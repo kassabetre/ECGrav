@@ -238,7 +238,7 @@ CvOverT::argerr="A Real is expected at position 1, an association
 at position 2, and an association at 3.";
 
 
-(* ::Chapter::Closed:: *)
+(* ::Chapter:: *)
 (*Hamiltonians*)
 
 
@@ -355,7 +355,7 @@ HLaplacian::argerr="An adjacency matrix is expected at position 1, a real number
 position 2.";
 
 
-(* ::Chapter::Closed:: *)
+(* ::Chapter:: *)
 (*Ground State Searches*)
 
 
@@ -415,7 +415,7 @@ position 4 (positin 3 if optional delta Hamiltonian formula not given),
 and integer at position 5 (positin 4 if optional delta Hamiltonian formula not given).";
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Simulated Annealing*)
 
 
@@ -454,7 +454,7 @@ position 5 (position 4 if optional delta Hamiltonian formula not given),
 and integers at the last two positions.";
 
 
-(* ::Chapter::Closed:: *)
+(* ::Chapter:: *)
 (*Metropolis MC*)
 
 
@@ -485,15 +485,15 @@ a real number at position 2, a hamiltonian at position 3, a list of functions
 at positions 4, and an integer at positions 5.";
 
 
-(* ::Chapter::Closed:: *)
+(* ::Chapter:: *)
 (*Parallel Tempering*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Parallel Tempering*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphSweepReplica*)
 
 
@@ -503,10 +503,13 @@ at positions 4, and an integer at positions 5.";
 
 (* :Usage Mesages: *)
 
-GraphSweepReplica::usage="GraphSweepReplica[seedGraph,beta,hamiltonian,delH,NN,minEToBeat,UnlabeledVerticesYes] 
-performs NN MCMC sweeps on a seed graph state given by the adjacency matrix seedGraph
+GraphSweepReplica::usage="GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_,delH_,
+	NN_Integer,minEToBeat_Real,UnlabeledVerticesYes_Integer], overload
+GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_,NN_Integer,minEToBeat_Real,
+	UnlabeledVerticesYes_Integer] performs NN MCMC sweeps on a seed graph state 
+given by the adjacency matrix seedGraph
 Inputs are:
-1. seedGraph = List, a seed graph as an adjacency matrix, \[IndentingNewLine]2. beta = Real, inverse temperature beta, \[IndentingNewLine]3. hamiltonian = a formula, the hamiltonian, \[IndentingNewLine]4. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. NN = Integer, number of sweeps NN,\[IndentingNewLine]6. minEToBeat = Real, a value for energy such that the lowest energy states with 
+1. seedGraph = List, a seed graph as an adjacency matrix, \[IndentingNewLine]2. beta = Real, inverse temperature beta, \[IndentingNewLine]3. hamiltonian = a formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. NN = Integer, number of sweeps NN,\[IndentingNewLine]6. minEToBeat = Real, a value for energy such that the lowest energy states with 
    energy lower than minEToBeat will be saved (for ground state search),\[IndentingNewLine]7. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the graphs
    unlabeled, UnlabeledVerticesYes = 1 means graphs are unlabeled.   \[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the sweep states with that energy. 
     If multiple states have degenerate minimum energy, they will all be included. 
@@ -521,7 +524,7 @@ the change in energy when one edge is toggled at position 4, integer at position
 a real number at position 6, an integer at position 7.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphEquilibriate*)
 
 
@@ -531,8 +534,11 @@ a real number at position 6, an integer at position 7.";
 
 (* :Usage Mesages: *)
 
-GraphEquilibriate::usage="GraphEquilibriate[seedGraph, beta, hamiltonian,delH,UnlabeledVerticesYes] 
-equilibriates an input graph configuration to the temperature beta.,\[IndentingNewLine]Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
+GraphEquilibriate::usage="GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_,delH_,
+		UnlabeledVerticesYes_Integer] overload
+	GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_,
+		UnlabeledVerticesYes_Integer] equilibriates an input graph configuration to the 
+	temperature beta.,\[IndentingNewLine]Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
    graphs unlabeled so graphs are labeled, 
    UnlabeledVerticesYes = 1 means graphs are unlabeled.,\[IndentingNewLine]\[IndentingNewLine]Depends on the function GraphSweepReplicas., \[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations:, ;, \[IndentingNewLine]The second is the final equilibriated state  \[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the equilibriation and the states with that 
     energy. If multiple states have degenerate minimum energy, they will all be included, 
@@ -546,11 +552,11 @@ equilibriates an input graph configuration to the temperature beta.,\[IndentingN
 (* :Error Mesages: *)
 
 GraphEquilibriate::argerr="A graph adjacency matrix is expected at position 1, 
-a real number at position 2, a hamiltonian at position 3, a formula for 
+a real number at position 2, a hamiltonian at position 3, an optional formula for 
 the change in energy when one edge is toggled at position 4, integer at position 5.";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphComputeCorrelationTime*)
 
 
@@ -560,13 +566,15 @@ the change in energy when one edge is toggled at position 4, integer at position
 
 (* :Usage Mesages: *)
 
-GraphComputeCorrelationTime::usage="GraphComputeCorrelationTime[seedGraph,beta,
-hamiltonian,delH,eqlT, minEToBeat,EnergyOrMag,UnlabeledVerticesYes] 
-takes an equilibriated graph model with equilibriation time and graph configurations
+GraphComputeCorrelationTime::usage="GraphComputeCorrelationTime[seedGraph_List,beta_Real,
+hamiltonian_,delH_, eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer]
+overload GraphComputeCorrelationTime[seedGraph_List,beta_Real,
+hamiltonian_, eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer] 
+takes an equilibriated graph with equilibriation time and graph configurations
 and computes the correlation time.,\[IndentingNewLine]
 Depends on the functions: GraphSweepReplicas, CorrelationTime.,
 
-Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. eqlT = Integer, equilibriation time.,
+Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. eqlT = Integer, equilibriation time.,
 6. minEToBeat = Real, energy value such that if a state (or states ) are found with energy 
    lower than this, then the lowest such energy and configurations with that energy 
    will be saved.,\[IndentingNewLine]7. EnergyOrMag = Integer, a variable to specify whether energy or magnetization is used to 
@@ -586,13 +594,13 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
 (* :Error Mesages: *)
 
 GraphComputeCorrelationTime::argerr="A graph adjacency matrix is expected at position 1, 
-a real number at position 2, a hamiltonian at position 3, a formula for 
+a real number at position 2, a hamiltonian at position 3, an optional formula for 
 the change in energy when one edge is toggled at position 4, and Integer at position 5, 
 a Real numbers at positions 6, and integers at positions 7 and 8. The integer at position
 8 has to be 1 or 0 for unlabeled ot labeled graphs respectively";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphMultiHistogram*)
 
 
@@ -602,23 +610,29 @@ a Real numbers at positions 6, and integers at positions 7 and 8. The integer at
 
 (* :Usage Mesages: *)
 
-GraphMultiHistogram::usage="GraphMultiHistogram[seedGraph,betaLow,betaHigh,
-hamiltonian,delH,obs,NN,UnlabeledVerticesYes] 
-the Multiple Histogram Method for the graph models to get a smooth plot of the 
+GraphMultiHistogram::usage="GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
+hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
+implements the Multiple Histogram Method for the graph models to get a smooth plot of the 
 observables in the list of functions obs as a function of inverse temperature 
 ranging from betaLow to betaHigh. It equilibriates, computes correlation times, 
 takes NN independent measurements, then computes the free energies that will be used 
 for the extrapolation.
 
-The overload GraphMultiHistogram[seedGraph,betaTable,
-hamiltonian,delH,obs,NN,UnlabeledVerticesYes] takes in a list of inverse temperatures 
-in betaTable instead of just high and low.\[IndentingNewLine]
-Depends on the functions: GraphSweepReplicas, CorrelationTime.,
+The overload GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
+	hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] allows delH to be optional.
+
+The overloads GraphMultiHistogram[seedGraph_List,betaTable_List,
+	hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
+	GraphMultiHistogram[seedGraph_List,betaTable_List,
+	hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
+inverse temperatures in betaTable instead of just high and low.\[IndentingNewLine]
+Depends on the functions: GraphSweepReplicas, GraphEquilibriate, 
+	GraphComputeCorrelationTime, CorrelationTime.,
 
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. betaLow = Real, lower bound of inverse temperature,
 3. betaHigh = Real, upper bound of inverse temperature,
    Note: the overload takes a list of inverse temperature values instead of betaLow and 
-   betaHigh\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
+   betaHigh\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = an optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
     output a number,
 7. NN = Integer, number of independent measurements,
 8. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
@@ -639,14 +653,14 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
 
 GraphMultiHistogram::argerr="A graph adjacency matrix is expected at position 1, real 
  numbers at positions 2 and 3 (alternatively a list of real numbers at position 2), 
- a hamiltonian at position 4 (or 3), a formula for the change in energy when one edge 
+ a hamiltonian at position 4 (or 3), an optional formula for the change in energy when one edge 
  is toggled at position 5 (or 4), a list of formulas corresponding to observables at 
- position 6 (or 5), an Integer at position 7 (or 6), and an Integer (0 or 1 only for 
+ position 6 (or 5 or 4), an Integer at position 7 (or 6 or 5), and an Integer (0 or 1 only for 
  unlabeled ot labeled graphs respectively) at 
- position 8 (or 7)."
+ position 8 (or 7 or 6)."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphCEITempSchedule*)
 
 
@@ -656,21 +670,26 @@ GraphMultiHistogram::argerr="A graph adjacency matrix is expected at position 1,
 
 (* :Usage Mesages: *)
 
-GraphCEITempSchedule::usage="GraphCEITempSchedule[seedGraph,betaLow,betaHigh,
-hamiltonian,delH,obs,NN,UnlabeledVerticesYes] 
+GraphCEITempSchedule::usage="GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
+hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
 finds a temperature schedule to be used for parallel tempering using the Constant
 Entropy Increase (CEI) approach based on the paper by Sobo et. al. 
 https://doi.org/10.1063/1.2907846. 
 
-The overload GraphCEITempSchedule[seedGraph,betaTable,
-hamiltonian,delH,obs,NN,UnlabeledVerticesYes]  takes in a list of inverse temperatures 
-in betaTable instead of just high and low.\[IndentingNewLine]
-Depends on the functions: GraphSweepReplica, GraphSweepReplicas, CorrelationTime.,
+The overload GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
+hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer]  allows delH to be optional.\[IndentingNewLine]
+The overloads GraphCEITempSchedule[seedGraph_List,betaTable_List,
+		hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
+	GraphCEITempSchedule[seedGraph_List,betaTable_List,
+		hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
+inverse temperatures in betaTable instead of just high and low.\[IndentingNewLine]
+Depends on the functions: GraphSweepReplicas, GraphMultiHistogram (which also depends on
+	GraphEquilibriate, GraphComputeCorrelationTime), CorrelationTime.,
 
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. betaLow = Real, lower bound of inverse temperature,
 3. betaHigh = Real, upper bound of inverse temperature,
    Note: the overload takes a list of inverse temperature values instead of betaLow and 
-   betaHigh\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
+   betaHigh\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = an optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
     output a number,
 7. NN = Integer, number of independent measurements,
 8. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
@@ -692,14 +711,14 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
 
 GraphCEITempSchedule::argerr="A graph adjacency matrix is expected at position 1, real 
  numbers at positions 2 and 3 (alternatively a list of real numbers at position 2), 
- a hamiltonian at position 4 (or 3), a formula for the change in energy when one edge 
+ a hamiltonian at position 4 (or 3), an optional formula for the change in energy when one edge 
  is toggled at position 5 (or 4), a list of formulas corresponding to observables at 
- position 6 (or 5), an Integer at position 7 (or 6), and an Integer (0 or 1 only for 
+ position 6 (or 5 or 4), an Integer at position 7 (or 6 or 5), and an Integer (0 or 1 only for 
  unlabeled ot labeled graphs respectively) at 
- position 8 (or 7)."
+ position 8 (or 7 or 6)."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphParallelTempering*)
 
 
@@ -709,8 +728,8 @@ GraphCEITempSchedule::argerr="A graph adjacency matrix is expected at position 1
 
 (* :Usage Mesages: *)
 
-GraphParallelTempering::usage="GraphParallelTempering[seedGraph, btTable, minEtoBeat,
-          hamiltonian,delH,obs,EnergyOrMag,NN,numberOfDataPoints,UnlabeledVerticesYes] 
+GraphParallelTempering::usage="GraphParallelTempering[seedGraph_List, btTable_List, minEtoBeat_Real,
+          hamiltonian_,delH_,obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] 
 Implements Parallel tempering algorithm on graph models at several different 
 temperatures determined by Constant Entropy Increase (CEI) temperature schedule based 
 on the paper by Sobo et. al. https://doi.org/10.1063/1.2907846. 
@@ -719,8 +738,14 @@ temperature swaps during the measurement step. It is parallelized so that
 equilibriation, computation of correlation time, and sweeps during measurement are 
 all done in parallel. Temperature swaps are done on the master kernel.
 
-The overload GraphParallelTempering[inputReplicas,minEtoBeat,hamiltonian,delH,obs,
-EnergyOrMag,NN,numberOfDataPoints,UnlabeledVerticesYes] takes as an input an association
+The overload GraphParallelTempering[seedGraph_List, btTable_List, minEtoBeat_Real,
+          hamiltonian_,obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer]
+	allows delH to be an optional formula.
+
+The overloads GraphParallelTempering[inputReplicas_Association,minEtoBeat_Real,hamiltonian_,delH_,obs_,
+	EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] and
+	GraphParallelTempering[inputReplicas_Association,minEtoBeat_Real,hamiltonian_,obs_,
+	EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] take as an input an association
 of replicas with keys as integer numbers of the replica and values assiciations listing
 the temperature, equilibriation time, correlation time, and equilibriated state of each
 replica. In other words, the overload takes as an input, the 4th entry in the output of 
@@ -730,6 +755,7 @@ GraphComputeCorrelationTime.
 
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. btTable - a list of inverse temperatures for the replicas, ideally returned from the
    temperature schedule found by GraphCEITempSchedule
+	Note, inputs 1 and 2 maybe replaced by the output association inputReplicas of a previous run
 3. minEToBeat = Real, a value for energy such that the lowest energy states with 
    energy lower than minEToBeat will be saved (for ground state search),\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = a formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
     output a number,
@@ -754,11 +780,12 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
 
 (* :Error Mesages: *)
 
-GraphParallelTempering::argerr="A graph adjacency matrix is expected at position 1, a 
- list of real numbers at position 2, a real  number at position 3, a hamiltonian at 
- position 4, a formula for the change in energy when one edge is toggled at position 5, 
- a list of formulas corresponding to observables at 
- position 6, and integers at positions 7,8,9,10."
+GraphParallelTempering::argerr="A graph adjacency matrix and a 
+	list of real numbers are expected at positions 1 or 2; a real  number at position 3, 
+	a hamiltonian at position 4, an optional formula for the change in energy when 
+	one edge is toggled at position 5, a list of formulas corresponding to observables at 
+	position 6, and integers at positions 7,8,9,10. Alternatively, an association can be 
+	given in place of positions 1 and 2."
 
 
 (* ::Title:: *)
@@ -1713,15 +1740,15 @@ CliqueFacetAutomorphismGroup::argerr="Input should be of the form
 (*Generate Pure Simplicial Complexes*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Generate All Pure Simplicial Complexes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Generate all vertex labeled pure simplicial complexes *)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*GenerateAllVertexLabeledPureSimplicialComplexes*)
 
 
@@ -1742,11 +1769,11 @@ GenerateAllVertexLabeledPureSimplicialComplexes::argerr="Input should be of the 
 	GenerateAllVertexLabeledPureSimplicialComplexes[{p_Integer, q_Integer}].";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Generate all facet-labeled pure simplicial complexes*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*GenerateAllFacetLabeledPureSimplicialComplexes*)
 
 
@@ -1767,11 +1794,11 @@ GenerateAllFacetLabeledPureSimplicialComplexes::argerr="Input should be of the f
 (*Generate A Random Pure Simplicial Complex*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Random [purity*facetOrder]-labeled Pure Simplicial Complex*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*RandomPQLabeledPureSimplicialComplex*)
 
 
@@ -1794,11 +1821,11 @@ RandomPQLabeledPureSimplicialComplex::argerr="Input should be of the form
 	RandomPQLabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer].";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Random Vertex labeled Pure Simplicial Complex*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*RandomVertexLabeledPureSimplicialComplex*)
 
 
@@ -1824,7 +1851,7 @@ RandomVertexLabeledPureSimplicialComplex::argerr="Input should be of the form
 (*Random facet labeled Pure Simplicial Complex*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*RandomFacetLabeledPureSimplicialComplex*)
 
 
@@ -1839,6 +1866,52 @@ RandomFacetLabeledPureSimplicialComplex::usage="
 (* :Error Messages: *)
 
 RandomFacetLabeledPureSimplicialComplex::argerr="Integers were expected at positions 1 and 2.";
+
+
+(* ::Section:: *)
+(*Generate A Random Pseudo-manifold*)
+
+
+(* ::Subsection:: *)
+(*Random Pseudo Manifold Through Successive Facet Addition*)
+
+
+(* ::Item:: *)
+(*RandomPseudoManifold*)
+
+
+(* :Usage Messages: *)
+
+RandomUnlabeledPseudoManifold::usage="
+	RandomUnlabeledPseudoManifold[{p_Integer, q_Integer}];  
+	generates a random ulabeled pseudo-manifold with purity p and facet-order q.";
+	
+(* :Error Messages: *)
+
+RandomUnlabeledPseudoManifold::argerr="Integers were expected at positions 1 and 2.";
+
+
+(* ::Subsection:: *)
+(*Add a random facet to a PseudoManifold*)
+
+
+(* ::Item:: *)
+(*AddRandomUnlabeledFacetToPseudoManifold*)
+
+
+(* :Usage Messages: *)
+
+AddRandomUnlabeledFacetToPseudoManifold::usage="
+	RandomUnlabeledPseudoManifold[facetsLst_List,apastingSites_List];  
+	adds a random facet to the existing pseudo-manifold given as the list
+	facetsLst of facets at pasting sites apastingSites which are co-dimension 1 faces 
+	available for binding. The method picks out one representative from the orbit of the 
+	binding sites under the automorphism group of the existing pseudo-manifold.";
+	
+(* :Error Messages: *)
+
+AddRandomUnlabeledFacetToPseudoManifold::argerr="Input should be of the form 
+	RandomUnlabeledPseudoManifold[facetsLst_List,apastingSites_List].";
 
 
 (* ::Title:: *)

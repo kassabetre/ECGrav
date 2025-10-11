@@ -43,7 +43,7 @@ Begin["`Private`"] (* Begin private context *)
 (*General*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Basic Simplicial Complex Constructions*)
 
 
@@ -160,7 +160,7 @@ ECGrav`ComplexFromFacetLabeledVertexList[args___]:=(Message[ECGrav`ComplexFromFa
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*FacetLabeledVertexListFromComplex*)
 
 
@@ -204,33 +204,35 @@ ECGrav`PureGraphQ[args___]:=(Message[ECGrav`PureGraphQ::argerr, args];
 $Failed);
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Spheres and Balls, Links and Stars*)
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*Sph*)
 
 
 (* Primary Pattern *)
-ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),i_Integer]:=
+ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 	(*Print["in case Amat. Amat = ",Amat];*)
 	If[i>size,Print[" Warning! attempting to find the sphere around a vertex that is not in the graph!"];
 		Print["graph ",Graph[AdjacencyGraph[Amat],VertexLabels->"Name"]," node ",i];
 	Return[{}]];
+	If[rowcolsToKeep=={},Return[{}]];
 	If[size==0,Return[{}]];
 	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
 ];
 
 (* Overload Pattern *)
-ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),i_Integer,r_Integer]:=
+ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
 (*	Print["in case Amat. Amat = ",Amat];*)
 	If[Length[Amat]==0,Return[{}]];
 	dm=GraphDistanceMatrix[AdjacencyGraph[Amat]];
 	(*Print[" Amat ",Amat, " dm ",dm];*)
 	rowcolsToKeep=Flatten[Position[dm[[i]],r]];
+	If[rowcolsToKeep=={},Return[{}]];
 	(*Print["rowcolsToKeep ",rowcolsToKeep];*)
 	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
 ];
@@ -262,19 +264,20 @@ ECGrav`Sph[args___]:=(Message[ECGrav`Sph::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*Bll*)
 
 
 (* Primary Pattern *)
 
-ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),i_Integer]:=
+ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 	(*Print["in case Amat. Amat = ",Amat];*)
 	If[i>size,Print[" Warning! attempting to find the sphere around a vertex that is not in the graph!"];
 		Print["graph ",Graph[AdjacencyGraph[Amat],VertexLabels->"Name"]," node ",i];
 	Return[{}]];
 	If[size==0,Return[{}]];
+	If[rowcolsToKeep=={},Return[{}]];
 	Join[
 		Transpose[
 			Join[
@@ -287,7 +290,7 @@ With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 ];
 
 (* Overload Pattern *)
-ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),i_Integer,r_Integer]:=
+ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
 	(*Print["in case Amat. Amat = ",Amat];*)
 	If[Length[Amat]==0,Return[{}]];
@@ -295,6 +298,7 @@ Module[{rowcolsToKeep,dm},
 	(*Print[" Amat ",Amat, " dm ",dm];*)
 	rowcolsToKeep=Flatten[Position[dm[[1]],_?(#<=r&)]];
 	(*Print["rowcolsToKeep ",rowcolsToKeep];*)
+	If[rowcolsToKeep=={},Return[{}]];
 	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
 ];
 
@@ -3161,7 +3165,7 @@ $Failed);
 (*Random facet labeled Pure Simplicial Complex*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*RandomFacetLabeledPureSimplicialComplex*)
 
 
@@ -3256,6 +3260,14 @@ $Failed);
 
 (* ::Chapter:: *)
 (*Generate A Random Pseudo Manifold*)
+
+
+(* ::Subsection:: *)
+(*Random Pseudo Manifold Through Successive Facet Addition*)
+
+
+(* ::Subsection:: *)
+(*Add  a random unlabeled facet to a pseudo-manifold*)
 
 
 (* ::Title:: *)
