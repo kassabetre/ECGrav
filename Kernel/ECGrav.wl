@@ -25,15 +25,7 @@ ClearAll @@ Names["ECGrav`*"];
 
 
 (* ::Title:: *)
-(*ECGrav Public Functions*)
-
-
-(* ::Subtitle:: *)
-(*Main ECGrav Public Symbols*)
-
-
-(* ::Title:: *)
-(*Involving MCSims*)
+(*ECGrav Public Functions Involving MCSims*)
 
 
 (* ::Chapter::Closed:: *)
@@ -242,7 +234,7 @@ at position 2, and an association at 3.";
 (*Hamiltonians*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Graph Hamiltonians*)
 
 
@@ -279,7 +271,7 @@ position 2, a real number at position 3, an integer at position 4, an integer at
 position 5.";
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*HWeightedFaceCounts*)
 
 
@@ -355,8 +347,83 @@ HLaplacian::argerr="An adjacency matrix is expected at position 1, a real number
 position 2.";
 
 
+(* ::Item:: *)
+(*HZeroOnDGraphs*)
+
+
+(* :Usage Mesages: *)
+
+HZeroOnDGraphs::usage="HZeroOnDGraphs[Amat,J]. Gives zero geometric graphs
+(combinatorial manifolds)
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
+(* :Error Mesages: *)
+
+HZeroOnDGraphs::argerr="An adjacency matrix is expected at position 1, a real number at 
+position 2.";
+
+
+(* ::Item:: *)
+(*HZeroOn1DGraphs*)
+
+
+(* :Usage Mesages: *)
+
+HZeroOn1DGraphs::usage="HZeroOn1DGraphs[Amat,J]. Gives zero on 1D geometric graphs
+(cycle and path graphs)
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
+(* :Error Mesages: *)
+
+HZeroOn1DGraphs::argerr="An adjacency matrix is expected at position 1, a real number at 
+position 2.";
+
+
+(* ::Item:: *)
+(*HZeroOnDSpheres*)
+
+
+(* :Usage Mesages: *)
+
+HZeroOnDSpheres::usage="HZeroOnDSpheres[Amat,J]. Gives zero d spheres
+(combinatorial manifolds homeomorphic to S^d)
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
+(* :Error Mesages: *)
+
+HZeroOnDSpheres::argerr="An adjacency matrix is expected at position 1, a real number at 
+position 2.";
+
+
 (* ::Chapter:: *)
 (*Ground State Searches*)
+
+
+(* ::Section::Closed:: *)
+(*Exact Low Energy State Searches*)
+
+
+(* ::Item::Closed:: *)
+(*LowEnergyStates*)
+
+
+(* :Usage Mesages: *)
+
+LowEnergyStates::usage="LowEnergyStates[states_List,H_,klevel_Integer] Calculates the 
+energies of the states in the list using the hamiltonian function H. Outputs an 
+ordered association with the lowest klevel energies as the keys and the states 
+with those energies as the values.
+Inputs are:
+1. states = List, a list of adjacency matrix of a graphs
+2. H = function, the Hamiltonian,  
+3. klevel = Integer, the number of lowest energy levels to return,
+
+Outputs an association with the lowest klevel energies as keys and lists of states 
+with the corresponding energies as the values.";
+(* :Error Mesages: *)
+
+LowEnergyStates::argerr="Input should be of the form 
+	LowEnergyStates[states_List,H_,klevel_Integer].";
 
 
 (* ::Section::Closed:: *)
@@ -369,7 +436,7 @@ position 2.";
 
 (* :Usage Mesages: *)
 
-GradDescent::usage="ECGrav`GradDescent[seedAmat,delH_,cutoff] runs the 
+GradDescent::usage="GradDescent[seedAmat,delH_,cutoff] runs the 
 gradient algorithm on the input adjacency matrix seedAmat
 Inputs are:
 1. seedAmat = List, adjacency matrix of a graph
@@ -455,6 +522,45 @@ and integers at the last two positions.";
 
 
 (* ::Chapter:: *)
+(*Exact Expectation Value Calculations*)
+
+
+(* ::Section:: *)
+(*Expectation Value*)
+
+
+(* ::Item:: *)
+(*ExactExpectationValue*)
+
+
+(* :Usage Mesages: *)
+
+ExactExpectationValue::usage="ExactExpectationValue[ensemble_List,degenValues_List,obsfunction_,Hamiltonian_,beta_]
+Calculates the expectation value of the observable function(s). Energies in Boltzman weights are computed using the Hamiltonian. degeneracy is vector of functions that give the different weights for a given graph. Beta is inverse temperature. \[IndentingNewLine]Usage ExpectationValue[{amat1, amat2},{{1.0,1.0},{1.0/3.0,1.0/5.0}},{AvgDeg, AvgDim},HIsing,10.0]. \[IndentingNewLine]
+Inputs are:
+1. states = List, a list of adjacency matrix of a graphs
+2. degenValues = List of list, a list of numbers representing the degeneracy or other 
+	weight to be applied to each graph in the state. Each list within the list must have 
+	the same length as states.
+3. obsfunction = a list of functions of observables whose expectation values in the canonical
+	ensemble is to be computed. In the overload this can be replaced by a list of list of 
+	observable values.
+3. Hamiltonian = function, the Hamiltonian,  
+
+5. beta = Real or a variable, the inverse temperature
+
+Outputs a list of lists with as many items as the length of the degeneracy list. 
+Each item in the output list has in itself the partition function, the free energy, 
+and the expectation values of the observable functions, all of which are computed with 
+the corresponding degeneracy weight.";
+(* :Error Mesages: *)
+
+LowEnergyStates::argerr="Input should be of the form 
+	ExactExpectationValue[ensemble_List,degenValues_List,obsfunction_,Hamiltonian_,beta_],
+	or ExactExpectationValue[ensemble_List,degenValues_List,obsValues_List,Hamiltonian_,beta_].";
+
+
+(* ::Chapter:: *)
 (*Metropolis MC*)
 
 
@@ -489,11 +595,11 @@ at positions 4, and an integer at positions 5.";
 (*Parallel Tempering*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Parallel Tempering*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphSweepReplica*)
 
 
@@ -524,7 +630,7 @@ the change in energy when one edge is toggled at position 4, integer at position
 a real number at position 6, an integer at position 7.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphEquilibriate*)
 
 
@@ -556,7 +662,7 @@ a real number at position 2, a hamiltonian at position 3, an optional formula fo
 the change in energy when one edge is toggled at position 4, integer at position 5.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphComputeCorrelationTime*)
 
 
@@ -600,7 +706,7 @@ a Real numbers at positions 6, and integers at positions 7 and 8. The integer at
 8 has to be 1 or 0 for unlabeled ot labeled graphs respectively";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphMultiHistogram*)
 
 
@@ -660,7 +766,7 @@ GraphMultiHistogram::argerr="A graph adjacency matrix is expected at position 1,
  position 8 (or 7 or 6)."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphCEITempSchedule*)
 
 
@@ -718,7 +824,7 @@ GraphCEITempSchedule::argerr="A graph adjacency matrix is expected at position 1
  position 8 (or 7 or 6)."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphParallelTempering*)
 
 
@@ -789,7 +895,7 @@ GraphParallelTempering::argerr="A graph adjacency matrix and a
 
 
 (* ::Title:: *)
-(*Involving PureComplexes*)
+(*ECGrav Public Functions Involving PureComplexes*)
 
 
 (* ::Chapter:: *)
@@ -941,8 +1047,22 @@ PureGraphQ::usage = "PureGraphQ[g_Graph] returns True if the graph is pure.";
 PureGraphQ::argerr="Input should be a graph object.";
 
 
+(* ::Item::Closed:: *)
+(*CliqueComplexQ*)
+
+
+(* :Usage Messages: *)
+
+CliqueComplexQ::usage = "CliqueComplexQ[facetsLst_List] returns True if the complex
+	given as a list of facets is a clique complex.";
+
+(* :Error Messages: *)
+
+CliqueComplexQ::argerr="Input should be a list of lists (the facets).";
+
+
 (* ::Subsection::Closed:: *)
-(*Spheres and Balls, Links and Stars*)
+(*Spheres, Balls, Links, Stars*)
 
 
 (* ::Item::Closed:: *)
@@ -1061,7 +1181,7 @@ FacetDeg::argerr="A list (of facets) is expected at position 1 an integer (a ver
  				
 
 HyperDeg::usage="HyperDeg[g_Graph,clq_List];
-	overload HyperDeg[Amat_List,clq_List], HyperDeg[facetsLst_List,clq_List]
+	overload HyperDeg[Amat_List,clq_List], HyperDeg[facetsLst_List,clq_List],
 	computes the degree of the clique (face) clq given as a list of vertices in the 
 	complex given as a graph g, adjacency matrix Amat, or a list facetsLst of facets. 
 	It checks whether or not the input is a clique (face) in the graph/complex.";
@@ -1344,7 +1464,7 @@ HausdorffDim::argerr="A graph adjacency matrix or graph was expected at position
 
 
 (* ::Subsection::Closed:: *)
-(*Geometric Graphs*)
+(*Pure and Geometric Complexes*)
 
 
 (* ::Item::Closed:: *)
@@ -1357,7 +1477,7 @@ DSphereQ::usage = "DSphereQ[g_Graph] outputs true if the graph is a d-sphere.";
 
 (* :Error Messages: *)
 
-DSphereQ::argerr="Input shoudl be a graph.";
+DSphereQ::argerr="Input should be a graph.";
 
 
 (* ::Item::Closed:: *)
@@ -1380,14 +1500,74 @@ DGraphQ::argerr="A graph was expected.";
 
 (* :Usage Messages: *)
 
-DGraphBoundary::usage = "DGraphBoundary[g_Graph] outputs the induced subgraph 
-	which is the boundary of the graph g. 
+DGraphBoundary::usage = "DGraphBoundary[g_Graph] or DGraphBoundary[Amat_List] outputs 
+	the induced subgraph 
+	which is the boundary of the graph g given as a graph object g or adjacency matrix 
+	Amat. 
 	The boudnary of a geometric graph is the induced subgraph over boundary 
 	nodes, i.e. those vertices whose unit spheres are contractible, or paths.";
 
 (* :Error Messages: *)
 
-DGraphBoundary::argerr="A graph was expected.";
+DGraphBoundary::argerr="Input must be a graph or an adjacency matrix.";
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialManifoldQ*)
+
+
+(* :Usage Messages: *)
+
+CombinatorialManifoldQ::usage = "CombinatorialManifoldQ[facetsLst_List] returns True if 
+	the complex is a combinatorial manifold.";
+
+(* :Error Messages: *)
+
+CombinatorialManifoldQ::argerr="Input should be a list of facets.";
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialSphereQ*)
+
+
+(* :Usage Messages: *)
+
+CombinatorialSphereQ::usage = "CombinatorialSphereQ[facetsLst_List] returns True if 
+	the complex is a combinatorial sphere.";
+
+(* :Error Messages: *)
+
+CombinatorialSphereQ::argerr="Input should be a list of facets.";
+
+
+(* ::Item::Closed:: *)
+(*OrientableCombinatorialManifoldQ*)
+
+
+(* :Usage Messages: *)
+
+OrientableCombinatorialManifoldQ::usage = "OrientableCombinatorialManifoldQ[facetsLst_List] 
+returns True if the complex assumed to be a pseudo combinatorial manifold is 
+orientable.";
+
+(* :Error Messages: *)
+
+OrientableCombinatorialManifoldQ::argerr="Input should be a list of facets.";
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialBoundary*)
+
+
+(* :Usage Messages: *)
+
+CombinatorialBoundary::usage = "CombinatorialBoundary[facetsLst_List] returns the 
+	boundary of the complex assuming it is a combinatorial manifold.";
+
+(* :Error Messages: *)
+
+CombinatorialBoundary::argerr="Input should be a list of facets representing a 
+	combinatorial manifold.";
 
 
 (* ::Item::Closed:: *)
@@ -1402,8 +1582,23 @@ CountHoles::usage = "CountHoles[g_Graph,k_Integer] gives the number of k-holes,
 
 (* :Error Messages: *)
 
-CountHoles::argerr="A list of lists or graph was expected at position 1 and 
+CountHoles::argerr="A list of lists or graph is expected at position 1 and 
 	an optional integer at position 2.";
+
+
+(* ::Item::Closed:: *)
+(*Visualize2DComplex*)
+
+
+(* :Usage Messages: *)
+
+Visualize2DComplex::usage = "Visualize2DComplex[facetsLst_List] gives 3D rendering of 
+	a 2D pure complex.";
+
+(* :Error Messages: *)
+
+Visualize2DComplex::argerr="Input should be a list of facets representing a 
+	combinatorial manifold.";
 
 
 (* ::Subsection::Closed:: *)
@@ -1790,7 +1985,7 @@ GenerateAllFacetLabeledPureSimplicialComplexes::argerr="Input should be of the f
 	GenerateAllFacetLabeledPureSimplicialComplexes[{p_Integer, q_Integer}].";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Generate A Random Pure Simplicial Complex*)
 
 
@@ -1847,7 +2042,7 @@ RandomVertexLabeledPureSimplicialComplex::argerr="Input should be of the form
 	RandomPQLabeledPureSimplicialComplex[{p_Integer,q_Integer}].";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Random facet labeled Pure Simplicial Complex*)
 
 
@@ -1868,16 +2063,16 @@ RandomFacetLabeledPureSimplicialComplex::usage="
 RandomFacetLabeledPureSimplicialComplex::argerr="Integers were expected at positions 1 and 2.";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Generate A Random Pseudo-manifold*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Random Pseudo Manifold Through Successive Facet Addition*)
 
 
-(* ::Item:: *)
-(*RandomPseudoManifold*)
+(* ::Item::Closed:: *)
+(*RandomUnlabeledPseudoManifold*)
 
 
 (* :Usage Messages: *)
@@ -1891,7 +2086,7 @@ RandomUnlabeledPseudoManifold::usage="
 RandomUnlabeledPseudoManifold::argerr="Integers were expected at positions 1 and 2.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Add a random facet to a PseudoManifold*)
 
 

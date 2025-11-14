@@ -35,7 +35,7 @@ Begin["`Private`"] (* Begin private context *)
 (*Helper Functions*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Aggregating Data*)
 
 
@@ -84,7 +84,7 @@ ECGrav`EmpCorrelationTime[args___]:=(Message[ECGrav`EmpCorrelationTime::argerr, 
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*ErrorBootstrap*)
 
 
@@ -361,7 +361,7 @@ $Failed);
 (*Hamiltonians*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Graph Hamiltonians*)
 
 
@@ -394,12 +394,12 @@ ECGrav`delHIsing[args___]:=(Message[ECGrav`delHIsing::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*HWeightedFaceCounts*)
 
 
 (* Primary Pattern *)
-ECGrav`HWeightedFaceCounts[Am_List,J1_Real,J2_Real,J3_Real,J4_Real, J5_Real]:=
+ECGrav`HWeightedFaceCounts[Am_List,J1_,J2_,J3_,J4_, J5_]:=
 (*J1*(# of vertices) + J2*(number of edges)+... + J5*(number of 5-cliques).*)
 Block[{n=Length[Am],num2cliques,num3cliques,num4cliques,num5cliques},
 (*clqs=FindClique[g,\[Infinity],All];*)
@@ -476,7 +476,56 @@ $Failed);
 (*Ground State Searches*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
+(*Exact Searches*)
+
+
+(* ::Item::Closed:: *)
+(*LowEnergyStates*)
+
+
+(* :Code Section: *)
+
+(* Primary Pattern *)
+ECGrav`LowEnergyStates[ensemble_List,H_,level_Integer]:=
+(****************************************)
+(*   (* Last updated 01/15/2025. *) *)
+(*   (* Note: list of states as values. *) *) 
+(****************************************)
+(* Calculates the 
+energies of the states in the list using the hamiltonian function H. Outputs an 
+ordered association with the lowest klevel energies as the keys and the states 
+with those energies as the values.*)
+
+Block[{mastertuplesParts,partialresult,minstates},
+
+mastertuplesParts=With[{partlength=Ceiling[Length[ensemble]/11]},
+Partition[ensemble,UpTo[partlength]]];
+(*Print[" mastertuplesParts length ",Length/@mastertuplesParts," mastertuplesParts ",
+mastertuplesParts];*)
+
+
+partialresult=Join@@ParallelTable[
+	TakeSmallestBy[p,H[#]&,UpTo[level]],{p,mastertuplesParts},
+		DistributedContexts->{$Context, "ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+	Print[" partialresult length ",Length[partialresult]
+];
+
+minstates=TakeSmallestBy[partialresult,H[#]&,UpTo[level]];
+(*Print[" minstates ",minstates];*)
+
+(*<|Table[GraphPlot[AdjacencyGraph[i],ImageSize->{70,70}]->H[i],{i,minstates}]|>*)
+
+ECGrav`ChooseNonIsomorphicGraphs[#]&/@(GroupBy[minstates,H[#]&])
+
+];
+
+(* Catch-all Pattern *)
+ECGrav`LowEnergyStates[args___]:=(Message[ECGrav`LowEnergyStates::argerr, args];
+$Failed);
+
+
+(* ::Section:: *)
 (*Gradient Descent (GD)*)
 
 
@@ -1033,6 +1082,147 @@ result
 ECGrav`SimulatedAnnealing[args___]:=(Message[ECGrav`SimulatedAnnealing::argerr, args];
 $Failed);
 
+
+
+(* ::Chapter:: *)
+(*Exact Expectation Value Calculations*)
+
+
+(* ::Section::Closed:: *)
+(*Expectation Value*)
+
+
+(* ::Item::Closed:: *)
+(*ExactExpectationValue*)
+
+
+(* :Code Section: *)
+
+(* Primary Pattern *)
+ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],function_,Hamiltonian_,beta_]:=
+(*(*****************************)
+(* Last Updated: 01/31/2025  *)
+(*****************************)*)
+(*Notes: ,
+1. 01/30/2025 update added the ability to include a degeneracy function that adds 
+	additional weight to each graph.,
+2. 01/31/2025 update changed ParallelTable to parallel map which has a 
+	significantly better memory management for large ensembles*)
+(*This program computes the expectation value of the observable function(s). 
+It does the same thing as the program ExpectationValue but in parallel. Energies in 
+Boltzman weights are computed using the Hamiltonian. degeneracy is vector of functions 
+that give the different weights for a given graph. Beta is inverse temperature. 
+Outputs a list of lists with as many items as the length of the degeneracy list. 
+Each item has in itself the partition function, the free energy, and the expectation 
+values of the functions inputed all of which are computed with the corresponding 
+degeneracy function. *)
+
+Block[{result,n,nprint,boltzmanWeights,partitionZ,freeF, funcvalues},
+n=Length[ensemble];
+nprint=Floor[n/5];
+result = 0.0;
+
+boltzmanWeights=ParallelMap[
+(*If[Mod[k,nprint]\[Equal]0,Print["Computing Boltzman weights at graph no. = ",k]];*)
+Exp[-beta*Hamiltonian[#]]&,
+ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+
+(*Print[" boltzmanWeights ",boltzmanWeights];*)
+
+funcvalues=Transpose[
+	ParallelMap[
+		Through[function[#]]&,ensemble,
+		DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}]
+	];
+
+(*Print[" funcvalues ",funcvalues];*)
+
+(*Print[" degenValues ",degenValues];*)
+
+partitionZ=Total/@Table[degenValues[[i]]*boltzmanWeights,{i,1,Length[degenValues]}];
+(*Print["partitionZ",partitionZ];*)
+
+freeF=(-1.0/beta)*Log[#]&/@partitionZ;
+(*Print["freeF",freeF];*)
+
+result=Table[(1.0/partitionZ[[i]])*Table[Total[(degenValues[[i]]*boltzmanWeights*funcvalues[[j]])],{j,1,Length[funcvalues]}],{i,1,Length[degenValues]}];
+
+(*Print["result ", result];*)
+
+(*Print["boltzmanWeights ", boltzmanWeights];
+Print["funcvalues ", funcvalues];
+Print["partitionZ ", partitionZ];
+Print["freeF ", freeF];
+Print["expvalue ", result];*)
+
+Table[{partitionZ[[i]],freeF[[i]],result[[i]]},{i,1,Length[degenValues]}]
+];
+
+ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],obsValues_List/;NumericQ[obsValues[[1,1]]],Hamiltonian_,beta_]:=
+(*(*****************************)
+(* Last Updated: 02/07/2025  *)
+(*****************************)*)
+(*Notes: ,
+1. 01/30/2025 update added the ability to include a degeneracy function that adds 
+	additional weight to each graph.,
+2. 01/31/2025 update changed ParallelTable to parallel map which has a significantly 
+	better memory management for large ensembles*)
+(*This program computes the expectation value of the observable function(s). 
+ Energies in Boltzman weights are computed using the Hamiltonian. ,
+Inputs are:,
+1. ensemble,
+2. degenValues = a list of list of graph multiplicities or degeneracies corresponding 
+	to different cases (e.g. labeled vs unlabeled). The list should have as many lists 
+	as the number of cases and each element in the list should have as many elements
+	as the length of the ensemble,
+3. obsValues = a list of list of observable values. Should have the same length as the 
+	number of observables and each element of the list should be as long as the 
+	ensemble with nth element of the ith list corresponding to the value of the ith 
+	observable on the nth graph in the ensemble,
+4. Hamiltonian = hamiltonian that maps graphs to reals,
+5. beta = inverse temperature 
+Outputs a list of lists with as many items as the length of the degeneracy list. Each 
+item has in itself the partition function, the free energy, and the expectation values 
+of the functions inputed all of which are computed with the corresponding degeneracy 
+function. *)
+
+Block[{result,n,nprint,boltzmanWeights,partitionZ,freeF},
+n=Length[ensemble];
+nprint=Floor[n/5];
+result = 0.0;
+
+boltzmanWeights=ParallelMap[
+(*If[Mod[k,nprint]\[Equal]0,Print["Computing Boltzman weights at graph no. = ",k]];*)
+Exp[-beta*Hamiltonian[#]]&,
+ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+
+(*Print[" boltzmanWeights ",boltzmanWeights];*)
+
+
+(*Print[" degenValues ",degenValues];*)
+
+partitionZ=Total/@Table[degenValues[[i]]*boltzmanWeights,{i,1,Length[degenValues]}];
+(*Print["partitionZ",partitionZ];*)
+
+freeF=(-1.0/beta)*Log[#]&/@partitionZ;
+(*Print["freeF",freeF];*)
+
+result=Table[(1.0/partitionZ[[i]])*Table[Total[(degenValues[[i]]*boltzmanWeights*obsValues[[j]])],{j,1,Length[obsValues]}],{i,1,Length[degenValues]}];
+
+(*Print["result ", result];*)
+
+(*Print["boltzmanWeights ", boltzmanWeights];
+Print["obsValues ", obsValues];
+Print["partitionZ ", partitionZ];
+Print["freeF ", freeF];
+Print["expvalue ", result];*)
+
+Table[{partitionZ[[i]],freeF[[i]],result[[i]]},{i,1,Length[degenValues]}]
+];
+
+(* Catch-all Pattern *)
+ECGrav`ExactExpectationValue[args___]:=(Message[ECGrav`ExactExpectationValue::argerr, args];
+$Failed);
 
 
 (* ::Chapter::Closed:: *)
@@ -1970,7 +2160,7 @@ $Failed);
 (*GraphMultiHistogram*)
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*GraphMultiHistogram Primary*)
 
 

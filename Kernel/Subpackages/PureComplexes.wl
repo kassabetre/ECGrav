@@ -43,7 +43,7 @@ Begin["`Private`"] (* Begin private context *)
 (*General*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Basic Simplicial Complex Constructions*)
 
 
@@ -204,11 +204,29 @@ ECGrav`PureGraphQ[args___]:=(Message[ECGrav`PureGraphQ::argerr, args];
 $Failed);
 
 
-(* ::Subsection:: *)
+(* ::Item::Closed:: *)
+(*CliqueComplexQ*)
+
+
+(* Primary Pattern *)
+ECGrav`CliqueComplexQ[facetsLst_List]:=
+(*Given a list of maximal cliques, it checks whether or not it passes the clique condition test*)
+Module[{threeSubsets=Subsets[facetsLst,{3}],fIsInAClique},
+If[Length[facetsLst]<3,Return[True]];
+fIsInAClique[candClq_List]:=AnyTrue[facetsLst,SubsetQ[#,candClq]&];
+AllTrue[threeSubsets,fIsInAClique[Union[Intersection[#[[1]],#[[2]]],Intersection[#[[1]],#[[3]]],Intersection[#[[2]],#[[3]]]]]&]
+];
+
+(* Catch-all Pattern *)
+ECGrav`CliqueComplexQ[args___]:=(Message[ECGrav`CliqueComplexQ::argerr, args];
+$Failed);
+
+
+(* ::Subsection::Closed:: *)
 (*Spheres and Balls, Links and Stars*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*Sph*)
 
 
@@ -264,7 +282,7 @@ ECGrav`Sph[args___]:=(Message[ECGrav`Sph::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*Bll*)
 
 
@@ -444,7 +462,7 @@ ECGrav`HyperDeg[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 	Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),clq_List]:=
 (*Computes the hyperdegree of the face clq given as a list of vertices. 
 Checks whether or not the input is a face in the graph*)
-With[{lnk=ECGrav`Lnk[facetsLst]},
+With[{lnk=ECGrav`Lnk[facetsLst,clq]},
 	If[NoneTrue[facetsLst,SubsetQ[#,clq]&],Print["Error! the input ",clq," 
 	is not a face of the complex"];Return[]];
 	Total[Length/@lnk]
@@ -1013,8 +1031,8 @@ ECGrav`HausdorffDim[args___]:=(Message[ECGrav`HausdorffDim::argerr, args];
 $Failed);
 
 
-(* ::Subsection::Closed:: *)
-(*Geometric Graphs*)
+(* ::Subsection:: *)
+(*Pure and Geometric Complexes*)
 
 
 (* ::Item::Closed:: *)
@@ -1063,7 +1081,7 @@ ECGrav`DGraphQ[args___]:=(Message[ECGrav`DGraphQ::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*DGraphBoundary*)
 
 
@@ -1078,8 +1096,167 @@ bdryPoints=Complement[vlist,interiorPoints];
 Return[Subgraph[g,bdryPoints]]
 ];
 
+(* Overload Pattern *)
+ECGrav`DGraphBoundary[Amat_List]:=
+(*Outputs the induced subgraph which is the boundary of the graph with adjacency matrix 
+Amat. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
+With[{bdryGraph=ECGrav`DGraphBoundary[AdjacencyGraph[Amat]]},
+	If[VertexCount[bdryGraph]==0,Return[{}]];
+	Normal[AdjacencyMatrix[bdryGraph]]
+];
+
 (* Catch-all Pattern *)
 ECGrav`DGraphBoundary[args___]:=(Message[ECGrav`DGraphBoundary::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialManifoldQ*)
+
+
+(* Primary Pattern *)
+ECGrav`CombinatorialManifoldQ[facelst_List]:=
+(*Given an input simplicial complex as a list of facets, it checks whether or not it is a combinatorial manifold. 
+Returns true if a combinatorial manifold and false if not.*)
+Module[{purity,codim1faces,links},
+If[facelst=={},Return[True]];(*The empty graph is the -1 sphere*)
+If[Length[facelst]==1,Return[True]];
+(*an n-simplex is a combinatorial manifold, an n-ball *)
+If[Length[DeleteDuplicates[Length/@facelst]]>1,Return[False]];(*the complex has to be pure*)
+
+purity=Length[facelst[[1]]];
+(*Print["purity ",purity];*)
+If[purity==1,
+If[Length[facelst]<=2,Return[True],Return[False]]
+];
+If[purity==2,
+If[PathGraphQ[ECGrav`GraphFromCliques[facelst]],Return[True],Return[False]]
+];
+If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Return[False]];(*the complex has to be connected*)
+codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
+If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]>2&],Return[False]];
+links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
+AllTrue[links,ECGrav`CombinatorialManifoldQ[#]&]
+];
+
+(* Catch-all Pattern *)
+ECGrav`CombinatorialManifoldQ[args___]:=(Message[ECGrav`CombinatorialManifoldQ::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialSphereQ*)
+
+
+(* Primary Pattern *)
+ECGrav`CombinatorialSphereQ[facelst_List]:=
+(*Given an input simplicial complex as a list of facets, it checks whether or not it 
+is a combinatorial sphere. Returns true if a combinatorial manifold and false if not.*)
+Module[{purity,codim1faces,links},
+If[facelst=={},Return[True]];(*The empty graph is the -1 sphere*)
+If[Length[facelst]==1,Return[False]];
+(*an n-simplex is an n-ball, not a sphere *)
+If[Length[DeleteDuplicates[Length/@facelst]]>1,Return[False]];(*the complex has to be pure*)
+
+purity=Length[facelst[[1]]];
+(*Print["purity ",purity];*)
+
+If[purity==1,
+	If[Length[facelst]==2,Return[True],Return[False]]
+];
+
+If[purity==2,Return[With[{g=ECGrav`GraphFromCliques[facelst]},
+	If[PathGraphQ[g]&&!AcyclicGraphQ[g],True,False]]]
+];
+
+If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Return[False]];(*the complex has to be connected*)
+
+codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
+If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Return[False]];
+
+links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
+AllTrue[links,ECGrav`CombinatorialSphereQ[#]&]
+];
+
+(* Catch-all Pattern *)
+ECGrav`CombinatorialSphereQ[args___]:=(Message[ECGrav`CombinatorialSphereQ::argerr, args];
+$Failed);
+
+
+(* ::Item:: *)
+(*OrientableCombinatorialManifoldQ*)
+
+
+(* Primary Pattern *)
+ECGrav`OrientableCombinatorialManifoldQ[inputfacetsLst_List]:=
+(*Checks whether or not a pseudo-combinatorial manifold given as a set of facets is 
+orientable. Does not check whether or not the input is a combinatorial pseudomanifold *)
+Module[{p=Length[inputfacetsLst[[1]]],q=Length[inputfacetsLst],facetsLst=Sort/@inputfacetsLst,orientations,RelativeOrientation,edgeList,graph,spanningtree,m1,m2,unexploredEdges},
+If[q<=2,Return[True]];
+If[p<=2,Return[True]];
+
+RelativeOrientation[simplex1_List,simplex2_List]:=
+(*gives the relative orientation between neighboring facets*)
+Block[{sharedFace=Intersection[simplex1,simplex2],remaining1,pos1,remaining2,pos2},(*Find the vertex not in the shared face for each simplex*)
+If[Length[sharedFace]!=Length[simplex1]-1,Return[0]];(*relative orientation of non-adjacent is set to 0*)
+remaining1=First@Complement[simplex1,sharedFace];
+remaining2=First@Complement[simplex2,sharedFace];
+pos1=Position[simplex1,remaining1][[1,1]];
+pos2=Position[simplex2,remaining2][[1,1]];
+
+((-1)^pos1)*Signature[Delete[simplex1,pos1]]*(-1)^pos2*Signature[Delete[simplex2,pos2]]
+];
+
+orientations=<|Table[i->i,{i,facetsLst}]|>;
+edgeList=Join@@(Table[Table[If[Length[Intersection[facetsLst[[i]],facetsLst[[j]]]]==p-1,UndirectedEdge[facetsLst[[j]],facetsLst[[i]]],Nothing],{i,j+1,q}],{j,1,q-1}]);
+
+graph=Graph[facetsLst,edgeList];
+
+spanningtree=FindSpanningTree[graph];
+
+
+(*Find Orientation on the spanning tree*)
+DepthFirstScan[spanningtree,{"DiscoverVertex"->(({m1,m2}={#1,#2};
+
+If[RelativeOrientation[orientations[[Key[m1]]],orientations[[Key[m2]]]]==+1,
+orientations[[Key[m1]]]=SelectFirst[Permutations[orientations[[Key[m1]]]],RelativeOrientation[orientations[[Key[m2]]],#]==-1&]];
+(*Print[" relative orientation after revision ",orientations];*))&)}];
+
+(*Check Compatability on the remaining edges*)
+unexploredEdges=Complement[Sort/@edgeList,Sort/@EdgeList[spanningtree],SameTest->(DeleteDuplicates[{Sort[#1], Sort[#2]}]==={Sort[#1]}&)];
+
+(*Print["unexploredEdges ",unexploredEdges];
+Print["checks on unexplored edges ",<|Table[i->RelativeOrientation[orientations[[Key[i[[1]]]]],orientations[[Key[i[[2]]]]]],{i,unexploredEdges}]|>];*)
+
+AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientations[[Key[#[[2]]]]]]==-1&]
+];
+
+(* Catch-all Pattern *)
+ECGrav`OrientableCombinatorialManifoldQ[args___]:=(Message[ECGrav`OrientableCombinatorialManifoldQ::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialBoundary*)
+
+
+(* Primary Pattern *)
+ECGrav`CombinatorialBoundary[facelst_List]:=
+(*Given an input simplicial complex as a list of facets, it returns the boundary. 
+It first checks whether or not the manifold is a combinatorial manifold and returns 
+$Failed if the complex is not a combinatorial manifold with a warning. *)
+Module[{purity=Length[facelst[[1]]],codim1faces},
+
+If[ECGrav`CombinatorialManifoldQ[facelst],
+codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
+(*Print[" codim1faces ",codim1faces, " degrees ",HyperDeg[facelst,#]&/@codim1faces];*)
+Select[codim1faces,ECGrav`HyperDeg[facelst,#]==1&],
+Print["Warning! Attempting to find the combinatorial boundary of a complex that is not a combinatorial manifold"];$Failed]
+
+];
+
+(* Catch-all Pattern *)
+ECGrav`CombinatorialBoundary[args___]:=(Message[ECGrav`CombinatorialBoundary::argerr, args];
 $Failed);
 
 
@@ -1124,7 +1301,33 @@ ECGrav`CountHoles[args___]:=(Message[ECGrav`CountHoles::argerr, args];
 $Failed);
 
 
-(* ::Subsection::Closed:: *)
+(* ::Item::Closed:: *)
+(*Visualize2DComplex*)
+
+
+(* Primary Pattern *)
+ECGrav`Visualize2DComplex[facelst_List]:=
+(*Given an input simplicial complex as a list of facets, it returns a 3D embedding. *)
+Module[{facets,cmap,coord,scoords},
+
+cmap=FindGraphIsomorphism[ECGrav`GraphFromCliques[facelst],CanonicalGraph[ECGrav`GraphFromCliques[facelst]]];
+
+facets=facelst/.cmap[[1]];
+
+coord=GraphEmbedding[CanonicalGraph[ECGrav`GraphFromCliques[facets]],"SpringEmbedding",3];
+(*"SpringElectricalEmbedding","SpringEmbedding","HighDimensionalEmbedding","CircularEmbedding","SpiralEmbedding","RandomEmbedding","RadialEmbedding","SpectralEmbedding","StarEmbedding"}*)
+(*Graphics3D[{Opacity[1.7],Yellow,GraphicsComplex[coord,Polygon[facets]]}];*)
+scoords=Map[Part[coord,#]&,facets];
+Graphics3D[{Opacity[0.9],Table[Simplex[i],{i,scoords}]}]
+
+];
+
+(* Catch-all Pattern *)
+ECGrav`Visualize2DComplex[args___]:=(Message[ECGrav`Visualize2DComplex::argerr, args];
+$Failed);
+
+
+(* ::Subsection:: *)
 (*Counting Pure Complexes*)
 
 
@@ -1622,7 +1825,7 @@ ECGrav`ChooseNonIsomorphicSimplicialComplexes[args___]:=(Message[ECGrav`ChooseNo
 $Failed);
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Automorphism Groups and Orders*)
 
 
@@ -1790,7 +1993,7 @@ g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
 
 
-Print[" relabelingRule ", relabelingRule, " inverseRelabelingRule ",Reverse/@relabelingRule];
+(*Print[" relabelingRule ", relabelingRule, " inverseRelabelingRule ",Reverse/@relabelingRule];*)
 
 If[Length[facetsLst]==1,Return[{SymmetricGroup[Length[facetsLst[[1]]]],Reverse/@relabelingRule}]];
 
@@ -2188,13 +2391,13 @@ g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
 
 
-Print[" relabelingRule ", relabelingRule, " inverseRelabelingRule ",Reverse/@relabelingRule];
+(*Print[" relabelingRule ", relabelingRule, " inverseRelabelingRule ",Reverse/@relabelingRule];*)
 
 facets=Sort/@(facetsLst/.relabelingRule);
 
-Print["relabeled facets according to canonical labeling ",facets];
+(*Print["relabeled facets according to canonical labeling ",facets];*)
 
-Print[" original graph ",GraphPlot[ECGrav`GraphFromCliques[facetsLst],VertexLabels->Automatic]," relabeled graph ",GraphPlot[g,VertexLabels->Automatic]];
+(*Print[" original graph ",GraphPlot[ECGrav`GraphFromCliques[facetsLst],VertexLabels->Automatic]," relabeled graph ",GraphPlot[g,VertexLabels->Automatic]];*)
 
 
 autGroup=GraphAutomorphismGroup[g];
@@ -2205,10 +2408,10 @@ doesntMixupMissingAndNonMissing[x_]:=NoneTrue[missingfacets,MemberQ[facets,Sort[
 
 missingfacets=Complement[Join@@(Subsets[#,{Length[facets[[1]]]}]&/@FindClique[g,\[Infinity],All]),facets];
 
-Print[" missingfacets ",missingfacets];
+(*Print[" missingfacets ",missingfacets];*)
 
-If[missingfacets!={},autGroup=PermutationGroup[Select[GroupElements[autGroup],doesntMixupMissingAndNonMissing[#]&]
-];
+If[missingfacets!={},
+	autGroup=PermutationGroup[Select[GroupElements[autGroup],doesntMixupMissingAndNonMissing[#]&]];
 ];
 
 (*Print["g Aut group ",autGroup, " order ",GroupOrder[autGroup]];*)
@@ -3266,8 +3469,397 @@ $Failed);
 (*Random Pseudo Manifold Through Successive Facet Addition*)
 
 
+(* ::Item::Closed:: *)
+(*RandomPseudoManifold*)
+
+
+(* :Code Section *)
+
+(* Primary Pattern *)
+ECGrav`RandomUnlabeledPseudoManifold[{purity_Integer,facetOrder_Integer,connected_Integer:0}]:=
+(*
+(****************************************)
+(*   (* Last updated 12/28/2024. *) *)
+(*   (* Note:  .*) *) 
+(****************************************)
+(*A code to generate a random pseudomanifold of a given purity and facet order 
+through iterative addition of vertices labeled by the facets. Input is the purity, 
+the facet order, and integer "connected" that is 1 for connected pseudomanifolds and 
+0 for disconnected.  E.g. RandomPseudoManifold[2,4,1] generates a 2-pure, connected 
+random pseudomanifold with 4 edges. It successively choses a random vertex from a 
+decreasing list of available vertex space.  *)
+
+*)
+Module[{facets={Range[purity]},pstingSites=Subsets[Range[purity],{purity-1}]},
+
+If[purity<2,
+If[facetOrder==1,Return[facets]];Print["No connected 1-pure graphs with clique order greater than 1"];
+Return[]
+];
+
+If[facetOrder==0,Print["The clique order must be a positive integer greater than 0"];
+Return[]];
+
+If[facetOrder==1,Return[facets]
+];
+
+(*Print["starting with facets ", facets, " pasting sites ",pstingSites];*)
+
+Do[
+(*Print["facets ",facets, " pstingSites ",pstingSites];*)
+
+{facets,pstingSites} =ECGrav`AddRandomUnlabeledFacetToPseudoManifold[facets,pstingSites,connected],{n,1,facetOrder-1}
+
+];
+
+{facets,pstingSites}
+
+];
+
+(* Catch-all Pattern *)
+ECGrav`RandomUnlabeledPseudoManifold[args___]:=(Message[ECGrav`RandomUnlabeledPseudoManifold::argerr, args];
+$Failed);
+
+
 (* ::Subsection:: *)
 (*Add  a random unlabeled facet to a pseudo-manifold*)
+
+
+(* ::Item::Closed:: *)
+(*AddRandomUnlabeledFacetToPseudoManifold*)
+
+
+(* :Code Section *)
+
+(* Primary Pattern *)
+ECGrav`AddRandomUnlabeledFacetToPseudoManifold[facetsLst_List,apastingSites_List,connected_Integer:0]:=
+(*
+(****************************************)
+(*   (* Last updated 10/11/2025. *) *)
+(*   (* Note:  .*) *) 
+(****************************************)
+(*A program that adds one more facet to existing labeled pseudo manifold at random. 
+Input is the current pseudo manifold as a list of facets, a second list of  codimension 
+1 faces available for binding, and an integer, connected, taking the values 0 or 1; 0 
+is for disconnected pseudomanifolds is the default. 1 is for connected pseudomanifolds. *)
+
+*)
+Module[{purity=Length[facetsLst[[1]]],glen,g,relabelingRule,autGroup,facets,newfacets,
+	newPastingSites,newclqVset,IsPartOfAFacet,CheckMatchingFunctionness,
+	CheckVertexDistance,bindingSiteSpace,bindingSite,AllowedPartnerSitesQ,
+	FindAllowedPastingSites,PasteSites,randomOrderOfPastingSites,allAllowedPSites,
+	success,relabelingRules},
+
+If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Print[" Error! attempting to add a clique to a non-pure graph. Exiting."];Return[]];If[DeleteDuplicates[Length/@facetsLst][[1]]!=purity,Print[" Error! attempting to add a clique of the wrong order to a pure graph. Exiting. "];
+Return[]];
+
+
+glen=Length[DeleteDuplicates[Flatten[facetsLst]]];
+
+(*facetAutGroup=PureComplexFacetAutomorphismGroup[facets];*)
+
+{autGroup,relabelingRule}={#1,Reverse/@#2}&@@ECGrav`PureComplexAutomorphismGroup[facetsLst];
+
+(*Print[ " autGroup ",autGroup," relabelingRule ",relabelingRule];*)
+
+g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+
+(*relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[facetsLst],g][[1]]];*)
+
+(*Print["canonical labeling rule ",relabelingRule];*)
+
+facets=Sort[Sort/@(facetsLst/.relabelingRule)];
+
+newPastingSites=Sort[Sort/@(apastingSites/.relabelingRule)];
+
+(*Print["relabeled facets according to canonical labeling ",facets, " relabeled graph ",GraphPlot[g,VertexLabels\[Rule]Automatic], " relabeled apastingSites ",newPastingSites];*)
+
+
+
+newclqVset=Range[glen+1,glen+purity];(*vertex set for the new clique to be added*)
+
+(*Print[" newclqVset ",newclqVset];*)
+
+If[apastingSites=={},Return[{Join[facets,{newclqVset}],Subsets[newclqVset,{purity-1}]}]];
+(*If apastingSites=={}, the manifold has no boundaries, so the program will return the 
+manifold and the new disconnected facet*)
+
+(*bindingSiteSpace=Subsets[Subsets[newclqVset,{purity-1}],purity];*)
+
+bindingSiteSpace=First/@Table[Subsets[Subsets[newclqVset,{purity-1}],{i}],{i,0,purity}];
+
+(*Print[" bindingSiteSpace ",bindingSiteSpace];*)
+
+bindingSiteSpace=bindingSiteSpace/.Thread[Range[purity]->newclqVset];
+
+(*Print[" bindingSiteSpace after relabeling ",bindingSiteSpace];*)
+
+If[connected==1,bindingSiteSpace=Complement[bindingSiteSpace,{{}}]];
+
+(*Print[" connected ",connected," bindingSiteSpace ",bindingSiteSpace];*)
+
+IsPartOfAFacet[a_List]:=(*Given a list of codimension 1 faces, this checks whether any subset of a pair is contained within a single facet in the pseudo manifold. Returns true if there is a facet containing any two of the faces in the list and false otherwise*)
+With[{pairs=Apply[Union,Subsets[a,{2}],1]},
+(*Or@@(Union@@Table[SubsetQ[i,#]&/@pairs,{i,facets}])*)
+AnyTrue[Table[Table[{i,j},{i,facets}],{j,pairs}],SubsetQ[#[[1]],#[[2]]]&,2]
+];
+
+(*Given a matching, decide whether or not it is a function, i.e., every member of the range has a unique preimage. It does so by finding the image of each element of the domain, calculating the size of such sets, and checking to see if any have cardinality \[GreaterEqual]2. Returns true if the matching is a proper function. It will be used to determine whether the pasting from partner sites in the graph to the binding sites in the new clique is a function.*)
+CheckMatchingFunctionness[ps_List,bs_List]:=Block[{asn},
+asn=<||>;
+Table[asn[[Key[ps[[i]]]]]=Union[Lookup[asn,Key[ps[[i]]],{}],{bs[[i]]}],{i,1,Length[ps]}];
+SelectFirst[Length/@asn,#>=2&,-1]==-1
+];
+
+(* Check that for a given set of vertices in the graph or psite that are mapped to the same vertex in bsite (the new clique) the distance in the original graph between any pair of them is greater than 2 so that they don't form multiloops or self loops. Returns true if no such case is found so that the pasting doesn't create any accidental self loops or multiloops. *)
+CheckVertexDistance[ps_List,bs_List]:=Block[{asn,pairs,distances},
+asn=<||>;
+(*Table[asn[[Key[bs[[i]]]]]=Append[Lookup[asn,Key[bs[[i]]],{}],ps[[i]]],{i,1,Length[bs]}];*)
+Table[asn[[Key[bs[[i]]]]]=Union[Lookup[asn,Key[bs[[i]]],{}],{ps[[i]]}],{i,1,Length[bs]}];
+
+(*Print["            In CheckVertexDistance, ps ",ps, " bs ",bs];
+Print["            In CheckVertexDistance, asn ",asn];*)
+
+pairs=Subsets[#,{2}]&/@asn;
+
+(*Print["            In CheckVertexDistance, pairs ",pairs];*)
+
+distances=Flatten[Table[GraphDistance[g,#[[1]],#[[2]]]&/@i,{i,pairs}]];
+
+(*Print["            In CheckVertexDistance, distances ",distances];*)
+
+SelectFirst[distances,#<=2&,-1]==-1 (*If there are no pairs with distance of 2 or less, SelectFirst ourputs -1 and the check returns true*)
+];
+
+
+AllowedPartnerSitesQ[candPsite_List]:=(*Given candPsite, a candidate partnersite list of codim 1 faces in the current complex( which will end up being part of the new facet that will be added) it checks whether or not a "slit" will be formed after pasting the new facet. A slit is basically two codim 1 faces that end up being identified at all their vertices. Returns True if the candPsite is ok, and False otherwise. *)
+Block[{vset=Union@@candPsite,facetComplements},
+If[Length[candPsite]<2,Return[True]];
+facetComplements=Complement[Subsets[vset,{purity-1}],candPsite];
+
+(*Print["          In AllowedPartnerSitesQ, candPsite ",candPsite," vset ",vset," facetComplements ",facetComplements];*)
+
+(*Print["         In AllowedPartnerSitesQ, tuples ",Tuples[{facets,facetComplements}]];*)
+
+NoneTrue[Tuples[{facets,facetComplements}],SubsetQ[#[[1]],#[[2]]]&]
+];
+
+FindAllowedPastingSites[ ]:=(*Finds the list of all lists of codimension 1 faces in the current allowed by the pasting rules sites in the complex.*)Module[{allPastingSites,validPastingSites,validPastingSiteOrbits,allUniquePastingSites},
+
+(*Print["      In FindAllowedPastingSites, newPastingSites ",newPastingSites];*)
+
+allPastingSites=Subsets[newPastingSites,{1,purity}];
+
+(*Print["      allPastingSites ",allPastingSites];*)
+
+allPastingSites=Select[allPastingSites,!IsPartOfAFacet[#]&];
+
+(*Print["      after applying !IsPartOfAFacet, allPastingSites ",allPastingSites];*)
+
+validPastingSites=Select[allPastingSites,AllowedPartnerSitesQ[#]&];
+
+(*Print["      In FindAllowedPastingSites, after applying AllowedPartnerSitesQ validPastingSites ",validPastingSites];*)
+
+(*Print[" AutG ",autGroup, " AutG order ",GroupOrder[autGroup]];*)
+
+validPastingSiteOrbits=GroupOrbits[autGroup,validPastingSites];
+
+(*Print["      Before sort, validPastingSiteOrbits ",validPastingSiteOrbits];*)
+
+(*Sorting is needed because Mathematica treats {1,2} as different from {2,1}*)
+validPastingSiteOrbits=Map[Sort,validPastingSiteOrbits,3];
+
+(*Print["      After sort, validPartnerSitesOrbits ",validPastingSiteOrbits];*)
+
+validPastingSiteOrbits=DeleteDuplicates[(DeleteDuplicates/@validPastingSiteOrbits)];
+
+(*removing duplicates after sorting.*)
+
+(*Print["      After deleteduplicates, validPastingSiteOrbits ",validPastingSiteOrbits];*)
+
+allUniquePastingSites = validPastingSiteOrbits[[All,1]];
+(*Picks a representative from each orbit of the automorphism group of the graph*)
+
+(*Print["      After picking unique representativs, allUniqueValidPartnerSites ",allUniqueValidPartnerSites];*)
+
+
+RandomSample[allUniquePastingSites]
+
+];
+
+
+
+PasteSites[bsite_List,psite_List]:=(*Given a list of binding site p-1)-faces (bsite) in the new facet and partnering pasting sites psite in the complex, this method pasts the two. It does so by creating a rule which relabels all vertices in the graph with their corresponding label in bsite. This pasting is a surjective (many to one) function from the vertex list of the partnering sites in psite to the vertex set of the binding sites in the clique. The method has side effect, it modifies newfacets. It returns 1 if succesful and 0 otherwise.*)
+Block[{psiteApexSet,bsiteApexSet,psiteSet,bsiteSet,rules,tgraph},
+
+newfacets=facets;
+
+(*Print["      Beginning the pasting. facets are ", facets, " newclqVset is ",newclqVset, " binding sites ",bsite," partnersites ",psite];*)
+
+(*care must be taken to make sure vertices that are in the intersection of two or more cliques in psite are also mapped to vertices that are intersections in bsite. psiteApexSet and bsiteApexSet collect such vertices. Then these vertices are mapped to eachother.*)
+
+psiteApexSet=Union@@(Apply[Intersection,Subsets[psite,{2}],1]);
+
+(*Print[" psiteApexSet ",psiteApexSet];*)
+
+bsiteApexSet=Union@@(Apply[Intersection,Subsets[bsite,{2}],1]);
+
+(*Print[" bsiteApexSet ",bsiteApexSet];*)
+
+(*psiteSet=Flatten[psite];
+bsiteSet=Flatten[bsite];
+
+Print["      before sorting, psiteSet ",psiteSet, " bsiteSet ",bsiteSet];*)
+
+psiteSet=Flatten[Table[SortBy[i,!MemberQ[psiteApexSet,#]&],{i,psite}]];
+bsiteSet=Flatten[Table[SortBy[i,!MemberQ[bsiteApexSet,#]&],{i,bsite}]];
+
+(*Print["            after sorting, psiteSet ",psiteSet, " bsiteSet ",bsiteSet];*)
+
+rules=DeleteDuplicates[Thread[psiteSet->bsiteSet]];
+(*Print["            rules ",rules];*)
+
+(*(** Check 1. Check that the matching from psite to bsite is a function, i.e., each vertex in psite is mapped to atmost one vertex in bsite **)*)
+
+If[CheckMatchingFunctionness[psiteSet,bsiteSet]==False,(*Print["Can not paste. No function from psite to bsite. Returning 0. "];*)Return[0]
+];
+
+(*(** Check 2.  For each member of bsiteApexSet, check that its preimage, i.e, all vertices in psite mapped to the same vertex in bsiteApexSet have distance of greater than 2. **)*)
+
+If[CheckVertexDistance[psiteSet,bsiteSet]==False,(*Print["Two or more vertices of separations less than 3 will be identified by this pasting. Returning 0 "];*)
+Return[0]
+];
+
+
+
+newfacets=Sort[Sort/@(newfacets/.rules)];
+
+(*Print["      After pasting rules, newfacets ",newfacets/.rules];*)
+
+AppendTo[newfacets,newclqVset];
+
+(*Print["      before updating newPastingSites ",newPastingSites ];*)
+
+newPastingSites=Complement[newPastingSites,psite];
+
+(*Print["      after removing pasted codim 1 face,  newPastingSites ",newPastingSites ];*)
+
+newPastingSites=Sort[Sort/@(newPastingSites/.rules)];
+
+(*Print["      After relabeling newPastingSites ",newPastingSites ];*)
+
+newPastingSites=Join[newPastingSites,Complement[Subsets[newclqVset,{purity-1}],bsite]];
+
+(*Print["      After adding new sites, newPastingSites ",newPastingSites ];*)
+
+newPastingSites=Sort[Sort/@newPastingSites];
+
+(*Print["      returning newfacets ",newfacets, " newPastingSites ",newPastingSites];*)
+
+(*tgraph=GraphFromCliques[newfacets];*)
+
+(*Print["new Graph ",GraphPlot[GraphFromCliques[newfacets],VertexLabels\[Rule]Automatic]];*)
+
+1
+
+];
+
+
+(*****************************
+*        main loop          *
+****************************
+*)
+
+(*randomOrderOfPastingSites=RandomSample[Select[bindingSiteSpace,Length[#]\[LessEqual]Length[facets]&]];*)
+
+(*Print["Random ordering of binding sites ",randomOrderOfPastingSites];*)
+
+
+(*Print[""];
+Print[""];
+Print[""];
+Print[""];
+Print["Main loop "];
+(*Print[ "bg ",bg, " Length[facets] ",Length[facets]];*)Print["facets ",facets," graph, ",GraphPlot[GraphFromCliques[facets],VertexLabels->Automatic,ImageSize->{65,65}]];
+Print["relabeled pastingSites ",newPastingSites];
+Print[""];
+Print[""];*)
+
+
+(******************************************************
+*     Select pasting sites from                      *
+*     the existing graph                             *
+*                                                    *
+******************************************************)
+
+allAllowedPSites=FindAllowedPastingSites[];
+
+
+(*Print["After FindAllowedPastingSites, allAllowedPSites ",allAllowedPSites];*)
+
+
+
+(********************************
+*   Commence pasting           *
+*******************************)
+
+Do[
+
+(*Print[""];*)
+
+
+success=0;
+
+bindingSite=SelectFirst[bindingSiteSpace,Length[#]==Length[randomPsite]&];
+
+(*Print[" Attempting to paste binding site ",bindingSite," with partner site ",randomPsite," on graph ", GraphPlot[g,VertexLabels\[Rule]Automatic]," success ",success];*)
+
+success = PasteSites[SortBy[bindingSite,Length],SortBy[randomPsite,Length]];
+
+(*Print[" After paste attempt, success is ",success];*)
+
+If[success==1,
+
+(*Print[" successfully pasted. Breaking "];*)
+
+Break[],Continue[]
+];
+
+
+,{randomPsite,allAllowedPSites}] ;
+
+(*Print[" before relabel, newfacets ",newfacets, " relabel rules ",
+	Thread[DeleteDuplicates[Flatten[newfacets]]\[Rule]Range[Length[DeleteDuplicates[
+			Flatten[newfacets]]]]] ];
+	Print[ " after relabel, newfacets ",newfacets/.Thread[DeleteDuplicates[Flatten[
+		newfacets]]\[Rule]Range[Length[DeleteDuplicates[Flatten[newfacets]]]]]];*)
+
+(*Print[" before relabeling, manifold is ",newfacets, " as graph ",
+	GraphPlot[GraphFromCliques[newfacets],VertexLabels->Automatic,ImageSize->{65,65}]];*)
+
+relabelingRules=Thread[DeleteDuplicates[Flatten[newfacets]]
+	->Range[Length[DeleteDuplicates[Flatten[newfacets]]]]];
+
+(*Print[" After relabeling, manifold is ",newfacets/.relabelingRules, 
+	" as graph ",GraphPlot[GraphFromCliques[newfacets/.relabelingRules],
+	VertexLabels->Automatic,ImageSize->{65,65}]];*)
+
+(*newfacets/.Thread[DeleteDuplicates[Flatten[newfacets]]\[Rule]Range[Length[DeleteDuplicates[Flatten[newfacets]]]]]*)
+
+(*Print["AddRandomFacetToPseudoManifold returning new facets ",newfacets," as graphs ",
+	GraphPlot[GraphFromCliques[newfacets],VertexLabels->Automatic,ImageSize->{70,70}], 
+	" newPastingSites ",newPastingSites];*)
+
+(*If[Length[Union@(Sort/@newfacets)]<=Length[facetsLst],Print["WARNING!! WARNING!! 
+	current complex ",facetsLst," new complex ",newfacets ]];*)
+
+{Sort[Sort/@(newfacets/.relabelingRules)], Sort[Sort/@(newPastingSites/.relabelingRules)]}
+
+];
+
+(* Catch-all Pattern *)
+ECGrav`AddRandomUnlabeledFacetToPseudoManifold[args___]:=(Message[ECGrav`AddRandomUnlabeledFacetToPseudoManifold::argerr, args];
+$Failed);
 
 
 (* ::Title:: *)
