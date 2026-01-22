@@ -377,7 +377,7 @@ ECGrav`Str[args___]:=(Message[ECGrav`Str::argerr, args];
 $Failed);
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Basic Graph Observables*)
 
 
@@ -594,43 +594,57 @@ ECGrav`KFaceDistanceMatrix[args___]:=(Message[ECGrav`KFaceDistanceMatrix::argerr
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*KpathConnectedComponents*)
 
 
 (* Primary Pattern *)
-ECGrav`KpathConnectedComponents[facets_List,facedim_Integer]:=
-(*Given a list of facets of a complex and 
-dimensionality facedim, this method computes the number of components connected by 
-(facedim+1)-paths where those clqdim faces that form a component connected by a 
-path of (facedim+1)-dimensional faces will form a component.  
-It  uses the built in Mathematica KVertexConnectedComponents function on a 
-graph constructed such that the vertices are all clqdim-faces and edges between 
-them are 1 if two faces are contained in a bigger clique and 0 otherwise. *)
+ECGrav`KpathConnectedComponents[facets_List,k_Integer]:=
 
-Module[{destinations,clqGraphAmat},
+(*(*****************************)
+(* Last Updated: 01/17/2026  *)
+(*****************************)*)
+(*Given a complex as a list of facets or a graph and dimensionality k, this method 
+computes the vertices contained in (k+1)-path connected components where a 
+(k+1)-path connected component of the complex contains all k-faces that form a 
+component connected by a path of (k+1)-dimensional faces.  It outputs a list of list 
+of vertices in each (k+1)-path connected component.
+It  uses the built in Mathematica ConnectedComponents function on a graph 
+constructed such that the vertices are all k-faces and two such vertices are
+connected if they are contained in a bigger face. *)
 
-If[facedim==1,Return[ConnectedComponents[ECGrav`GraphFromCliques[facets]]]];
+Module[{tooSmallFacets,isolated,destinations,clqGraphAmat},
 
-destinations=Union@@(Subsets[#,{facedim}]&/@facets);
+If[k==1,Return[ConnectedComponents[ECGrav`GraphFromCliques[facets]]]];
+
+tooSmallFacets=Select[facets,Length[#]<=k&];
+isolated={#}&/@
+	Complement[DeleteDuplicates[Flatten[tooSmallFacets]],
+		DeleteDuplicates[Flatten[Complement[facets,tooSmallFacets]]
+		]
+	];
+destinations=Union@@(Subsets[#,{k}]&/@facets);
 
 clqGraphAmat = 
 	Table[
 		Table[
 			If[Complement[i,j]=={},0,
-				If[(Length[Union[i,j]]==facedim+1)&&AnyTrue[facets,SubsetQ[#,Union[i,j]]&],1,0]
+				If[(Length[Union[i,j]]==k+1)&&AnyTrue[facets,SubsetQ[#,Union[i,j]]&],1,0]
 			],{i,destinations}
 		],
 {j,destinations}];
 
-(Union@@Part[destinations,#])&/@KVertexConnectedComponents[AdjacencyGraph[clqGraphAmat],1]
+Join[
+	(Union@@Part[destinations,#])&/@ConnectedComponents[AdjacencyGraph[clqGraphAmat]],
+	isolated
+	]
 
 ];
 
 (* Overload Pattern *)
-ECGrav`KpathConnectedComponents[g_Graph,clqdim_Integer]:=
+ECGrav`KpathConnectedComponents[g_Graph,k_Integer]:=
 With[{clqs=FindClique[g,\[Infinity],All]},
-	ECGrav`KpathConnectedComponents[clqs,clqdim]
+	ECGrav`KpathConnectedComponents[clqs,k]
 ];
 
 (* Catch-all Pattern *)
@@ -638,7 +652,7 @@ ECGrav`KpathConnectedComponents[args___]:=(Message[ECGrav`KpathConnectedComponen
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*ConnectedComplexComponents*)
 
 
@@ -678,7 +692,7 @@ ECGrav`FractionInLargestComponent[args___]:=(Message[ECGrav`FractionInLargestCom
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*FractionInLargestKPathComponent*)
 
 
@@ -1081,7 +1095,7 @@ ECGrav`DGraphQ[args___]:=(Message[ECGrav`DGraphQ::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*DGraphBoundary*)
 
 
@@ -1183,7 +1197,7 @@ ECGrav`CombinatorialSphereQ[args___]:=(Message[ECGrav`CombinatorialSphereQ::arge
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*OrientableCombinatorialManifoldQ*)
 
 

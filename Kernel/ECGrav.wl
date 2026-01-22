@@ -28,11 +28,11 @@ ClearAll @@ Names["ECGrav`*"];
 (*ECGrav Public Functions Involving MCSims*)
 
 
-(* ::Chapter::Closed:: *)
+(* ::Chapter:: *)
 (*Helper Functions*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Aggregating Data*)
 
 
@@ -155,28 +155,74 @@ LogSumExp::argerr="A list of reals is expected at position 1.";
 
 
 (* ::Item::Closed:: *)
+(*ComputeMinusBetaTimesFreeEnergy*)
+
+
+(* :Usage Mesages: *)
+
+ComputeMinusBetaTimesFreeEnergy::usage="ComputeMinusBetaTimesFreeEnergy[dat_Association] 
+Computes the value of -beta*free energy at the values of the inverse temperature beta
+given as the keys in the association dat.
+Overloads: 
+	ComputeMinusBetaTimesFreeEnergy[dat_Association, bt_Real] computes 
+	-beta*free energy at the values of the external field values
+	given as the keys in the association dat at the inverse temperature bt.
+	
+Inputs is:,
+1. dat - an association of external field values (J) and the corresponding 
+   list of values of the conjugate field (O) measured at these external field values.
+   (i.e., the Hamiltonian is assumed to have the term +J*O)
+   e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
+2. bt - Real = the inverse temperature
+
+Returns an association with the external field values (J_i) as keys and 
+-(betaFixed)(F[betaFixed,J_i] as the values.
+";
+
+(* :Error Mesages: *)
+
+ComputeMinusBetaTimesFreeEnergy::argerr="Input has to be of the form 
+	ComputeMinusBetaTimesFreeEnergy[dat_Association]
+	or 
+	ComputeMinusBetaTimesFreeEnergy[dat_Association, bt_Real]";
+
+
+(* ::Item::Closed:: *)
 (*NegativeBetaTimesFreeEnergy*)
 
 
 (* :Usage Mesages: *)
 
-NegativeBetaTimesFreeEnergy::usage="NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements] 
+NegativeBetaTimesFreeEnergy::usage="NegativeBetaTimesFreeEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association] 
 Computes the value of -beta*(free energy) at the value of the inverse temperature bf.
+Overloads: 
+	NegativeBetaTimesFreeEnergy[betaFixed_Real,targetExtField_Real,
+		minusBetaF_Association,conjugateExtFieldMeasurements_Association] computes 
+	-beta*free energy at the value of the inverse temperature betaFixed and target 
+	external field targetExtField.
+	
 Inputs are:
 1. bf = Real, inverse temperature
-2. minusBetaF = Association, an association of inverse temperatures and the 
+2. targetExtField - Real value for the external field at which the extrapolated value 
+	of -beta*freeEnergy is wanted,
+3. minusBetaF = Association, an association of inverse temperatures and the 
    corresponding value of -beta*(free energy) computed from the simulation at
    each beta, e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>,
-3. energyMeasurements = energyMeasurements - an association of inverse temperature 
-   and the corresponding list of energies measured at that beta., 
+4. energyMeasurements (or conjugateExtFieldMeasurements) = an association of inverse 
+	temperature (or external field )
+   and the corresponding list of energies (or conjugate observable values) measured at 
+	that beta (or external value)., 
    e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
-Note, the beta values which are the keys for both associations have to be equal as 
-sets! Also, the lengths of the lists of energy measurements have to be equal for all 
-betas.\[IndentingNewLine]It returns a real number equal to the -(bf)F[bf].";
+Note, the beta (external field) values which are the keys for both associations have 
+to be equal as sets! Also, the lengths of the lists of energy measurements have to be 
+equal for all betas/external fields.\[IndentingNewLine]It returns a real number equal to the -(bf)F[bf], or -(betaFixed)F[betaFixed,targetExtField]";
 (* :Error Mesages: *)
 
-NegativeBetaTimesFreeEnergy::argerr="A Real is expected at position 1, an association
-at position 2, and an association at 3.";
+NegativeBetaTimesFreeEnergy::argerr="Input has to be of the form 
+	NegativeBetaTimesFreeEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]
+	or 
+	NegativeBetaTimesFreeEnergy[betaFixed_Real,targetExtField_Real,
+		minusBetaF_Association,conjugateExtFieldMeasurements_Association]";
 
 
 (* ::Item::Closed:: *)
@@ -202,6 +248,41 @@ betas.\[IndentingNewLine]It returns a real number equal to U[bf].";
 
 InternalEnergy::argerr="A Real is expected at position 1, an association
 at position 2, and an association at 3.";
+
+
+(* ::Item::Closed:: *)
+(*ExtrapolatedExpectationValue*)
+
+
+(* :Usage Mesages: *)
+
+ExtrapolatedExpectationValue::usage="ExtrapolatedExpectationValue[bf_Real,
+	minusBetaF_Association,energyMeasurements_Association, 
+	measuredObservableValues_Association] 
+Computes the extrapolated expectation value of the observable at the target value of 
+the inverse temperature bf.
+Overloads: 
+	ExtrapolatedExpectationValue[betaFixed_Real,targetExtField_Real,
+		minusBetaF_Association,conjugateExtFieldMeasurements_Association,
+		measuredObservableValues_Association] 
+	computes the extrapolated value of the observable O at the fixed value of the 
+	inverse temperature betaFixed and at the value of the external field targetExtField. 
+	The microscopic Hamiltonian is assumed to have a term of the form J*E where J is tunable 
+	external field parameter and E is the conjugate observable..
+	
+Inputs are:,
+1. betaFixed - Real, the fixed value of the  inverse temperature,\[IndentingNewLine]2. targetExtField - Real, the value of the target external field,\[IndentingNewLine]3. minusBetaF - an association of the external field H and the corresponding value of -beta*free energy(H) e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>,\[IndentingNewLine]4. conjugateExtFieldMeasurements - an association of the external field values J and the corresponding list of energies (list of E's without the J multiplying them)measured at that J. e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>,\[IndentingNewLine]5. measuredObservableValues - an association of the external field values J and the corresponding list of meaurements of the observable O measured at those external field values. e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>\[IndentingNewLine]Note, the J values which are the keys for all the associations have to be equal as sets! Also, the lengths of the lists of values have to be equal for all J values,\[IndentingNewLine]
+Returns a real number equal to  the extrapolated expectation value of the observable at 
+the target value of the inverse temperature bf (or the target external field parameter 
+and fixed temperature).
+";
+
+(* :Error Mesages: *)
+
+ExtrapolatedExpectationValue::argerr="Input has to be of the form 
+	ComputeMinusBetaTimesFreeEnergy[dat_Association]
+	or 
+	ComputeMinusBetaTimesFreeEnergy[dat_Association, bt_Real]";
 
 
 (* ::Item::Closed:: *)
@@ -271,7 +352,7 @@ position 2, a real number at position 3, an integer at position 4, an integer at
 position 5.";
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*HWeightedFaceCounts*)
 
 
@@ -347,51 +428,58 @@ HLaplacian::argerr="An adjacency matrix is expected at position 1, a real number
 position 2.";
 
 
-(* ::Item:: *)
-(*HZeroOnDGraphs*)
+(* ::Item::Closed:: *)
+(*H1dCombManifold*)
 
 
 (* :Usage Mesages: *)
 
-HZeroOnDGraphs::usage="HZeroOnDGraphs[Amat,J]. Gives zero geometric graphs
-(combinatorial manifolds)
-Inputs are:
-1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
-(* :Error Mesages: *)
-
-HZeroOnDGraphs::argerr="An adjacency matrix is expected at position 1, a real number at 
-position 2.";
-
-
-(* ::Item:: *)
-(*HZeroOn1DGraphs*)
-
-
-(* :Usage Mesages: *)
-
-HZeroOn1DGraphs::usage="HZeroOn1DGraphs[Amat,J]. Gives zero on 1D geometric graphs
+H1dCombManifold::usage="H1dCombManifold[Amat,J]. Gives zero on 1D geometric graphs
 (cycle and path graphs)
 Inputs are:
-1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
+1. Amat = List, adjacency matrix of a graph
+2. J = Real, coupling constant,
+It returns a real number";
 (* :Error Mesages: *)
 
-HZeroOn1DGraphs::argerr="An adjacency matrix is expected at position 1, a real number at 
+H1dCombManifold::argerr="An adjacency matrix is expected at position 1, a real number at 
 position 2.";
 
 
-(* ::Item:: *)
-(*HZeroOnDSpheres*)
+(* ::Item::Closed:: *)
+(*H2dCombManifold*)
 
 
 (* :Usage Mesages: *)
 
-HZeroOnDSpheres::usage="HZeroOnDSpheres[Amat,J]. Gives zero d spheres
-(combinatorial manifolds homeomorphic to S^d)
+H2dCombManifold::usage="H2dCombManifold[Amat,J]. Gives zero on 2d combinatorial 
+	manifolds (combinatorial manifolds homeomorphic to the sphere S^2 or the disk B^2)
 Inputs are:
-1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. J = Real, coupling constant,\[IndentingNewLine]It returns a real number";
+1. Amat = List, adjacency matrix of a graph
+2. J = Real, coupling constant,
+It returns a real number";
 (* :Error Mesages: *)
 
-HZeroOnDSpheres::argerr="An adjacency matrix is expected at position 1, a real number at 
+H2dCombManifold::argerr="An adjacency matrix is expected at position 1, a real number at 
+position 2.";
+
+
+(* ::Item::Closed:: *)
+(*H2dPseudoCombManifold*)
+
+
+(* :Usage Mesages: *)
+
+H2dPseudoCombManifold::usage="H2dPseudoCombManifold[Amat,J]. Gives zero on 2d 
+	pseudo-combinatorial manifolds (graphs that 2 pure where the degree of each
+	edge is atmost 2 and are 2-path connected)
+Inputs are:
+1. Amat = List, adjacency matrix of a graph
+2. J = Real, coupling constant,
+It returns a real number";
+(* :Error Mesages: *)
+
+H2dPseudoCombManifold::argerr="An adjacency matrix is expected at position 1, a real number at 
 position 2.";
 
 
@@ -482,7 +570,7 @@ position 4 (positin 3 if optional delta Hamiltonian formula not given),
 and integer at position 5 (positin 4 if optional delta Hamiltonian formula not given).";
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Simulated Annealing*)
 
 
@@ -525,11 +613,11 @@ and integers at the last two positions.";
 (*Exact Expectation Value Calculations*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Expectation Value*)
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*ExactExpectationValue*)
 
 
@@ -595,7 +683,7 @@ at positions 4, and an integer at positions 5.";
 (*Parallel Tempering*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Parallel Tempering*)
 
 
@@ -609,13 +697,14 @@ at positions 4, and an integer at positions 5.";
 
 (* :Usage Mesages: *)
 
-GraphSweepReplica::usage="GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_,delH_,
+GraphSweepReplica::usage="GraphSweepReplica[seedGraph_List,beta_Real,
+	hamiltonian_[hparams___],delH_[delHparams___],
 	NN_Integer,minEToBeat_Real,UnlabeledVerticesYes_Integer], overload
-GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_,NN_Integer,minEToBeat_Real,
+GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_[hparams___],NN_Integer,minEToBeat_Real,
 	UnlabeledVerticesYes_Integer] performs NN MCMC sweeps on a seed graph state 
 given by the adjacency matrix seedGraph
 Inputs are:
-1. seedGraph = List, a seed graph as an adjacency matrix, \[IndentingNewLine]2. beta = Real, inverse temperature beta, \[IndentingNewLine]3. hamiltonian = a formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. NN = Integer, number of sweeps NN,\[IndentingNewLine]6. minEToBeat = Real, a value for energy such that the lowest energy states with 
+1. seedGraph = List, a seed graph as an adjacency matrix, \[IndentingNewLine]2. beta = Real, inverse temperature beta, \[IndentingNewLine]3. hamiltonian[hparams] = a formula, the hamiltonian together with its inpur parameters, \[IndentingNewLine]4. delH[delHparam] = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. NN = Integer, number of sweeps NN,\[IndentingNewLine]6. minEToBeat = Real, a value for energy such that the lowest energy states with 
    energy lower than minEToBeat will be saved (for ground state search),\[IndentingNewLine]7. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the graphs
    unlabeled, UnlabeledVerticesYes = 1 means graphs are unlabeled.   \[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the sweep states with that energy. 
     If multiple states have degenerate minimum energy, they will all be included. 
@@ -640,9 +729,10 @@ a real number at position 6, an integer at position 7.";
 
 (* :Usage Mesages: *)
 
-GraphEquilibriate::usage="GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_,delH_,
-		UnlabeledVerticesYes_Integer] overload
-	GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_,
+GraphEquilibriate::usage="GraphEquilibriate[seedGraph_List, beta_Real, 
+	hamiltonian_[hparams___],delH_[delHparams___], UnlabeledVerticesYes_Integer] 
+overload
+	GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_[hparams___],
 		UnlabeledVerticesYes_Integer] equilibriates an input graph configuration to the 
 	temperature beta.,\[IndentingNewLine]Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
    graphs unlabeled so graphs are labeled, 
@@ -673,11 +763,12 @@ the change in energy when one edge is toggled at position 4, integer at position
 (* :Usage Mesages: *)
 
 GraphComputeCorrelationTime::usage="GraphComputeCorrelationTime[seedGraph_List,beta_Real,
-hamiltonian_,delH_, eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer]
+	hamiltonian_[hparams___], delH_[delHparams___], eqlT_Integer, minEToBeat_Real,
+	EnergyOrMag_Integer,UnlabeledVerticesYes_Integer]
 overload GraphComputeCorrelationTime[seedGraph_List,beta_Real,
-hamiltonian_, eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer] 
-takes an equilibriated graph with equilibriation time and graph configurations
-and computes the correlation time.,\[IndentingNewLine]
+	hamiltonian_[hparams___], eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer] 
+	takes an equilibriated graph with equilibriation time and graph configurations
+	and computes the correlation time.,\[IndentingNewLine]
 Depends on the functions: GraphSweepReplicas, CorrelationTime.,
 
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. beta = Real, inverse temperature,\[IndentingNewLine]3. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]4. delH = optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]5. eqlT = Integer, equilibriation time.,
@@ -706,7 +797,7 @@ a Real numbers at positions 6, and integers at positions 7 and 8. The integer at
 8 has to be 1 or 0 for unlabeled ot labeled graphs respectively";
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphMultiHistogram*)
 
 
@@ -717,7 +808,7 @@ a Real numbers at positions 6, and integers at positions 7 and 8. The integer at
 (* :Usage Mesages: *)
 
 GraphMultiHistogram::usage="GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
-hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
+	hamiltonian_[hparams___],delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
 implements the Multiple Histogram Method for the graph models to get a smooth plot of the 
 observables in the list of functions obs as a function of inverse temperature 
 ranging from betaLow to betaHigh. It equilibriates, computes correlation times, 
@@ -725,14 +816,23 @@ takes NN independent measurements, then computes the free energies that will be 
 for the extrapolation.
 
 The overload GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
-	hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] allows delH to be optional.
+	hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] allows delH to be optional.
 
 The overloads GraphMultiHistogram[seedGraph_List,betaTable_List,
-	hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
+	hamiltonian_[hparams___],delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
 	GraphMultiHistogram[seedGraph_List,betaTable_List,
-	hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
+	hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
 inverse temperatures in betaTable instead of just high and low.\[IndentingNewLine]
-Depends on the functions: GraphSweepReplicas, GraphEquilibriate, 
+The overloads GraphMultiHistogram[seedGraph_List,beta_Real,
+	hamiltonian_[hparams___], delH_[delHparams___], externalFieldTable_List, conjugateObs_,
+	obs_, NN_Integer,UnlabeledVerticesYes_Integer] and 
+	GraphMultiHistogram[seedGraph_List,beta_Real,
+	hamiltonian_[hparams___],externalFieldTable_List,conjugateObs_, obs_,NN_Integer,
+	UnlabeledVerticesYes_Integer] take in a single value
+	of inverse temperatures and a list of external field parameters in externalFieldTable 
+	to do multihistogram estrapolation with other external field parameters.
+
+Depend on the functions: GraphSweepReplicas, GraphEquilibriate, 
 	GraphComputeCorrelationTime, CorrelationTime.,
 
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. betaLow = Real, lower bound of inverse temperature,
@@ -747,9 +847,11 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
     energy. If multiple states have degenerate minimum energy, they will all be included, 
     but if multiple identical adjacency graphs are found, only one unique adjacency graph 
     is kept. 
-2. an association with inverse temperatures as keys and -(beta)*(free energy), 
-   energy values, and observable values at the corresponding value of the inverse 
-   temperature beta.\[IndentingNewLine]3. the replicas in the last step, i.e., an association with inverse temperatures as keys 
+2. an association with inverse temperatures (or external field parameters) as keys and 
+   -(beta)*(free energy), energy values, (conjugate observable values), and observable 
+	values at the corresponding value of the inverse 
+   temperature beta (or the external field parameters).\[IndentingNewLine]3. the replicas in the last step, i.e., an association with inverse temperatures 
+	(external field parameters) as keys 
    and graph states as values where a state is itself an association which includes the 
    adjacency matrix, magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
@@ -777,17 +879,17 @@ GraphMultiHistogram::argerr="A graph adjacency matrix is expected at position 1,
 (* :Usage Mesages: *)
 
 GraphCEITempSchedule::usage="GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
-hamiltonian_,delH_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
+	hamiltonian_[hparams___],delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] 
 finds a temperature schedule to be used for parallel tempering using the Constant
 Entropy Increase (CEI) approach based on the paper by Sobo et. al. 
 https://doi.org/10.1063/1.2907846. 
 
 The overload GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
-hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer]  allows delH to be optional.\[IndentingNewLine]
+hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]  allows delH to be optional.\[IndentingNewLine]
 The overloads GraphCEITempSchedule[seedGraph_List,betaTable_List,
-		hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
+		hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] and 
 	GraphCEITempSchedule[seedGraph_List,betaTable_List,
-		hamiltonian_,obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
+		hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer] take in a list of 
 inverse temperatures in betaTable instead of just high and low.\[IndentingNewLine]
 Depends on the functions: GraphSweepReplicas, GraphMultiHistogram (which also depends on
 	GraphEquilibriate, GraphComputeCorrelationTime), CorrelationTime.,
@@ -795,7 +897,7 @@ Depends on the functions: GraphSweepReplicas, GraphMultiHistogram (which also de
 Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed graph,\[IndentingNewLine]2. betaLow = Real, lower bound of inverse temperature,
 3. betaHigh = Real, upper bound of inverse temperature,
    Note: the overload takes a list of inverse temperature values instead of betaLow and 
-   betaHigh\[IndentingNewLine]4. hamiltonian = formula, the hamiltonian, \[IndentingNewLine]5. delH = an optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
+   betaHigh\[IndentingNewLine]4. hamiltonian[hparams] = formula, the hamiltonian, \[IndentingNewLine]5. delH[delHparams] = an optional formula for delta E (when one edge is flipped to expedite computation),  \[IndentingNewLine]6. obs = List, a list of formulas of observables that act on graph adjacency matrix and 
     output a number,
 7. NN = Integer, number of independent measurements,
 8. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
@@ -834,8 +936,8 @@ GraphCEITempSchedule::argerr="A graph adjacency matrix is expected at position 1
 
 (* :Usage Mesages: *)
 
-GraphParallelTempering::usage="GraphParallelTempering[seedGraph_List, btTable_List, minEtoBeat_Real,
-          hamiltonian_,delH_,obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] 
+GraphParallelTempering::usage="GraphParallelTempering[seedGraph_List, btTable_List, 
+	minEtoBeat_Real, hamiltonian_[hparams___],delH_[delHparams___],obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] 
 Implements Parallel tempering algorithm on graph models at several different 
 temperatures determined by Constant Entropy Increase (CEI) temperature schedule based 
 on the paper by Sobo et. al. https://doi.org/10.1063/1.2907846. 
@@ -845,10 +947,10 @@ equilibriation, computation of correlation time, and sweeps during measurement a
 all done in parallel. Temperature swaps are done on the master kernel.
 
 The overload GraphParallelTempering[seedGraph_List, btTable_List, minEtoBeat_Real,
-          hamiltonian_,obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer]
+          hamiltonian_[hparams___],obs_,EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer]
 	allows delH to be an optional formula.
 
-The overloads GraphParallelTempering[inputReplicas_Association,minEtoBeat_Real,hamiltonian_,delH_,obs_,
+The overloads GraphParallelTempering[inputReplicas_Association,minEtoBeat_Real,hamiltonian_[hparams___],delH_[delHparams___],obs_,
 	EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] and
 	GraphParallelTempering[inputReplicas_Association,minEtoBeat_Real,hamiltonian_,obs_,
 	EnergyOrMag_Integer,NN_Integer,numberOfDataPoints_Integer,UnlabeledVerticesYes_Integer] take as an input an association
