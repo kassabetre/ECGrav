@@ -1660,8 +1660,8 @@ Inputs are:,
 4. observables = a list of cuntions on graph adjacency matrices e.g. magnetization, average degree etc.,
 5. maxSweep= the total number of sweeps where one sweep is N(N-1)/2 MC flip attempts.,
 It outputs the last graph in the simulation and a list of the values of the energy, magnetization, and observables.*)
-Module[{N=Length[seedAmat],maxEdgeCount,expDEVals,MCStep,MCSweep,numsweeps,Amat,AmatNew,printVal,result},
-maxEdgeCount=N (N-1)/2;
+Module[{vCount=Length[seedAmat],maxEdgeCount,expDEVals,MCStep,MCSweep,numsweeps,Amat,AmatNew,printVal,result},
+maxEdgeCount=vCount (vCount-1)/2;
 printVal=Floor[maxSweep/5];
 
 Amat = seedAmat;
@@ -1677,9 +1677,9 @@ lp=maxEdgeCount+1-l;
 m=0;
 While[lp>0,
 m++;
-lp-=N-m;
+lp-=vCount-m;
 ];
-j=N+1-m;
+j=vCount+1-m;
 i=l-(j-1)(j-2)/2;
 
 AmatNew[[i,j]]=Mod[Amat[[i,j]]+1,2];AmatNew[[j,i]]=AmatNew[[i,j]];
