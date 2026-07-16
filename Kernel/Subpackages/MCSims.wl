@@ -35,7 +35,7 @@ Begin["`Private`"] (* Begin private context *)
 (*Helper Functions*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Aggregating Data*)
 
 
@@ -116,7 +116,7 @@ ECGrav`ErrorBootstrap[args___]:=(Message[ECGrav`ErrorBootstrap::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*InternalEnergy*)
 
 
@@ -697,7 +697,7 @@ $Failed);
 (*Hamiltonians*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Graph Hamiltonians*)
 
 
@@ -807,7 +807,7 @@ ECGrav`HLaplacian[args___]:=(Message[ECGrav`HLaplacian::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*H1dCombManifold*)
 
 
@@ -829,7 +829,7 @@ ECGrav`H1dCombManifold[args___]:=(Message[ECGrav`H1dCombManifold::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*H2dCombManifold*)
 
 
@@ -2115,6 +2115,15 @@ The new data will be written on the first slot, so newer data is at the beginnin
 *  For diagnostics *
 ********************)
 
+(*Print["AllEnMat ",Transpose[AllEnMat]];*)
+(*Print["numsweeps ",numsweeps];*)
+(*Print["In IsingEquilibriate, eqlTime ",eqlTime, " Length[AllEnMat] ",Length[AllEnMat]];*)
+
+Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
+	PlotRange->All,PlotLabel->"t from 1 to 2 times eqlT for beta "<>ToString[beta]<>
+	" hparams { "<>StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
+
+(*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 		<|"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlTime,
@@ -2243,6 +2252,15 @@ Entable=RotateRight[#,1]&/@Entable;
 *  For diagnostics *
 ********************)
 
+(*Print["AllEnMat ",Transpose[AllEnMat]];*)
+(*Print["numsweeps ",numsweeps];*)
+(*Print["In IsingEquilibriate, eqlTime ",eqlTime, " Length[AllEnMat] ",Length[AllEnMat]];*)
+
+Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
+	PlotRange->All,PlotLabel->"t from 1 to 2 times eqlT for beta "<>ToString[beta]<>
+	" hparams { "<>StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
+
+(*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 		<|"beta"->beta,"externalField"->{hparams},"eqlT"->eqlTime,
@@ -2379,6 +2397,10 @@ computed, so this loop will be exited with the default corrT left at 2 *)
 tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
 
+Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
+	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
+	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
+
 data[[Key["corrT"]]]=
 Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
 
@@ -2503,6 +2525,9 @@ corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 
 tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
+Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
+	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
+	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=
 Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
@@ -2637,6 +2662,16 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		autocorrelation value first becomes negative*)
 	
 	
+		Print[
+			ListLinePlot[
+				Table[corrTable[[i,1;;Min[Length[corrTable[[i]]],4*tmaxVals[[i]]]]]
+				,{i,1,Length[corrTable]}],
+				PlotLegends->Flatten[{"energy","mag",ToString/@operators}],
+				PlotRange->Full,
+				PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams "<>ToString[{hparams}]
+			]
+		];
+
 		corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
 
 		
@@ -4620,6 +4655,11 @@ CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
+(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
+
+Print["CvOverT plot "];
+Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
+
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
 
@@ -4630,6 +4670,9 @@ delS=entropyRange/vCount;
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
+(*Print["entropyTable ",entropyTable];*)
+Print["entropyTable plot "];
+Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
@@ -4710,6 +4753,11 @@ CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
+(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
+
+Print["CvOverT plot "];
+Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
+
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
 
@@ -4720,6 +4768,9 @@ delS=entropyRange/vCount;
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
+(*Print["entropyTable ",entropyTable];*)
+Print["entropyTable plot "];
+Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
@@ -4770,6 +4821,11 @@ CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
+(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
+
+Print["CvOverT plot "];
+Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
+
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
 
@@ -4780,6 +4836,9 @@ delS=entropyRange/vCount;
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
+(*Print["entropyTable ",entropyTable];*)
+Print["entropyTable plot "];
+Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
@@ -4828,6 +4887,11 @@ CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
+(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
+
+Print["CvOverT plot "];
+Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
+
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
 
@@ -4838,6 +4902,9 @@ delS=entropyRange/vCount;
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
+(*Print["entropyTable ",entropyTable];*)
+Print["entropyTable plot "];
+Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
@@ -4925,6 +4992,8 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]},
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},
+	PlotRange->All,PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 		{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -4935,6 +5004,10 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
 
+Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},
+	PlotRange->All,PlotLabel->" interpolated thermodynamic distance "]];
+
+(*Print[" total thermodynamic length ",totalThermodynamicLength];*)
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
 
@@ -5002,6 +5075,8 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -5011,6 +5086,9 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
+
+Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},
+	PlotRange->All,PlotLabel->" interpolated thermodynamic distance "]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5069,6 +5147,9 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+(*Print["interpolatedThermodynamicSpeed plot "];*)
+Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -5078,6 +5159,8 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
 
+Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},PlotRange->All,
+	PlotLabel->" interpolated thermodynamic distance "]];
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
 
@@ -5166,6 +5249,8 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5174,6 +5259,9 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
 
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
+
+Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5260,6 +5348,8 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5268,6 +5358,9 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
 
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
+
+Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5343,6 +5436,8 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
+Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 	,{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5350,6 +5445,9 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
+
+Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
+	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5496,10 +5594,14 @@ densityPoints=
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
 							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
+Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
+(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
+Print["Smoothened rho contours ",Thread[{hVars,hMins,hMaxs}]
+	/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];
@@ -5664,10 +5766,14 @@ densityPoints=
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
 							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
+Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
+(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
+Print["Smoothened rho contours ",Thread[{hVars,hMins,hMaxs}]
+	/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];
@@ -5813,10 +5919,16 @@ densityPoints=Thread[
 	{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]/.{y__}:>Flatten[
 		(ParallelTable[{hVars,rho@@hVars},y,DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
+Print[" rho = Sqrt[det[g]] Plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
+(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
+Print["Smooth pdf of rho contours ",
+	Thread[{hVars,hMins,hMaxs}]
+		/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]
+];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];

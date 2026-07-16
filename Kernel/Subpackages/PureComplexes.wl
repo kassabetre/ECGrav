@@ -4072,6 +4072,12 @@ Reap[
 (********************
 *  For diagnostics *
 ********************)
+(*Print["AllEnMat ",Transpose[AllEnMat]];*)
+
+Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
+		PlotRange->All,
+	PlotLabel->"t from 1 to 2 times eqlT ",PlotLegends->{"seedComplex","maxNumV","minNumV","random"}]
+];
 
 
 result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
@@ -4236,6 +4242,11 @@ Reap[
 *  For diagnostics *
 ********************)
 
+Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
+	PlotRange->All,
+PlotLabel->"t from 1 to 2 times eqlT ",PlotLegends->{"seedComplex","leastEvenlyConnected","random1","random2"}]];
+
+(*Print["data",data];*)
 
 result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
 
