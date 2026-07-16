@@ -315,38 +315,6 @@ at position 2, and an association at 3.";
 
 
 (* ::Item::Closed:: *)
-(*Landau Free Energy of a Conjugate Field*)
-
-
-(* :Usage Mesages: *)
-
-LandauFreeEnergy::usage="LandauFreeEnergy[betaFixed_Real,targetExtField_Real,
-	targetConjugateExtField_,minusBetaF_Association,
-	conjugateExtFieldMeasurements_Association] 
-	Computes the constrained magnetization or the Landau Free energy of the 
-	magnetization or conjugate field f(beta,M) which depends implicitely on the 
-	external field H to which M is the conjugate field.
-	
-Inputs are:,
-1. betaFixed - Real, the fixed value of the  inverse temperature,\[IndentingNewLine]2. targetExtField - Real, the value of the target external field,
-3. targetConjugateExtField_ - a variable e.g. M at which the value of the Landau free 
-	energy is sought\[IndentingNewLine]4. minusBetaF - an association of the external field H and the corresponding value of 
-	-beta*free energy(H) e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>,\[IndentingNewLine]5. conjugateExtFieldMeasurements - an association of the external field values J and 
-	the corresponding list of energies (list of E's without the J multiplying them)
-	measured at that J. e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>,
-\[IndentingNewLine]Note, the J values which are the keys for all the associations have to be equal as 
-sets! Also, the lengths of the lists of values have to be equal for all J values,\[IndentingNewLine]
-Returns a function of the variable targetConjugateExtField and so can be plotted.
-";
-
-(* :Error Mesages: *)
-
-LandauFreeEnergy::argerr="Input has to be of the form 
-	LandauFreeEnergy[betaFixed_Real,targetExtField_Real,targetConjugateExtField_,
-	minusBetaF_Association,conjugateExtFieldMeasurements_Association] ";
-
-
-(* ::Item::Closed:: *)
 (*Constrained Probability of the Conjugate Field*)
 
 
