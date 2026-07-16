@@ -874,11 +874,18 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
 
 (* :Error Mesages: *)
 
-GraphComputeCorrelationTime::argerr="A graph adjacency matrix is expected at position 1, 
-a real number at position 2, a hamiltonian at position 3, an optional formula for 
-the change in energy when one edge is toggled at position 4, and Integer at position 5, 
+GraphComputeCorrelationTime::argerr="A graph adjacency matrix is expected at position 1,
+a real number at position 2, a hamiltonian at position 3, an optional formula for
+the change in energy when one edge is toggled at position 4, and Integer at position 5,
 a Real numbers at positions 6, and integers at positions 7 and 8. The integer at position
 8 has to be 1 or 0 for unlabeled ot labeled graphs respectively";
+
+GraphComputeCorrelationTime::stuck="All measured values of `1` are stuck at `2`.
+	Autocorrelation time can not be computed; a default value of 2 will be assigned.";
+
+GraphComputeCorrelationTime::alldefault="Autocorrelation time could not be computed
+	since all measured values of the observables are stuck at the values `1`.
+	Exiting with default values corrT -> 2, corrTValues -> `2`.";
 
 
 (* ::Subsection::Closed:: *)
@@ -1342,8 +1349,10 @@ Sph::usage="Sph[Amat,i,r]; overloads Sph[g,i,r] returns the
 
 (* :Error Messages: *)
 
-Sph::argerr="Adjacency matrix or a graph object is expected at 
+Sph::argerr="Adjacency matrix or a graph object is expected at
 	position 1 and integers at positions 2 and/or 3.";
+
+Sph::vtxnotfound="The vertex `1` is not in the graph. Returning {}.";
 
 
 (* ::Item::Closed:: *)
@@ -1358,8 +1367,10 @@ Bll::usage="Bll[Amat,i,r]; overloads Bll[g,i,r] returns the
 
 (* :Error Messages: *)
 
-Bll::argerr="Adjacency matrix or a graph object is expected at 
+Bll::argerr="Adjacency matrix or a graph object is expected at
 	position 1 and integers at positions 2 and/or 3.";
+
+Bll::vtxnotfound="The vertex `1` is not in the graph. Returning {}.";
 
 
 (* ::Item::Closed:: *)
@@ -1849,8 +1860,11 @@ CombinatorialBoundary::usage = "CombinatorialBoundary[facetsLst_List] returns th
 
 (* :Error Messages: *)
 
-CombinatorialBoundary::argerr="Input should be a list of facets representing a 
+CombinatorialBoundary::argerr="Input should be a list of facets representing a
 	combinatorial manifold.";
+
+CombinatorialBoundary::notmanifold="Attempting to find the combinatorial boundary of a
+	complex that is not a combinatorial manifold. Returning $Failed.";
 
 
 (* ::Item::Closed:: *)
@@ -2456,9 +2470,17 @@ RandomPureSimplicialComplexMCMCCorrelationTime::usage="
 	
 (* :Error Messages: *)
 
-RandomPureSimplicialComplexMCMCCorrelationTime::argerr="Input has to be of the form 
+RandomPureSimplicialComplexMCMCCorrelationTime::argerr="Input has to be of the form
 	RandomPureSimplicialComplexMCMCEquilibriate[equilibriatedComplex_List,
 	eqlT_Integer, operators_,labelingChoise_Integer].";
+
+RandomPureSimplicialComplexMCMCCorrelationTime::stuck="All measured values of `1` are
+	stuck at `2`. Autocorrelation time can not be computed; a default value of 2 will
+	be assigned.";
+
+RandomPureSimplicialComplexMCMCCorrelationTime::alldefault="Autocorrelation time could
+	not be computed since all measured values of the observables are stuck at the
+	values `1`. Exiting with default values corrT -> 2, corrTValues -> `2`.";
 
 
 (* ::Item::Closed:: *)

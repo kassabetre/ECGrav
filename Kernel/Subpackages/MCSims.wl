@@ -247,16 +247,10 @@ ntab=Table[Length[dat[[Key[i]]]],{i,Keys[dat]}],logntab,curFs,nextFs,iterNum,del
 logntab=Log[ntab*1.0];
 
 
-Print[" Computing -beta*freeenergy for betas ",betas];
-(*Print[" data ",dat];*)
-(*Print[" numTemps ", numTemps, " ntable ",ntab," logntab ",logntab];*)
-
 curFs=Table[1.0,{k,1,numTemps}];
 
 nextFs=curFs;
 
-
-(*Print["curFs ",curFs];*)
 
 iterNum=0;
 del=100.0;
@@ -290,7 +284,6 @@ deltab=Reap[
 ];
 
 
-
 output=<|Table[Keys[dat][[i]]->curFs[[i]],{i,1,Length[betas]}]|>;
 
 Remove[numTemps,betas,ntab,logntab,curFs,nextFs,iterNum,del,deltab];
@@ -298,7 +291,6 @@ Remove[numTemps,betas,ntab,logntab,curFs,nextFs,iterNum,del,deltab];
 output
 
 ];
-
 
 
 (*Overload for external fields*)
@@ -325,16 +317,10 @@ logntab=Log[ntab*1.0];
 curFs=curFs-((Max[curFs]+Min[curFs])/2);*)
 
 
-Print[" Computing -beta*freeEnergy for beta ",bt," external field parameters ",
-	extFieldVals];
-(*Print[" In computeBFs, dat is ",dat];*)
-
 curFs=Table[1.0,{k,1,numTotSims}];
 
 nextFs=curFs;
-(*Print[" ntable ",ntab," logntab ",logntab];*)
 
-(*Print["curFs ",curFs];*)
 
 iterNum=0;
 del=200.0;
@@ -377,9 +363,6 @@ Sow[del];(* For diagnostics *)
 ];
 
 
-(*Print[" curFs ",curFs,"deltab",deltab];*)
-(*Print[" curFs ",curFs];*)
-
 output=<|Table[extFieldVals[[i]]->curFs[[i]],{i,1,Length[extFieldVals]}]|>;
 
 Remove[numTotSims,extFieldVals,
@@ -388,7 +371,6 @@ Remove[numTotSims,extFieldVals,
 output
 
 ];
-
 
 
 (*Overload pattern for multiple external fields*)
@@ -414,16 +396,10 @@ logntab=Log[ntab*1.0];
 curFs=curFs-((Max[curFs]+Min[curFs])/2);*)
 
 
-Print[" Computing -beta*freeEnergy for beta ",bt," external field parameters ",
-	extFieldVals];
-
-
 curFs=Table[1.0,{k,1,numTotSims}];
 
 nextFs=curFs;
-(*Print[" ntable ",ntab," logntab ",logntab];*)
 
-(*Print["curFs ",curFs];*)
 
 iterNum=0;
 del=200.0;
@@ -674,7 +650,6 @@ logWeights=Flatten[
 
 weights=Exp[logWeights-Max[logWeights]];
 
-(*Print[" weights ",weights];*)
 
 weightedConjugateFiels=WeightedData[Join@@Values[conjugateExtFieldMeasurements],weights];
 
@@ -688,27 +663,23 @@ maxConjFieldVal=Table[(1.2)*Max[Max/@conjugateExtFieldMeasurements[[All,All,k]]]
 Do[If[minConjFieldVal[[k]]<=0.0,minConjFieldVal[[k]]=-maxConjFieldVal[[k]]*(0.2)],{k,1,Length[targetExtField]}];
 Do[If[maxConjFieldVal[[k]]<=0.0,maxConjFieldVal[[k]]=-minConjFieldVal[[k]]*(0.2)],{k,1,Length[targetExtField]}];
 
-(*Print[" vars ",vars," minConjFieldVal ",minConjFieldVal, " maxConjFieldVal ",maxConjFieldVal];*)
 
 Which[
 	Length[targetExtField]==1,
 
 		marginalProbConjFieldDist=SmoothKernelDistribution[WeightedData[Flatten[Values[conjugateExtFieldMeasurements]],weights]];
 
-		Print["marginal pdfs ",Plot[PDF[marginalProbConjFieldDist,x],{x,minConjFieldVal[[1]],maxConjFieldVal[[1]]}]];
-
+		
 		result={marginalProbConjFieldDist,minConjFieldVal,maxConjFieldVal},
 
 	Length[targetExtField]>=2,
 
 		jointProbConjFieldDist=SmoothKernelDistribution[weightedConjugateFiels];
 
-		Print["pdf contours ",Thread[{vars,minConjFieldVal,maxConjFieldVal}]/.{y__}:>ContourPlot[PDF[jointProbConjFieldDist,vars],y,PlotLegends->Automatic]];
-
+		
 		marginalProbConjFieldDist=Table[SmoothKernelDistribution[WeightedData[Join@@Values[conjugateExtFieldMeasurements[[All,All,k]]],weights]],{k,1,Length[targetExtField]}];
 
-		Print["marginal pdfs ",Table[Plot[PDF[marginalProbConjFieldDist[[k]],x],{x,minConjFieldVal[[k]],maxConjFieldVal[[k]]}],{k,1,Length[targetExtField]}]];
-
+		
 		result={Join[marginalProbConjFieldDist,{jointProbConjFieldDist}],minConjFieldVal,maxConjFieldVal};
 
 	];
@@ -771,7 +742,6 @@ maxClq=Max[Length/@clqs];
 
 fvect={n,Total[Am,2]/2,Tr[MatrixPower[Am,3]]/6,0,0};
 
-(*Print[" maxClq ",maxClq" fvect ",fvect];*)
 
 Do[fvect[[q]]=Length[Union@@(Subsets[#,{q}]&/@clqs)],{q,4,Min[5,maxClq]}];
 
@@ -792,7 +762,6 @@ $Failed);
 ECGrav`HEdgeDeg[Am_List,J_Real,D1_Real,D2_Real]:=
 (*J/(2N)*(Tr(A^4-A(2D1K + 2D2I)A)+D1^2*n(n-1)).*)
 With[{n=Length[Am],Amsq=Am . Am},
-(*Print["Lt "MatrixForm[2*D1*(Table[1,{i,n},{j,n}]-IdentityMatrix[n])+2*D2*IdentityMatrix[n]]];*)
 (J/(2*n))*((Tr[Amsq . Amsq]
    -Tr[Amsq . (2*D1*(Table[1,{i,n},{j,n}]-IdentityMatrix[n])+2*D2*IdentityMatrix[n])]))
 ];
@@ -831,7 +800,6 @@ $Failed);
 ECGrav`HLaplacian[Amat_List,J_Real]:=
 (*Sum_{ij} deg(i)L_{ij}deg(j), where L is the graph Laplacian, L = Diag[deg] - Amat*)
 With[{degv={Total[#]}&/@Amat,Lmat=DiagonalMatrix[Total/@Amat]-Amat},
-(*Print[" degv ",degv," Lmat ",Lmat];*)
 J*(Transpose[degv] . Lmat . degv)[[1,1]]];
 
 (* Catch-all Pattern *)
@@ -847,7 +815,6 @@ $Failed);
 ECGrav`H1dCombManifold[Amat_List,J_]:=
 (*(1/N0)(-2N1+2N3+HIsing+1+)*)
 With[{numV=Length[Amat],Amsq=Amat . Amat},
-(*Print[" degv ",degv," Lmat ",Lmat];*)
 If[numV<=0,Return[0.0]];
 (J/(numV))*(
 	ECGrav`HWeightedFaceCounts[Amat,0.0,-2.0,2.0,0.0,0.0]
@@ -934,7 +901,6 @@ $Failed);
 ECGrav`H2dPseudoCombManifold[Amat_List,J_]:=
 (*(1/N0)(-2N1+2N3+HIsing+1)*)
 With[{numV=Length[Amat],vList=Range[Length[Amat]],edgeList=Select[Position[Amat,1],#[[1]]<#[[2]]&]},
-(*Print[" edgeList ",edgeList," vList ",vList];*)
 J*(ECGrav`HWeightedFaceCounts[Amat,0.0,1.0,-(1.0/numV+3.0),4.0,0.0]
 
 	+1.0*Total[Binomial[ECGrav`HyperDeg[Amat,#],2]&/@edgeList]
@@ -983,11 +949,9 @@ mastertuplesParts];*)
 partialresult=Join@@ParallelTable[
 	TakeSmallestBy[p,H[#]&,UpTo[level]],{p,mastertuplesParts},
 		DistributedContexts->{$Context, "ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
-	Print[" partialresult length ",Length[partialresult]
-];
+	
 
 minstates=TakeSmallestBy[partialresult,H[#]&,UpTo[level]];
-(*Print[" minstates ",minstates];*)
 
 (*<|Table[GraphPlot[AdjacencyGraph[i],ImageSize->{70,70}]->H[i],{i,minstates}]|>*)
 
@@ -1031,18 +995,14 @@ step[]:=Block[{negatives,flipSpin},
 Do[
 
 deltaEtable[[Key[i]]]=delH[Amcur,i[[1]],i[[2]]];
-(*Print["In step, calculating deltaE for i ",i, " deltaE is ",deltaEtable[i]];*)
 ,{i,edgeList}];
 
-(*Print[" deltaEtable ",deltaEtable];*)
 
 negatives=Select[deltaEtable,#<=0&];
-(*Print["negatives ", negatives];*)
 
 If[Length[negatives]>0,
 flipSpin=Keys[TakeSmallest[negatives,1]][[1]];
 
-(*Print["flipping spin ", flipSpin];*)
 
 Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amcur[[flipSpin[[1]],flipSpin[[2]]]]+1,2],
 Return[0](* unable to find a flip that lowers the energy*)
@@ -1115,7 +1075,6 @@ edgeList=Subsets[Range[nn],{2}];
 deltaEtable=<|Table[i->0,{i,edgeList}]|>;
 weightsTable=deltaEtable;
 
-(*Print["deltaEtable ",deltaEtable," weightsTable ",weightsTable];*)
 
 curE = hamiltonian[Amcur];
 minE = curE;
@@ -1134,13 +1093,10 @@ step[]:=Block[{negatives,flipSpin},
 Do[
 
 deltaEtable[[Key[i]]]=delH[Amcur,i[[1]],i[[2]]];
-(*Print["In step, calculating deltaE for i ",i, " deltaE is ",deltaEtable[i]];*)
 ,{i,edgeList}];
 
 computeWeights[beta];
 flipSpin=RandomChoice[Values[weightsTable]->Keys[weightsTable]];
-
-(*Print["Flipping ",flipSpin, " which gives delEval ",deltaEtable[flipSpin]];*)
 
 
 Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amcur[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
@@ -1148,8 +1104,6 @@ Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Am
 
 curE=curE+deltaEtable[flipSpin];
 If[curE<minE,
-(*Print["updating minE and minAm b/c: curE = ", curE, " minE = ",minE];*)
-(*Print["direct calculations: H[Amcur]  = ", hamiltonian[Amcur,hparams], " H[minAm] = ",hamiltonian[minAm,hparams] ];*)
 minE=curE;
 minStates={Amcur},
 If[curE==minE,
@@ -1204,7 +1158,6 @@ edgeList=Subsets[Range[nn],{2}];
 deltaEtable=<|Table[i->0,{i,edgeList}]|>;
 weightsTable=deltaEtable;
 
-(*Print["deltaEtable ",deltaEtable," weightsTable ",weightsTable];*)
 
 curE = hamiltonian[Amcur];
 minE = curE;
@@ -1224,13 +1177,10 @@ Amnew=Amcur;
 Amnew[[i[[1]],i[[2]]]]=Amnew[[i[[2]],i[[1]]]]=Mod[Amnew[[i[[1]],i[[2]]]]+1,2];
 
 deltaEtable[[Key[i]]]= hamiltonian[Amnew]-curE;
-(*Print["In step, calculating deltaE for i ",i, " deltaE is ",deltaEtable[i]];*)
 ,{i,edgeList}];
 
 computeWeights[beta];
 flipSpin=RandomChoice[Values[weightsTable]->Keys[weightsTable]];
-
-(*Print["Flipping ",flipSpin, " which gives delEval ",deltaEtable[flipSpin]];*)
 
 
 Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amcur[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
@@ -1238,8 +1188,6 @@ Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Am
 
 curE=curE+deltaEtable[flipSpin];
 If[curE<minE,
-(*Print["updating minE and minAm b/c: curE = ", curE, " minE = ",minE];*)
-(*Print["direct calculations: H[Amcur]  = ", hamiltonian[Amcur,hparams], " H[minAm] = ",hamiltonian[minAm,hparams] ];*)
 minE=curE;
 minStates={Amcur},
 If[curE==minE,
@@ -1328,10 +1276,7 @@ excitedStates={Amcur};
 beta = betai;
 rate = SetPrecision[Exp[Log[betai/betaf]*roundLength/NN],precision];
 
-Print["rate ",rate]; 
-
-
-
+ 
 (*Print["state ", state];
 Print["finalstate ", finalState];*)
 
@@ -1351,8 +1296,6 @@ If[accept ==0, Return[0]];
 
 If[accept==1,
 
-(*Print["flipSpin ",flipSpin," Amcur ",Amcur//MatrixForm];*)
-
 
 Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amcur[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
 
@@ -1364,10 +1307,6 @@ Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Am
 (*End diagnostic*)
 *)
 
-
-(*Print["flipSpin ",flipSpin," Amnext ",Amcur//MatrixForm];*)
-
-(*Print[" Amnext ",Amcur//MatrixForm];*)
 
 curE=curE+delE;
 
@@ -1472,10 +1411,7 @@ excitedStates={Amcur};
 beta = betai;
 rate = SetPrecision[Exp[Log[betai/betaf]*roundLength/NN],precision];
 
-Print["rate ",rate]; 
-
-
-
+ 
 (*Print["state ", state];
 Print["finalstate ", finalState];*)
 
@@ -1485,7 +1421,6 @@ Block[{delE,expdelE,flipSpin,accept},
 flipSpin=RandomChoice[edgeList];
 Amnext[[flipSpin[[1]],flipSpin[[2]]]]=Amnext[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amnext[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
 
-(*Print["flipSpin ",flipSpin," Amcur ",Amcur//MatrixForm," Amnext ",Amnext//MatrixForm];*)
 
 delE = N[hamiltonian[Amnext,hparams],precision]-curE;
 (*delE = N[hamiltonian[Amnext]-hamiltonian[Amcur],precision];*)
@@ -1570,7 +1505,6 @@ ECGrav`SimulatedAnnealing[args___]:=(Message[ECGrav`SimulatedAnnealing::argerr, 
 $Failed);
 
 
-
 (* ::Chapter:: *)
 (*Exact Expectation Value Calculations*)
 
@@ -1610,11 +1544,9 @@ nprint=Floor[n/5];
 result = 0.0;
 
 boltzmanWeights=ParallelMap[
-(*If[Mod[k,nprint]\[Equal]0,Print["Computing Boltzman weights at graph no. = ",k]];*)
 Exp[-beta*Hamiltonian[#]]&,
 ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
 
-(*Print[" boltzmanWeights ",boltzmanWeights];*)
 
 funcvalues=Transpose[
 	ParallelMap[
@@ -1622,19 +1554,13 @@ funcvalues=Transpose[
 		DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}]
 	];
 
-(*Print[" funcvalues ",funcvalues];*)
-
-(*Print[" degenValues ",degenValues];*)
 
 partitionZ=Total/@Table[degenValues[[i]]*boltzmanWeights,{i,1,Length[degenValues]}];
-(*Print["partitionZ",partitionZ];*)
 
 freeF=(-1.0/beta)*Log[#]&/@partitionZ;
-(*Print["freeF",freeF];*)
 
 result=Table[(1.0/partitionZ[[i]])*Table[Total[(degenValues[[i]]*boltzmanWeights*funcvalues[[j]])],{j,1,Length[funcvalues]}],{i,1,Length[degenValues]}];
 
-(*Print["result ", result];*)
 
 (*Print["boltzmanWeights ", boltzmanWeights];
 Print["funcvalues ", funcvalues];
@@ -1679,24 +1605,16 @@ nprint=Floor[n/5];
 result = 0.0;
 
 boltzmanWeights=ParallelMap[
-(*If[Mod[k,nprint]\[Equal]0,Print["Computing Boltzman weights at graph no. = ",k]];*)
 Exp[-beta*Hamiltonian[#]]&,
 ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
 
-(*Print[" boltzmanWeights ",boltzmanWeights];*)
-
-
-(*Print[" degenValues ",degenValues];*)
 
 partitionZ=Total/@Table[degenValues[[i]]*boltzmanWeights,{i,1,Length[degenValues]}];
-(*Print["partitionZ",partitionZ];*)
 
 freeF=(-1.0/beta)*Log[#]&/@partitionZ;
-(*Print["freeF",freeF];*)
 
 result=Table[(1.0/partitionZ[[i]])*Table[Total[(degenValues[[i]]*boltzmanWeights*obsValues[[j]])],{j,1,Length[obsValues]}],{i,1,Length[degenValues]}];
 
-(*Print["result ", result];*)
 
 (*Print["boltzmanWeights ", boltzmanWeights];
 Print["obsValues ", obsValues];
@@ -1748,7 +1666,7 @@ printVal=Floor[maxSweep/5];
 
 Amat = seedAmat;
 AmatNew = Amat;
-Print["seed graph",AdjacencyGraph[Amat]];
+
 
 MCStep[]:=Module[{l,lp,m,i,j,deltaE,expBetaDE,accept},(*one MC flip attempt*)
 Do[
@@ -1775,7 +1693,6 @@ If[RandomReal[]<expBetaDE,accept=True]
 If[accept,
 Amat = AmatNew;
 ],
-(*Print["after ",Amat//MatrixForm];*)
 maxEdgeCount
 ];
 ];
@@ -1871,17 +1788,13 @@ col=RandomInteger[{row+1,vCount}];
 
 delE=delH[data[[Key["graph"]]],delHparams,row,col];
 
-(*Print["In step, calculated delta E for edge ", {row,col}, " delE ",delE];*)
-
-(*Print["Before spin flip of edge ",{row,col}, " state is ",data[[Key["graph"]]]//MatrixForm];*)
-
 
 newAmat=data[[Key["graph"]]];
 newAmat[[row,col]]=newAmat[[col,row]]=Mod[newAmat[[row,col]]+1,2];
 
 Which[UnlabeledVerticesYes==0,selectionProb=1,UnlabeledVerticesYes==1,
 selectionProb=(*Automorphism group order of new graph over auromorphism group order of the old*)
-GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[newAmat]]]/GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[data[[Key["graph"]]]]]],True,Print[" Error, in GraphSweepReplica, UnlabeledVerticesYes = ",UnlabeledVerticesYes," is invalid input. It has to be 0 for labeled or 1 for unlabeled "];Abort[];
+GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[newAmat]]]/GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[data[[Key["graph"]]]]]],True,Abort[];
 ];
 
 (*Print["current Amat is ",data[[Key["graph"]]]//MatrixForm];
@@ -1907,9 +1820,6 @@ accept = 0
 ];
 
 If[accept==1,
-
-(*Print["In step, accepting spin flip at edge ",{row,col}, " of state ",data[[Key["graph"]]]//MatrixForm];*)
-
 
 
 data[[Key["graph"]]]=newAmat;
@@ -1937,10 +1847,8 @@ If[curE+delE==minE&&Length[minStates]<maxGStateCount,minStates=DeleteDuplicates[
 
 Do[step[];
 
-(*Print["After step, graph is ",data[[Key["graph"]]]//MatrixForm];*)
 ,{i,NN*vCount (vCount-1)/2}];
 
-(*Print["expDelEtable ",expDelETable];*)
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
 
@@ -1950,7 +1858,6 @@ Remove[vCount,minE, minStates,maxGStateCount,expDelETable,data,step];
 result
 
 ];
-
 
 
 (*Overload without delH *)
@@ -2006,13 +1913,10 @@ newAmat[[row,col]]=newAmat[[col,row]]=Mod[newAmat[[row,col]]+1,2];
 
 delE=hamiltonian[newAmat,hparams]-curE;
 
-(*Print["In step, calculated delta E for edge ", {row,col}, " delE ",delE];*)
-
-(*Print["Before spin flip of edge ",{row,col}, " state is ",data[[Key["graph"]]]//MatrixForm];*)
 
 Which[UnlabeledVerticesYes==0,selectionProb=1,UnlabeledVerticesYes==1,
 selectionProb=(*Automorphism group order of new graph over auromorphism group order of the old*)
-GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[newAmat]]]/GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[data[[Key["graph"]]]]]],True,Print[" Error, in GraphSweepReplica, UnlabeledVerticesYes = ",UnlabeledVerticesYes," is invalid input. It has to be 0 for labeled or 1 for unlabeled "];Abort[];
+GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[newAmat]]]/GroupOrder[GraphAutomorphismGroup[AdjacencyGraph[data[[Key["graph"]]]]]],True,Abort[];
 ];
 
 (*Print["current Amat is ",data[[Key["graph"]]]//MatrixForm];
@@ -2032,8 +1936,6 @@ If[selectionProb*expdelE>=1,accept = 1,
 ];
 
 If[accept==1,
-
-(*Print["In step, accepting spin flip at edge ",{row,col}, " of state ",data[[Key["graph"]]]//MatrixForm];*)
 
 
 data[[Key["graph"]]]=newAmat;
@@ -2067,10 +1969,8 @@ If[curE+delE==minE&&Length[minStates]<maxGStateCount,minStates=DeleteDuplicates[
 
 Do[step[];
 
-(*Print["After step, graph is ",data[[Key["graph"]]]//MatrixForm];*)
 ,{i,NN*vCount (vCount-1)/2}];
 
-(*Print["expDelEtable ",expDelETable];*)
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
 
@@ -2131,9 +2031,6 @@ data[[Key["random"],Key["energy"]]]=hamiltonian[data[[Key["random"],Key["graph"]
 data[[Key["random"],Key["mag"]]]=Total[Flatten[data[[Key["random"],Key["graph"]]]]]*1.0/(vCount(vCount-1));
 
 
-Print["Equilibriating at beta ",beta, " hparams ",{hparams}];
-(*Print[" starting with data ",data];*)
-
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
@@ -2154,14 +2051,11 @@ Sow[{data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["energy"]]],data[
 
 Do[
 
-(*Print["sweeping at ",replicaName];*)
-(*Print["minEnergy ",data[[Key["minEnergy"]]]];*)
 
 sweepOutput=ECGrav`GraphSweepReplica[data[[Key[replicaName]]][[Key["graph"]]],beta,
 				hamiltonian[hparams],delH[delHparams],1,data[[Key["minEnergy"]]],
 				UnlabeledVerticesYes];
 
-(*Print["In GraphEquilibriate, sweep output ",sweepOutput];*)
 
 data[[Key[replicaName]]]=sweepOutput[[2]];
 
@@ -2175,13 +2069,8 @@ If[sweepOutput[[1,Key["minEnergy"]]]<data[[Key["minEnergy"]]],
 ];
 ,{replicaName,{"state","empty","random"}}];
 
-(*Print["after one sweep, replicas are ",data];*)
-
 
 Entable[[All,1]]={data[[Key["state"]]][[Key["energy"]]],data[[Key["empty"]]][[Key["energy"]]],data[[Key["random"]]][[Key["energy"]]]};
-
-
-(*Print["Entable ",Entable//MatrixForm];*)
 
 
 If[numsweeps>outWinLength,
@@ -2200,11 +2089,7 @@ sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
 meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,3}]];(*Mean variance of the newer energies*)
 
 
-(*Print["sqMeanEMat ",sqMeanEMat//MatrixForm," sqMeanPairwiseDiff ",sqMeanPairwiseDiff," meanLateVar ",meanLateVar];*)
-
-
 If[Abs[sqMeanPairwiseDiff]<meanLateVar,
-	(*Print["exiting because differences in mean less than standard deviation"];*)
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	Break[]
 ];(*Exit the while loop and go to the Do loop*)
@@ -2230,15 +2115,6 @@ The new data will be written on the first slot, so newer data is at the beginnin
 *  For diagnostics *
 ********************)
 
-(*Print["AllEnMat ",Transpose[AllEnMat]];*)
-(*Print["numsweeps ",numsweeps];*)
-(*Print["In IsingEquilibriate, eqlTime ",eqlTime, " Length[AllEnMat] ",Length[AllEnMat]];*)
-
-Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
-	PlotRange->All,PlotLabel->"t from 1 to 2 times eqlT for beta "<>ToString[beta]<>
-	" hparams { "<>StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
-
-(*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 		<|"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlTime,
@@ -2285,9 +2161,6 @@ data[[Key["random"],Key["energy"]]]=hamiltonian[data[[Key["random"],Key["graph"]
 data[[Key["random"],Key["mag"]]]=Total[Flatten[data[[Key["random"],Key["graph"]]]]]*1.0/(vCount(vCount-1));
 
 
-Print["Equilibriating at beta ",beta," hparams ",{hparams}];
-(*Print[" starting with data ",data];*)
-
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
@@ -2309,14 +2182,11 @@ Reap[
 
 	Do[
 
-	(*Print["sweeping at ",replicaName];*)
-	(*Print["minEnergy ",data[[Key["minEnergy"]]]];*)
 
 		sweepOutput=ECGrav`GraphSweepReplica[data[[Key[replicaName],Key["graph"]]],
 						beta,hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 						UnlabeledVerticesYes];
 
-	(*Print["In GraphEquilibriate, sweep output ",sweepOutput];*)
 
 	data[[Key[replicaName]]]=sweepOutput[[2]];
 
@@ -2330,14 +2200,9 @@ Reap[
 	];
 ,{replicaName,{"state","empty","random"}}];
 
-(*Print["after one sweep, replicas are ",data];*)
-
 
 Entable[[All,1]]={data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["energy"]]],
 	data[[Key["random"],Key["energy"]]]};
-
-
-(*Print["Entable ",Entable//MatrixForm];*)
 
 
 If[numsweeps>outWinLength,
@@ -2355,17 +2220,12 @@ If[numsweeps>outWinLength,
 	meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,3}]];(*Mean variance of the newer energies*)
 
 
-	(*Print["sqMeanEMat ",sqMeanEMat//MatrixForm," sqMeanPairwiseDiff ",sqMeanPairwiseDiff," meanLateVar ",meanLateVar];*)
-
-
 	If[Abs[sqMeanPairwiseDiff]<meanLateVar,
-	(*Print["exiting because differences in mean less than standard deviation"];*)
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	Break[]
 	];(*Exit the while loop and go to the Do loop*)
 
 	If[Abs[Tr[sqMeanEMat]]<0.00001,
-	(*Print["exiting because stuck in a metastable state, sqMeanEMat is ",MatrixForm[sqMeanEMat]];*)
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	Break[]
 	](*Exit the while loop and go to the Do loop*)
@@ -2383,15 +2243,6 @@ Entable=RotateRight[#,1]&/@Entable;
 *  For diagnostics *
 ********************)
 
-(*Print["AllEnMat ",Transpose[AllEnMat]];*)
-(*Print["numsweeps ",numsweeps];*)
-(*Print["In IsingEquilibriate, eqlTime ",eqlTime, " Length[AllEnMat] ",Length[AllEnMat]];*)
-
-Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
-	PlotRange->All,PlotLabel->"t from 1 to 2 times eqlT for beta "<>ToString[beta]<>
-	" hparams { "<>StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
-
-(*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 		<|"beta"->beta,"externalField"->{hparams},"eqlT"->eqlTime,
@@ -2485,7 +2336,6 @@ empair=Reap[EorMTable=
 									hamiltonian[hparams],delH[delHparams],1,
 									data[[Key["minEnergy"]]],UnlabeledVerticesYes];
 
-	(*Print["In compute Corr T, sweep output ",sweepOutput];*)
 
 	data[[Key["state"]]]=sweepOutput[[2]];
 
@@ -2505,11 +2355,9 @@ empair=Reap[EorMTable=
 ];
 
 (*For diagnostics*)
-(*Print["empair ",empair[[2,1]]];*)
 
 (*Table of energy/magnetizations*)
 
-(*Print[" EorMTable ",EorMTable];*)
 
 If[Length[DeleteDuplicates[EorMTable]]>1,
 
@@ -2521,7 +2369,6 @@ computed, so this loop will be exited with the default corrT left at 2 *)
 
 	If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
-	(*Print["norm ",norm];*)
 
 	corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 		PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
@@ -2531,10 +2378,6 @@ computed, so this loop will be exited with the default corrT left at 2 *)
 
 tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
-
-Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
-	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
-	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=
 Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
@@ -2616,7 +2459,6 @@ sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
 									hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 									UnlabeledVerticesYes];
 
-(*Print["In compute Corr T, sweep output ",sweepOutput];*)
 
 data[[Key["state"]]]=sweepOutput[[2]];
 
@@ -2639,11 +2481,9 @@ data[[Key["state"]]][[Key[EorM]]]
 ];
 
 (*For diagnostics*)
-(*Print["empair ",empair[[2,1]]];*)
 
 (*Table of energy/magnetizations*)
 
-(*Print[" EorMTable ",EorMTable];*)
 
 If[Length[DeleteDuplicates[EorMTable]]>1,
 
@@ -2654,7 +2494,6 @@ norm=ECGrav`CorrelationTime[0,EorMTable];
 
 If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
-(*Print["norm ",norm];*)
 
 corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 	PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
@@ -2664,9 +2503,6 @@ corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 
 tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
-Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
-	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
-	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=
 Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
@@ -2733,7 +2569,6 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 	PrintTemporary["computing correlation time at beta ",beta," hparams ",{hparams}, " numsweeps ",numsweeps];
 
-	(*Print[" data ", data];*)
 	
 	observablesTable=
 	Transpose[
@@ -2761,7 +2596,6 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		,{i,1,numsweeps}]
 	];
 
-	(*Print["observablesTable ",observablesTable];*)
 
 	(*If the measured observable values have all equal value, then correlation time can not be computed, 
 		so fluctuating selects the measurements whose correlation time can be computed. If 
@@ -2772,27 +2606,18 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		If[Length[DeleteDuplicates[observablesTable[[i]]]]>1,i,
 			Which[
 				i==1,
-				Print["Warning! all measured values of the energy are stuck at ",observablesTable[[1,1]],". Autocorrelation time can not
-					be computed. Default value of 2 will be assigned."],
+				Message[ECGrav`GraphComputeCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
 				i==2,
-				Print["Warning! all measured values of the magnetization are stuck at ",observablesTable[[2,1]],". Autocorrelation time can not
-					be computed. Default value of 2 will be assigned."],
+				Message[ECGrav`GraphComputeCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 				i>2,
-				Print["Warning! all measured values of the observable ",operators[[i-2]],
-					" are stuck at ",observablesTable[[i-2,1]],". Autocorrelation time can not
-				 be computed. Default value of 2 will be assigned."]];
+				Message[ECGrav`GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
 		Nothing],
 	{i,1,Length[observablesTable]}];
-	
-	(*Print["fluctuatingObservableIndices ",fluctuatingObservableIndices];*)
-		
-	
+
+
 	If[fluctuatingObservableIndices=={},
-		Print["Autocorrelation time could not be computed since all measured values of 
-				the observables are stuck at the values: "
-				,DeleteDuplicates[#]&/@observablesTable,
-				" ComputeCorrelationTime exiting with default values of corrT -> 2, 
-				corrTValues->",data[[Key["corrTValues"]]]],
+		Message[ECGrav`GraphComputeCorrelationTime::alldefault,
+			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
 		corrTable=Table[
 
 			norm=ECGrav`CorrelationTime[0,observablesTable[[i]]];
@@ -2806,27 +2631,14 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 		,{i,fluctuatingObservableIndices}];
 	
-		(*Print["corrTable ",corrTable];*)
 	
 		tmaxVals=Table[(FirstPosition[cT,_?(#<=0&),numsweeps-10])[[1]],{cT,corrTable}]; 
 		(* A place to stop the integration for calculation of correlation time is when the 
 		autocorrelation value first becomes negative*)
 	
-		(*Print["tmaxVals ",tmaxVals];*)
 	
-		Print[
-			ListLinePlot[
-				Table[corrTable[[i,1;;Min[Length[corrTable[[i]]],4*tmaxVals[[i]]]]]
-				,{i,1,Length[corrTable]}],
-				PlotLegends->Flatten[{"energy","mag",ToString/@operators}],
-				PlotRange->Full,
-				PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams "<>ToString[{hparams}]
-			]
-		];
-
 		corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
 
-		(*Print[" corrTValues ",corrTValues];*)
 		
 		data[[Key["corrT"]]]=Max[corrTValues];
 		Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
@@ -2941,8 +2753,7 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	(* A place to stop the integration for calculation of correlation time is when the 
 	autocorrelation value first becomes negative*)
 
-	Print[ListLinePlot[Table[corrTable[[i,1;;Min[Length[corrTable[[i]]],4*tmaxVals[[i]]]]],{i,1,Length[corrTable]}],PlotLegends->Flatten[{"energy","mag",ToString/@operators}],PlotRange->Full,PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams "<>ToString[{hparams}]]];
-
+	
 	corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
 
 	data[[Key["corrT"]]]=Max[corrTValues];
@@ -3015,7 +2826,6 @@ replicas=<||>;
 chart=<||>;
 groundStates=<|"minEnergy"->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph}|>;
 
-(*Print["groundStates ",groundStates];*)
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
@@ -3024,8 +2834,6 @@ btTable={{betaLow,betaHigh}};
 defaultRatio={Exp[Log[betaHigh/betaLow]/(vCount*1.0)],Exp[Log[betaLow/betaHigh]/(vCount*1.0)]};
 (*A default value for increment of beta if the specific heat happens to be 0. In general, sqrt[number of sites] replicas are needed for parallel tempering to be effective, hence the factor of vCount.*)
 
-Print[" Starting Multihistogram with default ratio ",defaultRatio];
-
 
 stopnum=1;
 
@@ -3033,7 +2841,6 @@ While[stopnum<500,
 
 stopnum++;
 
-(*Print["     In While loop btTable ",btTable];*)
 
 (*
 (********************)
@@ -3049,7 +2856,6 @@ Tempoutput=Association[
 		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
-(*Print["After equilibriating, Tempoutput ",Tempoutput];*)
 
 (*Prepare replicas*)
 replicas=Union[replicas,Tempoutput[[All,2]]];
@@ -3057,7 +2863,6 @@ replicas=Union[replicas,Tempoutput[[All,2]]];
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -3097,12 +2902,10 @@ Tempoutput=Association[
 
 Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,btTable[[-1]]}];
 
-(*Print[" After correlation time, updated replicas ",replicas];*)
 
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -3116,9 +2919,6 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 		];
 	];
 ];
-
-
-(*Print["     After updating groundStates ",groundStates ];*)
 
 
 (*
@@ -3142,7 +2942,6 @@ Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["m
 	(*repNumSweeps=replicas[[Key[i]]][[Key["corrT"]]];*)
 	(* Each replica will be swept corrT times *)
 
-	(*Print["in replica ", i, " repNumSweeps ",repNumSweeps];*)
 
 	<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 			hamiltonian[hparams],delH[delHparams],locrepl[[Key[i],Key["corrT"]]],
@@ -3174,7 +2973,6 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 ];
 
 
-
 If[Mod[numsweeps,1]==0,
 Table[
 
@@ -3183,7 +2981,6 @@ Sow[Flatten[{numsweeps,i,replicas[[Key[i]]][[Key["state"]]][[Key["energy"]]],Thr
 ];
 
 ]][[2]];
-
 
 
 chart=Union[chart,AssociationThread[btTable[[-1]],measurements[[1;;2]]]];
@@ -3205,18 +3002,12 @@ newBetas={btTable[[-1,1]]*curRatios[[1]],btTable[[-1,2]]*curRatios[[2]]};
 
 AppendTo[btTable,newBetas];
 
-Print["btTable ",btTable];
 
 ];
 
 
 btTable=Sort[Flatten[btTable]];
 
-(*Print["btTable ",btTable];*)
-
-(*Print[" chart ",chart];*)
-
-(*Print[" replicas ",replicas];*)
 
 (*
 (*********************************************)
@@ -3231,7 +3022,6 @@ btTable=Sort[Flatten[btTable]];
 
 energyAsn=<|Table[i->chart[[Key[i]]][[All,3]],{i,Keys[chart]}]|>;
 
-(*Print["energyAsn ",energyAsn];*)
 
 (*mBetaF=computeBFs[energyAsn];*)
 
@@ -3290,7 +3080,6 @@ replicas=<||>;
 chart=<||>;
 groundStates=<|"minEnergy"->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph}|>;
 
-(*Print["groundStates ",groundStates];*)
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
@@ -3299,8 +3088,6 @@ btTable={{betaLow,betaHigh}};
 defaultRatio={Exp[Log[betaHigh/betaLow]/(vCount*1.0)],Exp[Log[betaLow/betaHigh]/(vCount*1.0)]};
 (*A default value for increment of beta if the specific heat happens to be 0. In general, sqrt[number of sites] replicas are needed for parallel tempering to be effective, hence the factor of vCount.*)
 
-Print[" Starting Multihistogram with default ratio ",defaultRatio];
-
 
 stopnum=1;
 
@@ -3308,7 +3095,6 @@ While[stopnum<500,
 
 stopnum++;
 
-(*Print["     In While loop btTable ",btTable];*)
 
 (*
 (********************)
@@ -3324,7 +3110,6 @@ Tempoutput=Association[
 		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
 
-(*Print["After equilibriating, Tempoutput ",Tempoutput];*)
 
 (*Prepare replicas*)
 replicas=Union[replicas,Tempoutput[[All,2]]];
@@ -3332,7 +3117,6 @@ replicas=Union[replicas,Tempoutput[[All,2]]];
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -3347,8 +3131,6 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 		];
 	];
 ];
-
-(*Print["     After Euilibriating and updating, replicas ",replicas," groundStates ",groundStates ];*)
 
 
 (*
@@ -3367,20 +3149,16 @@ Tempoutput=Association[
 ];
 
 
-(*Print["     After computing correlation time, Tempoutput is ",Tempoutput];*)
-
 (*
 (*Update replicas*)
 *)
 
 Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,btTable[[-1]]}];
 
-(*Print[" After correlation time, updated replicas ",replicas];*)
 
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -3394,9 +3172,6 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 		];
 	];
 ];
-
-
-(*Print["     After updating groundStates ",groundStates ];*)
 
 
 (*
@@ -3414,17 +3189,12 @@ While[numsweeps<NN,
 numsweeps++;
 If[Mod[numsweeps,Ceiling[NN/5.0]]==0,Print[" sweepno ",numsweeps]];
 
-(*Print["At the start of parallel table ",replicas];*)
-
-(*Print["corrTs, ",Table[replicas[[Key[i],"corrT"]],{i,btTable[[-1]]}]];*)
-
 
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 	ParallelTable[
 	(*repNumSweeps=replicas[[Key[i]]][[Key["corrT"]]];*)
 	(* Each replica will be swept corrT times *)
 
-	(*Print["in replica ", i, " repNumSweeps ",repNumSweeps];*)
 
 	<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 		hamiltonian[hparams],locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
@@ -3444,7 +3214,6 @@ Do[replicas[[Key[i]]][[Key["state"]]]=Tempoutput[[Key[i]]][[2]],{i,btTable[[-1]]
 
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -3458,11 +3227,6 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 		];
 	];
 ];
-
-
-(*Print["     After sweep, replicas",replicas, " groundStates ",groundStates ];*)
-
-
 
 
 If[Mod[numsweeps,1]==0,
@@ -3480,7 +3244,6 @@ Print[" measurements ",measurements ];*)
 
 chart=Union[chart,AssociationThread[btTable[[-1]],measurements[[1;;2]]]];
 
-(*Print["chart",chart];*)
 
 If[(btTable[[-1,1]]>btTable[[-1,2]]),Break[]];
 
@@ -3488,35 +3251,23 @@ If[(btTable[[-1,1]]>btTable[[-1,2]]),Break[]];
 curRootSpecificHeat=Table[Sqrt[ECGrav`SpecificHeat[chart[[Key[i]]][[All,3]],1,i]],{i,btTable[[-1]]}];
 (*Total specific heat, not specific heat per site!*)
 
-(*Print[" curRootSpecificHeat ",curRootSpecificHeat];*)
-
 
 curRatios=
 Table[If[curRootSpecificHeat[[k]]!=0,(1.0+1.0/curRootSpecificHeat[[k]])^k,defaultRatio[[k]]],{k,{1,-1}}];
 (*when k=1 it multiplies, and divides when k=2. Ensures that the first factor is greater than 1, and the second less than one.*)
 
-(*Print[" curRatios ",curRatios];*)
 
 newBetas={btTable[[-1,1]]*curRatios[[1]],btTable[[-1,2]]*curRatios[[2]]};
 
-Print["     curRootSpecificHeat ",curRootSpecificHeat," curRatios ",curRatios];
-Print[" newBetas ",newBetas];
 
 AppendTo[btTable,newBetas];
 
-Print["btTable ",btTable];
 
 ];
 
-(*Print["btTable ",btTable];*)
 
 btTable=Sort[Flatten[btTable]];
 
-(*Print["btTable ",btTable];*)
-
-(*Print[" chart ",chart];*)
-
-(*Print[" replicas ",replicas];*)
 
 (*
 (*********************************************)
@@ -3528,9 +3279,6 @@ btTable=Sort[Flatten[btTable]];
 (**********************************************)
 *)
 
-(*Print["chart ",chart];*)
-(*Print[" dat to be used to compute -beta*F ",chart[[All,All,3]]];*)
-(*Print["Replicas ",replicas];*)
 
 mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
@@ -3589,9 +3337,6 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 (*In general, sqrt[number of sites] replicas are needed for parallel tempering to be effective.*)
 
 
-Print[" Starting multihistogram with Replical swap version 1 with btTable ",btTable];
-
-
 (*
 (********************)
 (*   Equilibriate   *)
@@ -3601,7 +3346,6 @@ Print[" Starting multihistogram with Replical swap version 1 with btTable ",btTa
 Tempoutput=Association[ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
 ];
 
-(*Print["After equilibriating, Tempoutput ",Tempoutput];*)
 
 (*Prepare replicas*)
 replicas=Tempoutput[[All,2]];
@@ -3613,13 +3357,9 @@ AppendTo[groundStates,"minEnergy"->Min[Tempoutput[[All,1,"minEnergy"]]]];
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
 
-(*Print["minEnergy",groundStates[[Key["minEnergy"]]] ];*)
-
 AppendTo[groundStates,"minEstates"->Union@@Values[Select[Tempoutput[[All,1]],#[[Key["minEnergy"]]]==groundStates[[Key["minEnergy"]]]&][[All,"minEstates"]]]];
 
 (*compare the minimum energy from the equilibriation run with that of the temperature schedule run and reset the minimum energy and states *)
-
-(*Print["     After Euilibriating and updating, replicas ",replicas," groundStates ",groundStates ];*)
 
 
 (*
@@ -3633,20 +3373,16 @@ Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["m
 ];
 
 
-(*Print["     After computing correlation time, Tempoutput is ",Tempoutput];*)
-
 (*
 (*Update replicas*)
 *)
 
 Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,numRep}];
 
-(*Print[" After correlation time, updated replicas ",replicas];*)
 
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 groundStates[[Key["minEnergy"]]]=candminE;
@@ -3661,12 +3397,10 @@ groundStates[[Key["minEstates"]]]=Union[groundStates[[Key["minEstates"]]],Union@
 ];
 ];
 
-(*Print["     After updating groundStates ",groundStates ];*)
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
 histories=<|Table[i-><|"beta"->replicas[[Key[i],Key["beta"]]],"swapAccept"->0,"swapTry"->0, "history"->Table[-1.0,{NN}]|>,{i,numRep}]|>;
-
 
 
 Do[histories[[Key[i],Key["history"],-1]]=replicas[[Key[i],Key["beta"]]],{i,numRep}];
@@ -3683,18 +3417,14 @@ Print["Starting SwapReplicas with offset ",offset];
 Print[" replicas ",replicas];
 Print[" histories ",histories];*)
 
-(*Print[" replicaKeysOrderedByBeta ",replicaKeysOrderedByBeta];*)
 
 Do[
 thisReplInd=replicaKeysOrderedByBeta[[Mod[offset+repl-1,numRep]+1]];
 nextReplInd=replicaKeysOrderedByBeta[[Mod[offset+repl,numRep]+1]];
 
-(*Print[" thisReplInd ",thisReplInd," nextReplInd ",nextReplInd];*)
 
 deltaBetaDeltaE= (replicas[[Key[thisReplInd],Key["beta"]]]-replicas[[Key[nextReplInd],Key["beta"]]])*(replicas[[Key[thisReplInd],Key["state"],Key["energy"]]]-replicas[[Key[nextReplInd],Key["state"],Key["energy"]]]);
 
-
-(*Print[" deltaBetaDeltaE ",deltaBetaDeltaE];*)
 
 (*Increase the number of swap tries by one for both replicas*)
 
@@ -3716,7 +3446,6 @@ If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
 
 If[accept==1, (*Do swap of replicas*)
 
-(*Print["Accepting swap"];*)
 
 (*Update states: store the state of the high temp replica temporarily*)
 
@@ -3740,9 +3469,6 @@ histories[[Key[nextReplInd],Key["history"]]]=RotateLeft[histories[[Key[nextReplI
 histories[[Key[thisReplInd],Key["swapAccept"]]]+=1.0;
 histories[[Key[nextReplInd],Key["swapAccept"]]]+=1.0 ;
 
-(*Print[" After swap, histories ",histories]*)
-
-(*, Print[" Rejecting swap "]; *)
 
 ];
 
@@ -3752,7 +3478,6 @@ Print["  histories ",histories];*)
 
 ,{repl,1,numRep-1,2}];
 
-(*Print["After swap[], replicas ", replicas, " histories ",histories];*)
 
 ];
 
@@ -3761,27 +3486,17 @@ Print["  histories ",histories];*)
 * Take NN measurements with swapping **
 ******************************************)*)
 
-(*Print[" At the start of taking measurements and swapping, the state of the system is, "];*)
-(*Print[" minimum energy so far ",groundStates[["minEnergy"]]];*)
-(*Print[" number of states with min energy ",Length[groundStates[["minEstates"]]]];*)
-(*Print[" Sample min energy states ",groundStates[["minEstates",1;;Min[10,Length[groundStates[["minEstates"]]]]]]];*)
-(*Print[" replicas ",replicas];*)
 
 numsweeps=1;
 
 printCase=Floor[(NN*1.0)/5.0];
 
-(*Print[" numsweeps ",numsweeps," NN ",NN, " printCase ",printCase];*)
 
 measurements=Reap[
 While[numsweeps<NN,
 
 
 If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
-
-(*Print["At the start of parallel table ",replicas];*)
-
-(*Print["corrTs, ",Table[replicas[[Key[i],"corrT"]],{i,btTable[[-1]]}]];*)
 
 
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -3804,7 +3519,6 @@ Do[replicas[[Key[i],Key["state"]]]=Tempoutput[[Key[i]]][[2]],{i,numRep}];
 
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 groundStates[[Key["minEnergy"]]]=candminE;
@@ -3820,16 +3534,8 @@ groundStates[[Key["minEstates"]]]=Union[groundStates[[Key["minEstates"]]],Union@
 ];
 
 
-(*Print["minEnergy",groundStates[[Key["minEnergy"]]] ];*)
-
-(*Print["replicas ",replicas ];*)
-(*Print["groundStates ",groundStates ];*)
-
-(*Print["Before swap, replicas",replicas ];*)
-
 swap[numsweeps];
 
-(*Print["After swap, replicas",replicas ];*)
 
 If[Mod[numsweeps,1]==0,
 Table[
@@ -3850,13 +3556,10 @@ Print[" measurements ",measurements ];*)
 
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
-(*Print["chart ",chart];*)
 
 Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
-
-(*Print[" replicas ",replicas];*)
 
 (*
 (*********************************************)
@@ -3924,9 +3627,6 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 (*In general, sqrt[number of sites] replicas are needed for parallel tempering to be effective.*)
 
 
-Print[" Starting multihistogram with Replical swap version 1 with btTable ",btTable];
-
-
 (*
 (********************)
 (*   Equilibriate   *)
@@ -3939,7 +3639,6 @@ Tempoutput=Association[
 		DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
 ];
 
-(*Print["After equilibriating, Tempoutput ",Tempoutput];*)
 
 (*Prepare replicas*)
 replicas=Tempoutput[[All,2]];
@@ -3951,13 +3650,9 @@ AppendTo[groundStates,"minEnergy"->Min[Tempoutput[[All,1,"minEnergy"]]]];
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
 
-(*Print["minEnergy",groundStates[[Key["minEnergy"]]] ];*)
-
 AppendTo[groundStates,"minEstates"->Union@@Values[Select[Tempoutput[[All,1]],#[[Key["minEnergy"]]]==groundStates[[Key["minEnergy"]]]&][[All,"minEstates"]]]];
 
 (*compare the minimum energy from the equilibriation run with that of the temperature schedule run and reset the minimum energy and states *)
-
-(*Print["     After Euilibriating and updating, replicas ",replicas," groundStates ",groundStates ];*)
 
 
 (*
@@ -3977,20 +3672,16 @@ Tempoutput=Association[
 ];
 
 
-(*Print["     After computing correlation time, Tempoutput is ",Tempoutput];*)
-
 (*
 (*Update replicas*)
 *)
 
 Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,numRep}];
 
-(*Print[" After correlation time, updated replicas ",replicas];*)
 
 (* Extract the minimum energy and corresponding states *)
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -4005,12 +3696,10 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 	];
 ];
 
-(*Print["     After updating groundStates ",groundStates ];*)
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
 histories=<|Table[i-><|"beta"->replicas[[Key[i],Key["beta"]]],"swapAccept"->0,"swapTry"->0, "history"->Table[-1.0,{NN}]|>,{i,numRep}]|>;
-
 
 
 Do[histories[[Key[i],Key["history"],-1]]=replicas[[Key[i],Key["beta"]]],{i,numRep}];
@@ -4027,18 +3716,14 @@ Print["Starting SwapReplicas with offset ",offset];
 Print[" replicas ",replicas];
 Print[" histories ",histories];*)
 
-(*Print[" replicaKeysOrderedByBeta ",replicaKeysOrderedByBeta];*)
 
 Do[
 thisReplInd=replicaKeysOrderedByBeta[[Mod[offset+repl-1,numRep]+1]];
 nextReplInd=replicaKeysOrderedByBeta[[Mod[offset+repl,numRep]+1]];
 
-(*Print[" thisReplInd ",thisReplInd," nextReplInd ",nextReplInd];*)
 
 deltaBetaDeltaE= (replicas[[Key[thisReplInd],Key["beta"]]]-replicas[[Key[nextReplInd],Key["beta"]]])*(replicas[[Key[thisReplInd],Key["state"],Key["energy"]]]-replicas[[Key[nextReplInd],Key["state"],Key["energy"]]]);
 
-
-(*Print[" deltaBetaDeltaE ",deltaBetaDeltaE];*)
 
 (*Increase the number of swap tries by one for both replicas*)
 
@@ -4060,7 +3745,6 @@ If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
 
 If[accept==1, (*Do swap of replicas*)
 
-(*Print["Accepting swap"];*)
 
 (*Update states: store the state of the high temp replica temporarily*)
 
@@ -4084,9 +3768,6 @@ histories[[Key[nextReplInd],Key["history"]]]=RotateLeft[histories[[Key[nextReplI
 histories[[Key[thisReplInd],Key["swapAccept"]]]+=1.0;
 histories[[Key[nextReplInd],Key["swapAccept"]]]+=1.0 ;
 
-(*Print[" After swap, histories ",histories]*)
-
-(*, Print[" Rejecting swap "]; *)
 
 ];
 
@@ -4096,7 +3777,6 @@ Print["  histories ",histories];*)
 
 ,{repl,1,numRep-1,2}];
 
-(*Print["After swap[], replicas ", replicas, " histories ",histories];*)
 
 ];
 
@@ -4105,27 +3785,17 @@ Print["  histories ",histories];*)
 * Take NN measurements with swapping **
 ******************************************)*)
 
-(*Print[" At the start of taking measurements and swapping, the state of the system is, "];*)
-(*Print[" minimum energy so far ",groundStates[["minEnergy"]]];*)
-(*Print[" number of states with min energy ",Length[groundStates[["minEstates"]]]];*)
-(*Print[" Sample min energy states ",groundStates[["minEstates",1;;Min[10,Length[groundStates[["minEstates"]]]]]]];*)
-(*Print[" replicas ",replicas];*)
 
 numsweeps=1;
 
 printCase=Floor[(NN*1.0)/5.0];
 
-(*Print[" numsweeps ",numsweeps," NN ",NN, " printCase ",printCase];*)
 
 measurements=Reap[
 While[numsweeps<NN,
 
 
 If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
-
-(*Print["At the start of parallel table ",replicas];*)
-
-(*Print["corrTs, ",Table[replicas[[Key[i],"corrT"]],{i,btTable[[-1]]}]];*)
 
 
 Tempoutput=Association[
@@ -4150,7 +3820,6 @@ Do[replicas[[Key[i],Key["state"]]]=Tempoutput[[Key[i]]][[2]],{i,numRep}];
 
 candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-(*Print["candminE",candminE];*)
 
 If[candminE<groundStates[[Key["minEnergy"]]],
 	groundStates[[Key["minEnergy"]]]=candminE;
@@ -4166,16 +3835,8 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 ];
 
 
-(*Print["minEnergy",groundStates[[Key["minEnergy"]]] ];*)
-
-(*Print["replicas ",replicas ];*)
-(*Print["groundStates ",groundStates ];*)
-
-(*Print["Before swap, replicas",replicas ];*)
-
 swap[numsweeps];
 
-(*Print["After swap, replicas",replicas ];*)
 
 If[Mod[numsweeps,1]==0,
 	Table[
@@ -4199,13 +3860,10 @@ Print[" measurements ",measurements ];*)
 
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
-(*Print["chart ",chart];*)
 
 Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
-
-(*Print[" replicas ",replicas];*)
 
 (*
 (*********************************************)
@@ -4517,7 +4175,6 @@ While[numsweeps<=NN,
 	,{i,numRep}];
 	(*End diagnostic*)
 	*)
-
 
 
 	If[Mod[numsweeps,1]==0,
@@ -4844,7 +4501,6 @@ While[numsweeps<=NN,
 	*)
 
 
-
 	If[Mod[numsweeps,1]==0,
 	Table[
 		Sow[{numsweeps,externalFieldTable[[i]],replicas[[Key[i],Key["state"],Key["energy"]]]
@@ -4944,7 +4600,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
 hist=ECGrav`GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
 
-(*Print[" In GraphCEITempSchedule, hist[[1]] ",hist[[1]]];*)
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
 chart=hist[[2,All,"data",All,3]];
@@ -4957,18 +4612,13 @@ Print[" After multihistogram, measurements ", chart];*)
 
 
 incrementVal=(1.0/betaLow-1.0/betaHigh)/(20*vCount);
-Print["incrementVal ",incrementVal];
+
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
 			{i,1.0/betaHigh,1.0/betaLow,incrementVal},
 			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
-
-(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
-
-Print["CvOverT plot "];
-Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
 
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
@@ -4977,23 +4627,17 @@ entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]}];
 
 delS=entropyRange/vCount;
 
-Print["entropyRange ",entropyRange, " delS ",delS ];
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
-(*Print["entropyTable ",entropyTable];*)
-Print["entropyTable plot "];
-Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
 entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,0,vCount}]]];
 
-(*Print["entropyVals ",entropyVals];*)
 
 tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,entropyVals}]];
 
-Print[" tempSchedule in T (not beta) ",tempSchedule];
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
@@ -5046,7 +4690,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
 
 hist=ECGrav`GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
 
-(*Print[" In GraphCEITempSchedule, hist[[1]] ",hist[[1]]];*)
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
 chart=hist[[2,All,"data",All,3]];
@@ -5059,18 +4702,13 @@ Print[" After multihistogram, measurements ", chart];*)
 
 
 incrementVal=(1.0/betaLow-1.0/betaHigh)/(20*vCount);
-Print["incrementVal ",incrementVal];
+
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
 			{i,1.0/betaHigh,1.0/betaLow,incrementVal},
 			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
-
-(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
-
-Print["CvOverT plot "];
-Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
 
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
@@ -5079,23 +4717,17 @@ entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]}];
 
 delS=entropyRange/vCount;
 
-Print["entropyRange ",entropyRange, " delS ",delS ];
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
-(*Print["entropyTable ",entropyTable];*)
-Print["entropyTable plot "];
-Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
 entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,0,vCount}]]];
 
-(*Print["entropyVals ",entropyVals];*)
 
 tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,entropyVals}]];
 
-Print[" tempSchedule in T (not beta) ",tempSchedule];
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
@@ -5118,7 +4750,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,increme
 hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
 
-(*Print[" In GraphCEITempSchedule, hist[[1]] ",hist[[1]]];*)
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
 chart=hist[[2,All,"data",All,3]];
@@ -5130,20 +4761,14 @@ Print[" After multihistogram, minusbetaFTable ",minusbetaFTable];
 Print[" After multihistogram, measurements ", chart];*)
 
 
-
 incrementVal=(1.0/Min[btTable]-1.0/Max[btTable])/(20*vCount);
-Print["incrementVal ",incrementVal];
+
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
 		{i,1.0/Max[btTable],1.0/Min[btTable],incrementVal},
 		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
-
-(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
-
-Print["CvOverT plot "];
-Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
 
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
@@ -5152,23 +4777,17 @@ entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]}];
 
 delS=entropyRange/vCount;
 
-Print["entropyRange ",entropyRange, " delS ",delS ];
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
-(*Print["entropyTable ",entropyTable];*)
-Print["entropyTable plot "];
-Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
 entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,0,vCount}]]];
 
-(*Print["entropyVals ",entropyVals];*)
 
 tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,entropyVals}]];
 
-Print[" tempSchedule in T (not beta) as a list of {Temp,Entropy} values ",tempSchedule];
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
@@ -5189,7 +4808,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,increme
 
 hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
 
-(*Print[" In GraphCEITempSchedule, hist[[1]] ",hist[[1]]];*)
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
 chart=hist[[2,All,"data",All,3]];
@@ -5201,20 +4819,14 @@ Print[" After multihistogram, minusbetaFTable ",minusbetaFTable];
 Print[" After multihistogram, measurements ", chart];*)
 
 
-
 incrementVal=(1.0/Min[btTable]-1.0/Max[btTable])/(20*vCount);
-Print["incrementVal ",incrementVal];
+
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
 		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
 		{i,1.0/Max[btTable],1.0/Min[btTable],incrementVal},
 		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
-
-(*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
-
-Print["CvOverT plot "];
-Print[ListLinePlot[CvOverTtab,PlotRange->All,PlotLabel->"Cv/T plot"]];
 
 
 (*entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]-1}];*)
@@ -5223,23 +4835,17 @@ entropyRange=Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,Length[CvOverTtab]}];
 
 delS=entropyRange/vCount;
 
-Print["entropyRange ",entropyRange, " delS ",delS ];
 
 entropyTable=Table[{CvOverTtab[[k,1]],Sum[CvOverTtab[[i,2]]*incrementVal,{i,1,k}]},{k,1,Length[CvOverTtab]}];(*integral of Cv/T dT gives entropy*)
 
-(*Print["entropyTable ",entropyTable];*)
-Print["entropyTable plot "];
-Print[ListLinePlot[entropyTable,PlotRange->All,PlotLabel->"entropy vs temp plot"]];
 
 (*entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,1,vCount}]]];*)
 
 entropyVals=Flatten[Nearest[entropyTable[[All,2]],Table[i*delS,{i,0,vCount}]]];
 
-(*Print["entropyVals ",entropyVals];*)
 
 tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,entropyVals}]];
 
-Print[" tempSchedule in T (not beta) as a list of {Temp,Entropy} values ",tempSchedule];
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
@@ -5295,7 +4901,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	interpolatedThermodynamicSpeed,totalThermodynamicLength,thermodynamicDistanceTable,
 	interpolatedThermodynamicLength,targetSteps,betaSchedule,b},
 
-Print[" Starting GraphCTLSchedule for beta with input betaList ",btTable, " numReplicas ",numReplicas];
 
 hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 	delH[delHparams],obs,NN,UnlabeledVerticesYes];
@@ -5320,8 +4925,6 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]},
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},
-	PlotRange->All,PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 		{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -5332,10 +4935,6 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
 
-Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},
-	PlotRange->All,PlotLabel->" interpolated thermodynamic distance "]];
-
-(*Print[" total thermodynamic length ",totalThermodynamicLength];*)
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
 
@@ -5382,8 +4981,6 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	betaSchedule,b},
 
 
-Print[" Starting GraphCTLSchedule for beta with input betaList ",btTable, " numReplicas ",numReplicas];
-
 hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,
 	UnlabeledVerticesYes];
 
@@ -5405,8 +5002,6 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -5416,9 +5011,6 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
-
-Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},
-	PlotRange->All,PlotLabel->" interpolated thermodynamic distance "]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5466,7 +5058,6 @@ Module[{result,thermodynamicSpeed,incrementValue,thermodynamicSpeedTable,
 	interpolatedThermodynamicSpeed,totalThermodynamicLength,thermodynamicDistanceTable,
 	interpolatedThermodynamicLength,targetSteps,betaSchedule,b},
 
-Print[" Starting GraphCTLSchedule for beta with input from previous GraphMultiHistogram, numReplicas ",numReplicas];
 
 thermodynamicSpeed[b_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues^2]
 	-(ECGrav`ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues])^2];
@@ -5478,9 +5069,6 @@ thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-(*Print["interpolatedThermodynamicSpeed plot "];*)
-Print[Plot[interpolatedThermodynamicSpeed[b],{b,betaMin,betaMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{b,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,b}]},{b,betaMin,betaMax*(1.1),incrementValue}];
@@ -5490,8 +5078,6 @@ interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,betaMin,betaMax}];
 
-Print[Plot[interpolatedThermodynamicLength[b],{b,betaMin,betaMax},PlotRange->All,
-	PlotLabel->" interpolated thermodynamic distance "]];
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
 
@@ -5580,8 +5166,6 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5590,9 +5174,6 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
 
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
-
-Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5607,7 +5188,6 @@ neighbors=Join[{{2,3}},Table[{i-1,i+1},{i,2,numReplicas-1}],{{numReplicas-2,numR
 edges=DeleteDuplicates@(
 		Sort/@Flatten[Table[UndirectedEdge[i,j],{i,numReplicas},{j,neighbors[[i]]}],1]);
 
-Print[" swapGraph ",GraphPlot[Graph[Range[numReplicas],edges],VertexLabels->Automatic]];
 
 replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
@@ -5656,10 +5236,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
 	neighbors,edges,replicaLabels},
 
-Print[" Starting GraphCTLSchedule for external field at a fixed beta ",bt
-	," with input external field schedule, ",externalFieldTable," numReplicas "
-	,numReplicas];
-	
+
 hist=ECGrav`GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
 	externalFieldTable,conjugateObs,obs,NN,UnlabeledVerticesYes];
 
@@ -5683,8 +5260,6 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x],
 	{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5693,9 +5268,6 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
 
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
-
-Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5710,7 +5282,6 @@ neighbors=Join[{{2,3}},Table[{i-1,i+1},{i,2,numReplicas-1}],{{numReplicas-2,numR
 edges=DeleteDuplicates@(
 		Sort/@Flatten[Table[UndirectedEdge[i,j],{i,numReplicas},{j,neighbors[[i]]}],1]);
 
-Print[" swapGraph ",GraphPlot[Graph[Range[numReplicas],edges],VertexLabels->Automatic]];
 
 replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
@@ -5772,8 +5343,6 @@ thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
-Print[Plot[interpolatedThermodynamicSpeed[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic speed"]];
 
 thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 	,{x,hMin,h}]},{h,hMin,hMax,incrementValue}];
@@ -5781,9 +5350,6 @@ thermodynamicDistanceTable=Table[{h,NIntegrate[interpolatedThermodynamicSpeed[x]
 interpolatedThermodynamicLength=Interpolation[thermodynamicDistanceTable];
 
 totalThermodynamicLength = NIntegrate[interpolatedThermodynamicSpeed[x],{x,hMin,hMax}];
-
-Print[Plot[interpolatedThermodynamicLength[h],{h,hMin,hMax},PlotRange->All,
-	PlotLabel->"interpolated thermodynamic distance"]];
 
 
 targetSteps=Table[i*(totalThermodynamicLength/(numReplicas-1)),{i,0,numReplicas-1}];
@@ -5798,7 +5364,6 @@ neighbors=Join[{{2,3}},Table[{i-1,i+1},{i,2,numReplicas-1}],{{numReplicas-2,numR
 edges=DeleteDuplicates@(
 	Sort/@Flatten[Table[UndirectedEdge[i,j],{i,numReplicas},{j,neighbors[[i]]}],1]);
 
-Print[" swapGraph ",GraphPlot[Graph[Range[numReplicas],edges],VertexLabels->Automatic]];
 
 replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
@@ -5868,7 +5433,6 @@ chartConjugateField=hist[[2,All,"data",All,4]];
 hMins=Min/@Transpose[Keys[minusbetaFAssn]];
 hMaxs=Max/@Transpose[Keys[minusbetaFAssn]];
 
-(*Print[" hMins ",hMins," hMaxs ",hMaxs];*)
 
 (* ===============1) BUILD the thermodynamic metric \[CapitalSigma](H1,H2,...)================*)
 
@@ -5881,7 +5445,7 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 
 sigmaInterpolationAsn=<|
 	Table[
-		Table[Print["  Working on Fisher Matrix element {i,j}= ",{i,j}];
+		Table[
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
@@ -5904,7 +5468,6 @@ sigmaMat[x__?NumericQ]:=With[
 
 	bt^2*mat
 ];
-
 
 
 (* Density function*)
@@ -5933,14 +5496,10 @@ densityPoints=
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
 							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
-Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
-(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
-Print["Smoothened rho contours ",Thread[{hVars,hMins,hMaxs}]
-	/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];
@@ -5982,7 +5541,6 @@ neighbors=Table[Ordering[replicasDistMat[[i]],numNeighbors],{i,numReplicas}];
 edges=DeleteDuplicates@(
 	Sort/@Flatten[Table[UndirectedEdge[i,j],{i,numReplicas},{j,neighbors[[i]]}],1]);
 
-Print[" swapGraph ",GraphPlot[Graph[Range[numReplicas],edges,VertexCoordinates->Thread[Range[numReplicas]->centers]],VertexLabels->Automatic]];
 
 replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
@@ -6043,7 +5601,6 @@ chartConjugateField=hist[[2,All,"data",All,4]];
 hMins=Min/@Transpose[Keys[minusbetaFAssn]];
 hMaxs=Max/@Transpose[Keys[minusbetaFAssn]];
 
-(*Print[" hMins ",hMins," hMaxs ",hMaxs];*)
 
 (* ===============1) BUILD the thermodynamic metric \[CapitalSigma](H1,H2,...)================*)
 
@@ -6056,7 +5613,7 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 
 sigmaInterpolationAsn=<|
 	Table[
-		Table[Print["  Working on Fisher Matrix element {i,j}= ",{i,j}];
+		Table[
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
@@ -6079,7 +5636,6 @@ sigmaMat[x__?NumericQ]:=With[
 
 	bt^2*mat
 ];
-
 
 
 (* Density function*)
@@ -6108,14 +5664,10 @@ densityPoints=
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
 							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
-Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
-(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
-Print["Smoothened rho contours ",Thread[{hVars,hMins,hMaxs}]
-	/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];
@@ -6155,7 +5707,6 @@ neighbors=Table[Ordering[replicasDistMat[[i]],numNeighbors],{i,numReplicas}];
 edges=DeleteDuplicates@(
 	Sort/@Flatten[Table[UndirectedEdge[i,j],{i,numReplicas},{j,neighbors[[i]]}],1]);
 
-Print[" swapGraph ",GraphPlot[Graph[Range[numReplicas],edges,VertexCoordinates->Thread[Range[numReplicas]->centers]],VertexLabels->Automatic]];
 
 replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
@@ -6199,8 +5750,6 @@ Module[{result,numVars=Length[hMins],numInterpolatingSamples=20,pSoft=0.96,h,hVa
 	centers,edges,swapGraph,neighbors,numNeighbors,replicasDistMat,replicaLabels},
 
 
-
-
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input from a 
 	previous run of GraphMultihistogram at beta ",bt," with hMins ",hMins," hMaxs "
 	,hMaxs];
@@ -6218,7 +5767,7 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 
 sigmaInterpolationAsn=<|
 Table[
-	Table[Print["  Working on Fisher Matrix element {i,j}= ",{i,j}];
+	Table[
 		{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
 			/.{y__}:>Join@@ParallelTable[
 					{hVars, Max[0.0,ECGrav`ExtrapolatedExpectationValue[bt,hVars,
@@ -6228,7 +5777,6 @@ Table[
 		,{i,1,j}]
 ,{j,1,numVars}]|>;
 
-(*Print[" sigmaInterpolationAsn ",sigmaInterpolationAsn];*)
 
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
 
@@ -6241,7 +5789,6 @@ sigmaMat[x__?NumericQ]:=
 
 	bt^2*mat
 ];
-
 
 
 (* Density function*)
@@ -6266,16 +5813,10 @@ densityPoints=Thread[
 	{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]/.{y__}:>Flatten[
 		(ParallelTable[{hVars,rho@@hVars},y,DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
 
-Print[" rho = Sqrt[det[g]] Plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
-(*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
 
 (*Create the continuous distribution using weights*)
 dist=SmoothKernelDistribution[WeightedData[densityPoints[[All,1]],densityPoints[[All,2]]]];
 
-Print["Smooth pdf of rho contours ",
-	Thread[{hVars,hMins,hMaxs}]
-		/.{y__}:>ContourPlot[PDF[dist,hVars],y,PlotLegends->Automatic]
-];
 
 (*2. Sample from the continuous distribution*)
 PrintTemporary["Sampling 20,000*numConjFields points from distribution..."];
@@ -6322,10 +5863,6 @@ edges=DeleteDuplicates@(
 
 swapGraph=Graph[Range[numReplicas],edges,VertexCoordinates->Thread[Range[numReplicas]->centers]];
 
-Print[" swapGraph ",
-	GraphPlot[Graph[Range[numReplicas],edges,VertexCoordinates->Thread[Range[numReplicas]->centers]],
-	VertexLabels->Automatic]
-];
 
 replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
@@ -6397,7 +5934,6 @@ groundStates=<||>;
 histories=<||>;
 numRep=Length[btTable];
 
-Print["Running PT for graph with vCount ",vCount," numRep ",numRep," btTable ",btTable];
 
 (*(******************************)
 (**      Equilibriate          **)
@@ -6407,7 +5943,6 @@ Tempoutput=Association[
 		hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]}
 	,DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 ];
-
 
 
 (*Prepare replicas*)
@@ -6443,7 +5978,6 @@ Tempoutput=Association[
 ];
 
 
-
 (*Update replicas*)
 Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,numRep}];
 
@@ -6471,7 +6005,6 @@ replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
 histories=<|Table[i-><|"beta"->replicas[[Key[i],Key["beta"]]],"swapAccept"->0,"swapTry"->0, 
 	"history"->Table[-1.0,{NN}]|>,{i,numRep}]|>;
-
 
 
 Do[histories[[Key[i],Key["history"],-1]]=replicas[[Key[i],Key["beta"]]],{i,numRep}];
@@ -6520,8 +6053,6 @@ If[accept==1, (*Do swap of replicas*)
 ,{repl,1,numRep-1,2}];
 
 ];
-
-
 
 
 (*(******************************************
@@ -6639,7 +6170,6 @@ groundStates=<||>;
 histories=<||>;
 numRep=Length[btTable];
 
-Print["Running PT for graph with vCount ",vCount," numRep ",numRep," btTable ",btTable];
 
 (*(******************************)
 (**      Equilibriate          **)
@@ -6707,7 +6237,6 @@ replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
 histories=<|Table[i-><|"beta"->replicas[[Key[i],Key["beta"]]],"swapAccept"->0,"swapTry"->0
 	, "history"->Table[-1.0,{NN}]|>,{i,numRep}]|>;
-
 
 
 Do[histories[[Key[i],Key["history"],-1]]=replicas[[Key[i],Key["beta"]]],{i,numRep}];
@@ -6791,7 +6320,6 @@ measurements=Reap[
 	(*Update minimum energy*)
 	candminE=Min[Tempoutput[[All,1,"minEnergy"]]];
 
-	(*Print["candminE ", candminE," minEnergy ",groundStates[[Key["minEnergy"]]]];*)
 
 	If[candminE<groundStates[[Key["minEnergy"]]],
 		groundStates[[Key["minEnergy"]]]=candminE;
@@ -6882,7 +6410,6 @@ Module[{result,numRep=Length[inputReplicas],vCount=Length[inputReplicas[[1,"stat
 	,maxGStateCount=500,replicaKeysOrderedByBeta,bt,minStates,candminE,measurements
 	,numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
 
-Print["Running PT for graph with vCount ",vCount," numRep ",numRep," btTable ",btTable];
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
@@ -7050,7 +6577,6 @@ Module[{result,numRep=Length[inputReplicas],vCount=Length[inputReplicas[[1,"stat
 	,maxGStateCount=500,replicaKeysOrderedByBeta,bt,minStates,candminE,measurements
 	,numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
 
-Print["Running PT for graph with vCount ",vCount," numRep ",numRep," btTable ",btTable];
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
@@ -7106,8 +6632,6 @@ Do[
 ,{repl,1,numRep-1,2}];
 
 ];
-
-
 
 
 (*(******************************************
@@ -7275,7 +6799,6 @@ Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,numRep}];
 Do[
 	candminE=Tempoutput[[Key[i],1,"minEnergy"]];
 
-	(*Print["candminE",candminE];*)
 
 	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
 		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
@@ -7547,7 +7070,6 @@ Do[replicas[[Key[i]]]=Tempoutput[[Key[i],2]],{i,numRep}];
 Do[
 	candminE=Tempoutput[[Key[i],1,"minEnergy"]];
 
-	(*Print["candminE",candminE];*)
 
 	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
 		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
@@ -7779,7 +7301,6 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-Print["Running PT for graph with numRep ",numRep," bt ",bt, " replicaSwapEdgesLabels ",replicaSwapEdgesLabels];
 
 groundStates=
 	<|Table[
@@ -7877,8 +7398,6 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 ];
 
 
-
-
 (*(******************************************
 * Start taking measurements and swapping **
 ******************************************)*)
@@ -7907,8 +7426,6 @@ measurements=Reap[
 			{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 
 		];
-
-		(*Print[" after sweep replica Tempoutput ", Tempoutput];*)
 
 
 		(*Update replicas*)
@@ -8009,7 +7526,6 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-Print["Running PT for graph with numRep ",numRep," bt ",bt, " replicaSwapEdgesLabels ",replicaSwapEdgesLabels];
 
 groundStates=
 	<|Table[
@@ -8107,8 +7623,6 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 ];
 
 
-
-
 (*(******************************************
 * Start taking measurements and swapping **
 ******************************************)*)
@@ -8136,8 +7650,6 @@ measurements=Reap[
 			{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
 
 		];
-
-		(*Print[" after sweep replica Tempoutput ", Tempoutput];*)
 
 
 		(*Update replicas*)
