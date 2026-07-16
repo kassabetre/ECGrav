@@ -356,7 +356,7 @@ Print[" nextFs ",nextFs];
 
 
 Sow[del];(* For diagnostics *)
-	If[Mod[iterNum,500]==0,Print["iterNum ",iterNum, " del ",del]];
+	If[Mod[iterNum,500]==0,PrintTemporary["iterNum ",iterNum, " del ",del]];
 
 		curFs=nextFs-(Mean[nextFs]);
 	];
@@ -429,7 +429,7 @@ del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTotSims}]];
 
 
 Sow[del];(* For diagnostics *)
-	If[Mod[iterNum,500]==0,Print["iterNum ",iterNum, " del ",del]];
+	If[Mod[iterNum,500]==0,PrintTemporary["iterNum ",iterNum, " del ",del]];
 
 		curFs=nextFs-(Mean[nextFs]);
 	];
@@ -1017,7 +1017,7 @@ numsteps=0;
 stepagain=1;
 
 While[stepagain==1&&numsteps<cutoff,
-If[Mod[numsteps,printCase]==0,Print["step number ",numsteps]];
+If[Mod[numsteps,printCase]==0,PrintTemporary["step number ",numsteps]];
 
 (*Print["before step, graph", AdjacencyGraph[Amcur,ImageSize\[Rule]Tiny]];
 Print["before step, eDifftable ", MatrixPlot[to2DArray[nn,deltaEtable]]];
@@ -1119,7 +1119,7 @@ printCase=Floor[(NN*1.0)/5.0];
 numsteps=0;
 
 While[numsteps<NN,
-If[Mod[numsteps,printCase]==0,Print["step number ",numsteps]];
+If[Mod[numsteps,printCase]==0,PrintTemporary["step number ",numsteps]];
 
 
 step[];
@@ -1203,7 +1203,7 @@ printCase=Floor[(NN*1.0)/5.0];
 numsteps=0;
 
 While[numsteps<NN,
-If[Mod[numsteps,printCase]==0,Print["step number ",numsteps]];
+If[Mod[numsteps,printCase]==0,PrintTemporary["step number ",numsteps]];
 
 
 step[];
@@ -1341,7 +1341,7 @@ numsteps=0;
 
 While[numsteps<NN,
 
-If[Mod[numsteps,printCase]==0,Print["sweep number ",numsteps]];
+If[Mod[numsteps,printCase]==0,PrintTemporary["sweep number ",numsteps]];
 
 (*Print["before step , deltaEtable ", deltaEtable];
 Print["before step , state ", state];*)
@@ -1478,7 +1478,7 @@ numsteps=0;
 
 While[numsteps<NN,
 
-If[Mod[numsteps,printCase]==0,Print["sweep number ",numsteps]];
+If[Mod[numsteps,printCase]==0,PrintTemporary["sweep number ",numsteps]];
 
 (*Print["before step , deltaEtable ", deltaEtable];
 Print["before step , state ", state];*)
@@ -1706,7 +1706,7 @@ numsweeps=0;
 result=Reap[
 Do[MCSweep[];
 numsweeps++;
-If[Mod[numsweeps,printVal]==0,Print["Now at sweep number ",numsweeps]];
+If[Mod[numsweeps,printVal]==0,PrintTemporary["Now at sweep number ",numsweeps]];
 
 
 Sow[Flatten[{numsweeps,hamiltonian[Amat],Through[observables [Amat]]}]]
@@ -2331,7 +2331,7 @@ PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}
 
 empair=Reap[EorMTable=
 	Table[
-		If[Mod[i,Ceiling[numsweeps/5.0]]==0,Print[" sweepno ",i]];
+		If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
 			sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
 									hamiltonian[hparams],delH[delHparams],1,
 									data[[Key["minEnergy"]]],UnlabeledVerticesYes];
@@ -2454,7 +2454,7 @@ PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}
 
 empair=Reap[EorMTable=
 Table[
-If[Mod[i,Ceiling[numsweeps/5.0]]==0,Print[" sweepno ",i]];
+If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
 sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
 									hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 									UnlabeledVerticesYes];
@@ -2934,7 +2934,7 @@ measurements=Reap[
 While[numsweeps<NN,
 
 numsweeps++;
-If[Mod[numsweeps,Ceiling[NN/5.0]]==0,Print[" sweepno ",numsweeps]];
+If[Mod[numsweeps,Ceiling[NN/5.0]]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -3187,7 +3187,7 @@ measurements=Reap[
 While[numsweeps<NN,
 
 numsweeps++;
-If[Mod[numsweeps,Ceiling[NN/5.0]]==0,Print[" sweepno ",numsweeps]];
+If[Mod[numsweeps,Ceiling[NN/5.0]]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -3496,7 +3496,7 @@ measurements=Reap[
 While[numsweeps<NN,
 
 
-If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -3795,7 +3795,7 @@ measurements=Reap[
 While[numsweeps<NN,
 
 
-If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 
 Tempoutput=Association[
@@ -4113,7 +4113,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 While[numsweeps<=NN,
 
-	If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+	If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 	Tempoutput=Association[
 		ParallelTable[
@@ -4437,7 +4437,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 While[numsweeps<=NN,
 
-	If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+	If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 	Tempoutput=Association[
 		ParallelTable[
@@ -6066,7 +6066,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 While[numsweeps<=NN,
 
-If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -6300,7 +6300,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 	While[numsweeps<=NN,
 
-		If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		Tempoutput=Association[
 			With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
@@ -6912,7 +6912,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 	While[numsweeps<=NN,
 
-		If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		Tempoutput=Association[
 			ParallelTable[
@@ -7183,7 +7183,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 	While[numsweeps<=NN,
 
-		If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		Tempoutput=Association[
 			ParallelTable[
@@ -7411,7 +7411,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 	While[numsweeps<=NN,
 
-		If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		Tempoutput=Association[
 			ParallelTable[
@@ -7636,7 +7636,7 @@ printCase=Floor[(NN*1.0)/5.0];
 measurements=Reap[
 	While[numsweeps<=NN,
 
-		If[Mod[numsweeps,printCase]==0,Print[" sweepno ",numsweeps]];
+		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		Tempoutput=Association[
 			ParallelTable[
