@@ -1,0 +1,566 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     22564,        557]
+NotebookOptionsPosition[     17267,        450]
+NotebookOutlinePosition[     20438,        518]
+CellTagsIndexPosition[     20353,        513]
+WindowTitle->KpathConnectedComponents
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "0a337aa3-be33-4a49-98f5-2f20f0b9f8aa"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "8b48ec76-0ea4-4b5d-8f85-e68aa09e107b"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "3dfa1f95-ebd5-4923-aa05-d085c542a8d1"]
+        }],ExpressionUUID->"3a049dec-d335-40cb-a7fa-4dc30593788d"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/KpathConnectedComponents\"" :> None, 
+        "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard["ECGrav/ref/KpathConnectedComponents"], Delimiter, 
+        "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/\
+KpathConnectedComponents.html"], StandardForm]], "Input", TextClipboardType -> 
+                "PlainText"]}, Visible -> False]]; 
+          SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/KpathConnectedComponents") <> ".html"], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "fce9f3f6-7e72-416c-8ddf-cd2ad9ccd9af"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "722ce52e-9608-45c6-b670-0761dfdca0fb"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"e31acefa-1cde-40d1-8120-b4831eacbaf9"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"7384c36d-51d0-4ea7-a355-e28789ff0aa8"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "KpathConnectedComponents", "ObjectName",ExpressionUUID->
+      "30af7b06-f241-4814-92b3-cbd01653f598"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"2555b056-d2b9-4a11-b051-636e56b04972"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "291b5368-7ff0-4b33-a9a3-f4cbbb75a04c"]
+    }],ExpressionUUID->"83254369-da26-416d-878d-3f1b3b2b6fbd"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"0903bc2e-aa68-4247-951b-\
+5b59e397782d"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["KpathConnectedComponents"]], 
+         "paclet:ECGrav/ref/KpathConnectedComponents", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["facetsLst_List", "TI"], ",", 
+        StyleBox["k_Integer", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "1c5f26ae-fcdd-454a-a105-eac0aea0fd87"],
+     "\[LineSeparator]Given a complex as a list of facets ",
+     Cell[BoxData[
+      StyleBox["facetsLst", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "da8de011-8578-4254-b41a-c413ecf2c4df"],
+     " and dimensionality ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "a70d3528-888e-4a9e-acd5-361b062f0173"],
+     ", it computes the number of components connected by (",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "dc7a6199-8654-4521-85ff-d3f77b48ed1c"],
+     "+1)-paths where those ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "95d4b4a6-a0cc-4ddf-b3df-6a1b6d9bb508"],
+     "-faces that form a component connected by a path of (",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "22c282e0-a0d7-475c-bbc8-1c55f4f5dc0a"],
+     "+1)-dimensional faces will form a component. It uses the built in \
+Mathematica KVertexConnectedComponents function on a graph constructed such \
+that the vertices are all ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "d05ecc5a-b6d2-43d4-af0d-5f466858d30f"],
+     "-faces and edges between them are 1 if two faces are contained in a \
+bigger clique and 0 otherwise."
+    }],ExpressionUUID->"6fc44108-6d94-431a-9f65-8eb8e0fc2b25"]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["KpathConnectedComponents"]], 
+         "paclet:ECGrav/ref/KpathConnectedComponents", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["g_Graph", "TI"], ",", 
+        StyleBox["k_Integer", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "2c962976-2980-4d85-a5ce-0b4548cf4bc0"],
+     "\[LineSeparator]Given a complex as a graph ",
+     Cell[BoxData[
+      StyleBox["g", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "5134e359-4355-47e5-9568-f72378035c8d"],
+     " and dimensionality ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "a405990a-8eed-42b6-93d2-7cb4a96dca96"],
+     ", it computes the number of components connected by (",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "1e13f493-011f-4818-af0e-ec1035286d84"],
+     "+1)-paths where those k-faces that form a component connected by a path \
+of (",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "36c5aab6-559d-4abf-89c1-6a247a00e76f"],
+     "+1)-dimensional faces will form a component. It uses the built in \
+Mathematica KVertexConnectedComponents function on a graph constructed such \
+that the vertices are all ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "09391ca6-a7f6-4afa-8cc0-a4bcf34eb0a7"],
+     "-faces and edges between them are 1 if two faces are contained in a \
+bigger clique and 0 otherwise."
+    }],ExpressionUUID->"905b6149-8fd7-4907-8a07-6c40656bf0e7"]}
+  }]], "Usage",
+ CellID->44540722,ExpressionUUID->"9396c3b1-36d6-43c5-bfdd-2bd803250292"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"a616be90-dc5b-4de4-958b-e24244330719"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"053dc4ba-fa46-405d-b1dd-38912c829800"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "e9a5075e-d045-42cb-83f0-6d42583452bf"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->678279428,ExpressionUUID->"e2e55884-0e76-4fc0-8ecb-9339f277c594"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"db1ed9f8-985c-4385-82a3-bbc9455426e2"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"65e942b1-e4d7-42fe-8aa2-65f0af3a2701"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "11515d97-8368-4fad-83bf-25f86b3d5ed6"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->999148120,ExpressionUUID->"f14deb56-073a-42c8-95fb-cee7c778a1db"],
+
+Cell["A vertex labeled graph, g:", "ExampleText",
+ CellID->210834210,ExpressionUUID->"555c5a38-ff38-4247-83b3-47ee1d66e77a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"g", " ", "=", " ", 
+  RowBox[{"Graph", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"3", "\[UndirectedEdge]", "4"}], ",", 
+      RowBox[{"3", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "6"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+    RowBox[{"ImageSize", "->", "Medium"}]}], "]"}]}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->206829906,ExpressionUUID->"a60778fd-8cf7-4494-b264-405be564effc"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 2, 3, 4, 5, 6}, {
+      Null, {{1, 2}, {1, 3}, {2, 3}, {3, 4}, {3, 5}, {4, 5}, {1, 6}, {2, 
+       6}}}, {ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{2.134882454453977, 0.03303561565322127}, {
+         2.135224040936419, 0.7304977360741269}}, {{2.134882454453977, 
+         0.03303561565322127}, {1.0351139785890262`, 0.3817337807955095}}, {{
+         2.134882454453977, 0.03303561565322127}, {3.026888112863144, 
+         0.3815947607495787}}, {{2.135224040936419, 0.7304977360741269}, {
+         1.0351139785890262`, 0.3817337807955095}}, {{2.135224040936419, 
+         0.7304977360741269}, {3.026888112863144, 0.3815947607495787}}, {{
+         1.0351139785890262`, 0.3817337807955095}, {0., 
+         0.763371082514009}}, {{1.0351139785890262`, 0.3817337807955095}, {
+         0.00019507557743603243`, 0.}}, {{0., 0.763371082514009}, {
+         0.00019507557743603243`, 0.}}}, 0.030432033352218085`]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {
+         DiskBox[{2.134882454453977, 0.03303561565322127}, 
+          0.030432033352218085], 
+         InsetBox["1", 
+          Offset[{2, 2}, {2.165314487806195, 0.06346764900543936}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.135224040936419, 0.7304977360741269}, 
+          0.030432033352218085], 
+         InsetBox["2", 
+          Offset[{2, 2}, {2.1656560742886373, 0.760929769426345}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.0351139785890262`, 0.3817337807955095}, 
+          0.030432033352218085], 
+         InsetBox["3", 
+          Offset[{2, 2}, {1.0655460119412443, 0.41216581414772757}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0., 0.763371082514009}, 0.030432033352218085], 
+         InsetBox["4", 
+          Offset[{2, 2}, {0.030432033352218085, 0.7938031158662271}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.00019507557743603243`, 0.}, 0.030432033352218085], 
+         InsetBox["5", 
+          Offset[{2, 2}, {0.030627108929654118, 0.030432033352218085}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{3.026888112863144, 0.3815947607495787}, 
+          0.030432033352218085], 
+         InsetBox["6", 
+          Offset[{2, 2}, {3.0573201462153623, 0.41202679410179677}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->284332197,ExpressionUUID->"82b9d74d-b3c4-459c-9a79-f1559406964b"]
+}, Open  ]],
+
+Cell["As a clique complex, g has facets:", "ExampleText",
+ CellID->151316493,ExpressionUUID->"68d9d032-c4c7-4234-bc31-5c8d0bdef9ad"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"facets", " ", "=", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"3", ",", "4", ",", "5"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "6"}], "}"}]}], "}"}]}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->465613004,ExpressionUUID->"0b488456-69fc-44a6-b059-78c5d72f068b"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "2", ",", "3"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"3", ",", "4", ",", "5"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "2", ",", "6"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->455275871,ExpressionUUID->"b2a00897-59e1-4e1e-9b33-444f3bce2e33"]
+}, Open  ]],
+
+Cell["The components that are 2-path connected are:", "ExampleText",
+ CellID->247516658,ExpressionUUID->"5c5b2b2c-ccd0-4a87-bd35-13ffe9a0ae5b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"KpathConnectedComponents", "[", 
+  RowBox[{"facets", ",", "2"}], "]"}]], "Input",
+ CellLabel->"In[3]:=",
+ CellID->573194341,ExpressionUUID->"52e50bdd-9951-4a0f-afc7-16791739dcaa"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "2", ",", "3", ",", "6"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"3", ",", "4", ",", "5"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[3]=",
+ CellID->29812447,ExpressionUUID->"d2bb8974-a9a9-485e-bc1d-f421a87911be"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"9232d9ee-3b3a-4a84-8356-89afd7a9aa91"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"KpathConnectedComponents",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 54, 59.017855}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "KpathConnectedComponents[facetsLst_List, k_Integer] Given a complex as a \
+list of facets facetsLst and dimensionality k, it computes the number of \
+components connected by (k+1)-paths where those k-faces that form a component \
+connected by a path of (k+1)-dimensional faces will form a component. It uses \
+the built in Mathematica KVertexConnectedComponents function on a graph \
+constructed such that the vertices are all k-faces and edges between them are \
+1 if two faces are contained in a bigger clique and 0 otherwise. \
+KpathConnectedComponents[g_Graph, k_Integer] Given a complex as a graph g and \
+dimensionality k, it computes the number of components connected by \
+(k+1)-paths where those k-faces that form a component connected by a path of \
+(k+1)-dimensional faces will form a component. It uses the built in \
+Mathematica KVertexConnectedComponents function on a graph constructed such \
+that the vertices are all k-faces and edges between them are 1 if two faces \
+are contained in a bigger clique and 0 otherwise.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "KpathConnectedComponents", "titlemodifier" -> 
+    "", "metadescription" -> "", "windowtitle" -> "KpathConnectedComponents", 
+    "type" -> "Symbol", "uri" -> "ECGrav/ref/KpathConnectedComponents"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[8480, 218, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"e2e55884-0e76-4fc0-8ecb-9339f277c594",
+   CellTags->"PrimaryExamplesSection",
+   CellID->678279428]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 20154, 506}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[592, 21, 3007, 72, 70, "AnchorBarGrid",ExpressionUUID->"e31acefa-1cde-40d1-8120-b4831eacbaf9",
+ CellID->1],
+Cell[3602, 95, 89, 0, 70, "ContextNameCell",ExpressionUUID->"7384c36d-51d0-4ea7-a355-e28789ff0aa8"],
+Cell[CellGroupData[{
+Cell[3716, 99, 567, 14, 70, "ObjectNameGrid",ExpressionUUID->"0903bc2e-aa68-4247-951b-5b59e397782d"],
+Cell[4286, 115, 4157, 98, 70, "Usage",ExpressionUUID->"9396c3b1-36d6-43c5-bfdd-2bd803250292",
+ CellID->44540722]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8480, 218, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"e2e55884-0e76-4fc0-8ecb-9339f277c594",
+ CellTags->"PrimaryExamplesSection",
+ CellID->678279428],
+Cell[CellGroupData[{
+Cell[9942, 260, 1415, 37, 70, "ExampleSection",ExpressionUUID->"f14deb56-073a-42c8-95fb-cee7c778a1db",
+ CellID->999148120],
+Cell[11360, 299, 124, 1, 70, "ExampleText",ExpressionUUID->"555c5a38-ff38-4247-83b3-47ee1d66e77a",
+ CellID->210834210],
+Cell[CellGroupData[{
+Cell[11509, 304, 770, 17, 70, "Input",ExpressionUUID->"a60778fd-8cf7-4494-b264-405be564effc",
+ CellID->206829906],
+Cell[12282, 323, 3039, 63, 70, "Output",ExpressionUUID->"82b9d74d-b3c4-459c-9a79-f1559406964b",
+ CellID->284332197]
+}, Open  ]],
+Cell[15336, 389, 132, 1, 70, "ExampleText",ExpressionUUID->"68d9d032-c4c7-4234-bc31-5c8d0bdef9ad",
+ CellID->151316493],
+Cell[CellGroupData[{
+Cell[15493, 394, 402, 11, 70, "Input",ExpressionUUID->"0b488456-69fc-44a6-b059-78c5d72f068b",
+ CellID->465613004],
+Cell[15898, 407, 358, 10, 70, "Output",ExpressionUUID->"b2a00897-59e1-4e1e-9b33-444f3bce2e33",
+ CellID->455275871]
+}, Open  ]],
+Cell[16271, 420, 143, 1, 70, "ExampleText",ExpressionUUID->"5c5b2b2c-ccd0-4a87-bd35-13ffe9a0ae5b",
+ CellID->247516658],
+Cell[CellGroupData[{
+Cell[16439, 425, 203, 4, 70, "Input",ExpressionUUID->"52e50bdd-9951-4a0f-afc7-16791739dcaa",
+ CellID->573194341],
+Cell[16645, 431, 298, 8, 70, "Output",ExpressionUUID->"d2bb8974-a9a9-485e-bc1d-f421a87911be",
+ CellID->29812447]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[17185, 448, 78, 0, 70, "FooterCell",ExpressionUUID->"9232d9ee-3b3a-4a84-8356-89afd7a9aa91"]
+}
+]
+*)
+
+(* End of internal cache information *)

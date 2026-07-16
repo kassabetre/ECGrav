@@ -1,0 +1,592 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     23061,        583]
+NotebookOptionsPosition[     17759,        472]
+NotebookOutlinePosition[     20553,        536]
+CellTagsIndexPosition[     20468,        531]
+WindowTitle->FractionInLargestKPathComponent
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "f91d4a63-6d3e-4344-b380-6af37f2b18ad"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "d67f3863-3691-484c-9f87-16a07fdedaa5"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "228b3f6e-e81c-4611-b87a-81e0e3f3e2d7"]
+        }],ExpressionUUID->"02d20b86-b9fb-4a26-8fb0-bf301d34d4bc"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/FractionInLargestKPathComponent\"" :> None, 
+        "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard["ECGrav/ref/FractionInLargestKPathComponent"], 
+        Delimiter, "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/\
+FractionInLargestKPathComponent.html"], StandardForm]], "Input", 
+                TextClipboardType -> "PlainText"]}, Visible -> False]]; 
+          SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/FractionInLargestKPathComponent") <> ".html"], 
+             None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "a00910c0-5b3b-488c-907e-74ee0f311c24"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "6fda1744-2eed-4bb6-84a8-11730e7d59c9"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"19999ead-7831-4bad-a0be-2e9413270c95"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"ec575ed6-f02b-4c41-88e8-c35f793ae49a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "FractionInLargestKPathComponent", "ObjectName",ExpressionUUID->
+      "a5d4ef10-734a-4d6b-9b6c-5fbb79fbc5b4"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"e2fc7371-ae40-4588-89cf-2f47f34dd3eb"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "5e41d008-e65d-4f3b-a10b-3309b0112ecf"]
+    }],ExpressionUUID->"10d6a152-7f14-4ba5-95ec-b797f517c748"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"e278c15d-58d1-45d1-864b-\
+200d5a2a1375"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["FractionInLargestKPathComponent"]], 
+         "paclet:ECGrav/ref/FractionInLargestKPathComponent", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["g_Graph", "TI"], ",", 
+        StyleBox["k_Integer", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "c8186c37-557d-4d53-9267-b467fcf1e1fe"],
+     "\[LineSeparator]Given a graph ",
+     Cell[BoxData[
+      StyleBox["g", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "4f927e25-6694-429a-9c46-e10bbf984443"],
+     " and dimension ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "4422363e-8afa-4496-9045-554e1e86a11f"],
+     ", it computes the ratio of the number of vertices in the largest ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "50900fbf-78fa-46cb-8812-65f0e7f63c44"],
+     "-path connected component to the total number of vertices in the \
+complex. If ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "b42f3bb3-2d6a-4512-b0a3-8e7e9c1ecc4b"],
+     " is not specified, it uses ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "5ab6ddee-5507-4589-90fb-3807d1b69e16"],
+     " = size of the largest maximal clique."
+    }],ExpressionUUID->"893cb0e1-b5ce-449f-bb2d-f45ef03aa6a8"]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["FractionInLargestKPathComponent"]], 
+         "paclet:ECGrav/ref/FractionInLargestKPathComponent", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["amat_List", "TI"], ",", 
+        StyleBox["k_Integer", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "9ffe5bfd-d277-4c44-a929-d36afb0ffea5"],
+     "\[LineSeparator]Given a graph adjacency matrix ",
+     Cell[BoxData[
+      StyleBox["amat", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "ab4fc51d-b283-447f-91bd-a737b193a37d"],
+     " and dimension ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "cabc1377-e6e3-492a-825a-8fb58409a261"],
+     ", it computes the ratio of the number of vertices in the largest ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "efee77d8-a0dd-4596-848d-52251d929df2"],
+     "-path connected component to the total number of vertices in the \
+complex. If ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "8b5f9744-9df7-433e-b194-058b119171c4"],
+     " is not specified, it uses ",
+     Cell[BoxData[
+      StyleBox["k", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "0c37aa50-3f7e-434a-8e79-fc338c228ba6"],
+     " = size of the largest maximal clique."
+    }],ExpressionUUID->"d1c30284-8b2a-4ef3-9de2-af07ad03547b"]}
+  }]], "Usage",
+ CellID->183606134,ExpressionUUID->"6b797634-7716-4255-ac69-375205d2d7db"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"a9ef6ac9-7e64-49e3-adbc-6f3d6855abcd"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"cb199790-9ae0-47b9-8be7-4ada230e8935"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "4293adb9-cb7a-4584-a154-ff6261455546"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->855077228,ExpressionUUID->"3706138e-c1ee-41f9-b2cb-6348abce3dd9"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"280f6a3c-ba9d-43bf-935e-f0a5859a2fe9"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"13f4ddfc-1349-4218-a460-93dbd46d503d"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "77c1700a-d7d3-4a21-bece-34ad6df430be"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->322405272,ExpressionUUID->"fd0508db-0c93-43a3-9d54-0c7a96e1a6e2"],
+
+Cell["A vertex labeled graph, g:", "ExampleText",
+ CellID->210834210,ExpressionUUID->"2adf054b-65ee-4467-b6d4-682c85dba20e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"g", " ", "=", " ", 
+  RowBox[{"Graph", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "5"}], ",", 
+      RowBox[{"5", "\[UndirectedEdge]", "6"}], ",", 
+      RowBox[{"6", "\[UndirectedEdge]", "7"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+    RowBox[{"ImageSize", "->", "Medium"}]}], "]"}]}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->206829906,ExpressionUUID->"42567f88-5f06-4ab8-9bf8-72af77a18d9b"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 2, 3, 4, 5, 6, 7}, {
+      Null, {{1, 2}, {1, 3}, {2, 3}, {4, 5}, {5, 6}, {6, 7}}}, {
+      ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{0.8009701829958562, -1.1718429912444641`}, {
+         1.3040416244171098`, -0.30759805089851544`}}, {{
+         0.8009701829958562, -1.1718429912444641`}, {
+         0.3040479676145957, -0.30404796761459574`}}, {{
+         1.3040416244171098`, -0.30759805089851544`}, {
+         0.3040479676145957, -0.30404796761459574`}}, {{
+         3.3008667690157423`, -1.7799389264736556`}, {
+         2.333833109778215, -1.7799389264736583`}}, {{
+         2.333833109778215, -1.7799389264736583`}, {
+         1.2697875111823969`, -1.7799389264736576`}}, {{
+         1.2697875111823969`, -1.7799389264736576`}, {
+         0.30404796761459574`, -1.7799389264736558`}}}, 0.03021670332601524]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {
+         DiskBox[{0.8009701829958562, -1.1718429912444641`}, 
+          0.03021670332601524], 
+         InsetBox["1", 
+          Offset[{2, 2}, {0.8311868863218714, -1.141626287918449}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.3040416244171098`, -0.30759805089851544`}, 
+          0.03021670332601524], 
+         InsetBox["2", 
+          Offset[{2, 2}, {1.334258327743125, -0.2773813475725002}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.3040479676145957, -0.30404796761459574`}, 
+          0.03021670332601524], 
+         InsetBox["3", 
+          Offset[{2, 2}, {0.3342646709406109, -0.2738312642885805}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{3.3008667690157423`, -1.7799389264736556`}, 
+          0.03021670332601524], 
+         InsetBox["4", 
+          Offset[{2, 2}, {3.3310834723417577, -1.7497222231476404}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.333833109778215, -1.7799389264736583`}, 
+          0.03021670332601524], 
+         InsetBox["5", 
+          Offset[{2, 2}, {2.3640498131042302, -1.749722223147643}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.2697875111823969`, -1.7799389264736576`}, 
+          0.03021670332601524], 
+         InsetBox["6", 
+          Offset[{2, 2}, {1.300004214508412, -1.7497222231476424}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.30404796761459574`, -1.7799389264736558`}, 
+          0.03021670332601524], 
+         InsetBox["7", 
+          Offset[{2, 2}, {0.33426467094061096, -1.7497222231476406}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->491150609,ExpressionUUID->"dc1eab22-8c96-4cd4-9295-54a8ab78246a"]
+}, Open  ]],
+
+Cell["\<\
+Find the ratio of vertices in the largest 1-path connected component to the \
+total number of vertices in the g:\
+\>", "ExampleText",
+ CellID->247516658,ExpressionUUID->"9c398c32-f044-4d46-880a-4f8d6fca64ef"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FractionInLargestKPathComponent", "[", 
+  RowBox[{"g", ",", "1"}], "]"}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->573194341,ExpressionUUID->"2fef75b7-b5f5-4c9e-b811-9e22397935a0"],
+
+Cell[BoxData[
+ FractionBox["4", "7"]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->357440470,ExpressionUUID->"ca25a2dd-a181-4f12-80e5-783c9d90c361"]
+}, Open  ]],
+
+Cell["g has graph adjacency matrix:", "ExampleText",
+ CellID->121766025,ExpressionUUID->"0d82ddf0-3a5c-4532-b952-1337af61386d"],
+
+Cell[CellGroupData[{
+
+Cell["Amat = Normal[AdjacencyMatrix[g]]", "Input",
+ CellLabel->"In[3]:=",
+ CellID->61058880,ExpressionUUID->"9981ee56-b081-4ea5-9493-331dbbfb461a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "1", ",", "0"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "1"}],
+     "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0"}],
+     "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[3]=",
+ CellID->107205231,ExpressionUUID->"ab7de39e-249d-4d41-be1d-3461f89f3517"]
+}, Open  ]],
+
+Cell["\<\
+Find the ratio of vertices in the largest 2-path connected component to the \
+total number of vertices in the g using Amat:\
+\>", "ExampleText",
+ CellID->84295877,ExpressionUUID->"f4d315c7-26d2-44fc-b0f3-e9f73c3c2ac4"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FractionInLargestKPathComponent", "[", 
+  RowBox[{"Amat", ",", "2"}], "]"}]], "Input",
+ CellLabel->"In[4]:=",
+ CellID->503297567,ExpressionUUID->"0b877fcd-9f04-4d47-9ea2-eaf893a456e1"],
+
+Cell[BoxData[
+ FractionBox["3", "7"]], "Output",
+ CellLabel->"Out[4]=",
+ CellID->129249853,ExpressionUUID->"f09a6e6c-ca7b-4a7f-bd75-55c47e19e777"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"247c74ed-4be4-4229-9abe-c79b39faa735"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"FractionInLargestKPathComponent",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 54, 50.233432}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "FractionInLargestKPathComponent[g_Graph, k_Integer] Given a graph g and \
+dimension k, it computes the ratio of the number of vertices in the largest \
+k-path connected component to the total number of vertices in the complex. If \
+k is not specified, it uses k = size of the largest maximal clique. \
+FractionInLargestKPathComponent[amat_List, k_Integer] Given a graph adjacency \
+matrix amat and dimension k, it computes the ratio of the number of vertices \
+in the largest k-path connected component to the total number of vertices in \
+the complex. If k is not specified, it uses k = size of the largest maximal \
+clique.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "FractionInLargestKPathComponent", "titlemodifier" -> "", 
+    "metadescription" -> "", "windowtitle" -> 
+    "FractionInLargestKPathComponent", "type" -> "Symbol", "uri" -> 
+    "ECGrav/ref/FractionInLargestKPathComponent"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[7969, 209, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"3706138e-c1ee-41f9-b2cb-6348abce3dd9",
+   CellTags->"PrimaryExamplesSection",
+   CellID->855077228]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 20269, 524}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[599, 21, 3049, 73, 70, "AnchorBarGrid",ExpressionUUID->"19999ead-7831-4bad-a0be-2e9413270c95",
+ CellID->1],
+Cell[3651, 96, 89, 0, 70, "ContextNameCell",ExpressionUUID->"ec575ed6-f02b-4c41-88e8-c35f793ae49a"],
+Cell[CellGroupData[{
+Cell[3765, 100, 574, 14, 70, "ObjectNameGrid",ExpressionUUID->"e278c15d-58d1-45d1-864b-200d5a2a1375"],
+Cell[4342, 116, 3590, 88, 70, "Usage",ExpressionUUID->"6b797634-7716-4255-ac69-375205d2d7db",
+ CellID->183606134]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7969, 209, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"3706138e-c1ee-41f9-b2cb-6348abce3dd9",
+ CellTags->"PrimaryExamplesSection",
+ CellID->855077228],
+Cell[CellGroupData[{
+Cell[9431, 251, 1415, 37, 70, "ExampleSection",ExpressionUUID->"fd0508db-0c93-43a3-9d54-0c7a96e1a6e2",
+ CellID->322405272],
+Cell[10849, 290, 124, 1, 70, "ExampleText",ExpressionUUID->"2adf054b-65ee-4467-b6d4-682c85dba20e",
+ CellID->210834210],
+Cell[CellGroupData[{
+Cell[10998, 295, 664, 15, 70, "Input",ExpressionUUID->"42567f88-5f06-4ab8-9bf8-72af77a18d9b",
+ CellID->206829906],
+Cell[11665, 312, 3267, 72, 70, "Output",ExpressionUUID->"dc1eab22-8c96-4cd4-9295-54a8ab78246a",
+ CellID->491150609]
+}, Open  ]],
+Cell[14947, 387, 218, 4, 70, "ExampleText",ExpressionUUID->"9c398c32-f044-4d46-880a-4f8d6fca64ef",
+ CellID->247516658],
+Cell[CellGroupData[{
+Cell[15190, 395, 205, 4, 70, "Input",ExpressionUUID->"2fef75b7-b5f5-4c9e-b811-9e22397935a0",
+ CellID->573194341],
+Cell[15398, 401, 146, 3, 70, "Output",ExpressionUUID->"ca25a2dd-a181-4f12-80e5-783c9d90c361",
+ CellID->357440470]
+}, Open  ]],
+Cell[15559, 407, 127, 1, 70, "ExampleText",ExpressionUUID->"0d82ddf0-3a5c-4532-b952-1337af61386d",
+ CellID->121766025],
+Cell[CellGroupData[{
+Cell[15711, 412, 147, 2, 70, "Input",ExpressionUUID->"9981ee56-b081-4ea5-9493-331dbbfb461a",
+ CellID->61058880],
+Cell[15861, 416, 949, 25, 70, "Output",ExpressionUUID->"ab7de39e-249d-4d41-be1d-3461f89f3517",
+ CellID->107205231]
+}, Open  ]],
+Cell[16825, 444, 228, 4, 70, "ExampleText",ExpressionUUID->"f4d315c7-26d2-44fc-b0f3-e9f73c3c2ac4",
+ CellID->84295877],
+Cell[CellGroupData[{
+Cell[17078, 452, 208, 4, 70, "Input",ExpressionUUID->"0b877fcd-9f04-4d47-9ea2-eaf893a456e1",
+ CellID->503297567],
+Cell[17289, 458, 146, 3, 70, "Output",ExpressionUUID->"f09a6e6c-ca7b-4a7f-bd75-55c47e19e777",
+ CellID->129249853]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[17677, 470, 78, 0, 70, "FooterCell",ExpressionUUID->"247c74ed-4be4-4229-9abe-c79b39faa735"]
+}
+]
+*)
+
+(* End of internal cache information *)

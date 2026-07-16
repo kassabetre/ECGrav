@@ -1,0 +1,574 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     21688,        565]
+NotebookOptionsPosition[     16675,        456]
+NotebookOutlinePosition[     19040,        514]
+CellTagsIndexPosition[     18955,        509]
+WindowTitle->IsomorphicSimplicialComplexQ
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "586f108f-3e7e-4338-8bf3-560e38ad4eed"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "cec39cc4-2a0e-4d65-82d0-744b06158a58"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "f29f668e-6364-4572-8897-2b68f6205f5a"]
+        }],ExpressionUUID->"a881e56c-80fe-44e7-a356-9eeec38d63b9"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/IsomorphicSimplicialComplexQ\"" :> None, 
+        "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard["ECGrav/ref/IsomorphicSimplicialComplexQ"], Delimiter,
+         "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/\
+IsomorphicSimplicialComplexQ.html"], StandardForm]], "Input", 
+                TextClipboardType -> "PlainText"]}, Visible -> False]]; 
+          SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/IsomorphicSimplicialComplexQ") <> ".html"], 
+             None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "05848ae2-573d-4651-8e73-c1b54d22e514"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "98e2b745-1837-471f-ad16-700ed2210d34"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"28255965-f28d-4d72-a81d-8b3d72fbb7be"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"7c12e410-0866-474d-b60a-65dd52cd5506"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "IsomorphicSimplicialComplexQ", "ObjectName",ExpressionUUID->
+      "86dfdcd1-a819-41f6-9810-92d97ce68dd7"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"70a6c52c-3d5f-46c6-ae5d-ce4065d3d2ea"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "08c3bc98-977b-4ee8-9c67-586c65185019"]
+    }],ExpressionUUID->"92a88a7d-50e3-4839-b015-046881dc9de6"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"914a9277-e1a3-4dfd-abc8-\
+196dc5383b33"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["IsomorphicSimplicialComplexQ"]], 
+         "paclet:ECGrav/ref/IsomorphicSimplicialComplexQ", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        RowBox[{
+         SubscriptBox[
+          StyleBox["c", "TI"], "1"], 
+         StyleBox[
+          RowBox[{"_", 
+           StyleBox["List", "TI"]}]]}], ",", 
+        RowBox[{
+         SubscriptBox[
+          StyleBox["c", "TI"], 
+          StyleBox["2", "TI"]], 
+         StyleBox[
+          RowBox[{"_", 
+           StyleBox["List", "TI"]}]]}]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "93eb76c0-412e-4ff7-aa89-9da869f7d72f"],
+     "\[LineSeparator]checks whether the pure simplicial complexes ",
+     Cell[BoxData[
+      StyleBox["c1", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "15404fb3-dfd0-4053-8f2e-99a131475c20"],
+     " and ",
+     Cell[BoxData[
+      StyleBox["c2", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "d74bc33d-4b70-46de-9a1f-57fbf875195f"],
+     " (each given as a list of facets) are isomorphic under vertex labeling, \
+returning True if isomorphic."
+    }],ExpressionUUID->"83e995b5-a6c5-4dd6-8903-ad179fafa514"]}
+  }]], "Usage",
+ CellID->178438634,ExpressionUUID->"f9e2b323-cc74-46b9-89ef-f3e1212108f3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"9f46163f-35e7-47a6-9511-48005eee8bc4"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"dd5574e1-b497-4cb1-904d-bb02274be839"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "13bff8fa-cf1c-42dc-8695-ef8a6d02b533"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->367218994,ExpressionUUID->"b7b55c1b-6b0e-4192-8b77-27e2f4c7b8c7"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"4a8a6866-16ef-4f8b-a979-1a28cbbbe5b4"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"87e871bb-9c67-4b0b-ab23-16bb751401e8"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "1bd6b11e-8382-473e-9e13-a0b1c0c4a78c"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->2129114327,ExpressionUUID->"33077db6-dd8a-44ef-aef1-8d267a7ce3e6"],
+
+Cell["Two vertex labeled graphs, g1 and g2:", "ExampleText",
+ CellID->598891051,ExpressionUUID->"9fefae55-a8dd-4235-86fa-a44144e05d37"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"g1", " ", "=", " ", 
+  RowBox[{"Graph", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"3", "\[UndirectedEdge]", "4"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "3"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+    RowBox[{"ImageSize", "->", "Medium"}]}], "]"}]}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->4568171,ExpressionUUID->"53307a85-6828-4987-8424-1b494680b1d0"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {2, 3}, {3, 4}, {1, 3}}}, {
+      ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{0.0001964751172666146, 0.}, {0., 0.8475386976306538}}, {{
+         0.0001964751172666146, 0.}, {0.9164048379140673, 
+         0.42386488156829044`}}, {{0., 0.8475386976306538}, {
+         0.9164048379140673, 0.42386488156829044`}}, {{0.9164048379140673, 
+         0.42386488156829044`}, {2.031430211699506, 0.42382043094346533`}}}, 
+         0.022865977658369868`]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {DiskBox[{0.0001964751172666146, 0.}, 0.022865977658369868], 
+         InsetBox["1", 
+          Offset[{2, 2}, {0.023062452775636483, 0.022865977658369868}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0., 0.8475386976306538}, 0.022865977658369868], 
+         InsetBox["2", 
+          Offset[{2, 2}, {0.022865977658369868, 0.8704046752890237}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.9164048379140673, 0.42386488156829044`}, 
+          0.022865977658369868], 
+         InsetBox["3", 
+          Offset[{2, 2}, {0.9392708155724372, 0.44673085922666034}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.031430211699506, 0.42382043094346533`}, 
+          0.022865977658369868], 
+         InsetBox["4", 
+          Offset[{2, 2}, {2.054296189357876, 0.44668640860183517}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->2627159,ExpressionUUID->"f30723fb-bece-47f0-8539-d98cc1ad3abb"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"g2", " ", "=", " ", 
+  RowBox[{"Graph", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "4"}], ",", 
+      RowBox[{"4", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "4"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "3"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+    RowBox[{"ImageSize", "->", "Medium"}]}], "]"}]}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->445647403,ExpressionUUID->"271d1b19-b5af-4e71-990e-ed62416a8e5d"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 4, 3, 2}, {Null, {{1, 2}, {2, 3}, {4, 2}, {1, 3}}}, {
+      ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{0.002089066523780936, 0.}, {0.9175848200953383, 
+         0.4241670904205272}}, {{0.002089066523780936, 0.}, {0., 
+         0.8473715512181632}}, {{0.9175848200953383, 0.4241670904205272}, {0.,
+          0.8473715512181632}}, {{0.9175848200953383, 0.4241670904205272}, {
+         2.0324134878538267`, 0.42430280790670055`}}}, 
+         0.022873923537282098`]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {DiskBox[{0.002089066523780936, 0.}, 0.022873923537282098], 
+         InsetBox["1", 
+          Offset[{2, 2}, {0.024962990061063034, 0.022873923537282098}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.9175848200953383, 0.4241670904205272}, 
+          0.022873923537282098], 
+         InsetBox["4", 
+          Offset[{2, 2}, {0.9404587436326204, 0.44704101395780926}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0., 0.8473715512181632}, 0.022873923537282098], 
+         InsetBox["3", 
+          Offset[{2, 2}, {0.022873923537282098, 0.8702454747554453}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.0324134878538267`, 0.42430280790670055`}, 
+          0.022873923537282098], 
+         InsetBox["2", 
+          Offset[{2, 2}, {2.0552874113911086, 0.4471767314439826}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->120216977,ExpressionUUID->"d97eddea-dd3b-4a6e-8372-3b61a98ac182"]
+}, Open  ]],
+
+Cell["\<\
+As pure simplicial complexes, g1 and g2 have the following facets:\
+\>", "ExampleText",
+ CellID->260155553,ExpressionUUID->"93da732a-1d6d-43f9-b201-ffa216de9f81"],
+
+Cell[CellGroupData[{
+
+Cell["facets1 = {{1,2},{1,3},{2,3},{3,4}}", "Input",
+ CellLabel->"In[3]:=",
+ CellID->14879137,ExpressionUUID->"d0597353-e50d-4239-8ef9-046720c78440"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "2"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "3"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"2", ",", "3"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"3", ",", "4"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[3]=",
+ CellID->84065733,ExpressionUUID->"798894f9-4aa9-44a8-ae18-4bd617422b95"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"facets2", " ", "=", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"1", ",", "3"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "4"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"3", ",", "4"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"2", ",", "4"}], "}"}]}], "}"}]}]], "Input",
+ CellLabel->"In[4]:=",
+ CellID->480956928,ExpressionUUID->"cbe1e424-84c3-4bbb-a07a-0251bc15f72b"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "3"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "4"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"3", ",", "4"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"2", ",", "4"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[4]=",
+ CellID->423241761,ExpressionUUID->"b6a5a5e4-68ed-416d-8347-7c245e0c2076"]
+}, Open  ]],
+
+Cell["\<\
+Check if facets1 and facets2 are isomorphic under vertex labeling:\
+\>", "ExampleText",
+ CellID->37876271,ExpressionUUID->"b05fac5a-3a16-496d-aad7-d1b3067107c0"],
+
+Cell[CellGroupData[{
+
+Cell["IsomorphicSimplicialComplexQ[facets1,facets2]", "Input",
+ CellLabel->"In[5]:=",
+ CellID->129298599,ExpressionUUID->"1758425e-9c99-40d8-8d5a-51797ceba1e8"],
+
+Cell[BoxData["True"], "Output",
+ CellLabel->"Out[5]=",
+ CellID->410953432,ExpressionUUID->"5653dee8-0835-4e3c-8be8-c99d4c22eb5a"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"8c6fca29-3d57-4e55-acdc-be1b1be7ae90"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"IsomorphicSimplicialComplexQ",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 54, 57.165187}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "IsomorphicSimplicialComplexQ[c1 _List, c2 _List] checks whether the pure \
+simplicial complexes c1 and c2 (each given as a list of facets) are \
+isomorphic under vertex labeling, returning True if isomorphic.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "IsomorphicSimplicialComplexQ", "titlemodifier" -> "", "metadescription" -> 
+    "", "windowtitle" -> "IsomorphicSimplicialComplexQ", "type" -> "Symbol", 
+    "uri" -> "ECGrav/ref/IsomorphicSimplicialComplexQ"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[5870, 162, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"b7b55c1b-6b0e-4192-8b77-27e2f4c7b8c7",
+   CellTags->"PrimaryExamplesSection",
+   CellID->367218994]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 18756, 502}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[596, 21, 3037, 73, 70, "AnchorBarGrid",ExpressionUUID->"28255965-f28d-4d72-a81d-8b3d72fbb7be",
+ CellID->1],
+Cell[3636, 96, 89, 0, 70, "ContextNameCell",ExpressionUUID->"7c12e410-0866-474d-b60a-65dd52cd5506"],
+Cell[CellGroupData[{
+Cell[3750, 100, 571, 14, 70, "ObjectNameGrid",ExpressionUUID->"914a9277-e1a3-4dfd-abc8-196dc5383b33"],
+Cell[4324, 116, 1509, 41, 70, "Usage",ExpressionUUID->"f9e2b323-cc74-46b9-89ef-f3e1212108f3",
+ CellID->178438634]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5870, 162, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"b7b55c1b-6b0e-4192-8b77-27e2f4c7b8c7",
+ CellTags->"PrimaryExamplesSection",
+ CellID->367218994],
+Cell[CellGroupData[{
+Cell[7332, 204, 1416, 37, 70, "ExampleSection",ExpressionUUID->"33077db6-dd8a-44ef-aef1-8d267a7ce3e6",
+ CellID->2129114327],
+Cell[8751, 243, 135, 1, 70, "ExampleText",ExpressionUUID->"9fefae55-a8dd-4235-86fa-a44144e05d37",
+ CellID->598891051],
+Cell[CellGroupData[{
+Cell[8911, 248, 557, 13, 70, "Input",ExpressionUUID->"53307a85-6828-4987-8424-1b494680b1d0",
+ CellID->4568171],
+Cell[9471, 263, 2086, 44, 70, "Output",ExpressionUUID->"f30723fb-bece-47f0-8539-d98cc1ad3abb",
+ CellID->2627159]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[11594, 312, 559, 13, 70, "Input",ExpressionUUID->"271d1b19-b5af-4e71-990e-ed62416a8e5d",
+ CellID->445647403],
+Cell[12156, 327, 2081, 44, 70, "Output",ExpressionUUID->"d97eddea-dd3b-4a6e-8372-3b61a98ac182",
+ CellID->120216977]
+}, Open  ]],
+Cell[14252, 374, 172, 3, 70, "ExampleText",ExpressionUUID->"93da732a-1d6d-43f9-b201-ffa216de9f81",
+ CellID->260155553],
+Cell[CellGroupData[{
+Cell[14449, 381, 149, 2, 70, "Input",ExpressionUUID->"d0597353-e50d-4239-8ef9-046720c78440",
+ CellID->14879137],
+Cell[14601, 385, 386, 12, 70, "Output",ExpressionUUID->"798894f9-4aa9-44a8-ae18-4bd617422b95",
+ CellID->84065733]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15024, 402, 434, 13, 70, "Input",ExpressionUUID->"cbe1e424-84c3-4bbb-a07a-0251bc15f72b",
+ CellID->480956928],
+Cell[15461, 417, 387, 12, 70, "Output",ExpressionUUID->"b6a5a5e4-68ed-416d-8347-7c245e0c2076",
+ CellID->423241761]
+}, Open  ]],
+Cell[15863, 432, 171, 3, 70, "ExampleText",ExpressionUUID->"b05fac5a-3a16-496d-aad7-d1b3067107c0",
+ CellID->37876271],
+Cell[CellGroupData[{
+Cell[16059, 439, 160, 2, 70, "Input",ExpressionUUID->"1758425e-9c99-40d8-8d5a-51797ceba1e8",
+ CellID->129298599],
+Cell[16222, 443, 129, 2, 70, "Output",ExpressionUUID->"5653dee8-0835-4e3c-8be8-c99d4c22eb5a",
+ CellID->410953432]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[16593, 454, 78, 0, 70, "FooterCell",ExpressionUUID->"8c6fca29-3d57-4e55-acdc-be1b1be7ae90"]
+}
+]
+*)
+
+(* End of internal cache information *)

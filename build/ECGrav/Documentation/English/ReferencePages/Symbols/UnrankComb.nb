@@ -1,0 +1,424 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     15552,        415]
+NotebookOptionsPosition[     10942,        314]
+NotebookOutlinePosition[     13298,        372]
+CellTagsIndexPosition[     13213,        367]
+WindowTitle->UnrankComb
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "dc0e289d-a713-4fad-a64d-89bb14bd2525"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "cca79fa1-f719-448d-85cd-f91342d0d74c"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "8e031c6c-6a66-4d50-9d58-8760445d132c"]
+        }],ExpressionUUID->"56216bf9-5d5e-40e2-848f-737d4c4922c5"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/UnrankComb\"" :> None, 
+        "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard["ECGrav/ref/UnrankComb"], Delimiter, 
+        "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/\
+UnrankComb.html"], StandardForm]], "Input", TextClipboardType -> 
+                "PlainText"]}, Visible -> False]]; 
+          SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/UnrankComb") <> ".html"], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "1ad181b2-81fd-4f5b-a6f2-92d8b03a6c83"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "fa3d0069-0b89-415e-96ae-b7454348b6b0"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"e5c42660-b63a-47af-93fb-fe88b8db8e07"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"3256a16d-5599-4318-887b-c4bb0dec5c5b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "UnrankComb", "ObjectName",ExpressionUUID->
+      "6f70ca98-a245-4853-bdc3-831d4e52aa44"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"282ce23c-1143-49bb-a37e-968728ee6a78"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "8d846470-70f1-468b-a028-75ed9cf6ad72"]
+    }],ExpressionUUID->"47b70162-387a-4eb0-a24a-ab83a9493d2a"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"96c37498-2f70-499d-8e76-\
+b22e64de0375"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["UnrankComb"]], "paclet:ECGrav/ref/UnrankComb", 
+         "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["l_Integer", "TI"], ",", 
+        StyleBox["numLabels_Integer", "TI"], ",", 
+        StyleBox["setSize_Integer", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "9dd3df90-5dde-400c-8e5e-5ddfc204c734"],
+     "\[LineSeparator]Given an integer ",
+     Cell[BoxData[
+      StyleBox["l", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "8283a2ae-e189-4151-b64a-7273dd7deaab"],
+     " between 0 and ",
+     Cell[BoxData[
+      StyleBox["numLabels", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "65fb87e4-fce6-4fa0-9193-90abaa596d9b"],
+     " choose ",
+     Cell[BoxData[
+      StyleBox["setSize", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "8382c26c-6480-462b-af68-e70d2bb3a66b"],
+     "-1,it assigns a unique sorted set which is a ",
+     Cell[BoxData[
+      StyleBox["setSize", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "f5110cd0-7e6c-45ff-89c1-407ad8eb9a0e"],
+     "-subset of {0,1,,...,",
+     Cell[BoxData[
+      StyleBox["numLabels", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "48876a12-e32e-46b1-a7af-58b98009e746"],
+     "-1}.\[IndentingNewLine]E.g., UnrankComb[0, 3, 2] = {0,1}, and \
+UnrankComb[2, 3, 2] = {1,2}."
+    }],ExpressionUUID->"3e89e560-5d1a-439c-9f4a-a7d00c0b91aa"]}
+  }]], "Usage",
+ CellID->108755881,ExpressionUUID->"fe30893a-feac-4cc9-b617-5ec164dfdd1b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"a7802e5b-9075-46be-9827-e6dbc121f143"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"c5fa70f0-0da7-421c-b739-6fd48cce0c0d"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "338a60a1-2019-469c-992b-332382ee4e9a"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->271157050,ExpressionUUID->"291d828b-5555-4d5c-adfe-af52eb0a9fb1"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"c605580c-2e60-4768-9419-138f72725a94"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"b4e26e71-a92b-4435-9b4a-89c6baf6baf7"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "b9420d92-0c12-43ab-b0d1-8a7447e08900"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->376240416,ExpressionUUID->"4ecc8a29-f160-4b85-a1e9-7df31237715f"],
+
+Cell["Suppose:", "ExampleText",
+ CellID->245352203,ExpressionUUID->"4daa722c-693d-4c68-b3ba-af1c9e5aa32a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"l", "=", "0"}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->393450455,ExpressionUUID->"4c1c020e-c5f8-4156-8fcf-6998a1b2ce77"],
+
+Cell[BoxData["0"], "Output",
+ CellLabel->"Out[1]=",
+ CellID->309946824,ExpressionUUID->"58d7eb40-faf8-4324-b164-9ed574fa660e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"numLabels", "=", "3"}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->64916732,ExpressionUUID->"30e414ef-5179-4a97-a95e-e269c92c1a60"],
+
+Cell[BoxData["3"], "Output",
+ CellLabel->"Out[2]=",
+ CellID->348958168,ExpressionUUID->"66e61670-49e6-4e6a-a90a-6d7981b791bd"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"setSize", "=", "2"}]], "Input",
+ CellLabel->"In[3]:=",
+ CellID->228913857,ExpressionUUID->"e13eb22f-e4f8-456e-a6a3-35983ba30119"],
+
+Cell[BoxData["2"], "Output",
+ CellLabel->"Out[3]=",
+ CellID->261362094,ExpressionUUID->"f1b2d08d-ab1e-40bc-a523-dfdfe83c9dd9"]
+}, Open  ]],
+
+Cell["\<\
+The unique setSize-subset of the set {0, 1, ..., numLabels - 1} corresponding \
+to the integer 0 is {0, 1}:\
+\>", "ExampleText",
+ CellID->118576990,ExpressionUUID->"c9d4c478-b464-449b-8ec2-422d8c6f57a6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"UnrankComb", "[", 
+  RowBox[{"0", ",", "3", ",", "2"}], "]"}]], "Input",
+ CellLabel->"In[4]:=",
+ CellID->34235268,ExpressionUUID->"63ceb3b8-e0c9-4637-b903-c6f8615677e8"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1"}], "}"}]], "Output",
+ CellLabel->"Out[4]=",
+ CellID->3515091,ExpressionUUID->"a40a369f-c99b-4791-8c7c-af0f9c50abcb"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"f449891b-b65f-4c23-ae9d-431e6674da80"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"UnrankComb",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 55, 10.563004}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "UnrankComb[l_Integer, numLabels_Integer, setSize_Integer] Given an \
+integer l between 0 and numLabels choose setSize-1,it assigns a unique sorted \
+set which is a setSize-subset of {0,1,,...,numLabels-1}.\nE.g., UnrankComb[0, \
+3, 2] = {0,1}, and UnrankComb[2, 3, 2] = {1,2}.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "UnrankComb", "titlemodifier" -> "", 
+    "metadescription" -> "", "windowtitle" -> "UnrankComb", "type" -> 
+    "Symbol", "uri" -> "ECGrav/ref/UnrankComb"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[6074, 165, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"291d828b-5555-4d5c-adfe-af52eb0a9fb1",
+   CellTags->"PrimaryExamplesSection",
+   CellID->271157050]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 13014, 360}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[578, 21, 2951, 72, 70, "AnchorBarGrid",ExpressionUUID->"e5c42660-b63a-47af-93fb-fe88b8db8e07",
+ CellID->1],
+Cell[3532, 95, 89, 0, 70, "ContextNameCell",ExpressionUUID->"3256a16d-5599-4318-887b-c4bb0dec5c5b"],
+Cell[CellGroupData[{
+Cell[3646, 99, 553, 14, 70, "ObjectNameGrid",ExpressionUUID->"96c37498-2f70-499d-8e76-b22e64de0375"],
+Cell[4202, 115, 1835, 45, 70, "Usage",ExpressionUUID->"fe30893a-feac-4cc9-b617-5ec164dfdd1b",
+ CellID->108755881]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6074, 165, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"291d828b-5555-4d5c-adfe-af52eb0a9fb1",
+ CellTags->"PrimaryExamplesSection",
+ CellID->271157050],
+Cell[CellGroupData[{
+Cell[7536, 207, 1415, 37, 70, "ExampleSection",ExpressionUUID->"4ecc8a29-f160-4b85-a1e9-7df31237715f",
+ CellID->376240416],
+Cell[8954, 246, 106, 1, 70, "ExampleText",ExpressionUUID->"4daa722c-693d-4c68-b3ba-af1c9e5aa32a",
+ CellID->245352203],
+Cell[CellGroupData[{
+Cell[9085, 251, 147, 3, 70, "Input",ExpressionUUID->"4c1c020e-c5f8-4156-8fcf-6998a1b2ce77",
+ CellID->393450455],
+Cell[9235, 256, 126, 2, 70, "Output",ExpressionUUID->"58d7eb40-faf8-4324-b164-9ed574fa660e",
+ CellID->309946824]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9398, 263, 154, 3, 70, "Input",ExpressionUUID->"30e414ef-5179-4a97-a95e-e269c92c1a60",
+ CellID->64916732],
+Cell[9555, 268, 126, 2, 70, "Output",ExpressionUUID->"66e61670-49e6-4e6a-a90a-6d7981b791bd",
+ CellID->348958168]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9718, 275, 153, 3, 70, "Input",ExpressionUUID->"e13eb22f-e4f8-456e-a6a3-35983ba30119",
+ CellID->228913857],
+Cell[9874, 280, 126, 2, 70, "Output",ExpressionUUID->"f1b2d08d-ab1e-40bc-a523-dfdfe83c9dd9",
+ CellID->261362094]
+}, Open  ]],
+Cell[10015, 285, 213, 4, 70, "ExampleText",ExpressionUUID->"c9d4c478-b464-449b-8ec2-422d8c6f57a6",
+ CellID->118576990],
+Cell[CellGroupData[{
+Cell[10253, 293, 193, 4, 70, "Input",ExpressionUUID->"63ceb3b8-e0c9-4637-b903-c6f8615677e8",
+ CellID->34235268],
+Cell[10449, 299, 169, 4, 70, "Output",ExpressionUUID->"a40a369f-c99b-4791-8c7c-af0f9c50abcb",
+ CellID->3515091]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[10860, 312, 78, 0, 70, "FooterCell",ExpressionUUID->"f449891b-b65f-4c23-ae9d-431e6674da80"]
+}
+]
+*)
+
+(* End of internal cache information *)

@@ -1,0 +1,432 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     16541,        423]
+NotebookOptionsPosition[     12396,        336]
+NotebookOutlinePosition[     15181,        400]
+CellTagsIndexPosition[     15096,        395]
+WindowTitle->GenerateAllVertexLabeledPureSimplicialComplexes
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "85ce8d29-8c73-44aa-ac01-3739a74ea89f"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "ce198dee-3c5e-4781-8dd9-c4d8bbce69cd"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "ad9cc990-fa37-4fb5-a928-b53cf9c4e471"]
+        }],ExpressionUUID->"8b972a63-641c-4657-bc1a-5186e4be6a07"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/GenerateAllVertexLabeledPureSimplicialComplexes\"" :> 
+        None, "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard[
+         "ECGrav/ref/GenerateAllVertexLabeledPureSimplicialComplexes"], 
+        Delimiter, "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/\
+GenerateAllVertexLabeledPureSimplicialComplexes.html"], StandardForm]], 
+                "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+              False]]; SelectionMove[
+           DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/GenerateAllVertexLabeledPureSimplicialComplexes") <> 
+              ".html"], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "7f5be14f-679a-4d87-9cef-477a72a576e7"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "a1b4c752-8a97-4e9a-8134-119f73c821d0"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"e95a28d5-2ce4-48c1-846c-5d0a3543032c"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"469246bc-4aa4-458b-94e2-b0b5d5760ebb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "GenerateAllVertexLabeledPureSimplicialComplexes", "ObjectName",
+      ExpressionUUID->"f327a20b-058b-463b-9559-1fcfd9a94a13"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"34609d05-3bdc-42fb-8a8f-ac9ce32d88f3"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "7790ae59-679c-44e2-a981-d669b95929a8"]
+    }],ExpressionUUID->"d05154b7-1020-450e-8807-fe5003e0dde8"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"949a326b-37c8-4a65-9d8b-\
+47f837db79f4"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["GenerateAllVertexLabeledPureSimplicialComplexes"]], 
+         "paclet:ECGrav/ref/Sph", "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{"{", 
+        RowBox[{
+         StyleBox["p_Integer", "TI"], ",", 
+         StyleBox["q_Integer", "TI"], ",", 
+         StyleBox["n_Integer", "TI"]}], "}"}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "056510ba-0fe8-47a1-bd3c-c71e4619582c"],
+     "\[LineSeparator]returns a list of all vertex-labeled ",
+     Cell[BoxData[
+      StyleBox["p", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "a7bbec4b-41ce-4a7f-8ab8-f06b7f71256d"],
+     "-pure simplicial complexes of facet-order ",
+     Cell[BoxData[
+      StyleBox["q", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "e471f2e7-77b3-4738-9226-f98a73b5dbbc"],
+     " and ",
+     Cell[BoxData[
+      RowBox[{
+       StyleBox["n", "TI"], " "}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "1216c3c9-7f17-44fc-84a2-92339af3b8f0"],
+     " vertices (as lists of their facets). Vertices are labeled from the set \
+[n]={1,2,...,n}."
+    }],ExpressionUUID->"fb4ebb80-91e9-44fa-9256-c3a016f67790"]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["GenerateAllVertexLabeledPureSimplicialComplexes"]], 
+         "paclet:ECGrav/ref/Sph", "ECGrav Package Symbol"},
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{"{", 
+        RowBox[{
+         StyleBox["p_Integer", "TI"], ",", 
+         StyleBox["q_Integer", "TI"]}], "}"}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "5d9b9d40-10ff-4474-80a8-9bb464127a13"],
+     "\[LineSeparator]returns a list of vertex-labeled ",
+     Cell[BoxData[
+      StyleBox["p", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "3b486ae9-ed5e-4fee-8293-b0f44587d56d"],
+     "-pure simplicial complexes of facet-order ",
+     Cell[BoxData[
+      StyleBox["q", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "adcb9aa0-a71f-4549-97d2-f35de19fdae3"],
+     " for all vertex counts between ",
+     Cell[BoxData[
+      SubscriptBox["n", "min"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "0cecdda4-aa43-46fc-9f68-946830680342"],
+     " and n=",
+     Cell[BoxData[Cell[TextData[Cell[BoxData[
+       FormBox[Cell[TextData[Cell[BoxData[
+         FormBox[
+          RowBox[{
+           StyleBox["p", "TI"], "*", 
+           StyleBox["q", "TI"]}], TraditionalForm]], "InlineFormula",
+         ExpressionUUID->"75e6abb4-2cc5-4ea4-a3e0-d1041a546336"]],
+         ExpressionUUID->"4d62f270-86b5-4cc8-b356-de9d446d656b"], 
+        TraditionalForm]], "InlineFormula",ExpressionUUID->
+       "f820d757-51d0-4176-93b7-42d7d0a23e4e"]],ExpressionUUID->
+       "0d5bcf51-cf9e-4d21-84f4-7f3d90c71153"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "66885a1f-46c7-482a-beda-31adf8eaa4c0"],
+     " (as lists of their facets). Vertices are labeled from the set \
+[n]={1,2,...,n}."
+    }],ExpressionUUID->"75c95bda-282b-4187-a45b-7471de464234"]}
+  }]], "Usage",
+ CellID->6875675,ExpressionUUID->"565714a2-2859-4e03-8767-9f0ed46a68ad"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"9ee978ea-c030-4b95-b89a-f431c1eb83dd"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"14e14039-b6c1-40f2-90b5-520834952bde"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "2929d202-c7a9-46f7-8517-d808c9887465"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->1759458343,ExpressionUUID->"8efbd312-bb0a-475c-a655-2e425fa1b53f"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"6407fc39-c5b9-4c7e-98ff-ee1af734f68f"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"8335dbf8-7ec0-494d-8e66-3ddcf4413994"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "5022a572-36b5-4d3d-876b-56901352203a"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->366551611,ExpressionUUID->"b24f9a9c-0db2-4a02-88d5-81f4004d82d1"],
+
+Cell["\<\
+We find all vertex labeled purity 2 simplicial complexes with 3 vertices and \
+facet-order 2 (given as lists of their facets):\
+\>", "ExampleText",
+ CellID->234826861,ExpressionUUID->"93badfe3-ebcb-4079-959a-d5a767acbbf9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GenerateAllVertexLabeledPureSimplicialComplexes", "[", 
+  RowBox[{"{", 
+   RowBox[{"2", ",", "2", ",", "3"}], "}"}], "]"}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->144209353,ExpressionUUID->"98c55a3f-7162-432f-90b6-a737f781e340"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"1", ",", "3"}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "2"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"2", ",", "3"}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"2", ",", "3"}], "}"}]}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->140305993,ExpressionUUID->"1f27baa0-7c71-46d9-a20d-70dd407c43fa"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"ca366825-8223-483e-83d4-e03610fb8ca0"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GenerateAllVertexLabeledPureSimplicialComplexes",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 54, 51.595280}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "GenerateAllVertexLabeledPureSimplicialComplexes[{p_Integer, q_Integer, \
+n_Integer}] returns a list of all vertex-labeled p-pure simplicial complexes \
+of facet-order q and n vertices (as lists of their facets). Vertices are \
+labeled from the set [n]={1,2,...,n}. \
+GenerateAllVertexLabeledPureSimplicialComplexes[{p_Integer, q_Integer}] \
+returns a list of vertex-labeled p-pure simplicial complexes of facet-order q \
+for all vertex counts between nmin and n=p*q (as lists of their facets). \
+Vertices are labeled from the set [n]={1,2,...,n}.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> 
+    "GenerateAllVertexLabeledPureSimplicialComplexes", "titlemodifier" -> "", 
+    "metadescription" -> "", "windowtitle" -> 
+    "GenerateAllVertexLabeledPureSimplicialComplexes", "type" -> "Symbol", 
+    "uri" -> "ECGrav/ref/GenerateAllVertexLabeledPureSimplicialComplexes"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[8030, 207, 1438, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"8efbd312-bb0a-475c-a655-2e425fa1b53f",
+   CellTags->"PrimaryExamplesSection",
+   CellID->1759458343]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 14896, 388}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[615, 21, 3140, 75, 70, "AnchorBarGrid",ExpressionUUID->"e95a28d5-2ce4-48c1-846c-5d0a3543032c",
+ CellID->1],
+Cell[3758, 98, 89, 0, 70, "ContextNameCell",ExpressionUUID->"469246bc-4aa4-458b-94e2-b0b5d5760ebb"],
+Cell[CellGroupData[{
+Cell[3872, 102, 590, 14, 70, "ObjectNameGrid",ExpressionUUID->"949a326b-37c8-4a65-9d8b-47f837db79f4"],
+Cell[4465, 118, 3528, 84, 70, "Usage",ExpressionUUID->"565714a2-2859-4e03-8767-9f0ed46a68ad",
+ CellID->6875675]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8030, 207, 1438, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"8efbd312-bb0a-475c-a655-2e425fa1b53f",
+ CellTags->"PrimaryExamplesSection",
+ CellID->1759458343],
+Cell[CellGroupData[{
+Cell[9493, 249, 1415, 37, 70, "ExampleSection",ExpressionUUID->"b24f9a9c-0db2-4a02-88d5-81f4004d82d1",
+ CellID->366551611],
+Cell[10911, 288, 232, 4, 70, "ExampleText",ExpressionUUID->"93badfe3-ebcb-4079-959a-d5a767acbbf9",
+ CellID->234826861],
+Cell[CellGroupData[{
+Cell[11168, 296, 255, 5, 70, "Input",ExpressionUUID->"98c55a3f-7162-432f-90b6-a737f781e340",
+ CellID->144209353],
+Cell[11426, 303, 646, 22, 70, "Output",ExpressionUUID->"1f27baa0-7c71-46d9-a20d-70dd407c43fa",
+ CellID->140305993]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[12314, 334, 78, 0, 70, "FooterCell",ExpressionUUID->"ca366825-8223-483e-83d4-e03610fb8ca0"]
+}
+]
+*)
+
+(* End of internal cache information *)

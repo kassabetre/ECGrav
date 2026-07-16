@@ -1,0 +1,573 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     21776,        564]
+NotebookOptionsPosition[     16926,        459]
+NotebookOutlinePosition[     19266,        517]
+CellTagsIndexPosition[     19181,        512]
+WindowTitle->Bll
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {GridBox[{
+      {
+       ItemBox[Cell[BoxData[
+         RowBox[{
+          TemplateBox[{12},
+           "Spacer1"], Cell["E C GRAV SYMBOL", "PacletNameCell",
+           TextAlignment->Center,ExpressionUUID->
+           "8570d6c5-1f1c-4932-aaad-d037a656d087"], 
+          TemplateBox[{8},
+           "Spacer1"]}]],
+         TextAlignment->Center,ExpressionUUID->
+         "9ba841a1-1daa-402a-863e-30b705bd03ef"],
+        Background->LightDarkSwitched[
+          RGBColor[0.490196, 0.576471, 0.690196]],
+        ItemSize->Full], ""}
+     },
+     GridBoxAlignment->{"Rows" -> {{Center}}},
+     GridBoxItemSize->{"Columns" -> {Full, 
+         Scaled[0.02]}, "Rows" -> {{2.5}}}], Cell[TextData[Cell[BoxData[
+     TagBox[
+      ActionMenuBox[
+       FrameBox[Cell[TextData[{
+         "URL",
+         " ",
+         Cell[BoxData[
+          GraphicsBox[
+           {GrayLevel[0.66667], Thickness[0.13], 
+            LineBox[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]},
+           AspectRatio->1,
+           ImageSize->20,
+           PlotRange->{{-3, 4}, {-1, 1}}]],ExpressionUUID->
+          "e60d1848-7119-4d17-a26a-94edcc88f568"]
+        }],ExpressionUUID->"ebe0e21a-510e-453b-86e4-56e2f721e5ed"],
+        StripOnInput->False],{
+       "\"ECGrav/ref/Bll\"" :> None, 
+        "\"Copy Wolfram Documentation Center URL\"" :> 
+        CopyToClipboard["ECGrav/ref/Bll"], Delimiter, "\"Copy web URL\"" :> 
+        Module[{DocumentationSearch`Private`nb$}, 
+          DocumentationSearch`Private`nb$ = 
+           NotebookPut[
+            Notebook[{
+              Cell[BoxData[
+                MakeBoxes[
+                 Hyperlink[
+                  "http://reference.wolfram.com/language/ECGrav/ref/Bll.html"]\
+, StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+              False]]; SelectionMove[
+           DocumentationSearch`Private`nb$, All, Notebook]; 
+          FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+          NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+        "\"Go to web URL\"" :> 
+        FrontEndExecute[{
+          NotebookLocate[{
+            URL[(If[TrueQ[False], 
+                 "http://reference.wolfram.com/system-modeler/", 
+                 "http://reference.wolfram.com/language/"] <> 
+               "ECGrav/ref/Bll") <> ".html"], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"],
+      MouseAppearanceTag["LinkHand"]]],
+     LineSpacing->{1.4, 0},ExpressionUUID->
+     "373d384f-1ae2-4f7a-a235-58b498691bd2"]], "AnchorBar",
+     CacheGraphics->False,ExpressionUUID->
+     "d5bb327e-3b0e-4d1a-be39-4fe8c32104b8"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"7d46946d-ec40-4723-9c5c-ea0ea635d7c9"],
+
+Cell["ECGrav`", "ContextNameCell",ExpressionUUID->"1374acb1-8ab8-4d8a-90f5-043338d3989e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {Cell[TextData[{
+     Cell[
+     "Bll", "ObjectName",ExpressionUUID->
+      "0900f0d1-66ad-4bcc-9c03-4bd6faa09b08"],
+     Cell[BoxData[
+      TemplateBox[{8},
+       "Spacer1"]],ExpressionUUID->"c815a437-ad3c-43a9-80d9-53882305c0b9"],
+     Cell[BoxData[
+     ""], "ObjectNameTranslation",ExpressionUUID->
+      "75e2343b-459c-4e26-88db-58258212cbbe"]
+    }],ExpressionUUID->"5dc664fd-139b-4c99-ad83-0e88d2fa24d2"], 
+    "\[SpanFromLeft]"}
+  }]], "ObjectNameGrid",ExpressionUUID->"b98e9479-704d-4077-87df-\
+73500ff06238"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["Bll"]], "paclet:ECGrav/ref/Bll", "ECGrav Package Symbol"},
+        
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{"Amat", ",", 
+        StyleBox["i", "TI"], ",", 
+        StyleBox["r", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "2149e182-8412-4543-87c4-2a055a866d3c"],
+     "\[LineSeparator]returns the ball of radius ",
+     Cell[BoxData[
+      StyleBox["r", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "72073b1c-3218-484f-b577-64866034fe53"],
+     ", at vertex ",
+     Cell[BoxData[
+      StyleBox["i", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "14ddab42-20b7-4d80-8236-8eab11411509"],
+     ", in the graph given by ",
+     Cell[BoxData[
+      StyleBox["Amat", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "32f61f09-821f-4b01-9c06-a83851eeb808"],
+     ". If ",
+     Cell[BoxData[
+      StyleBox["r", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "2cc75cc1-f002-43bc-a1ba-49c1efb1904d"],
+     " is not specified, it gives the unit ball with r =1."
+    }],ExpressionUUID->"787979c4-e154-40f6-b306-9ab317c23410"]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{
+       TemplateBox[{
+         Cell[
+          TextData["Bll"]], "paclet:ECGrav/ref/Bll", "ECGrav Package Symbol"},
+        
+        "PackageLink",
+        BaseStyle->"InlineFormula"], "[", 
+       RowBox[{
+        StyleBox["g", "TI"], ",", 
+        StyleBox["i", "TI"], ",", 
+        StyleBox["r", "TI"]}], "]"}]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "c771d228-ca71-4180-8cf3-f4a1730cf3cf"],
+     "\[LineSeparator]returns the ball of radius ",
+     Cell[BoxData[
+      StyleBox["r", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "2645f3dc-c7e1-447b-ada9-0af51f2db430"],
+     ", at vertex ",
+     Cell[BoxData[
+      StyleBox["i", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "42a38b74-45f5-4fec-b021-4a9016735b80"],
+     ", in the graph given by ",
+     Cell[BoxData[
+      StyleBox["g", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "62c9e2ed-54a2-4eb2-8564-3cb4c5f79364"],
+     ". If ",
+     Cell[BoxData[
+      StyleBox["r", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "c1d80879-589d-4f2d-a9e2-bb852df591fd"],
+     " is not specified, it gives the unit ball with r = 1."
+    }],ExpressionUUID->"0256b1f3-511c-41d4-9367-c79c8fab74c9"]}
+  }]], "Usage",
+ CellID->764761076,ExpressionUUID->"4052814a-734b-484e-8715-6769eeb842d6"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {
+       TaggingRules, "Openers", "PrimaryExamplesSection"}, Open], 
+      Alternatives[True, Open]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.251494140625001, 9.348505859375}}]],
+  ExpressionUUID->"64425a97-98be-4005-803e-2f1d126a118d"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"d8feb332-26fa-4080-a737-62ff50622275"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "5abb7ef6-32a0-4ffc-828e-210a9488183d"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellTags->"PrimaryExamplesSection",
+ CellID->106298394,ExpressionUUID->"18fb61d8-e9f6-4178-86f4-af397e1bf116"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  DynamicBox[ToBoxes[
+    If[
+     MatchQ[
+      CurrentValue[
+       EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"},
+        Closed], 
+      Alternatives[Open, True]], 
+     Style[
+      Graphics[{
+        Thickness[0.18], 
+        RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+        Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+       PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+      0.68 Inherited], 
+     Rotate[
+      Style[
+       Graphics[{
+         Thickness[0.18], 
+         RGBColor[0.8509803921568627, 0.396078431372549, 0], 
+         Line[{{-1.8, 0.5}, {0, 0}, {1.8, 0.5}}]}, AspectRatio -> 1, 
+        PlotRange -> {{-3, 4}, {-1, 1}}, ImageSize -> 20], Magnification -> 
+       0.68 Inherited], Rational[1, 2] Pi, {-1.65, -1}]]],
+   ImageSizeCache->{
+    13.600000000000001`, {4.551318359375001, 9.048681640625}}]],
+  ExpressionUUID->"33600203-a8d4-4c00-9036-647411f52434"],
+ Cell[BoxData[
+  TemplateBox[{1},
+   "Spacer1"]],ExpressionUUID->"104b587e-cfcc-4a59-8a26-94dce4fedf42"],
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "a9643c18-eee9-42f3-8a5a-12e1ac361e7f"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CacheGraphics->False,
+ CellID->1998197301,ExpressionUUID->"860370c0-a021-4d56-893d-0db5f74914f6"],
+
+Cell["A vertex labeled graph, g:", "ExampleText",
+ CellID->22597451,ExpressionUUID->"2d5c97f3-a1b0-4d71-8efd-457a0f441546"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"g", " ", "=", " ", 
+  RowBox[{"Graph", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"1", "\[UndirectedEdge]", "2"}], ",", 
+      RowBox[{"2", "\[UndirectedEdge]", "3"}], ",", 
+      RowBox[{"3", "\[UndirectedEdge]", "4"}], ",", 
+      RowBox[{"1", "\[UndirectedEdge]", "3"}]}], "}"}], ",", 
+    RowBox[{"VertexLabels", "\[Rule]", "\"\<Name\>\""}], ",", 
+    RowBox[{"ImageSize", "->", "Medium"}]}], "]"}]}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->282510683,ExpressionUUID->"21fb11ad-e3c9-4947-8991-91fdc7400e90"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 2, 3, 4}, {Null, {{1, 2}, {2, 3}, {3, 4}, {1, 3}}}, {
+      ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{0.0001964751172666146, 0.}, {0., 0.8475386976306538}}, {{
+         0.0001964751172666146, 0.}, {0.9164048379140673, 
+         0.42386488156829044`}}, {{0., 0.8475386976306538}, {
+         0.9164048379140673, 0.42386488156829044`}}, {{0.9164048379140673, 
+         0.42386488156829044`}, {2.031430211699506, 0.42382043094346533`}}}, 
+         0.022865977658369868`]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {DiskBox[{0.0001964751172666146, 0.}, 0.022865977658369868], 
+         InsetBox["1", 
+          Offset[{2, 2}, {0.023062452775636483, 0.022865977658369868}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0., 0.8475386976306538}, 0.022865977658369868], 
+         InsetBox["2", 
+          Offset[{2, 2}, {0.022865977658369868, 0.8704046752890237}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.9164048379140673, 0.42386488156829044`}, 
+          0.022865977658369868], 
+         InsetBox["3", 
+          Offset[{2, 2}, {0.9392708155724372, 0.44673085922666034}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.031430211699506, 0.42382043094346533`}, 
+          0.022865977658369868], 
+         InsetBox["4", 
+          Offset[{2, 2}, {2.054296189357876, 0.44668640860183517}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->18600233,ExpressionUUID->"cebce540-196e-4d8f-b982-2583271fb7ff"]
+}, Open  ]],
+
+Cell["g has graph adjacency matrix:", "ExampleText",
+ CellID->124967331,ExpressionUUID->"10070158-7748-4aae-bc4e-d861d6cde0e6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"adjMat", "=", " ", 
+  RowBox[{"Normal", "[", 
+   RowBox[{"AdjacencyMatrix", "[", "g", "]"}], "]"}]}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->369947928,ExpressionUUID->"d417fb45-edf1-4e9e-8c85-3d542c58c32b"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1", ",", "1", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1", ",", "0", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->300174543,ExpressionUUID->"d8669fe9-c971-4d80-989d-048ba75adf9e"]
+}, Open  ]],
+
+Cell["Using g, the ball around vertex 1 with radius 1 is:", "ExampleText",
+ CellID->429575673,ExpressionUUID->"f2434a59-7655-4e6e-bcf0-d4e9406a14db"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Bll", "[", 
+  RowBox[{"g", ",", "1", ",", "1"}], "]"}]], "Input",
+ CellLabel->"In[3]:=",
+ CellID->174354234,ExpressionUUID->"42932ec6-07ad-4f44-8a7c-589da1b18fb8"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{1, 2, 3}, {Null, {{1, 2}, {2, 3}, {1, 3}}}, {
+      ImageSize -> Medium, VertexLabels -> {"Name"}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.7], Opacity[0.7], CapForm["Round"], Arrowheads[0.], 
+        ArrowBox[{{{-0.8660254037844384, -0.49999999999999933`}, {
+         1.8369701987210297`*^-16, 
+         1.}}, {{-0.8660254037844384, -0.49999999999999933`}, {
+         0.8660254037844389, -0.5000000000000012}}, {{
+         1.8369701987210297`*^-16, 1.}, {
+         0.8660254037844389, -0.5000000000000012}}}, 
+         0.020399597244776385`]}, 
+       {Hue[0.6, 0.5, 1.], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {
+         DiskBox[{-0.8660254037844384, -0.49999999999999933`}, 
+          0.020399597244776385], 
+         InsetBox["1", 
+          Offset[{2, 2}, {-0.845625806539662, -0.479600402755223}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.8369701987210297`*^-16, 1.}, 0.020399597244776385], 
+         InsetBox["2", 
+          Offset[{2, 2}, {0.02039959724477657, 1.0203995972447764}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.8660254037844389, -0.5000000000000012}, 
+          0.020399597244776385], 
+         InsetBox["3", 
+          Offset[{2, 2}, {0.8864250010292153, -0.47960040275522486}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->"NetworkGraphics",
+  FormatType->TraditionalForm,
+  FrameTicks->None,
+  ImageSize->Medium]], "Output",
+ CellLabel->"Out[3]=",
+ CellID->717095500,ExpressionUUID->"d942dd76-1d67-44a1-ab3f-c52b64f84786"]
+}, Open  ]],
+
+Cell["\<\
+Using adjMat, the graph adjacency matrix for the ball around vertex 4 with \
+radius 1 is:\
+\>", "ExampleText",
+ CellID->229671557,ExpressionUUID->"9843bf49-72b5-4cba-8616-b0e1873425a5"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Bll", "[", 
+  RowBox[{"adjMat", ",", "4", ",", "1"}], "]"}]], "Input",
+ CellLabel->"In[4]:=",
+ CellID->148152826,ExpressionUUID->"824c05e3-2304-46bf-8521-d330281e3e2a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1", ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[4]=",
+ CellID->899521834,ExpressionUUID->"90b22a1e-8487-4ec7-b451-026447233798"]
+}, Open  ]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, 
+  Closed]]]]
+}, Dynamic[CurrentValue[
+ EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, 
+  Closed]]]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"0a35676d-cf81-4553-8f87-74831e6f8ac4"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{900, 830},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"Bll",
+Visible->True,
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "", "LinkTrails" -> "", 
+  "ExampleCounter" -> 1, 
+  "Openers" -> {
+   "PrimaryExamplesSection" -> Open, "ExampleSection" -> {"0" -> Open}, 
+    "AllOptsTable" -> Closed}, "NewStyles" -> True, 
+  "CitationPopupData" -> $Failed, "ShowCitation" -> False, "HasOptions" -> 
+  True, "RootCaptions" -> "", "HeaderCoreAreaLink" -> {}, 
+  "Metadata" -> {
+   "built" -> "{2026, 1, 22, 8, 54, 35.148724}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "ECGrav`", "keywords" -> {},
+     "specialkeywords" -> {}, "tutorialcollectionlinks" -> {}, "index" -> 
+    True, "label" -> "E C Grav Symbol", "language" -> "en", "paclet" -> 
+    "ECGrav", "status" -> "None", "summary" -> 
+    "Bll[Amat, i, r] returns the ball of radius r, at vertex i, in the graph \
+given by Amat. If r is not specified, it gives the unit ball with r =1. \
+Bll[g, i, r] returns the ball of radius r, at vertex i, in the graph given by \
+g. If r is not specified, it gives the unit ball with r = 1.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "Bll", "titlemodifier" -> 
+    "", "metadescription" -> "", "windowtitle" -> "Bll", "type" -> "Symbol", 
+    "uri" -> "ECGrav/ref/Bll"}},
+CellContext->"Global`",
+FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "14.3 for Mac OS X ARM (64-bit) (July 8, 2025)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"8c9d222f-3e5c-48ed-9e61-de46787482b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[7063, 194, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"18fb61d8-e9f6-4178-86f4-af397e1bf116",
+   CellTags->"PrimaryExamplesSection",
+   CellID->106298394]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 18982, 505}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[571, 21, 2913, 71, 70, "AnchorBarGrid",ExpressionUUID->"7d46946d-ec40-4723-9c5c-ea0ea635d7c9",
+ CellID->1],
+Cell[3487, 94, 89, 0, 70, "ContextNameCell",ExpressionUUID->"1374acb1-8ab8-4d8a-90f5-043338d3989e"],
+Cell[CellGroupData[{
+Cell[3601, 98, 546, 14, 70, "ObjectNameGrid",ExpressionUUID->"b98e9479-704d-4077-87df-73500ff06238"],
+Cell[4150, 114, 2876, 75, 70, "Usage",ExpressionUUID->"4052814a-734b-484e-8715-6769eeb842d6",
+ CellID->764761076]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7063, 194, 1437, 38, 70, "PrimaryExamplesSection",ExpressionUUID->"18fb61d8-e9f6-4178-86f4-af397e1bf116",
+ CellTags->"PrimaryExamplesSection",
+ CellID->106298394],
+Cell[CellGroupData[{
+Cell[8525, 236, 1416, 37, 70, "ExampleSection",ExpressionUUID->"860370c0-a021-4d56-893d-0db5f74914f6",
+ CellID->1998197301],
+Cell[9944, 275, 123, 1, 70, "ExampleText",ExpressionUUID->"2d5c97f3-a1b0-4d71-8efd-457a0f441546",
+ CellID->22597451],
+Cell[CellGroupData[{
+Cell[10092, 280, 558, 13, 70, "Input",ExpressionUUID->"21fb11ad-e3c9-4947-8991-91fdc7400e90",
+ CellID->282510683],
+Cell[10653, 295, 2087, 44, 70, "Output",ExpressionUUID->"cebce540-196e-4d8f-b982-2583271fb7ff",
+ CellID->18600233]
+}, Open  ]],
+Cell[12755, 342, 127, 1, 70, "ExampleText",ExpressionUUID->"10070158-7748-4aae-bc4e-d861d6cde0e6",
+ CellID->124967331],
+Cell[CellGroupData[{
+Cell[12907, 347, 233, 5, 70, "Input",ExpressionUUID->"d417fb45-edf1-4e9e-8c85-3d542c58c32b",
+ CellID->369947928],
+Cell[13143, 354, 467, 12, 70, "Output",ExpressionUUID->"d8669fe9-c971-4d80-989d-048ba75adf9e",
+ CellID->300174543]
+}, Open  ]],
+Cell[13625, 369, 149, 1, 70, "ExampleText",ExpressionUUID->"f2434a59-7655-4e6e-bcf0-d4e9406a14db",
+ CellID->429575673],
+Cell[CellGroupData[{
+Cell[13799, 374, 187, 4, 70, "Input",ExpressionUUID->"42932ec6-07ad-4f44-8a7c-589da1b18fb8",
+ CellID->174354234],
+Cell[13989, 380, 1825, 41, 70, "Output",ExpressionUUID->"d942dd76-1d67-44a1-ab3f-c52b64f84786",
+ CellID->717095500]
+}, Open  ]],
+Cell[15829, 424, 195, 4, 70, "ExampleText",ExpressionUUID->"9843bf49-72b5-4cba-8616-b0e1873425a5",
+ CellID->229671557],
+Cell[CellGroupData[{
+Cell[16049, 432, 192, 4, 70, "Input",ExpressionUUID->"824c05e3-2304-46bf-8521-d330281e3e2a",
+ CellID->148152826],
+Cell[16244, 438, 358, 10, 70, "Output",ExpressionUUID->"90b22a1e-8487-4ec7-b451-026447233798",
+ CellID->899521834]
+}, Open  ]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "ExampleSection", "0"}, Closed]]]]
+}, Dynamic[CurrentValue[EvaluationNotebook[], {TaggingRules, "Openers", "PrimaryExamplesSection"}, Closed]]]],
+Cell[16844, 457, 78, 0, 70, "FooterCell",ExpressionUUID->"0a35676d-cf81-4553-8f87-74831e6f8ac4"]
+}
+]
+*)
+
+(* End of internal cache information *)
