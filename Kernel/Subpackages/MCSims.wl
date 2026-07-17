@@ -708,8 +708,8 @@ $Failed);
 (* Primary Pattern *)
 ECGrav`HIsing[Am_List,J_Real,L_Real]:=
 (*J/2 sum_{i!=j}A^2_{ij} + L/2 sum_{i!=j}A_{ij}*)
-With[{Amsq=Am . Am, Fm=Table[1,{n,Length[Am]},{m,Length[Am]}]},
-(J/2)*(Tr[Amsq . Fm]-Tr[Amsq])+(L/2)Tr[Am . Fm]
+With[{Amsq=Am . Am},
+(J/2)*(Total[Amsq,2]-Tr[Amsq])+(L/2)*Total[Am,2]
 ];
 
 (* Catch-all Pattern *)
@@ -1730,7 +1730,7 @@ $Failed);
 (*Parallel Tempering*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphSweepReplica*)
 
 
@@ -1991,7 +1991,7 @@ ECGrav`GraphSweepReplica[args___[argparams___]]:=(Message[ECGrav`GraphSweepRepli
 $Failed);
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphEquilibriate*)
 
 
@@ -3985,7 +3985,7 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
 (*In general, sqrt[number of sites] replicas are needed for parallel tempering to be effective.*)
 
-PrintTemporary[" Starting multihistogram with replical swap with delH and with beta "
+PrintTemporary[" Starting multihistogram with replica swap and delH and at beta "
 	,bt," external field parameters ",externalFieldTable];
 
 
@@ -4011,7 +4011,6 @@ replicas=Tempoutput[[All,2]];
 (* Extract the minimum energy and corresponding states *)
 
 groundStates=Tempoutput[[All,1]];
-
 
 (*
 (***************************************)
@@ -6243,7 +6242,8 @@ result
 ];
 
 
-ECGrav`GraphParallelTempering[seedGraph_List, btTable_List,minEtoBeat_Real,hamiltonian_[hparams___],obs_,EnergyOrMag_Integer,NN_Integer,UnlabeledVerticesYes_Integer]:=
+ECGrav`GraphParallelTempering[seedGraph_List, btTable_List,
+	hamiltonian_[hparams___],obs_,EnergyOrMag_Integer,NN_Integer,UnlabeledVerticesYes_Integer,minEtoBeat_Real]:=
 
 (*************************************)
 (***  Last updated on: 02/16/2026  ***)
@@ -6477,7 +6477,7 @@ result
 ];
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*Overload GraphParallelTempering with previous beta replica as input*)
 
 
