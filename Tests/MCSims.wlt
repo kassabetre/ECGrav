@@ -57,7 +57,9 @@ VerificationTest[
 
 (* ---------- Exact enumeration (deterministic) ---------- *)
 
-(* K4 and C6 are the two lowest levels; energies -12 and -6. *)
+(* K4 and C6 are the two lowest levels; energies -12 and -6.
+   (The $KernelCount == 0 regression is guarded by a separate test at the end of
+   this file, which must run last because it closes the parallel kernels.) *)
 VerificationTest[
     Sort[Round[Keys[ECGrav`LowEnergyStates[{K4, C6}, ECGrav`HIsing[#, -1.0, 0.0] &, 2]]]],
     {-12, -6},
@@ -123,4 +125,19 @@ VerificationTest[
         n >= 1],
     True,
     TestID -> "GraphMultiHistogram-emits-plot"
+];
+
+(* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
+   MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
+   guard (Max[$KernelCount, 1]) is exercised. Without the fix this failed with
+   Power::infy and returned $Failed. The ParallelTable::nopar warning (parallel
+   call falling back to sequential with no kernels) is benign and quieted. *)
+VerificationTest[
+    Module[{r}, CloseKernels[];
+        r = Quiet[
+            Sort[Round[Keys[ECGrav`LowEnergyStates[{K4, C6}, ECGrav`HIsing[#, -1.0, 0.0] &, 2]]]],
+            ParallelTable::nopar];
+        r],
+    {-12, -6},
+    TestID -> "LowEnergyStates-no-kernels-divide-guard"
 ];

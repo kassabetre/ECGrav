@@ -869,11 +869,19 @@ With[{dMad=Length@@FindClique[g]},
 	ECGrav`Branchedness[g,dMad-1]
 ];
 
-(* Overload Pattern *)
-ECGrav`Branchedness[amat_List,n_Integer]:=ECGrav`Branchedness[AdjacencyGraph[amat],n];
+(* Overload Pattern: adjacency-matrix input *)
+ECGrav`Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]]),n_Integer]:=
+	ECGrav`Branchedness[AdjacencyGraph[amat],n];
 
-(* Overload Pattern *)
-ECGrav`Branchedness[amat_List]:=ECGrav`Branchedness[AdjacencyGraph[amat]];
+(* Overload Pattern: adjacency-matrix input *)
+ECGrav`Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]])]:=
+	ECGrav`Branchedness[AdjacencyGraph[amat]];
+
+(* Overload Pattern: facet-list input, interpreted as a clique complex *)
+ECGrav`Branchedness[facetsLst_List,n_Integer]:=ECGrav`Branchedness[ECGrav`GraphFromCliques[facetsLst],n];
+
+(* Overload Pattern: facet-list input, interpreted as a clique complex *)
+ECGrav`Branchedness[facetsLst_List]:=ECGrav`Branchedness[ECGrav`GraphFromCliques[facetsLst]];
 
 (* Catch-all Pattern *)
 ECGrav`Branchedness[args___]:=(Message[ECGrav`Branchedness::argerr, args];

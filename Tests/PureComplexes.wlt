@@ -78,6 +78,18 @@ VerificationTest[ECGrav`FacetDeg[fst1, 2], 2, TestID -> "FacetDeg-fst1"];
 VerificationTest[ECGrav`HyperDeg[fst1, {2, 4}], 1, TestID -> "HyperDeg-fst1-edge"];
 VerificationTest[ECGrav`Branchedness[octaG], 0, TestID -> "Branchedness-octahedron-graph"];
 
+(* Facet-list input must match the clique-graph form and must not leak a Null
+   into the result (regression for the AdjacencyGraph-misinterpretation bug). *)
+VerificationTest[
+    ECGrav`Branchedness[octahedron],
+    ECGrav`Branchedness[octaG],
+    TestID -> "Branchedness-octahedron-facetlist-matches-graph"
+];
+VerificationTest[FreeQ[ECGrav`Branchedness[fst1], Null], True, TestID -> "Branchedness-facetlist-no-Null-leak"];
+VerificationTest[ECGrav`Branchedness[fst1], 0, TestID -> "Branchedness-fst1-facetlist"];
+(* Adjacency-matrix input must still route to the graph computation. *)
+VerificationTest[ECGrav`Branchedness[K4], 0, TestID -> "Branchedness-K4-adjacency-matrix"];
+
 (* ---------- Spheres, balls, links, stars ---------- *)
 
 VerificationTest[

@@ -939,7 +939,7 @@ ordered association with the lowest klevel energies as the keys and the states
 with those energies as the values.*)
 
 Module[{mastertuplesParts,partialresult,minstates,numkernels},
-numkernels=$KernelCount;
+numkernels=Max[$KernelCount,1];(* avoid division by zero when no parallel kernels are launched *)
 mastertuplesParts=With[{partlength=Ceiling[Length[ensemble]/numkernels]},
 Partition[ensemble,UpTo[partlength]]];
 (*Print[" mastertuplesParts length ",Length/@mastertuplesParts," mastertuplesParts ",

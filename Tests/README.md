@@ -57,18 +57,25 @@ implementation: known surface topology (`EulerChi[tetrahedron] == 2`,
 notebook (`NumPureComplexes[3, 3] == 2649`, automorphism order 24). The
 remainder are characterization tests that lock in current behaviour.
 
+## Fixed bugs (found while building the suite, now regression-tested)
+
+- **`Branchedness[facetList]` used to leak a `Null`** (e.g.
+  `-1/4 + (-3/2 + Null)^2`) because a facet list was misinterpreted as an
+  adjacency matrix. It now routes facet lists through `GraphFromCliques`, with
+  the adjacency-matrix overloads guarded (mirroring `RmsPurity`). Guarded by
+  `Branchedness-*` tests in `PureComplexes.wlt`.
+- **`LowEnergyStates` divided by `$KernelCount`** and failed with `Power::infy`
+  if called before `LaunchKernels[]`. Now uses `Max[$KernelCount, 1]`. The
+  `LowEnergyStates-energies-no-kernels` test calls `CloseKernels[]` first to
+  exercise the `$KernelCount == 0` path directly.
+
 ## Known gaps / suspected bugs (not encoded as passing tests)
 
-These were found while building the suite and are deliberately **not** asserted,
-because doing so would bake in probably-wrong behaviour:
+These are deliberately **not** asserted, because doing so would bake in
+probably-wrong behaviour:
 
 - **`CombinatorialSphereQ[torus]` returns `True`.** A torus (χ = 0) is not a
   sphere. Only the correct cases (tetrahedron, octahedron) are asserted.
-- **`Branchedness[facetList]` leaks a `Null`**, returning e.g.
-  `-1/4 + (-3/2 + Null)^2`. It works on `Graph` input (only that form is
-  tested). It should either handle facet lists or reject them via `::argerr`.
-- **`LowEnergyStates` divides by `$KernelCount`** and fails with `Power::infy`
-  if called before `LaunchKernels[]`. Worked around in the prelude.
 - **`ExactExpectationValue` emits `Part::partd`** while probing its observable
   argument. Harmless (result is correct) but declared as an expected message.
 
