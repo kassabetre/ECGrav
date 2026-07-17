@@ -37,7 +37,7 @@ _Status snapshot: 2026-07-17._
 - [ ] Top-level `README.md`: what Emergent Combinatorial Gravity is, install,
       a short quickstart, current status and limitations
 - [ ] `.gitattributes` marking `*.paclet` (and other binaries) as binary
-- [ ] `CHANGELOG.md` starting at 1.1.0
+- [ ] `CHANGELOG.md` starting at 1.2.0
 - [ ] `CITATION.cff` — deferred until there is a paper (software-only cite optional)
 
 ## Phase 2 — Documentation completeness
