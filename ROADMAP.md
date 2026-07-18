@@ -9,6 +9,7 @@ _Status snapshot: 2026-07-17._
 **Decisions made**
 - License: **MIT** ✅
 - Citation: no associated paper yet — revisit when one exists.
+- **Released 1.2.0** on GitHub with the installable paclet attached ✅
 - Remote: an existing GitHub repo holds an older version; plan is to preserve
   the old state (tag/branch) and make this cleaned-up history canonical.
 
@@ -68,7 +69,7 @@ _Status snapshot: 2026-07-17._
 ## Phase 4 — Release & distribution
 
 - [ ] Adopt semantic-versioning discipline and tag releases
-- [ ] Attach the built `.paclet` to GitHub releases
+- [x] Attach the built `.paclet` to GitHub releases (`v1.2.0`)
 - [ ] Decide distribution channel: Wolfram Paclet Repository submission vs.
       install-from-GitHub-release
 - [ ] Turn the manual steps in `BuildingAndInstallingPaclets.nb` into a
