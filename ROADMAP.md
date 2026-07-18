@@ -43,15 +43,58 @@ _Status snapshot: 2026-07-17._
 
 ## Phase 2 — Documentation completeness
 
-- [ ] Add usage messages for the 5 undocumented `*Conn` functions
-- [ ] Author reference pages for the ~52 public functions that lack them
-      (essentially the whole MCSims domain: Hamiltonians, MC drivers, tempering,
-      free-energy tools)
+- [ ] Add usage messages for the 5 undocumented `*Conn` functions (list below)
+- [ ] Author reference pages for the 51 public functions that lack them (list below)
 - [ ] Add at least one **Guide** page mapping the API by theme
       (`Documentation/English/Guides/` is currently empty)
 - [ ] Add a getting-started **Tutorial**: build a graph → run Metropolis →
       read observables → plot (`Documentation/English/Tutorials/` is empty)
 - [ ] Make the README quickstart mirror the tutorial
+
+### Phase 2 worklist (exact targets, generated 2026-07-17)
+
+**A. Usage messages — 5 functions have no `::usage`** (all connected-variant
+automorphism/stabilizer counts; add `::usage` + `::argerr` in `Kernel/ECGrav.wl`
+mirroring their non-`Conn` counterparts):
+
+`CliqueFacetAutomorphismGroupOrderConn`, `CliqueFacetStabilizerGroupOrderConn`,
+`PureComplexAutomorphismGroupOrderConn`, `PureComplexFacetAutomorphismGroupOrderConn`,
+`SimplicialComplexAutomorphismGroupOrderConn`
+
+**B. Reference pages — 51 functions have none.** Pages live in
+`Documentation/English/ReferencePages/Symbols/<Name>.nb`; the 60 existing pages
+are copy-from templates.
+
+_PureComplexes domain (15):_ `AddRandomUnlabeledFacetToPseudoManifold`,
+`CliqueComplexQ`, `CombinatorialBoundary`, `CombinatorialManifoldQ`,
+`CombinatorialSphereQ`, `FVector`, `OrientableCombinatorialManifoldQ`,
+`RandomPureSimplicialComplexMCMC`, `RandomPureSimplicialComplexMCMCCorrelationTime`,
+`RandomPureSimplicialComplexMCMCEquilibriate`, `RandomPureSimplicialComplexMCMCSweep`,
+`RandomUniformFacetLabeledPureSimplicialComplex`,
+`RandomUniformUnlabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold`,
+`Visualize2DComplex`
+
+_MCSims domain (36):_ Hamiltonians — `HIsing`, `delHIsing`, `HWeightedFaceCounts`,
+`HEdgeDeg`, `delHEdgeDeg`, `HLaplacian`, `H1dCombManifold`, `H2dCombManifold`,
+`delH2dCombManifold`, `H2dPseudoCombManifold`; MC drivers — `GraphMetropolis`,
+`GraphSweepReplica`, `GraphEquilibriate`, `GraphComputeCorrelationTime`,
+`GraphParallelTempering`, `GraphMultiHistogram`, `GraphCTLSchedule`,
+`GraphCEITempSchedule`; ground-state search — `LowEnergyStates`, `GradDescent`,
+`SGradDescent`, `SimulatedAnnealing`; exact & analysis — `ExactExpectationValue`,
+`CorrelationTime`, `EmpCorrelationTime`, `ErrorBootstrap`, `LogSumExp`,
+`SpecificHeat`, `DSpecificHeat`, `Susceptibility`, `InternalEnergy`, `CvOverT`,
+`ComputeMinusBetaTimesFreeEnergy`, `NegativeBetaTimesFreeEnergy`,
+`ExtrapolatedExpectationValue`, `ConstrainedProbConjugateField`
+
+**C. Guides / Tutorials** — both directories are empty; seed at least one of each.
+
+**Tips for the next session:**
+- Verified example inputs/outputs already exist in `README.md` (quickstarts) and
+  `Tests/PureComplexes.wlt` / `Tests/MCSims.wlt` — reuse them in doc pages.
+- Regenerate the lists with the shell in the commit that added this worklist, or:
+  compare `::usage` names in `Kernel/ECGrav.wl` against `*.nb` files in
+  `Documentation/English/ReferencePages/Symbols/`.
+- Rebuilding docs regenerates the ignored `build/ECGrav/` search-index tree.
 
 ## Phase 3 — Quality & CI
 
