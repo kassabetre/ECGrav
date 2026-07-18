@@ -1,0 +1,159 @@
+# ECGrav — Emergent Combinatorial Gravity
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-14.2%2B-red.svg)
+
+A Wolfram Language paclet for studying models in which geometry — and ultimately
+gravity — **emerges from the statistical mechanics of combinatorial structures**
+(graphs and simplicial complexes).
+
+ECGrav provides two complementary toolkits:
+
+- **Combinatorics of complexes and graphs** — build and analyze pure simplicial
+  complexes and graphs: dimensions, Euler characteristic, homology/holes,
+  links and spheres, manifold and sphere predicates, automorphism groups, and
+  isomorphism classes.
+- **Monte Carlo statistical mechanics** — sample ensembles of graphs/complexes
+  under energy functionals (Hamiltonians) that reward geometric, manifold-like
+  configurations, and extract thermodynamic observables via Metropolis MC,
+  parallel tempering, multi-histogram reweighting, and exact enumeration.
+
+> **Status:** 1.2.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> for what's planned and [Tests/README.md](Tests/README.md) for known issues.
+
+---
+
+## Requirements
+
+- Wolfram Language / Mathematica **14.2 or later**
+- Multiple parallel kernels are recommended — many Monte Carlo routines use
+  `ParallelTable`, and some (e.g. `LowEnergyStates`, parallel tempering) expect
+  `LaunchKernels[]` to have been called.
+
+## Installation
+
+### Option 1 — load the source directly (no build)
+
+```wolfram
+PacletDirectoryLoad["/path/to/ECGrav"];   (* the cloned repo directory *)
+Needs["ECGrav`"];
+```
+
+### Option 2 — build and install the paclet
+
+```wolfram
+Needs["PacletTools`"];
+PacletBuild["/path/to/ECGrav"];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.2.0.paclet", ForceVersionInstall -> True];
+Needs["ECGrav`"];
+```
+
+For the Monte Carlo routines, also start parallel kernels:
+
+```wolfram
+LaunchKernels[];
+ParallelNeeds["ECGrav`"];
+```
+
+## Quick start
+
+### Combinatorics on a simplicial complex
+
+```wolfram
+Needs["ECGrav`"];
+
+(* An octahedron: 8 triangular facets on 6 vertices — a triangulated 2-sphere *)
+octahedron = {{1,2,3},{1,2,4},{1,3,5},{1,4,5},{6,2,3},{6,2,4},{6,3,5},{6,4,5}};
+
+EulerChi[octahedron]              (* 2        — Euler characteristic of S^2      *)
+FVector[octahedron]               (* {6,12,8} — 6 vertices, 12 edges, 8 faces    *)
+CountHoles[octahedron]            (* {1,0,1}  — Betti numbers b0, b1, b2          *)
+CombinatorialSphereQ[octahedron]  (* True                                        *)
+```
+
+### A Metropolis Monte Carlo run
+
+```wolfram
+Needs["ECGrav`"];
+
+seed = Normal[AdjacencyMatrix[CycleGraph[6]]];
+
+(* Run 100 sweeps at inverse temperature 0.5 with the graph Ising Hamiltonian;
+   track the number of edges as an observable. *)
+{finalGraph, observables} =
+   GraphMetropolis[seed, 0.5, HIsing[#, 1.0, 0.0] &, {Total[#, 2]/2. &}, 100];
+```
+
+`GraphMetropolis` returns the last graph visited and the observable values along
+the trajectory. Higher-level drivers (`GraphEquilibriate`,
+`GraphComputeCorrelationTime`, `GraphParallelTempering`, `GraphMultiHistogram`)
+build on this and emit diagnostic plots as they run.
+
+## What's in the package
+
+ECGrav exports ~116 public functions across two subpackages. A selection:
+
+### Simplicial complexes & graphs
+
+| Area | Functions (examples) |
+| --- | --- |
+| Representations & conversions | `FacetIncidenceMatrix`, `FacetAdjacencyMatrix`, `GraphFromCliques`, `CliquesFromFacetIncidence`, `ComplexFromFacetLabeledVertexList` |
+| Local structure | `Sph`, `Bll`, `Lnk`, `Str`, `Deg`, `HyperDeg`, `FacetDeg` |
+| Dimension & topology | `AvgKDim`, `SpectralDim`, `HausdorffDim`, `EulerChi`, `CountHoles`, `FVector`, `GVolume` |
+| Manifold predicates | `CombinatorialManifoldQ`, `CombinatorialSphereQ`, `DSphereQ`, `DGraphQ`, `OrientableCombinatorialManifoldQ` |
+| Symmetry & enumeration | `SimplicialComplexAutomorphismGroupOrder`, `IsomorphicSimplicialComplexQ`, `ChooseNonIsomorphicSimplicialComplexes`, `NumPureComplexes`, `RankComb`, `UnrankComb` |
+| Random complexes | `RandomVertexLabeledPureSimplicialComplex`, `RandomFacetLabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold` |
+
+### Monte Carlo & statistical mechanics
+
+| Area | Functions (examples) |
+| --- | --- |
+| Hamiltonians | `HIsing`, `HWeightedFaceCounts`, `HEdgeDeg`, `HLaplacian`, `H1dCombManifold`, `H2dCombManifold`, `H2dPseudoCombManifold` |
+| Ground-state search | `LowEnergyStates`, `GradDescent`, `SGradDescent`, `SimulatedAnnealing` |
+| Sampling | `GraphMetropolis`, `GraphSweepReplica`, `GraphEquilibriate`, `GraphParallelTempering` |
+| Reweighting & schedules | `GraphMultiHistogram`, `GraphCTLSchedule`, `GraphCEITempSchedule`, `ComputeMinusBetaTimesFreeEnergy`, `ExtrapolatedExpectationValue` |
+| Exact & analysis | `ExactExpectationValue`, `CorrelationTime`, `SpecificHeat`, `Susceptibility`, `ErrorBootstrap`, `LogSumExp` |
+
+Use the built-in help for details on any symbol:
+
+```wolfram
+?ECGrav`*        (* list every public symbol *)
+?GraphMetropolis (* usage message for one function *)
+```
+
+Reference documentation pages are available for many functions in the Wolfram
+Documentation Center; guides and tutorials are in progress (see the roadmap).
+
+## Tests
+
+The `Tests/` directory holds a `.wlt` regression suite (63 tests) that loads the
+package **from source**:
+
+```wolfram
+Needs["MUnit`"];
+TestReport["/path/to/ECGrav/Tests"]
+```
+
+See [Tests/README.md](Tests/README.md) for the suite's design, coverage, and a
+list of known issues.
+
+## Versioning
+
+This repository follows semantic-ish versioning. The `main` branch is the
+current release (1.2.0). Earlier releases are preserved as git tags:
+
+- `v1.2.0` — current: cleanup, regression test suite, bug fixes, MIT license
+- `v1.1.0`, `v1.0.0` — the earlier codebase (preserved for reference)
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+## Authors
+
+- **Kassahun Betre** — author
+- **Khai Luong** — contributor
+
+If you use ECGrav in academic work, please cite this repository (a companion
+paper is planned).
