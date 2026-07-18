@@ -36,7 +36,7 @@ _Status snapshot: 2026-07-17._
 - [x] Create/connect the GitHub remote and push (old versions preserved as tags `v1.0.0`, `v1.1.0`; released `v1.2.0`)
 - [x] Top-level `README.md`: what Emergent Combinatorial Gravity is, install,
       a short quickstart, current status and limitations
-- [ ] `.gitattributes` marking `*.paclet` (and other binaries) as binary
+- [x] `.gitattributes` marking `*.paclet` (and other binaries) as binary
 - [ ] `CHANGELOG.md` starting at 1.2.0
 - [ ] `CITATION.cff` — deferred until there is a paper (software-only cite optional)
 

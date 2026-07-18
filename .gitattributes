@@ -1,0 +1,14 @@
+# Normalize line endings for text files; let git auto-detect what's text.
+* text=auto
+
+# Wolfram Language source is text. Tag it so GitHub's language stats report it
+# as Mathematica (especially .m, which Linguist otherwise misdetects).
+*.wl  text linguist-language=Mathematica
+*.m   text linguist-language=Mathematica
+*.wls text linguist-language=Mathematica
+*.wlt text linguist-language=Mathematica
+
+# Binary / generated Wolfram artifacts: never diff, merge, or convert them.
+*.paclet binary
+*.mx     binary
+*.nb     binary
