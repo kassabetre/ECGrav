@@ -33,7 +33,7 @@ _Status snapshot: 2026-07-17._
 
 ## Phase 1 — GitHub foundations
 
-- [ ] Create/connect the GitHub remote and push (preserve old version as a tag/branch)
+- [x] Create/connect the GitHub remote and push (old versions preserved as tags `v1.0.0`, `v1.1.0`; released `v1.2.0`)
 - [ ] Top-level `README.md`: what Emergent Combinatorial Gravity is, install,
       a short quickstart, current status and limitations
 - [ ] `.gitattributes` marking `*.paclet` (and other binaries) as binary
