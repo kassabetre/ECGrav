@@ -286,8 +286,6 @@ deltab=Reap[
 
 output=<|Table[Keys[dat][[i]]->curFs[[i]],{i,1,Length[betas]}]|>;
 
-Remove[numTemps,betas,ntab,logntab,curFs,nextFs,iterNum,del,deltab];
-
 output
 
 ];
@@ -365,9 +363,6 @@ Sow[del];(* For diagnostics *)
 
 output=<|Table[extFieldVals[[i]]->curFs[[i]],{i,1,Length[extFieldVals]}]|>;
 
-Remove[numTotSims,extFieldVals,
-	ntab,logntab,curFs,nextFs,iterNum,del,deltab];
-
 output
 
 ];
@@ -437,9 +432,6 @@ Sow[del];(* For diagnostics *)
 
 
 output=<|Table[extFieldVals[[i]]->curFs[[i]],{i,1,Length[extFieldVals]}]|>;
-
-Remove[numTotSims,extFieldVals,
-	ntab,logntab,curFs,nextFs,iterNum,del,deltab];
 
 output
 
@@ -1361,8 +1353,6 @@ numsteps++;
 
 result=<|"minE"->minE,"excitedEnergy"->excitedEnergy,"minEstates"->minStates,"excitedStates"->excitedStates,"LastState"->Amcur|>;
 
-Remove[ nn,maxNumOfSavedStates,Amcur,edgeList,minE,excitedEnergy,curE,minStates,excitedStates,beta,rate,step,numsteps,printCase];
-
 result
 ];
 
@@ -1497,8 +1487,6 @@ numsteps++;
 ];
 
 result=<|"minE"->minE,"excitedEnergy"->excitedEnergy,"minEstates"->minStates,"excitedStates"->excitedStates,"LastState"->Amcur|>;
-
-Remove[ nn,maxNumOfSavedStates,Amcur,edgeList,minE,excitedEnergy,curE,minStates,excitedStates,beta,rate,step,numsteps,printCase];
 
 result
 ];
@@ -1860,8 +1848,6 @@ Do[step[];
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
 
-Remove[vCount,minE, minStates,maxGStateCount,expDelETable,data,step];
-
 
 result
 
@@ -1981,8 +1967,6 @@ Do[step[];
 
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
-
-Remove[vCount,minE, minStates,maxGStateCount,expDelETable,data,step];
 
 
 result
@@ -2137,9 +2121,6 @@ result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEsta
 		<|"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlTime,
 		"state"->data[[Key["state"]]]|>};
 
-Remove[{vCount,data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,
-	AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime,maxNumSweeps}];
-
 result
 
 ];
@@ -2273,9 +2254,6 @@ Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 		<|"beta"->beta,"externalField"->{hparams},"eqlT"->eqlTime,
 			"state"->data[[Key["state"]]]|>};
-
-Remove[{vCount,data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,
-	AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime,maxNumSweeps}];
 
 result
 
@@ -2417,9 +2395,6 @@ Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
 	data[[3;;All]]};
 
-Remove[vCount,data,maxGStateCount,sweepOutput,EorMTable,corrTable,tmax,norm,numsweeps,
-	EorM ,empair,maxNumSweeps];
-
 result
 
 ];
@@ -2543,8 +2518,6 @@ Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
 ];
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,data[[3;;All]]};
-
-Remove[vCount,data,maxGStateCount,sweepOutput,EorMTable,corrTable,tmax,norm,numsweeps,EorM ,empair,maxNumSweeps];
 
 result
 
@@ -2691,9 +2664,6 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 	result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,data[[3;;All]]};
 
-	Remove[vCount,data,maxGStateCount,sweepOutput,observablesTable,fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues
-		,numsweeps];
-
 	result
 
 ];
@@ -2804,9 +2774,6 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	data[[Key["corrTValues"]]]=corrTValues;
 
 	result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,data[[3;;All]]};
-
-	Remove[vCount,data,maxGStateCount,sweepOutput,observablesTable,norm,corrTable,tmaxVals,corrTValues
-		,numsweeps];
 
 	result
 
@@ -3072,8 +3039,6 @@ mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[energyAsn];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas};
 
-Remove[vCount,edgeCount,groundStates,maxGStateCount,replicas,Tempoutput,btTable,defaultRatio,measurements,numsweeps,stopnum, candminE,repNumSweeps,chart,curRootSpecificHeat,curRatios,newBetas,computeBFs,energyAsn,mBetaF];
-
 result
 
 ];
@@ -3326,8 +3291,6 @@ btTable=Sort[Flatten[btTable]];
 mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas};
-
-Remove[vCount,edgeCount,groundStates,maxGStateCount,replicas,Tempoutput,btTable,defaultRatio,measurements,numsweeps,stopnum, candminE,repNumSweeps,chart,curRootSpecificHeat,curRatios,newBetas,computeBFs,mBetaF];
 
 result
 
@@ -3619,8 +3582,6 @@ mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas,histories};
 
-
-Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,numRep,histories,bt,Tempoutput,swap,EnergyOrMag,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,computeBFs,energyAsn,mBetaF];
 
 result
 
@@ -3923,10 +3884,6 @@ mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas,histories};
 
-
-Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,numRep,histories,
-	bt,Tempoutput,swap,EnergyOrMag,measurements,numsweeps,stopnum, candminE,printCase,
-	repNumSweeps,chart,computeBFs,energyAsn,mBetaF];
 
 result
 
@@ -4257,8 +4214,6 @@ result={<|Table[replicas[[Key[i],Key["externalField"]]]->groundStates[[Key[i]]],
 	,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->bt,"externalField"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>
 	,replicas,histories};
 
-Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF];
-
 result
 
 ];
@@ -4581,8 +4536,6 @@ result={<|Table[replicas[[Key[i],Key["externalField"]]]->groundStates[[Key[i]]],
 	,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->bt,"externalField"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>
 	,replicas,histories};
 
-Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,swap,Tempoutput,EnergyOrMag ,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF];
-
 result
 
 ];
@@ -4691,8 +4644,6 @@ tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
-Remove[vCount,hist,minusbetaFTable,chart,betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule];
-
 result
 ];
 
@@ -4789,8 +4740,6 @@ tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
-Remove[vCount,hist,minusbetaFTable,chart,betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule];
-
 result
 ];
 
@@ -4857,8 +4806,6 @@ tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
 
-Remove[vCount,hist,minusbetaFTable,chart,betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule];
-
 result
 ];
 
@@ -4922,8 +4869,6 @@ tempSchedule=DeleteDuplicates[Table[Flatten[Select[entropyTable,#[[2]]==i&]],{i,
 
 
 result={hist[[1]],tempSchedule,hist[[2]],hist[[3]]};
-
-Remove[vCount,hist,minusbetaFTable,chart,betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule];
 
 result
 ];
@@ -5024,11 +4969,6 @@ betaSchedule=Table[b/. FindRoot[interpolatedThermodynamicLength[b]==targetSteps[
 
 result={betaSchedule,hist};
 
-Remove[vCount,hist,minusbetaFAssn,betaMin,betaMax,thermodynamicSpeed,chartEnergy,
-	incrementValue,thermodynamicSpeedTable,interpolatedThermodynamicSpeed,
-	totalThermodynamicLength,thermodynamicDistanceTable,interpolatedThermodynamicLength,
-	targetSteps,betaSchedule,b];
-
 result
 ];
 
@@ -5109,11 +5049,6 @@ betaSchedule=Table[b/. FindRoot[interpolatedThermodynamicLength[b]==targetSteps[
 result={betaSchedule,hist};
 
 
-Remove[vCount,hist,minusbetaFAssn,betaMin,betaMax,thermodynamicSpeed,chartEnergy,
-	incrementValue,thermodynamicSpeedTable,interpolatedThermodynamicSpeed,
-	totalThermodynamicLength,thermodynamicDistanceTable,
-	interpolatedThermodynamicLength,targetSteps,betaSchedule,b];
-
 result
 ];
 
@@ -5177,10 +5112,6 @@ betaSchedule=Table[b/. FindRoot[interpolatedThermodynamicLength[b]==targetSteps[
 
 result=betaSchedule;
 
-
-Remove[incrementValue,thermodynamicSpeedTable,interpolatedThermodynamicSpeed,
-	totalThermodynamicLength,thermodynamicDistanceTable,
-	interpolatedThermodynamicLength,targetSteps,betaSchedule,b];
 
 result
 ];
@@ -5288,11 +5219,6 @@ replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
 result={{externalFieldSchedule,edges,replicaLabels},hist};
 
-Remove[vCount,hist,minusbetaFAssn,hMin,hMax,thermodynamicSpeed,chartConjugateField,
-	totalThermodynamicLength,thermodynamicDistanceTable,
-	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
-	neighbors,edges,replicaLabels];
-
 result
 ];
 
@@ -5387,11 +5313,6 @@ replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
 result={{externalFieldSchedule,edges,replicaLabels},hist};
 
-Remove[vCount,hist,minusbetaFAssn,hMin,hMax,thermodynamicSpeed,chartConjugateField,
-	totalThermodynamicLength,thermodynamicDistanceTable,
-	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
-	neighbors,edges,replicaLabels];
-
 result
 ];
 
@@ -5473,10 +5394,6 @@ edges=DeleteDuplicates@(
 replicaLabels=<|Table[i->externalFieldSchedule[[i]],{i,numReplicas}]|>;
 
 result={externalFieldSchedule,edges,replicaLabels};
-
-Remove[thermodynamicSpeed,totalThermodynamicLength,thermodynamicDistanceTable,
-	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
-	neighbors,edges,replicaLabels];
 
 result
 ];
@@ -5655,11 +5572,6 @@ replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
 result={{centers,edges,replicaLabels},hist};
 
-Remove[hist,minusbetaFAssn,hMins,hMaxs,chartConjugateField,numVars,
-	numInterpolatingSamples,pSoft,h,hVars,sigmaInterpolationAsn,sigmaMat,metricDistance,
-	rho,densityPoints,dist,samples,centers,edges,neighbors,numNeighbors,
-	replicasDistMat,replicaLabels];
-
 result
 ];
 
@@ -5825,11 +5737,6 @@ replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
 result={{centers,edges,replicaLabels},hist};
 
-Remove[hist,minusbetaFAssn,hMins,hMaxs,chartConjugateField,numVars,
-	numInterpolatingSamples,pSoft,h,hVars,sigmaInterpolationAsn,sigmaMat,metricDistance,
-	rho,densityPoints,dist,samples,centers,edges,neighbors,numNeighbors,
-	replicasDistMat,replicaLabels];
-
 result
 ];
 
@@ -5986,10 +5893,6 @@ swapGraph=Graph[Range[numReplicas],edges,VertexCoordinates->Thread[Range[numRepl
 replicaLabels=<|Table[i->centers[[i]],{i,numReplicas}]|>;
 
 result={centers,edges,replicaLabels};
-
-Remove[numVars,numInterpolatingSamples,pSoft,h,hVars,sigmaInterpolationAsn,sigmaMat,
-	metricDistance,rho,densityPoints,dist,samples,centers,edges,swapGraph,neighbors,
-	numNeighbors,replicasDistMat,replicaLabels];
 
 result
 ];
@@ -6241,10 +6144,6 @@ Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[vCount,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,
-	histories,numRep,bt,minStates,candminE,measurements,numsweeps,Tempoutput,swap,
-	printCase,repNumSweeps,chart];
-
 result
 
 ];
@@ -6476,10 +6375,6 @@ Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"]
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[vCount,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,
-	histories,numRep,bt,minStates,candminE,measurements,numsweeps,Tempoutput,swap,
-	printCase,repNumSweeps,chart];
-
 result
 
 ];
@@ -6649,10 +6544,6 @@ Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"]
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[vCount,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,histories
-	,numRep,bt,minStates,candminE,measurements,numsweeps,Tempoutput,swap,printCase
-	,repNumSweeps,chart];
-
 result
 
 ];
@@ -6821,8 +6712,6 @@ Do[histories[[Key[i],Key["history"]]]=
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 result={groundStates,chart,replicas,histories};
-
-Remove[vCount,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,histories,numRep,bt,minStates,candminE,measurements,numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart];
 
 result
 
@@ -7097,8 +6986,6 @@ Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["histor
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[groundStates,maxGStateCount,replicas,histories,numRep,minStates,candminE,measurements,numsweeps,Tempoutput,ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart];
-
 result
 
 ];
@@ -7367,8 +7254,6 @@ Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["histor
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[groundStates,maxGStateCount,replicas,histories,numRep,minStates,candminE,measurements,numsweeps,Tempoutput,ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart];
-
 result
 
 ];
@@ -7594,10 +7479,6 @@ Do[
 
 result={ groundStates,chart,replicas,histories};
 
-Remove[numRep,bt,replicas,groundStates,histories,maxGStateCount,minStates,candminE,
-	measurements,numsweeps,Tempoutput,ChooseRandomIndependentEdgeSet,Swap,printCase,
-	repNumSweeps,chart];
-
 result
 
 ];
@@ -7817,10 +7698,6 @@ Do[
 {i,numRep}];(*remove the -1's in the initiation*)
 
 result={ groundStates,chart,replicas,histories};
-
-Remove[numRep,bt,replicas,groundStates,histories,maxGStateCount,minStates,candminE,
-	measurements,numsweeps,Tempoutput,ChooseRandomIndependentEdgeSet,Swap,printCase,
-	repNumSweeps,chart];
 
 result
 

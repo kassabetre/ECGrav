@@ -3886,8 +3886,6 @@ Module[{
 
 Do[step[],{NN*purity* facetOrder}];
 
-Remove[purity,facetOrder,step];
-
 data
 ]
 
@@ -3994,8 +3992,6 @@ step[]:=(*Performs one spin flip step*)
 	,{i,NN*purity* facetOrder}];
 
 	result=data;
-
-	Remove[purity,facetOrder,data,step];
 
 	result
 ];
@@ -4134,8 +4130,6 @@ Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
 
 
 result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
-
-Remove[purity,facetOrder,data,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime,maxNumSweeps];
 
 result
 
@@ -4303,8 +4297,6 @@ PlotLabel->"t from 1 to 2 times eqlT ",PlotLegends->{"seedComplex","leastEvenlyC
 
 result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
 
-Remove[purity,facetOrder,nV,makeLeastEvenlyConnectedComplex,data,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime,maxNumSweeps];
-
 result
 
 ];
@@ -4407,9 +4399,6 @@ If[fluctuatingObservableIndices=={},
 	{j,fluctuatingObservableIndices}];
 ];
 
-Remove[purity,facetOrder,sweepOutput,observablesTable,
-	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps];
-
 data
 
 ];
@@ -4494,9 +4483,6 @@ If[fluctuatingObservableIndices=={},
 	Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 ];
 
-
-Remove[purity,facetOrder,sweepOutput,observablesTable,
-	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps];
 
 data
 
@@ -4584,8 +4570,6 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-Remove[Tempoutput,numsweeps,stopnum,printCase];
-
 {measurements,data}
 
 ]
@@ -4670,8 +4654,6 @@ measurements=
 		]
 	][[2,1]];
 
-Remove[Tempoutput,numsweeps,stopnum,printCase];
-
 {measurements,data}
 
 ];
@@ -4718,8 +4700,6 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-
-Remove[Tempoutput,numsweeps,stopnum,printCase];
 
 {measurements,data}
 
@@ -4770,8 +4750,6 @@ measurements=Reap[
 
 	]
 ][[2,1]];
-
-Remove[Tempoutput,numsweeps,stopnum,printCase];
 
 {measurements,data}
 
