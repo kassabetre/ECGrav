@@ -1,0 +1,701 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 15.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     27161,        692]
+NotebookOptionsPosition[     22891,        616]
+NotebookOutlinePosition[     23282,        631]
+CellTagsIndexPosition[     23239,        628]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["ECGrav", "GuideTitle",
+ CellID->323818939,ExpressionUUID->"f4f6bdba-0a7a-453b-ac3e-2b0b6242ce29"],
+
+Cell["\<\
+ECGrav (Emergent Combinatorial Gravity) is a Wolfram Language paclet for \
+building and analyzing pure simplicial complexes and for running Monte Carlo \
+simulations of graph and complex models. It provides combinatorial-topology \
+tools, uniform and Markov-chain random-complex generators, a family of graph \
+Hamiltonians, and Metropolis, parallel-tempering, and multiple-histogram \
+simulation drivers together with thermodynamic-analysis functions.\
+\>", "GuideAbstract",
+ CellID->932045640,ExpressionUUID->"dcf3a5e7-5472-454d-96f2-39c3955e501d"],
+
+Cell[CellGroupData[{
+
+Cell["Reference", "GuideReferenceSection",
+ CellID->833044982,ExpressionUUID->"7869877a-1347-44c0-a121-521707a2c2ea"],
+
+Cell["Simplicial Complexes \[Dash] Construction & Topology", \
+"GuideFunctionsSubsection",
+ CellID->719603482,ExpressionUUID->"4c592cd0-7b71-4546-a5c0-fa03dabc2037"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["PureComplexQ"]], "paclet:ECGrav/ref/PureComplexQ", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "afa8bed0-d55a-4e5b-84a6-3487f88f1408"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CliqueComplexQ"]], "paclet:ECGrav/ref/CliqueComplexQ", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "23e22e9b-deb0-4f82-89a7-c0b8357c4940"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphFromCliques"]], "paclet:ECGrav/ref/GraphFromCliques", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "6fda817d-e8c0-4650-b34e-a6def7e937a6"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["FVector"]], "paclet:ECGrav/ref/FVector", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "1386c7d7-1faa-440d-b6ee-d2f432db9fea"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["EulerChi"]], "paclet:ECGrav/ref/EulerChi", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "504441a1-9900-43c5-8bcb-5fea464a8ebe"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CountHoles"]], "paclet:ECGrav/ref/CountHoles", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "f473f230-5705-4972-bdf5-54b7f6622be8"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HausdorffDim"]], "paclet:ECGrav/ref/HausdorffDim", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "cf4caf81-1901-4889-a00e-7da288cfacdb"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["SpectralDim"]], "paclet:ECGrav/ref/SpectralDim", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "65d44632-4b60-4fdd-85df-8446f2d2e9ec"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CombinatorialManifoldQ"]], 
+    "paclet:ECGrav/ref/CombinatorialManifoldQ", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "c514854c-cc4d-4736-be91-c4528e6b9171"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CombinatorialSphereQ"]], 
+    "paclet:ECGrav/ref/CombinatorialSphereQ", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "238c7822-6122-4654-adfa-70de8c03b0a4"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["OrientableCombinatorialManifoldQ"]], 
+    "paclet:ECGrav/ref/OrientableCombinatorialManifoldQ", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "10e73801-8ea4-4c43-a30c-3e5bda5493bf"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CombinatorialBoundary"]], 
+    "paclet:ECGrav/ref/CombinatorialBoundary", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "ecd6c83b-2a8d-4928-a636-82fd9ae9f8e5"]
+}], "InlineGuideFunctionListing",
+ CellID->161824551,ExpressionUUID->"68b1e427-5f99-46e0-ac52-4e144837e689"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"e05ee021-2779-44bb-bc67-60ddb982029a"],
+
+Cell["Automorphisms & Enumeration", "GuideFunctionsSubsection",
+ CellID->710768017,ExpressionUUID->"74b47018-9314-4a86-97e6-d3149ab6343f"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["SimplicialComplexAutomorphismGroupOrder"]], 
+    "paclet:ECGrav/ref/SimplicialComplexAutomorphismGroupOrder", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "b0271a03-63d6-43bb-b67c-dd9f7885b526"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["PureComplexAutomorphismGroupOrder"]], 
+    "paclet:ECGrav/ref/PureComplexAutomorphismGroupOrder", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "93615542-c55a-4be7-b547-f348b4840097"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CliqueFacetAutomorphismGroupOrder"]], 
+    "paclet:ECGrav/ref/CliqueFacetAutomorphismGroupOrder", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "33aa23be-8c5c-4b8e-8a19-d7d1a2d98286"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["NumPureComplexes"]], "paclet:ECGrav/ref/NumPureComplexes", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "cd3d54bc-d5b3-450b-b51a-6ae5c3bdbcbe"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GenerateAllVertexLabeledPureSimplicialComplexes"]], 
+    "paclet:ECGrav/ref/GenerateAllVertexLabeledPureSimplicialComplexes", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "2b96e6fa-8448-4dae-8dd5-b7c95f391e84"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["ChooseNonIsomorphicSimplicialComplexes"]], 
+    "paclet:ECGrav/ref/ChooseNonIsomorphicSimplicialComplexes", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "8ff6f707-ffea-4934-aa89-8474e814e0b1"]
+}], "InlineGuideFunctionListing",
+ CellID->484090383,ExpressionUUID->"f90fc3d7-4f47-4542-a247-e9a0cb080ae7"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"780c2bb2-dd8c-4fe1-b39e-cdd067566cb7"],
+
+Cell["Random Complexes & MCMC", "GuideFunctionsSubsection",
+ CellID->310930580,ExpressionUUID->"5e086194-2506-45c3-8f98-55f04c7a0005"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomUniformUnlabeledPureSimplicialComplex"]], 
+    "paclet:ECGrav/ref/RandomUniformUnlabeledPureSimplicialComplex", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "748e48dd-a0e4-4f1e-9213-719c4bc5c4d4"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomUniformFacetLabeledPureSimplicialComplex"]], 
+    "paclet:ECGrav/ref/RandomUniformFacetLabeledPureSimplicialComplex", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "a60584aa-2461-40fb-985e-999b14287404"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomUnlabeledPseudoManifold"]], 
+    "paclet:ECGrav/ref/RandomUnlabeledPseudoManifold", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "7f564baa-c962-4124-8e69-6e69d2075b38"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["AddRandomUnlabeledFacetToPseudoManifold"]], 
+    "paclet:ECGrav/ref/AddRandomUnlabeledFacetToPseudoManifold", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "2d59458e-2cde-41df-a529-0e84b2f70ac2"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomPureSimplicialComplexMCMC"]], 
+    "paclet:ECGrav/ref/RandomPureSimplicialComplexMCMC", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "4e4d7dbd-37fc-4c84-8675-773217984587"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomPureSimplicialComplexMCMCSweep"]], 
+    "paclet:ECGrav/ref/RandomPureSimplicialComplexMCMCSweep", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "304fb75a-0577-4889-ab03-964b0fa385fd"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["RandomPureSimplicialComplexMCMCEquilibriate"]], 
+    "paclet:ECGrav/ref/RandomPureSimplicialComplexMCMCEquilibriate", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "14a0fefe-ac23-4bc7-b771-4e88ca29237d"]
+}], "InlineGuideFunctionListing",
+ CellID->324711803,ExpressionUUID->"ca50a144-3e64-456e-a39b-7dcf7b1661ee"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"9014b1ca-1a4f-47b3-9fdd-0efa30199474"],
+
+Cell["Graph Hamiltonians", "GuideFunctionsSubsection",
+ CellID->884072005,ExpressionUUID->"3abc8658-9ce2-4643-a246-00450da4443f"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HIsing"]], "paclet:ECGrav/ref/HIsing", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "b382c715-6609-41be-9d65-4beb6ab7ec28"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HWeightedFaceCounts"]], 
+    "paclet:ECGrav/ref/HWeightedFaceCounts", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "a6279c6b-42f5-455b-88d4-9577963dbd25"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HEdgeDeg"]], "paclet:ECGrav/ref/HEdgeDeg", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "7abc2d48-a0ac-4c14-bde7-c73154ab4c38"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HLaplacian"]], "paclet:ECGrav/ref/HLaplacian", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "e6b511e5-d821-4a8f-bb69-1510fd2a3a5a"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["H1dCombManifold"]], "paclet:ECGrav/ref/H1dCombManifold", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "71146cb4-36f9-42bc-a715-e1b89258a095"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["H2dCombManifold"]], "paclet:ECGrav/ref/H2dCombManifold", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "7b1ada66-2e5c-48af-8ca1-0871f85779b2"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["H2dPseudoCombManifold"]], 
+    "paclet:ECGrav/ref/H2dPseudoCombManifold", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "e6194c27-14cd-45b5-9f60-4e3adab13b77"]
+}], "InlineGuideFunctionListing",
+ CellID->844170188,ExpressionUUID->"aca92bab-5e87-47be-bf6b-96485bd4e671"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"3095ecb8-1cac-4d99-8d7c-ca699fd0adf3"],
+
+Cell["Monte Carlo Drivers", "GuideFunctionsSubsection",
+ CellID->128132389,ExpressionUUID->"b1b94cc2-b5af-4625-9542-14684407a701"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphMetropolis"]], "paclet:ECGrav/ref/GraphMetropolis", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "a801e6ed-86e7-4061-ac41-1d269b9b947e"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphEquilibriate"]], "paclet:ECGrav/ref/GraphEquilibriate", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "58183184-ac46-48e8-8285-50e2d7efb3f6"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphSweepReplica"]], "paclet:ECGrav/ref/GraphSweepReplica", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "d20086c4-ac05-49bd-b434-be7519cd5b18"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphComputeCorrelationTime"]], 
+    "paclet:ECGrav/ref/GraphComputeCorrelationTime", "ECGrav Package Symbol"},
+   
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "587dd9e2-d1a7-4753-aaf8-43a27ebcbdde"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphParallelTempering"]], 
+    "paclet:ECGrav/ref/GraphParallelTempering", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "64b20b95-ca2e-4493-b415-c730aa5e8f42"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphMultiHistogram"]], 
+    "paclet:ECGrav/ref/GraphMultiHistogram", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "c78ad604-dd02-4dba-a667-ae9ae1ed8293"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphCTLSchedule"]], "paclet:ECGrav/ref/GraphCTLSchedule", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "c60af0eb-dded-42eb-8e91-41aefd149551"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GraphCEITempSchedule"]], 
+    "paclet:ECGrav/ref/GraphCEITempSchedule", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "8df3e436-5cb4-49bf-8acf-67e11e29a637"]
+}], "InlineGuideFunctionListing",
+ CellID->149036812,ExpressionUUID->"a7b1e4b6-9e61-41a9-81b7-b82bded7c379"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"ad75fddb-c8b5-4e3f-af6c-df32f596586c"],
+
+Cell["Ground-State Search", "GuideFunctionsSubsection",
+ CellID->751593798,ExpressionUUID->"d91458b5-6214-4fb3-978b-a4d5ff0bc0eb"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["LowEnergyStates"]], "paclet:ECGrav/ref/LowEnergyStates", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "e50de13b-e222-4e56-81a1-82016365a6d5"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["GradDescent"]], "paclet:ECGrav/ref/GradDescent", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "b5886327-86d5-450c-8c2e-dea758a20402"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["SGradDescent"]], "paclet:ECGrav/ref/SGradDescent", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "fef98ca9-c713-436a-9abe-6f1a3c3706e9"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["SimulatedAnnealing"]], "paclet:ECGrav/ref/SimulatedAnnealing", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "f4a0f4b8-934b-484e-bd18-a894275d1884"]
+}], "InlineGuideFunctionListing",
+ CellID->126757495,ExpressionUUID->"431fb2fd-c6bd-49ad-b88e-848650b3d254"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"26d8b0f3-1464-410f-9418-69f5fd6cb377"],
+
+Cell["Thermodynamic Analysis", "GuideFunctionsSubsection",
+ CellID->774525846,ExpressionUUID->"85f2b242-4b1e-47e7-a160-485661dffc98"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["InternalEnergy"]], "paclet:ECGrav/ref/InternalEnergy", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "4bf392b6-2152-4f37-a0cd-7b35be9f6811"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["SpecificHeat"]], "paclet:ECGrav/ref/SpecificHeat", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "1b8b1fd9-0d17-4083-b753-88a7588e4c31"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["Susceptibility"]], "paclet:ECGrav/ref/Susceptibility", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "12f6dff4-108e-4c21-8629-26f82265b61c"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CorrelationTime"]], "paclet:ECGrav/ref/CorrelationTime", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "7de707fb-fb27-4185-865c-28d3b599d5c4"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["ErrorBootstrap"]], "paclet:ECGrav/ref/ErrorBootstrap", 
+    "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "ad23638b-b767-4ce3-b65f-d04124538f75"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["ExactExpectationValue"]], 
+    "paclet:ECGrav/ref/ExactExpectationValue", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "9bc80789-c6a8-499d-83be-49082bb3119d"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["NegativeBetaTimesFreeEnergy"]], 
+    "paclet:ECGrav/ref/NegativeBetaTimesFreeEnergy", "ECGrav Package Symbol"},
+   
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "669b1b15-5764-476d-9149-0ca3f937f91b"],
+ StyleBox[" \[FilledSmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["ExtrapolatedExpectationValue"]], 
+    "paclet:ECGrav/ref/ExtrapolatedExpectationValue", "ECGrav Package Symbol"},
+   "PackageLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans",ExpressionUUID->
+  "6f2fee21-07fe-4ef2-886f-3ea06297bac9"]
+}], "InlineGuideFunctionListing",
+ CellID->337980899,ExpressionUUID->"7127df40-b6c2-4bcc-a1a2-361705c6da6e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tech Notes & Related Guides", "GuideTutorialsSection",
+ CellID->138143107,ExpressionUUID->"6979adad-9c45-4f09-8771-b86a715ff258"],
+
+Cell[TextData[ButtonBox["Getting Started with ECGrav",
+ BaseStyle->"Link",
+ ButtonData->
+  "paclet:ECGrav/tutorial/GettingStartedWithECGrav"]], "GuideTutorial",
+ CellID->798844847,ExpressionUUID->"6f48c640-0fc6-4d3f-9d1f-88b16dc7e327"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection",
+ CellID->815991167,ExpressionUUID->"9f96189e-f9eb-469a-9a19-f8c23faefa2c"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->942084120,ExpressionUUID->"06ebedd3-d2d1-443b-b0da-bde8ef3c44d4"],
+
+Cell["Guide", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->218826854,ExpressionUUID->"630d0f29-4e12-4cfe-b984-2b5106c04800"],
+
+Cell["ECGrav", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->929577366,ExpressionUUID->"7b7d4d20-dd0e-4411-a9f3-e5856403a683"],
+
+Cell["ECGrav`", "Categorization",
+ CellLabel->"Context",
+ CellID->313769205,ExpressionUUID->"7a5cedbb-9c79-4417-b741-5eb36b9dea83"],
+
+Cell["ECGrav/guide/ECGrav", "Categorization",
+ CellLabel->"URI",
+ CellID->356748380,ExpressionUUID->"2a321997-04b0-415c-b56a-6e0c89a5de63"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules-><|"Paclet" -> "ECGrav"|>,
+FrontEndVersion->"15.0 for Mac OS X ARM (64-bit) (May 19, 2026)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb"],
+ExpressionUUID->"6c7fe996-23ed-4557-841b-f06797f1cf29"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[554, 20, 103, 1, 70, "GuideTitle",ExpressionUUID->"f4f6bdba-0a7a-453b-ac3e-2b0b6242ce29",
+ CellID->323818939],
+Cell[660, 23, 560, 8, 70, "GuideAbstract",ExpressionUUID->"dcf3a5e7-5472-454d-96f2-39c3955e501d",
+ CellID->932045640],
+Cell[CellGroupData[{
+Cell[1245, 35, 117, 1, 70, "GuideReferenceSection",ExpressionUUID->"7869877a-1347-44c0-a121-521707a2c2ea",
+ CellID->833044982],
+Cell[1365, 38, 165, 2, 70, "GuideFunctionsSubsection",ExpressionUUID->"4c592cd0-7b71-4546-a5c0-fa03dabc2037",
+ CellID->719603482],
+Cell[1533, 42, 4126, 110, 70, "InlineGuideFunctionListing",ExpressionUUID->"68b1e427-5f99-46e0-ac52-4e144837e689",
+ CellID->161824551],
+Cell[5662, 154, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"e05ee021-2779-44bb-bc67-60ddb982029a"],
+Cell[5751, 156, 138, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"74b47018-9314-4a86-97e6-d3149ab6343f",
+ CellID->710768017],
+Cell[5892, 159, 2346, 60, 70, "InlineGuideFunctionListing",ExpressionUUID->"f90fc3d7-4f47-4542-a247-e9a0cb080ae7",
+ CellID->484090383],
+Cell[8241, 221, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"780c2bb2-dd8c-4fe1-b39e-cdd067566cb7"],
+Cell[8330, 223, 134, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"5e086194-2506-45c3-8f98-55f04c7a0005",
+ CellID->310930580],
+Cell[8467, 226, 2785, 71, 70, "InlineGuideFunctionListing",ExpressionUUID->"ca50a144-3e64-456e-a39b-7dcf7b1661ee",
+ CellID->324711803],
+Cell[11255, 299, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"9014b1ca-1a4f-47b3-9fdd-0efa30199474"],
+Cell[11344, 301, 129, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"3abc8658-9ce2-4643-a246-00450da4443f",
+ CellID->884072005],
+Cell[11476, 304, 2399, 63, 70, "InlineGuideFunctionListing",ExpressionUUID->"aca92bab-5e87-47be-bf6b-96485bd4e671",
+ CellID->844170188],
+Cell[13878, 369, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"3095ecb8-1cac-4d99-8d7c-ca699fd0adf3"],
+Cell[13967, 371, 130, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"b1b94cc2-b5af-4625-9542-14684407a701",
+ CellID->128132389],
+Cell[14100, 374, 2833, 74, 70, "InlineGuideFunctionListing",ExpressionUUID->"a7b1e4b6-9e61-41a9-81b7-b82bded7c379",
+ CellID->149036812],
+Cell[16936, 450, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"ad75fddb-c8b5-4e3f-af6c-df32f596586c"],
+Cell[17025, 452, 130, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"d91458b5-6214-4fb3-978b-a4d5ff0bc0eb",
+ CellID->751593798],
+Cell[17158, 455, 1407, 37, 70, "InlineGuideFunctionListing",ExpressionUUID->"431fb2fd-c6bd-49ad-b88e-848650b3d254",
+ CellID->126757495],
+Cell[18568, 494, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"26d8b0f3-1464-410f-9418-69f5fd6cb377"],
+Cell[18657, 496, 133, 1, 70, "GuideFunctionsSubsection",ExpressionUUID->"85f2b242-4b1e-47e7-a160-485661dffc98",
+ CellID->774525846],
+Cell[18793, 499, 2817, 74, 70, "InlineGuideFunctionListing",ExpressionUUID->"7127df40-b6c2-4bcc-a1a2-361705c6da6e",
+ CellID->337980899]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[21647, 578, 135, 1, 70, "GuideTutorialsSection",ExpressionUUID->"6979adad-9c45-4f09-8771-b86a715ff258",
+ CellID->138143107],
+Cell[21785, 581, 235, 4, 70, "GuideTutorial",ExpressionUUID->"6f48c640-0fc6-4d3f-9d1f-88b16dc7e327",
+ CellID->798844847]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[22057, 590, 110, 1, 70, "MetadataSection",ExpressionUUID->"9f96189e-f9eb-469a-9a19-f8c23faefa2c",
+ CellID->815991167],
+Cell[CellGroupData[{
+Cell[22192, 595, 122, 1, 70, "CategorizationSection",ExpressionUUID->"06ebedd3-d2d1-443b-b0da-bde8ef3c44d4",
+ CellID->942084120],
+Cell[22317, 598, 133, 2, 70, "Categorization",ExpressionUUID->"630d0f29-4e12-4cfe-b984-2b5106c04800",
+ CellID->218826854],
+Cell[22453, 602, 134, 2, 70, "Categorization",ExpressionUUID->"7b7d4d20-dd0e-4411-a9f3-e5856403a683",
+ CellID->929577366],
+Cell[22590, 606, 131, 2, 70, "Categorization",ExpressionUUID->"7a5cedbb-9c79-4417-b741-5eb36b9dea83",
+ CellID->313769205],
+Cell[22724, 610, 139, 2, 70, "Categorization",ExpressionUUID->"2a321997-04b0-415c-b56a-6e0c89a5de63",
+ CellID->356748380]
+}, Closed]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)

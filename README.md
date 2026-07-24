@@ -77,22 +77,25 @@ CombinatorialSphereQ[octahedron]  (* True                                       
 ```wolfram
 Needs["ECGrav`"];
 
-seed = Normal[AdjacencyMatrix[CycleGraph[6]]];
+seed = Normal[AdjacencyMatrix[CycleGraph[10]]];   (* seed graph as an adjacency matrix *)
+H    = HIsing[#, -1.0, 0.0] &;                     (* Ising energy; J = -1 rewards edges *)
 
-(* Run 100 sweeps at inverse temperature 0.5 with the graph Ising Hamiltonian;
-   track the number of edges as an observable. *)
-{finalGraph, observables} =
-   GraphMetropolis[seed, 0.5, HIsing[#, 1.0, 0.0] &, {Total[#, 2]/2. &}, 100];
+(* Run 50 Metropolis sweeps at inverse temperature 0.5, measuring the average degree. *)
+{finalGraph, series} = GraphMetropolis[seed, 0.5, H, {AvgDeg}, 50];
+
+Dimensions[series]                 (* {50, 3} — one {sweep, energy, observable} row per sweep *)
+ListLinePlot[series[[All, 3]]]     (* average degree climbing as the graph densifies *)
 ```
 
-`GraphMetropolis` returns the last graph visited and the observable values along
-the trajectory. Higher-level drivers (`GraphEquilibriate`,
+`GraphMetropolis` returns the last graph visited and the `{sweep, energy, observable}`
+table along the trajectory — this mirrors the [Getting Started tutorial](Documentation/English/Tutorials/GettingStartedWithECGrav.nb).
+Higher-level drivers (`GraphEquilibriate`,
 `GraphComputeCorrelationTime`, `GraphParallelTempering`, `GraphMultiHistogram`)
 build on this and emit diagnostic plots as they run.
 
 ## What's in the package
 
-ECGrav exports ~116 public functions across two subpackages. A selection:
+ECGrav exports 111 public functions across two subpackages. A selection:
 
 ### Simplicial complexes & graphs
 
@@ -122,8 +125,9 @@ Use the built-in help for details on any symbol:
 ?GraphMetropolis (* usage message for one function *)
 ```
 
-Reference documentation pages are available for many functions in the Wolfram
-Documentation Center; guides and tutorials are in progress (see the roadmap).
+Reference documentation pages are available for every public function in the Wolfram
+Documentation Center, along with an **ECGrav** guide (API by theme) and a
+**Getting Started with ECGrav** tutorial.
 
 ## Tests
 
