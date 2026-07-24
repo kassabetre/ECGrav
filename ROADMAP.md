@@ -4,7 +4,7 @@ Working plan for turning ECGrav into a well-documented, openly shared Wolfram
 Language paclet. Checkboxes track progress; phases are roughly ordered by
 priority. This is a living document — update it as items land.
 
-_Status snapshot: 2026-07-17._
+_Status snapshot: 2026-07-24 — Phase 2 (documentation) complete; Phase 3 (quality & CI) is next._
 
 **Decisions made**
 - License: **MIT** ✅
@@ -41,7 +41,7 @@ _Status snapshot: 2026-07-17._
 - [x] `CHANGELOG.md` starting at 1.2.0
 - [ ] `CITATION.cff` — deferred until there is a paper (software-only cite optional)
 
-## Phase 2 — Documentation completeness
+## Phase 2 — Documentation completeness ✅ (done)
 
 - [x] Resolve the 5 undocumented `*Conn` functions — made them **private** (internal
       efficiency helpers) rather than documenting them (list below)
