@@ -162,7 +162,7 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 ## Known issues / bugs
 
-All three bugs below were **resolved** in Phase 3 (details in `CHANGELOG.md` →
+The bugs below were **resolved** in Phase 3 (details in `CHANGELOG.md` →
 Unreleased); each now has a regression test. Kept here as a record.
 
 - **`CombinatorialSphereQ[torus]` returned `True`.** ✅ Resolved. The old logic actually
@@ -171,6 +171,11 @@ Unreleased); each now has a regression test. Kept here as a record.
   and `CombinatorialSphereQ` tests genuine sphere-ness (a closed manifold with the Euler
   characteristic of a sphere, χ = 1 + (−1)^d). Exact for surfaces; a necessary
   homology-level filter in dimension ≥ 3. **Breaking change** to `CombinatorialSphereQ`.
+- **`DSphereQ` had the same flaw for graphs.** ✅ Resolved by the analogous split: the
+  closed-manifold test on a graph's clique complex is now `ClosedDGraphQ`, and `DSphereQ`
+  tests genuine sphere-ness (a closed d-graph with a sphere's Euler characteristic), so a
+  graph whose clique complex is a torus now returns `False`. `DGraphBoundary` was repointed
+  to `ClosedDGraphQ` to preserve its behaviour. **Breaking change** to `DSphereQ`.
 - **`ExactExpectationValue` emitted a stray `Part::partd`.** ✅ Resolved. The
   numeric-observable overload's pattern test now uses `MatrixQ[obsValues, NumericQ]`, so
   dispatch no longer evaluates `{func,…}[[1,1]]`. Result values unchanged.

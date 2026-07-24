@@ -104,7 +104,7 @@ ECGrav exports 111 public functions across two subpackages. A selection:
 | Representations & conversions | `FacetIncidenceMatrix`, `FacetAdjacencyMatrix`, `GraphFromCliques`, `CliquesFromFacetIncidence`, `ComplexFromFacetLabeledVertexList` |
 | Local structure | `Sph`, `Bll`, `Lnk`, `Str`, `Deg`, `HyperDeg`, `FacetDeg` |
 | Dimension & topology | `AvgKDim`, `SpectralDim`, `HausdorffDim`, `EulerChi`, `CountHoles`, `FVector`, `GVolume` |
-| Manifold predicates | `CombinatorialManifoldQ`, `ClosedCombinatorialManifoldQ`, `CombinatorialSphereQ`, `DSphereQ`, `DGraphQ`, `OrientableCombinatorialManifoldQ` |
+| Manifold predicates | `CombinatorialManifoldQ`, `ClosedCombinatorialManifoldQ`, `CombinatorialSphereQ`, `DSphereQ`, `ClosedDGraphQ`, `DGraphQ`, `OrientableCombinatorialManifoldQ` |
 | Symmetry & enumeration | `SimplicialComplexAutomorphismGroupOrder`, `IsomorphicSimplicialComplexQ`, `ChooseNonIsomorphicSimplicialComplexes`, `NumPureComplexes`, `RankComb`, `UnrankComb` |
 | Random complexes | `RandomVertexLabeledPureSimplicialComplex`, `RandomFacetLabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold` |
 

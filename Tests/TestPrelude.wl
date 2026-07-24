@@ -62,6 +62,7 @@ surfaces = {mobiusStrip1, mobiusStrip2, kleinbottle, projectivePlane,
 (* Clique-graph views of a couple of the complexes *)
 octaG = ECGrav`GraphFromCliques[octahedron];
 tetraG = ECGrav`GraphFromCliques[tetrahedron];
+torusG = ECGrav`GraphFromCliques[torus];  (* clique complex is a clean torus triangulation *)
 
 (* ----- Fixtures: graph adjacency matrices for the MC / Hamiltonian tests ----- *)
 

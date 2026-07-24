@@ -151,4 +151,15 @@ VerificationTest[ECGrav`ClosedCombinatorialManifoldQ[torus], True, TestID -> "Cl
 VerificationTest[ECGrav`ClosedCombinatorialManifoldQ[{{1, 2, 3}}], False, TestID -> "ClosedCombinatorialManifoldQ-single-simplex-has-boundary"];
 
 VerificationTest[ECGrav`DSphereQ[octaG], True, TestID -> "DSphereQ-octahedron"];
+
+(* DSphereQ now tests genuine sphere-ness of the graph's clique complex: the octahedron graph
+   is a 2-sphere (True), but the torus graph's clique complex is a closed manifold that is not
+   a sphere, so it is False. ClosedDGraphQ is the closed-combinatorial-manifold test the old
+   DSphereQ actually implemented (torus -> True). A K4 is a solid tetrahedron (a 3-ball), which
+   has boundary, so ClosedDGraphQ is False for it (whereas DGraphQ, allowing boundary, is True). *)
+VerificationTest[ECGrav`DSphereQ[torusG], False, TestID -> "DSphereQ-torus-not-sphere"];
+VerificationTest[ECGrav`ClosedDGraphQ[octaG], True, TestID -> "ClosedDGraphQ-octahedron-sphere"];
+VerificationTest[ECGrav`ClosedDGraphQ[torusG], True, TestID -> "ClosedDGraphQ-torus-is-closed-manifold"];
+VerificationTest[ECGrav`ClosedDGraphQ[tetraG], False, TestID -> "ClosedDGraphQ-K4-has-boundary"];
+
 VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];

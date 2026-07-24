@@ -14,9 +14,13 @@ Phase 3 (quality & CI) work, staged for the next release (1.3.0).
   codimension-1 face contained in exactly two facets, and every vertex link recursively
   a closed combinatorial manifold. This is the predicate the old `CombinatorialSphereQ`
   actually implemented — a torus, Klein bottle, and sphere all return `True`.
-- Regression tests: `CombinatorialSphereQ` and `ClosedCombinatorialManifoldQ` over the
-  seven reference surfaces, and a `GraphParallelTempering` smoke test that exercises the
-  beta-history boundary (a previously untested function). Suite is now 69 tests.
+- `ClosedDGraphQ` — the graph/clique-complex analogue: tests whether a graph's clique
+  complex is a closed combinatorial manifold (the predicate the old `DSphereQ` actually
+  implemented). Reference pages added for both new symbols.
+- Regression tests: `CombinatorialSphereQ` / `ClosedCombinatorialManifoldQ` and `DSphereQ`
+  / `ClosedDGraphQ` over the reference surfaces and their clique graphs, plus a
+  `GraphParallelTempering` smoke test exercising the beta-history boundary (a previously
+  untested function). Suite is now 73 tests.
 
 ### Changed
 - **Breaking:** `CombinatorialSphereQ` now tests genuine sphere-ness. It returns `True`
@@ -27,10 +31,18 @@ Phase 3 (quality & CI) work, staged for the next release (1.3.0).
   `ClosedCombinatorialManifoldQ`. For surfaces the new test is exact; in dimension ≥ 3 the
   Euler-characteristic condition is a necessary (homology-level) filter only, since
   recognizing PL spheres is not algorithmically decidable in general.
+- **Breaking:** `DSphereQ` now tests whether a graph's clique complex is a combinatorial
+  manifold *homeomorphic to a sphere* — a closed d-graph (see `ClosedDGraphQ`) with the
+  Euler characteristic of a sphere. Previously it returned `True` for any closed d-graph,
+  so a graph whose clique complex is a torus wrongly returned `True`. `DGraphBoundary`'s
+  interior-point test was repointed to `ClosedDGraphQ` to preserve its behaviour (the two
+  agree on all genuine geometric graphs).
 
 ### Fixed
 - `CombinatorialSphereQ[torus]` (and Klein bottle, projective plane) no longer returns
   `True` — see the split above.
+- `DSphereQ` no longer returns `True` for a graph whose clique complex is a torus (or any
+  other closed non-sphere manifold) — see the split above.
 - `ExactExpectationValue` no longer emits a stray `Part::partd` when passed a list of
   observable *functions*. The numeric-observable overload's pattern test now uses
   `MatrixQ[obsValues, NumericQ]` instead of `NumericQ[obsValues[[1,1]]]`, so dispatch no

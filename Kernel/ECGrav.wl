@@ -1728,12 +1728,32 @@ HausdorffDim::argerr="A graph adjacency matrix or graph was expected at position
 
 
 (* ::Item::Closed:: *)
+(*ClosedDGraphQ*)
+
+
+(* :Usage Messages: *)
+
+ClosedDGraphQ::usage = "ClosedDGraphQ[g_Graph] returns True if the clique complex of the graph
+g is a combinatorial manifold without boundary (a closed d-graph): the unit sphere of every
+vertex is recursively a closed d-graph. This is the topological manifold condition only; a
+graph whose clique complex is a torus returns True. Use DSphereQ to test for a sphere.";
+
+(* :Error Messages: *)
+
+ClosedDGraphQ::argerr="Input should be a graph.";
+
+
+(* ::Item::Closed:: *)
 (*DSphereQ*)
 
 
 (* :Usage Messages: *)
 
-DSphereQ::usage = "DSphereQ[g_Graph] outputs true if the graph is a d-sphere.";
+DSphereQ::usage = "DSphereQ[g_Graph] returns True if the clique complex of the graph g is a
+combinatorial manifold homeomorphic to a sphere: a closed d-graph (see ClosedDGraphQ) whose
+clique complex additionally has the Euler characteristic of a sphere of the same dimension
+(chi = 1 + (-1)^d). For surfaces this is exact (only the 2-sphere returns True; a torus
+returns False); in dimension >= 3 it is a necessary homology-level condition only.";
 
 (* :Error Messages: *)
 

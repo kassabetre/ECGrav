@@ -1101,12 +1101,16 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
-(*DSphereQ*)
+(*ClosedDGraphQ*)
 
 
 (* Primary Pattern *)
-ECGrav`DSphereQ[g_Graph]:=
-(*Outputs true if the graph is a d-sphere*)
+ECGrav`ClosedDGraphQ[g_Graph]:=
+(*Outputs True if the clique complex of the graph g is a combinatorial manifold without
+boundary (a closed d-graph): the unit sphere of every vertex is recursively a closed d-graph,
+bottoming out at a single cycle (the 1-sphere) and at two isolated vertices (the 0-sphere).
+This is the topological manifold condition only and does NOT test sphere-ness -- a graph whose
+clique complex is a torus returns True. Use DSphereQ to test whether it is a sphere.*)
 Module[{n=VertexCount[g],vlist=VertexList[g],clqs=FindClique[g,\[Infinity],All],numClqSizes,dim,spheres},
 If[EdgeCount[g]==0,If[n==2,Return[True],Return[False]]];
 numClqSizes=DeleteDuplicates[Length/@clqs];
@@ -1114,8 +1118,28 @@ If[Length[numClqSizes]>1,Return[False]];
 dim=numClqSizes[[1]];
 If[dim==2,Return[PathGraphQ[g]&&!TreeGraphQ[g]]];
 spheres=Table[ECGrav`Sph[g,i],{i,vlist}];
-AllTrue[spheres,ECGrav`DSphereQ[#]&]
+AllTrue[spheres,ECGrav`ClosedDGraphQ[#]&]
 ];
+
+(* Catch-all Pattern *)
+ECGrav`ClosedDGraphQ[args___]:=(Message[ECGrav`ClosedDGraphQ::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*DSphereQ*)
+
+
+(* Primary Pattern *)
+ECGrav`DSphereQ[g_Graph]:=
+(*Outputs True if the clique complex of the graph g is a combinatorial manifold homeomorphic
+to a sphere: a closed d-graph (see ClosedDGraphQ) whose clique complex additionally has the
+Euler characteristic of a sphere of the same dimension, chi = 1 + (-1)^d (d = dimension of the
+clique complex = one less than the largest clique). For surfaces this is exact -- only the
+2-sphere returns True, while a graph whose clique complex is a torus returns False; in
+dimension >= 3 the Euler-characteristic condition is necessary but not sufficient.*)
+If[!ECGrav`ClosedDGraphQ[g],False,
+	ECGrav`EulerChi[g]==1+(-1)^(Length[First[FindClique[g]]]-1)];
 
 (* Catch-all Pattern *)
 ECGrav`DSphereQ[args___]:=(Message[ECGrav`DSphereQ::argerr, args];
@@ -1154,7 +1178,7 @@ ECGrav`DGraphBoundary[g_Graph]:=
 (*Outputs the induced subgraph which is the boundary of the graph g. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
 Module[{vlist=VertexList[g],interiorPoints,bdryPoints},
 (*If[!DGraphQ[g],Return["Error! The graph is not geometric."]];*)
-interiorPoints=Select[vlist,ECGrav`DSphereQ[ECGrav`Sph[g,#]]&];
+interiorPoints=Select[vlist,ECGrav`ClosedDGraphQ[ECGrav`Sph[g,#]]&];(*interior vertices have a sphere link; ClosedDGraphQ preserves the original behaviour of this test (it was DSphereQ, which used to be the closed-manifold predicate)*)
 bdryPoints=Complement[vlist,interiorPoints];
 Return[Subgraph[g,bdryPoints]]
 ];
