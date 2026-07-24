@@ -1787,13 +1787,35 @@ CombinatorialManifoldQ::argerr="Input should be a list of facets.";
 
 
 (* ::Item::Closed:: *)
+(*ClosedCombinatorialManifoldQ*)
+
+
+(* :Usage Messages: *)
+
+ClosedCombinatorialManifoldQ::usage = "ClosedCombinatorialManifoldQ[facetsLst_List] returns
+True if the pure simplicial complex (given as a list of facets) is a combinatorial manifold
+without boundary, i.e. a closed combinatorial manifold: connected, with every codimension-1
+face contained in exactly two facets and every vertex link recursively a closed combinatorial
+manifold. This is the topological manifold condition only; a torus, Klein bottle, or sphere
+all return True. Use CombinatorialSphereQ to test whether the manifold is a sphere.";
+
+(* :Error Messages: *)
+
+ClosedCombinatorialManifoldQ::argerr="Input should be a list of facets.";
+
+
+(* ::Item::Closed:: *)
 (*CombinatorialSphereQ*)
 
 
 (* :Usage Messages: *)
 
-CombinatorialSphereQ::usage = "CombinatorialSphereQ[facetsLst_List] returns True if 
-	the complex is a combinatorial sphere.";
+CombinatorialSphereQ::usage = "CombinatorialSphereQ[facetsLst_List] returns True if the pure
+simplicial complex (given as a list of facets) is a combinatorial sphere: a closed combinatorial
+manifold (see ClosedCombinatorialManifoldQ) that in addition has the Euler characteristic of a
+sphere of the same dimension, chi = 1 + (-1)^d. For surfaces this is exact (only the 2-sphere
+returns True; a torus, Klein bottle, or projective plane return False); in dimension >= 3 it is
+a necessary homology-level condition only.";
 
 (* :Error Messages: *)
 

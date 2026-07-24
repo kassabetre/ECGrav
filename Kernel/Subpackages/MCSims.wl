@@ -1013,7 +1013,7 @@ Return[0](* unable to find a flip that lowers the energy*)
 1 (*success*)
 ];
 
-printCase=Floor[(cutoff*1.0)/5.0];
+printCase=Max[Floor[(cutoff*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for cutoff<5*)
 
 numsteps=0;
 stepagain=1;
@@ -1116,7 +1116,7 @@ minStates=Join[minStates,{Amcur}];
 1 (*success*)
 ];
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 numsteps=0;
 
@@ -1200,7 +1200,7 @@ minStates=Join[minStates,{Amcur}];
 1 (*success*)
 ];
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 numsteps=0;
 
@@ -1337,7 +1337,7 @@ Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excited
 1 (*success*)
 ];
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 numsteps=0;
@@ -1474,7 +1474,7 @@ Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excited
 1 (*success*)
 ];
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 numsteps=0;
@@ -1574,7 +1574,12 @@ Print["expvalue ", result];*)
 Table[{partitionZ[[i]],freeF[[i]],result[[i]]},{i,1,Length[degenValues]}]
 ];
 
-ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],obsValues_List/;NumericQ[obsValues[[1,1]]],Hamiltonian_,beta_]:=
+(* The obsValues discriminator uses MatrixQ[obsValues,NumericQ] rather than
+   NumericQ[obsValues[[1,1]]]: the latter evaluates obsValues[[1,1]] during pattern
+   matching, which throws Part::partd when the caller passes a list of observable
+   *functions* (matching the overload above, whose 3rd arg is a bare function_). MatrixQ
+   short-circuits on non-matrix input, so no message leaks; a numeric matrix still matches. *)
+ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],obsValues_List/;MatrixQ[obsValues,NumericQ],Hamiltonian_,beta_]:=
 (*(*****************************)
 (* Last Updated: 02/07/2025  *)
 (*****************************)*)
@@ -3527,7 +3532,7 @@ Print["  histories ",histories];*)
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -3595,7 +3600,7 @@ Print[" measurements ",measurements ];*)
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 
-Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
+Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]]),{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 
@@ -3826,7 +3831,7 @@ Print["  histories ",histories];*)
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -3899,7 +3904,7 @@ Print[" measurements ",measurements ];*)
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 
-Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
+Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]]),{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 
@@ -4145,7 +4150,7 @@ Do[
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 measurements=Reap[
 While[numsweeps<=NN,
@@ -4235,7 +4240,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[externalFieldTable]]]}]|>;
 
 Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i]
 	,Key["history"]]]],histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])]
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])]
 ,{i,numRep}];
 (*remove the -1's in the initiation *)
 
@@ -4469,7 +4474,7 @@ Do[
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 measurements=Reap[
 While[numsweeps<=NN,
@@ -4559,7 +4564,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[externalFieldTable]]]}]|>;
 
 Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i]
 	,Key["history"]]]],histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])]
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])]
 ,{i,numRep}];
 (*remove the -1's in the initiation *)
 (*
@@ -6175,7 +6180,7 @@ If[accept==1, (*Do swap of replicas*)
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 measurements=Reap[
 While[numsweeps<=NN,
@@ -6231,7 +6236,7 @@ numsweeps++;
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],
-	-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
+	Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]]),{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 result={ groundStates,chart,replicas,histories};
@@ -6410,7 +6415,7 @@ Do[
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 measurements=Reap[
 	While[numsweeps<=NN,
@@ -6466,7 +6471,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 
 Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"]
-		,-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
+		,Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]]),{i,numRep}];
 		(*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 result={ groundStates,chart,replicas,histories};
@@ -6587,7 +6592,7 @@ Do[
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -6639,7 +6644,7 @@ While[numsweeps<=NN,
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"]
-	,-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]]),{i,numRep}];
+	,Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]]),{i,numRep}];
 	(*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
 result={ groundStates,chart,replicas,histories};
@@ -6756,7 +6761,7 @@ Do[
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -6811,7 +6816,7 @@ numsweeps++;
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[btTable]]]}]|>;
 
 Do[histories[[Key[i],Key["history"]]]=
-	(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])
+	(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])
 	,{i,numRep}];
 (*remove the -1's in the initiation and select every nth point so that the total length is no more than numberOfDataPoints*)
 
@@ -7021,7 +7026,7 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -7087,7 +7092,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 (*remove the -1's in the initiation*)
 Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["history"]]]],
 	histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])]
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])]
 ,{i,numRep}];
 
 result={ groundStates,chart,replicas,histories};
@@ -7292,7 +7297,7 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -7357,7 +7362,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 (*remove the -1's in the initiation*)
 Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["history"]]]],
 	histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])]
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])]
 ,{i,numRep}];
 
 result={ groundStates,chart,replicas,histories};
@@ -7520,7 +7525,7 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -7583,7 +7588,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 Do[
 	If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["history"]]]],
 	histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])
 	],
 {i,numRep}];(*remove the -1's in the initiation*)
 
@@ -7745,7 +7750,7 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 numsweeps=1;
 
-printCase=Floor[(NN*1.0)/5.0];
+printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
 
 
 measurements=Reap[
@@ -7807,7 +7812,7 @@ chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 Do[
 	If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i],Key["history"]]]],
 	histories[[Key[i],Key["history"]]]
-		=(histories[[Key[i],Key["history"],-(histories[[Key[i],Key["swapAccept"]]]+1);;-1]])
+		=(histories[[Key[i],Key["history"],Max[-(histories[[Key[i],Key["swapAccept"]]]+1),-Length[histories[[Key[i],Key["history"]]]]];;-1]])
 	],
 {i,numRep}];(*remove the -1's in the initiation*)
 

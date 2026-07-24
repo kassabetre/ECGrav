@@ -8,8 +8,8 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures and float-comparison helpers. |
-| `PureComplexes.wlt` | 38 deterministic assertions: complex constructions, observables, dimensions, geometric predicates. |
-| `MCSims.wlt` | 20 tests: exact assertions for Hamiltonians / data helpers, smoke tests for the stochastic MC drivers. |
+| `PureComplexes.wlt` | 47 deterministic assertions: complex constructions, observables, dimensions, geometric predicates. |
+| `MCSims.wlt` | 22 tests: exact assertions for Hamiltonians / data helpers, smoke tests for the stochastic MC drivers. |
 
 ## Running
 
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **58 tests, 58 passing** (~20 s, dominated by the MC smoke tests).
+Expected: **69 tests, 69 passing** (~15 s, dominated by the MC smoke tests).
 
 ## Design notes
 
@@ -68,21 +68,31 @@ remainder are characterization tests that lock in current behaviour.
   if called before `LaunchKernels[]`. Now uses `Max[$KernelCount, 1]`. The
   `LowEnergyStates-energies-no-kernels` test calls `CloseKernels[]` first to
   exercise the `$KernelCount == 0` path directly.
+- **`CombinatorialSphereQ` conflated spheres with closed manifolds** — it returned
+  `True` for a torus, Klein bottle, and projective plane. Split into
+  `ClosedCombinatorialManifoldQ` (the closed-manifold test the old code actually
+  implemented) and a corrected `CombinatorialSphereQ` (closed manifold **and** the Euler
+  characteristic of a sphere, χ = 1 + (−1)^d; exact for surfaces). Guarded by
+  `CombinatorialSphereQ-surfaces` and `ClosedCombinatorialManifoldQ-surfaces`.
+- **`ExactExpectationValue` emitted a stray `Part::partd`** while probing its observable
+  overload. The numeric-observable pattern test now uses `MatrixQ[obsValues, NumericQ]`.
+  The `ExactExpectationValue-AvgDeg-highbeta` test now declares **no** expected messages,
+  so it fails if the message reappears.
+- **`GraphParallelTempering` / `GraphMultiHistogram` emitted `Part::take`** when a
+  replica's accepted-swap count reached `NN`; the beta-history trim now clamps to the
+  buffer length. A `Mod[_, 0]` progress-print glitch on short runs (`Floor[NN/5] → 0`)
+  was fixed at the same time. Guarded by `GraphParallelTempering-smoke-no-Part-take`,
+  which asserts a clean, message-free run at the triggering boundary (`NN == swapAccept`).
 
-## Known gaps / suspected bugs (not encoded as passing tests)
+## Known gaps / suspected bugs
 
-These are deliberately **not** asserted, because doing so would bake in
-probably-wrong behaviour:
-
-- **`CombinatorialSphereQ[torus]` returns `True`.** A torus (χ = 0) is not a
-  sphere. Only the correct cases (tetrahedron, octahedron) are asserted.
-- **`ExactExpectationValue` emits `Part::partd`** while probing its observable
-  argument. Harmless (result is correct) but declared as an expected message.
+None outstanding — the three suspected-wrong-behaviour bugs previously flagged here have
+been fixed at the source (see above) and are regression-tested.
 
 ## Coverage
 
-Not exhaustive: ~40 of the package's 116 public symbols. Untested areas include
-parallel tempering (`GraphParallelTempering`, `GraphCTLSchedule`,
-`GraphCEITempSchedule`), ground-state search (`SimulatedAnnealing`,
-`GradDescent`, `SGradDescent`), the random-complex generators, and the
-free-energy extrapolation family.
+Still not exhaustive (~45 of the package's public symbols). `GraphParallelTempering` now
+has a smoke test; remaining untested areas include the temperature schedulers
+(`GraphCTLSchedule`, `GraphCEITempSchedule`), ground-state search (`SimulatedAnnealing`,
+`GradDescent`, `SGradDescent`), the random-complex generators, and the free-energy
+extrapolation family.

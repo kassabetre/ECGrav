@@ -66,14 +66,14 @@ VerificationTest[
     TestID -> "LowEnergyStates-energies"
 ];
 
-(* High-beta expectation of AvgDeg is dominated by K4 (avg degree 3).
-   The Part::partd message is emitted by the function itself while probing
-   which overload its observable argument matches; the result is still correct. *)
+(* High-beta expectation of AvgDeg is dominated by K4 (avg degree 3). Passing a list of
+   observable *functions* as the 3rd argument must dispatch cleanly: no expected-messages
+   argument is given, so this also asserts that the stray Part::partd (emitted by the old
+   numeric-obsValues pattern test while probing the overload) is now silenced. *)
 VerificationTest[
     ECGrav`ExactExpectationValue[{K4, C6}, {{1.0, 1.0}}, {ECGrav`AvgDeg},
         ECGrav`HIsing[#, -1.0, 0.0] &, 1.0][[1, 3, 1]],
     2.9975273768433652,
-    {Part::partd},
     SameTest -> looseEq, TestID -> "ExactExpectationValue-AvgDeg-highbeta"
 ];
 
@@ -125,6 +125,23 @@ VerificationTest[
         n >= 1],
     True,
     TestID -> "GraphMultiHistogram-emits-plot"
+];
+
+(* GraphParallelTempering must run cleanly on a tiny job (regression for the beta-history
+   Part::take). NN=1 with two nearby betas drives a replica's swapAccept up to NN, which
+   used to underflow the fixed-length history buffer: the trim slice -(swapAccept+1);;-1
+   asked for positions -2..-1 of a length-1 list. SeedRandom[1] deterministically reaches
+   swapAccept==NN on both replicas, exercising that boundary. With no expected-messages
+   argument this also guards the Mod[_,0] progress-print glitch (printCase==0 when NN<5).
+   The inner drivers emit diagnostic plots via Print, so Print is blocked. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{r},
+        SeedRandom[1];
+        r = ECGrav`GraphParallelTempering[C6, {0.1, 0.2}, h[-1.0, 0.0], dH[-1.0, 0.0],
+            {Total[#, 2]/2. &}, 0, 1, 0, -100.0];
+        {Head[r], Length[r]}]],
+    {List, 4},
+    TestID -> "GraphParallelTempering-smoke-no-Part-take"
 ];
 
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------

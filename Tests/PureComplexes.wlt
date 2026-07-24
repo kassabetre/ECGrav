@@ -126,5 +126,29 @@ VerificationTest[
 ];
 VerificationTest[ECGrav`CombinatorialSphereQ[tetrahedron], True, TestID -> "CombinatorialSphereQ-tetrahedron"];
 VerificationTest[ECGrav`CombinatorialSphereQ[octahedron], True, TestID -> "CombinatorialSphereQ-octahedron"];
+
+(* CombinatorialSphereQ tests genuine sphere-ness: of the seven surfaces, only the two
+   2-spheres (tetrahedron, octahedron) qualify. The closed non-spheres (Klein bottle,
+   projective plane, torus) and the two bounded Mobius strips are all False. This is the
+   regression for the old CombinatorialSphereQ[torus] == True bug (the old code tested
+   closed-manifold-ness, now split out into ClosedCombinatorialManifoldQ below). *)
+VerificationTest[
+    ECGrav`CombinatorialSphereQ /@ surfaces,
+    {False, False, False, False, False, True, True},
+    TestID -> "CombinatorialSphereQ-surfaces"
+];
+VerificationTest[ECGrav`CombinatorialSphereQ[torus], False, TestID -> "CombinatorialSphereQ-torus-not-sphere"];
+
+(* ClosedCombinatorialManifoldQ tests combinatorial-manifold-without-boundary-ness (the
+   behaviour the old CombinatorialSphereQ actually implemented): the five closed surfaces
+   are True; the two Mobius strips, which have boundary, are False. *)
+VerificationTest[
+    ECGrav`ClosedCombinatorialManifoldQ /@ surfaces,
+    {False, False, True, True, True, True, True},
+    TestID -> "ClosedCombinatorialManifoldQ-surfaces"
+];
+VerificationTest[ECGrav`ClosedCombinatorialManifoldQ[torus], True, TestID -> "ClosedCombinatorialManifoldQ-torus-is-closed-manifold"];
+VerificationTest[ECGrav`ClosedCombinatorialManifoldQ[{{1, 2, 3}}], False, TestID -> "ClosedCombinatorialManifoldQ-single-simplex-has-boundary"];
+
 VerificationTest[ECGrav`DSphereQ[octaG], True, TestID -> "DSphereQ-octahedron"];
 VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];

@@ -4,7 +4,7 @@ Working plan for turning ECGrav into a well-documented, openly shared Wolfram
 Language paclet. Checkboxes track progress; phases are roughly ordered by
 priority. This is a living document — update it as items land.
 
-_Status snapshot: 2026-07-24 — Phase 2 (documentation) complete; Phase 3 (quality & CI) is next._
+_Status snapshot: 2026-07-24 — Phase 2 (documentation) complete; Phase 3 (quality & CI) in progress: the three known bugs are resolved and regression-tested (suite 63 → 69)._
 
 **Decisions made**
 - License: **MIT** ✅
@@ -131,7 +131,8 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 ## Phase 3 — Quality & CI
 
-- [ ] Resolve or document known bugs (see below)
+- [x] Resolve or document known bugs (see below) — all three fixed at the source and
+      regression-tested ✅
 - [ ] Expand test coverage beyond the current ~40 / 116 symbols; gaps include
       parallel tempering, simulated annealing, gradient descent, the random-complex
       generators, and the free-energy extrapolation family
@@ -161,18 +162,23 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 ## Known issues / bugs
 
-Found while building the test suite and the documentation; **not** yet fixed, and
-deliberately not asserted as passing behaviour in the suite:
+All three bugs below were **resolved** in Phase 3 (details in `CHANGELOG.md` →
+Unreleased); each now has a regression test. Kept here as a record.
 
-- **`CombinatorialSphereQ[torus]` returns `True`.** A torus (χ = 0) is not a
-  sphere. Only the correct cases (tetrahedron, octahedron) are currently asserted.
-- **`ExactExpectationValue` emits a stray `Part::partd`** while probing which
-  overload its observable argument matches. The result is correct; the message is
-  declared as expected in the test. Worth silencing at the source.
-- **`GraphParallelTempering` emits `Part::take: Cannot take positions -N through
-  -1 in {…}`** on some inputs (seen while authoring the doc examples from
-  `MCSimsExamples.nb`). The call still returns a result, but the message points to
-  an out-of-range slice of the replica/temperature history — worth tracing. The
-  messages are stripped from the reference-page examples for now.
+- **`CombinatorialSphereQ[torus]` returned `True`.** ✅ Resolved. The old logic actually
+  tested closed-combinatorial-manifold-ness — for which a torus is correctly `True` — so
+  it was **split in two**: the closed-manifold test is now `ClosedCombinatorialManifoldQ`,
+  and `CombinatorialSphereQ` tests genuine sphere-ness (a closed manifold with the Euler
+  characteristic of a sphere, χ = 1 + (−1)^d). Exact for surfaces; a necessary
+  homology-level filter in dimension ≥ 3. **Breaking change** to `CombinatorialSphereQ`.
+- **`ExactExpectationValue` emitted a stray `Part::partd`.** ✅ Resolved. The
+  numeric-observable overload's pattern test now uses `MatrixQ[obsValues, NumericQ]`, so
+  dispatch no longer evaluates `{func,…}[[1,1]]`. Result values unchanged.
+- **`GraphParallelTempering` emitted `Part::take: Cannot take positions -N through -1`.**
+  ✅ Resolved. The rolling beta-history buffer trim now clamps its slice to the buffer
+  length (the same latent bug was fixed in `GraphMultiHistogram` too). Bonus: a
+  `Mod[_, 0]` progress-print glitch on short runs (`printCase = Floor[NN/5] → 0`) was
+  fixed across the MC drivers (`GraphParallelTempering`, `GraphMultiHistogram`,
+  `SimulatedAnnealing`, `SGradDescent`, `GradDescent`).
 
 See `Tests/README.md` for the full list of test caveats and design notes.

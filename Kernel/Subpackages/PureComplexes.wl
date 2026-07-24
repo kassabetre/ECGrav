@@ -1207,36 +1207,66 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
-(*CombinatorialSphereQ*)
+(*ClosedCombinatorialManifoldQ*)
 
 
 (* Primary Pattern *)
-ECGrav`CombinatorialSphereQ[facelst_List]:=
-(*Given an input simplicial complex as a list of facets, it checks whether or not it 
-is a combinatorial sphere. Returns true if a combinatorial manifold and false if not.*)
+ECGrav`ClosedCombinatorialManifoldQ[facelst_List]:=
+(*Given an input pure simplicial complex as a list of facets, checks whether it is a
+combinatorial manifold without boundary (a closed combinatorial manifold): connected,
+pure, every codimension-1 face contained in exactly two facets, and every vertex link
+recursively a closed combinatorial manifold. Returns True or False. This tests the
+topological manifold condition only and does NOT test sphere-ness -- a torus, Klein
+bottle, or sphere all return True. Use CombinatorialSphereQ to test for a sphere.*)
 Module[{purity,codim1faces,links},
-If[facelst=={},Return[True]];(*The empty graph is the -1 sphere*)
+If[facelst=={},Return[True]];(*The empty complex is closed (the -1 sphere)*)
 If[Length[facelst]==1,Return[False]];
-(*an n-simplex is an n-ball, not a sphere *)
+(*a single n-simplex is an n-ball: it has boundary, so it is not closed *)
 If[Length[DeleteDuplicates[Length/@facelst]]>1,Return[False]];(*the complex has to be pure*)
 
 purity=Length[facelst[[1]]];
 
 If[purity==1,
 	If[Length[facelst]==2,Return[True],Return[False]]
-];
+];(*the only closed 0-manifold is S^0 = two points*)
 
 If[purity==2,Return[With[{g=ECGrav`GraphFromCliques[facelst]},
 	If[PathGraphQ[g]&&!AcyclicGraphQ[g],True,False]]]
-];
+];(*the only closed 1-manifold is a single cycle*)
 
 If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Return[False]];(*the complex has to be connected*)
 
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Return[False]];
+If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Return[False]];(*closed: every ridge lies in exactly two facets*)
 
 links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
-AllTrue[links,ECGrav`CombinatorialSphereQ[#]&]
+AllTrue[links,ECGrav`ClosedCombinatorialManifoldQ[#]&]
+];
+
+(* Catch-all Pattern *)
+ECGrav`ClosedCombinatorialManifoldQ[args___]:=(Message[ECGrav`ClosedCombinatorialManifoldQ::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*CombinatorialSphereQ*)
+
+
+(* Primary Pattern *)
+ECGrav`CombinatorialSphereQ[facelst_List]:=
+(*Given an input pure simplicial complex as a list of facets, checks whether it is a
+combinatorial sphere. A combinatorial d-sphere is a closed combinatorial manifold
+(see ClosedCombinatorialManifoldQ) that additionally has the Euler characteristic of the
+d-sphere, chi = 1 + (-1)^d. For surfaces (dimension <= 2) this is exact: only the
+2-sphere returns True, while a torus, Klein bottle, or projective plane return False.
+In dimension >= 3 the Euler-characteristic condition is necessary but not sufficient
+(recognizing PL spheres is not algorithmically decidable in general), so there the test
+is a homology-level filter. Returns True or False.*)
+Module[{purity},
+If[facelst=={},Return[True]];(*The empty complex is the -1 sphere*)
+If[!ECGrav`ClosedCombinatorialManifoldQ[facelst],Return[False]];(*a sphere is first of all a closed manifold*)
+purity=Length[facelst[[1]]];
+ECGrav`EulerChi[facelst]==1+(-1)^(purity-1)
 ];
 
 (* Catch-all Pattern *)
