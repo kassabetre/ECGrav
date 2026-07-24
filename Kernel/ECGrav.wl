@@ -320,29 +320,27 @@ at position 2, and an association at 3.";
 
 (* :Usage Mesages: *)
 
-ConstrainedProbConjugateField::usage="ConstrainedProbConjugateField[betaFixed_Real,targetExtField_Real,
-	targetConjugateExtField_,minusBetaF_Association,
-	conjugateExtFieldMeasurements_Association] 
-	Computes the probability density function of the magnetization or conjugate field 
+ConstrainedProbConjugateField::usage="ConstrainedProbConjugateField[betaFixed_Real,targetExtField_List,
+	minusBetaF_Association,
+	conjugateExtFieldMeasurements_Association]
+	Computes the probability density of the magnetization or conjugate field
 	P(beta,M) which depends implicitely on the external field H to which M is the 
 	conjugate field..
 	
 Inputs are:,
-1. betaFixed - Real, the fixed value of the  inverse temperature,\[IndentingNewLine]2. targetExtField - Real, the value of the target external field,
-3. targetConjugateExtField_ - a variable e.g. M at which the value of the Landau free 
-	energy is sought\[IndentingNewLine]4. minusBetaF - an association of the external field H and the corresponding value of 
-	-beta*free energy(H) e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>,\[IndentingNewLine]5. conjugateExtFieldMeasurements - an association of the external field values J and 
+1. betaFixed - Real, the fixed value of the  inverse temperature,\[IndentingNewLine]2. targetExtField - List, a vector of external-field values at which the density is evaluated,\[IndentingNewLine]3. minusBetaF - an association of the external field H and the corresponding value of
+	-beta*free energy(H) e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>,\[IndentingNewLine]4. conjugateExtFieldMeasurements - an association of the external field values J and
 	the corresponding list of energies (list of E's without the J multiplying them)
 	measured at that J. e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>,
 \[IndentingNewLine]Note, the J values which are the keys for all the associations have to be equal as 
 sets! Also, the lengths of the lists of values have to be equal for all J values,\[IndentingNewLine]
-Returns a function of the variable targetConjugateExtField and so can be plotted.
+Returns a list containing a SmoothKernelDistribution of the conjugate field (together with plot ranges), which can be plotted.
 ";
 
 (* :Error Mesages: *)
 
 ConstrainedProbConjugateField::argerr="Input has to be of the form 
-	ConstrainedProbConjugateField[betaFixed_Real,targetExtField_Real,targetConjugateExtField_,
+	ConstrainedProbConjugateField[betaFixed_Real,targetExtField_List,
 	minusBetaF_Association,conjugateExtFieldMeasurements_Association] ";
 
 
@@ -674,7 +672,7 @@ and integers at the last two positions.";
 (* :Usage Mesages: *)
 
 ExactExpectationValue::usage="ExactExpectationValue[ensemble_List,degenValues_List,obsfunction_,Hamiltonian_,beta_]
-Calculates the expectation value of the observable function(s). Energies in Boltzman weights are computed using the Hamiltonian. degeneracy is vector of functions that give the different weights for a given graph. Beta is inverse temperature. \[IndentingNewLine]Usage ExpectationValue[{amat1, amat2},{{1.0,1.0},{1.0/3.0,1.0/5.0}},{AvgDeg, AvgDim},HIsing,10.0]. \[IndentingNewLine]
+Calculates the expectation value of the observable function(s). Energies in Boltzman weights are computed using the Hamiltonian. degeneracy is vector of functions that give the different weights for a given graph. Beta is inverse temperature. \[IndentingNewLine]Usage: ExactExpectationValue[{amat1, amat2},{{1.0,1.0},{1.0/3.0,1.0/5.0}},{AvgDeg, AvgDim},HIsing[#,-1.0,0.0]&,10.0]. \[IndentingNewLine]
 Inputs are:
 1. states = List, a list of adjacency matrix of a graphs
 2. degenValues = List of list, a list of numbers representing the degeneracy or other 
@@ -683,7 +681,7 @@ Inputs are:
 3. obsfunction = a list of functions of observables whose expectation values in the canonical
 	ensemble is to be computed. In the overload this can be replaced by a list of list of 
 	observable values.
-3. Hamiltonian = function, the Hamiltonian,  
+4. Hamiltonian = a one-argument function of an adjacency matrix (e.g. HIsing[#,-1.0,0.0]&),  
 
 5. beta = Real or a variable, the inverse temperature
 
@@ -693,7 +691,7 @@ and the expectation values of the observable functions, all of which are compute
 the corresponding degeneracy weight.";
 (* :Error Mesages: *)
 
-LowEnergyStates::argerr="Input should be of the form 
+ExactExpectationValue::argerr="Input should be of the form
 	ExactExpectationValue[ensemble_List,degenValues_List,obsfunction_,Hamiltonian_,beta_],
 	or ExactExpectationValue[ensemble_List,degenValues_List,obsValues_List,Hamiltonian_,beta_].";
 
@@ -2101,7 +2099,7 @@ PureComplexAutomorphismGroup::argerr="Input should be of the form
 
 (* :Usage Messages: *)
 
-PureComplexAutomorphismGroupOrder::usage="PureComplexAutomorphismGroupOrderConn[facetsLst_List] 
+PureComplexAutomorphismGroupOrder::usage="PureComplexAutomorphismGroupOrder[facetsLst_List] 
 	computes the automorphism group order of the pure complex facetsLst.";
 	
 PureComplexAutomorphismGroupOrder::argerr="Input should be of the form 
@@ -2506,7 +2504,7 @@ RandomUnlabeledPseudoManifold::argerr="Integers were expected at positions 1 and
 (* :Usage Messages: *)
 
 AddRandomUnlabeledFacetToPseudoManifold::usage="
-	RandomUnlabeledPseudoManifold[facetsLst_List,apastingSites_List];  
+	AddRandomUnlabeledFacetToPseudoManifold[facetsLst_List,apastingSites_List];  
 	adds a random facet to the existing pseudo-manifold given as the list
 	facetsLst of facets at pasting sites apastingSites which are co-dimension 1 faces 
 	available for binding. The method picks out one representative from the orbit of the 
@@ -2514,8 +2512,8 @@ AddRandomUnlabeledFacetToPseudoManifold::usage="
 	
 (* :Error Messages: *)
 
-AddRandomUnlabeledFacetToPseudoManifold::argerr="Input should be of the form 
-	RandomUnlabeledPseudoManifold[facetsLst_List,apastingSites_List].";
+AddRandomUnlabeledFacetToPseudoManifold::argerr="Input should be of the form
+	AddRandomUnlabeledFacetToPseudoManifold[facetsLst_List,apastingSites_List].";
 
 
 (* ::Title:: *)
