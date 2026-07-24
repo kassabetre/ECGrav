@@ -35,7 +35,7 @@ Begin["`Private`"] (* Begin private context *)
 (*Helper Functions*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Aggregating Data*)
 
 
@@ -117,34 +117,6 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
-(*InternalEnergy*)
-
-
-(* Primary Pattern *)
-ECGrav`InternalEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
-(*Computes the value of the interval energy at the value of the inverse temperature bf.
-It requires two inputs:,
-1. minusBetaF - an association of inverse temperatures and the corresponding value of -beta*free energy, e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>
-2. energyMeasurements - an association of inverse temperature and the corresponding list of energies measured at that beta., e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
-Note, the beta values which are the keys for both associations have to be equal as sets! Also, the lengths of the lists of energy measurements have to be equal for all betas.
-*)
-With[{betas=Keys[minusBetaF],obsLength=Length[energyMeasurements[[1]]]},
-(Exp[-ECGrav`NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
-Sum[
-Sum[(energyMeasurements[[Key[betas[[i]]]]][[s]])/
-(Sum[
-obsLength*Exp[(bf-betas[[j]])*energyMeasurements[[Key[betas[[i]]]]][[s]]]*Exp[-minusBetaF[[Key[betas[[j]]]]]]
-,{j,1,Length[betas]}])
-,{s,1,obsLength}]
-,{i,1,Length[betas]}]
-];
-
-(* Catch-all Pattern *)
-ECGrav`InternalEnergy[args___]:=(Message[ECGrav`InternalEnergy::argerr, args];
-$Failed);
-
-
-(* ::Item::Closed:: *)
 (*SpecificHeat*)
 
 
@@ -191,6 +163,34 @@ ECGrav`Susceptibility[args___]:=(Message[ECGrav`Susceptibility::argerr, args];
 $Failed);
 
 
+(* ::Item:: *)
+(*InternalEnergy*)
+
+
+(* Primary Pattern *)
+ECGrav`InternalEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
+(*Computes the value of the interval energy at the value of the inverse temperature bf.
+It requires two inputs:,
+1. minusBetaF - an association of inverse temperatures and the corresponding value of -beta*free energy, e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>
+2. energyMeasurements - an association of inverse temperature and the corresponding list of energies measured at that beta., e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
+Note, the beta values which are the keys for both associations have to be equal as sets! Also, the lengths of the lists of energy measurements have to be equal for all betas.
+*)
+With[{betas=Keys[minusBetaF],obsLength=Length[energyMeasurements[[1]]]},
+(Exp[-ECGrav`NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
+Sum[
+Sum[(energyMeasurements[[Key[betas[[i]]]]][[s]])/
+(Sum[
+obsLength*Exp[(bf-betas[[j]])*energyMeasurements[[Key[betas[[i]]]]][[s]]]*Exp[-minusBetaF[[Key[betas[[j]]]]]]
+,{j,1,Length[betas]}])
+,{s,1,obsLength}]
+,{i,1,Length[betas]}]
+];
+
+(* Catch-all Pattern *)
+ECGrav`InternalEnergy[args___]:=(Message[ECGrav`InternalEnergy::argerr, args];
+$Failed);
+
+
 (* ::Item::Closed:: *)
 (*CvOverT*)
 
@@ -224,7 +224,7 @@ ECGrav`CvOverT[args___]:=(Message[ECGrav`CvOverT::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*ComputeMinusBetaTimesFreeEnergy*)
 
 
@@ -627,7 +627,9 @@ Inputs are:,
 5. conjugateExtFieldMeasurements_Association - an association with external field as keys and measured values of the conjugate field as values e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
 Note, the keys of minusBetaF and conjugateExtFieldMeasurements have to be the same. Also, the lengths of the lists of conjugate field measurements have to be equal for all external field values,
 
-The Output is a function of the variable targetConjugateExtField and so can be plotted *)
+The Output is a list with three values: 1. a distribution that can be plotted using PDF[]
+   2. a list of the minimum coordinates of the conjugate fields, 3. the maximum coordinate
+   of the conjugate fields *)
 
 Module[{externalFieldValues=Keys[minusBetaF],
 	nValuesAssn=Length/@conjugateExtFieldMeasurements,
@@ -913,7 +915,7 @@ ECGrav`H2dPseudoCombManifold[args___]:=(Message[ECGrav`H2dPseudoCombManifold::ar
 $Failed);
 
 
-(* ::Chapter:: *)
+(* ::Chapter::Closed:: *)
 (*Ground State Searches*)
 
 
@@ -1230,7 +1232,8 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],betai_Real,betaf_Real,roundLength_Integer,NN_Integer]:=                     
+ECGrav`SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],
+	betai_Real,betaf_Real,roundLength_Integer,NN_Integer]:=                     
 (*************************************)
 (***  Last updated on: 01/15/2025  ***)
 (*************************************)
@@ -4249,7 +4252,7 @@ result={<|Table[replicas[[Key[i],Key["externalField"]]]->groundStates[[Key[i]]],
 	,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->bt,"externalField"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>
 	,replicas,histories};
 
-Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,swap,Tempoutput,EnergyOrMag ,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF];
+Remove[groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF];
 
 result
 
@@ -4930,7 +4933,7 @@ ECGrav`GraphCEITempSchedule[args___]:=(Message[ECGrav`GraphCEITempSchedule::arge
 $Failed);
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphCTLSchedule*)
 
 
@@ -5827,7 +5830,7 @@ result
 
 
 (* ::Item::Closed:: *)
-(*GraphCTLSchedule for multiple external fields at a fixed beta with input from a previous run of Multihistogram*)
+(*GraphCTLSchedule for multiple external fields at a fixed beta with input from a previous run *)
 
 
 (*Primary pattern*)
@@ -6477,7 +6480,7 @@ result
 ];
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*Overload GraphParallelTempering with previous beta replica as input*)
 
 
