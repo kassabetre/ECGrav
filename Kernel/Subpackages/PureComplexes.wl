@@ -35,6 +35,21 @@ BeginPackage["ECGrav`PureComplexes`"];
 Begin["`Private`"] (* Begin private context *)
 
 
+(* Private helper messages ------------------------------------------------------
+   Error messages for the internal connected-complex automorphism/stabilizer
+   helpers (SimplicialComplexAutomorphismGroupOrderConn, PureComplexAutomorphismGroupOrderConn,
+   PureComplexFacetAutomorphismGroupOrderConn, CliqueFacetStabilizerGroupOrderConn,
+   CliqueFacetAutomorphismGroupOrderConn). These live in this subpackage's Private
+   context and are NOT public: the public non-Conn functions call them on each
+   already-connected component. The messages are defensive diagnostics only. *)
+
+ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected complex of the form SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List].";
+ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexAutomorphismGroupOrderConn[facetsLst_List].";
+ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List].";
+ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetStabilizerGroupOrderConn[facetsLst_List].";
+ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetAutomorphismGroupOrderConn[facetsLst_List].";
+
+
 (* ::Chapter:: *)
 (*Helper Functions*)
 
@@ -1898,7 +1913,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List]:=
+ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List]:=
 
 (*
 (****************************************)
@@ -1963,7 +1978,7 @@ GroupOrder[reducedAutG]*Product[Length[i]!,{i,leafsLst}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`SimplicialComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`SimplicialComplexAutomorphismGroupOrderConn::argerr, args];
+ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -1985,7 +2000,7 @@ ECGrav`SimplicialComplexAutomorphismGroupOrder[facetsLst_List]:=
 With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`SimplicialComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
@@ -2055,7 +2070,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexAutomorphismGroupOrderConn[facetsLst_List]:=
+ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[facetsLst_List]:=
 
 (*
 (****************************************)
@@ -2117,7 +2132,7 @@ reducedAutGorder*Product[Length[i]!,{i,leafsLst}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexAutomorphismGroupOrderConn, args];
+ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2139,7 +2154,7 @@ ECGrav`PureComplexAutomorphismGroupOrder[facetsLst_List]:=
 With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`PureComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
@@ -2194,7 +2209,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List]:=
+ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/13/2024. *) *)
@@ -2246,7 +2261,7 @@ GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexFacetAutomorphismGroupOrderConn];$Failed);
+ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn::argerr, args];$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2266,7 +2281,7 @@ ECGrav`PureComplexFacetAutomorphismGroupOrder[facetsLst_List]:=
 With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`PureComplexFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
@@ -2347,7 +2362,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`CliqueFacetStabilizerGroupOrderConn[facetsLst_List]:=
+ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/09/2024. *) *)
@@ -2394,7 +2409,7 @@ GroupOrder[reducedFacetStabilizerGroup]*Product[Length[i]!,{i,leafsLst}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueFacetStabilizerGroupOrderConn[args___]:=(Message[ECGrav`CliqueFacetStabilizerGroupOrderConn::argerr, args];
+ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2414,7 +2429,7 @@ ECGrav`CliqueFacetStabilizerGroupOrder[facetsLst_List]:=
 *)With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[ECGrav`GraphFromCliques[#1],ECGrav`GraphFromCliques[#2]]&]},
 
 
-Product[(ECGrav`CliqueFacetStabilizerGroupOrderConn[i[[1]]]^(i[[2]])),{i,components}]
+Product[(ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[i[[1]]]^(i[[2]])),{i,components}]
 
 ];
 
@@ -2430,7 +2445,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`CliqueFacetAutomorphismGroupOrderConn[facetsLst_List]:=
+ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/09/2024. *) *)
@@ -2470,7 +2485,7 @@ GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`CliqueFacetAutomorphismGroupOrderConn::argerr, args];
+ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2491,7 +2506,7 @@ ECGrav`CliqueFacetAutomorphismGroupOrder[facetsLst_List]:=
 *)With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[ECGrav`GraphFromCliques[#1],ECGrav`GraphFromCliques[#2]]&]},
 
 
-Product[(ECGrav`CliqueFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
