@@ -163,3 +163,41 @@ VerificationTest[ECGrav`ClosedDGraphQ[torusG], True, TestID -> "ClosedDGraphQ-to
 VerificationTest[ECGrav`ClosedDGraphQ[tetraG], False, TestID -> "ClosedDGraphQ-K4-has-boundary"];
 
 VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];
+
+(* ---------- Random complex generators (structural invariants) ---------- *)
+
+(* Each generator must return a well-formed pure simplicial complex of the requested shape,
+   whatever the random draw. Seeded only so a failure reproduces; the assertions themselves
+   are seed-independent structural invariants.
+   NB: the parallel uniform samplers -- RandomUniformUnlabeledPureSimplicialComplex,
+   RandomUniformFacetLabeledPureSimplicialComplex, RandomVertexLabeledPureSimplicialComplex --
+   are verified interactively but deliberately kept OUT of the suite: their first call in a
+   fresh kernel pays a large one-time parallel-distribution cost (~30 s), not worth a
+   structural smoke test here. *)
+
+VerificationTest[
+    Module[{c}, SeedRandom[301];
+        c = ECGrav`RandomFacetLabeledPureSimplicialComplex[{3, 4}];
+        {ECGrav`PureComplexQ[c], Length[c], AllTrue[c, Length[#] == 3 &]}],
+    {True, 4, True},
+    TestID -> "RandomFacetLabeledPureSimplicialComplex-shape"
+];
+
+(* RandomUnlabeledPseudoManifold returns {complex, pastingSites}; its complex (part 1) is pure. *)
+VerificationTest[
+    Module[{r}, SeedRandom[304];
+        r = ECGrav`RandomUnlabeledPseudoManifold[{3, 4}];
+        {ECGrav`PureComplexQ[r[[1]]], Length[r[[1]]]}],
+    {True, 4},
+    TestID -> "RandomUnlabeledPseudoManifold-shape"
+];
+
+(* One MCMC sweep returns an association describing the current complex / weight / energy. *)
+VerificationTest[
+    Module[{r}, SeedRandom[305];
+        r = ECGrav`RandomPureSimplicialComplexMCMCSweep[
+            ECGrav`RandomFacetLabeledPureSimplicialComplex[{3, 4}], 0, 5];
+        {Head[r], KeyExistsQ[r, "complex"], ECGrav`PureComplexQ[r["complex"]]}],
+    {Association, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMCSweep-smoke"
+];

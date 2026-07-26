@@ -55,6 +55,37 @@ VerificationTest[
     SameTest -> floatEq, TestID -> "InternalEnergy-single-beta"
 ];
 
+(* ---------- Free-energy / reweighting helpers (deterministic oracles) ---------- *)
+
+(* Empirical autocorrelation is 1 at lag 0 by construction (normalized); lag-1 hand-computed. *)
+VerificationTest[ECGrav`EmpCorrelationTime[0, {1., 2., 3., 4.}], 1., SameTest -> floatEq, TestID -> "EmpCorrelationTime-lag0-is-1"];
+VerificationTest[ECGrav`EmpCorrelationTime[1, {1., 3., 2., 4.}], -0.5, SameTest -> floatEq, TestID -> "EmpCorrelationTime-lag1"];
+
+(* dCv/dT per site, hand-computed from (-beta^3/NN)(2(<E^2>-<E>^2)(1+beta<E>) - beta(<E^3>-<E><E^2>)). *)
+VerificationTest[ECGrav`DSpecificHeat[{1., 2., 3., 4.}, 5, 1.5], -1.6875, SameTest -> floatEq, TestID -> "DSpecificHeat"];
+
+(* Multi-histogram reweighting evaluated at the single measured beta collapses to closed
+   forms (the free-energy factor cancels): -betaF equals the supplied value; the extrapolated
+   observable equals its sample mean; Cv/T equals beta^2 (<E^2> - <E>^2); and the
+   self-consistent free energy is gauge-fixed to 0 for a single temperature. *)
+VerificationTest[
+    ECGrav`NegativeBetaTimesFreeEnergy[0.5, <|0.5 -> -2.3|>, <|0.5 -> {1., 2., 3.}|>],
+    -2.3, SameTest -> floatEq, TestID -> "NegativeBetaTimesFreeEnergy-single-beta"
+];
+VerificationTest[
+    ECGrav`CvOverT[0.5, <|0.5 -> -2.3|>, <|0.5 -> {1., 2., 3.}|>],
+    0.5^2 (Mean[{1., 4., 9.}] - 2.^2), SameTest -> floatEq, TestID -> "CvOverT-single-beta"
+];
+VerificationTest[
+    ECGrav`ExtrapolatedExpectationValue[0.5, <|0.5 -> -2.3|>, <|0.5 -> {1., 2., 3.}|>, <|0.5 -> {10., 20., 30.}|>],
+    20., SameTest -> floatEq, TestID -> "ExtrapolatedExpectationValue-single-beta"
+];
+VerificationTest[
+    First[Values[Quiet[
+        ECGrav`ComputeMinusBetaTimesFreeEnergy[<|0.5 -> {1., 2., 3.}|>], ParallelTable::nopar]]],
+    0., SameTest -> floatEq, TestID -> "ComputeMinusBetaTimesFreeEnergy-single-beta"
+];
+
 (* ---------- Exact enumeration (deterministic) ---------- *)
 
 (* K4 and C6 are the two lowest levels; energies -12 and -6.
@@ -142,6 +173,47 @@ VerificationTest[
         {Head[r], Length[r]}]],
     {List, 4},
     TestID -> "GraphParallelTempering-smoke-no-Part-take"
+];
+
+(* ---------- Ground-state search ---------- *)
+
+(* GradDescent is deterministic steepest descent: it returns a valid (6x6, symmetric, 0/1)
+   adjacency matrix and never increases the energy -- the defining invariant of descent. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{r},
+        r = ECGrav`GradDescent[C6, ECGrav`delHIsing[#1, -1.0, 0.0, #2, #3] &, 10];
+        {Dimensions[r], r === Transpose[r], SubsetQ[{0, 1}, Union@Flatten[r]],
+         ECGrav`HIsing[r, -1.0, 0.0] <= ECGrav`HIsing[C6, -1.0, 0.0]}]],
+    {{6, 6}, True, True, True},
+    TestID -> "GradDescent-descent-invariant"
+];
+
+(* SGradDescent (softmax stochastic descent) returns <|minE, minEstates, LastState|>;
+   smoke-test both the with-delH and no-delH overloads. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{r}, SeedRandom[201];
+        r = ECGrav`SGradDescent[C6, ECGrav`HIsing[#, -1.0, 0.0] &,
+            ECGrav`delHIsing[#1, -1.0, 0.0, #2, #3] &, 0.5, 5];
+        {Head[r], KeyExistsQ[r, "minE"], NumberQ[r["minE"]]}]],
+    {Association, True, True},
+    TestID -> "SGradDescent-with-delH-smoke"
+];
+VerificationTest[
+    Block[{Print = Null &}, Module[{r}, SeedRandom[202];
+        r = ECGrav`SGradDescent[C6, ECGrav`HIsing[#, -1.0, 0.0] &, 0.5, 5];
+        {Head[r], KeyExistsQ[r, "minE"]}]],
+    {Association, True},
+    TestID -> "SGradDescent-no-delH-smoke"
+];
+
+(* SimulatedAnnealing (inert h[..]/dH[..] form) anneals betai -> betaf and returns an
+   association including the minimum energy visited. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{r}, SeedRandom[203];
+        r = ECGrav`SimulatedAnnealing[C6, h[-1.0, 0.0], dH[-1.0, 0.0], 0.1, 2.0, 5, 3];
+        {Head[r], KeyExistsQ[r, "minE"], NumberQ[r["minE"]]}]],
+    {Association, True, True},
+    TestID -> "SimulatedAnnealing-smoke"
 ];
 
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------

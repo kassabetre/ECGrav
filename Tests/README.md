@@ -8,8 +8,8 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures and float-comparison helpers. |
-| `PureComplexes.wlt` | 47 deterministic assertions: complex constructions, observables, dimensions, geometric predicates. |
-| `MCSims.wlt` | 22 tests: exact assertions for Hamiltonians / data helpers, smoke tests for the stochastic MC drivers. |
+| `PureComplexes.wlt` | 54 tests: complex constructions, observables, dimensions, geometric predicates, and structural checks on the random-complex generators. |
+| `MCSims.wlt` | 33 tests: exact assertions for Hamiltonians / data & free-energy helpers, smoke tests for the stochastic MC drivers and ground-state search. |
 
 ## Running
 
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **69 tests, 69 passing** (~15 s, dominated by the MC smoke tests).
+Expected: **87 tests, 87 passing** (~22 s, dominated by the MC smoke tests).
 
 ## Design notes
 
@@ -91,8 +91,30 @@ been fixed at the source (see above) and are regression-tested.
 
 ## Coverage
 
-Still not exhaustive (~45 of the package's public symbols). `GraphParallelTempering` now
-has a smoke test; remaining untested areas include the temperature schedulers
-(`GraphCTLSchedule`, `GraphCEITempSchedule`), ground-state search (`SimulatedAnnealing`,
-`GradDescent`, `SGradDescent`), the random-complex generators, and the free-energy
-extrapolation family.
+Roughly 58 of the package's public symbols. Recently added:
+
+- **Free-energy / reweighting helpers** — `EmpCorrelationTime`, `DSpecificHeat`,
+  `NegativeBetaTimesFreeEnergy`, `CvOverT`, `ExtrapolatedExpectationValue`,
+  `ComputeMinusBetaTimesFreeEnergy`, as deterministic oracles. The reweighting family is
+  tested at the **single measured beta**, where the free-energy factor cancels and each
+  reduces to a closed form (−βF equals the supplied value, the extrapolated observable
+  equals its sample mean, Cv/T equals β²(⟨E²⟩−⟨E⟩²), the self-consistent free energy is 0).
+- **Ground-state search** — `GradDescent` (deterministic: returns a valid adjacency matrix
+  and never increases the energy), `SGradDescent` and `SimulatedAnnealing` (seeded smoke).
+- **Random-complex generators** — structural checks on
+  `RandomFacetLabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold`, and
+  `RandomPureSimplicialComplexMCMCSweep` (the output is a well-formed pure complex of the
+  requested shape, whatever the draw).
+
+Deliberately **still untested**, each for a concrete reason:
+
+- **Temperature schedulers** (`GraphCTLSchedule`, `GraphCEITempSchedule`) — the CTL/CEI
+  algorithms run MC + reweighting at every schedule point and take minutes even on a tiny
+  input, too slow for the suite.
+- **Parallel uniform samplers** (`RandomUniformUnlabeledPureSimplicialComplex`,
+  `RandomUniformFacetLabeledPureSimplicialComplex`, `RandomVertexLabeledPureSimplicialComplex`)
+  — verified interactively, but the first call in a fresh kernel pays a ~30 s one-time
+  parallel-distribution cost, not worth a structural smoke test.
+- **Non-reproducible parallel functions** (`ErrorBootstrap`, the parallel
+  `RandomPureSimplicialComplexMCMC` pipeline) — no `SeedRandom` reproducibility, so no
+  stable assertion.
