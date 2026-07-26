@@ -15,6 +15,16 @@ If[StringQ[$InputFileName] && $InputFileName =!= "" &&
         FileExistsQ[FileNameJoin[{ParentDirectory[DirectoryName[$InputFileName]], "Kernel", "ECGrav.wl"}]],
     $ECGravRoot = ParentDirectory[DirectoryName[$InputFileName]]];
 
+(* CI / relocation override: an explicit ECGRAV_ROOT environment variable, when it points
+   at a real checkout, wins over both the hardcoded default and the $InputFileName guess.
+   This lets the suite run from a repo checked out to any path (e.g. GitHub Actions), where
+   the hardcoded absolute path does not exist and $InputFileName does not resolve under
+   TestReport. Tests/ci-run.wls sets this before invoking TestReport. *)
+With[{envRoot = Environment["ECGRAV_ROOT"]},
+    If[StringQ[envRoot] && envRoot =!= "" &&
+            FileExistsQ[FileNameJoin[{envRoot, "Kernel", "ECGrav.wl"}]],
+        $ECGravRoot = envRoot]];
+
 Get[FileNameJoin[{$ECGravRoot, "Kernel", "ECGrav.wl"}]];
 
 (* Much of MCSims runs on ParallelTable, and LowEnergyStates divides by

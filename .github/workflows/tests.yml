@@ -1,0 +1,47 @@
+name: Tests
+
+# Runs the ECGrav .wlt regression suite in the official Wolfram Engine container on every
+# push to main and on every pull request, failing the job if any test regresses.
+# Tests/ci-run.wls locates the package, runs both .wlt files via MUnit`TestReport, and
+# exits non-zero on any failure.
+#
+# ---------------------------------------------------------------------------------------
+# LICENSING -- REQUIRED one-time setup before this workflow can run
+# ---------------------------------------------------------------------------------------
+# The Wolfram Engine needs a license. Choose one option and add the matching repository
+# secret under  Settings -> Secrets and variables -> Actions:
+#
+#   (A) On-demand entitlement  [what this file uses; officially supported for CI]
+#       Secret  WOLFRAMSCRIPT_ENTITLEMENTID = your Wolfram license entitlement ID.
+#       wolframscript checks a license out of the Wolfram Cloud each run. NOTE: on-demand
+#       kernels draw on your Wolfram Service Credits, and the suite calls LaunchKernels[],
+#       so several kernels may be billed per run -- keep the trigger scope small.
+#
+#   (B) Free Wolfram Engine for Developers  [zero cost, but fiddlier / not guaranteed]
+#       Activate the free engine once locally (it writes ~/.WolframEngine/Licensing/mathpass),
+#       store that file's contents as a secret (e.g. WOLFRAM_MATHPASS), and add a step
+#       before "Run the suite" that writes it to /root/.WolframEngine/Licensing/mathpass.
+#       Caveat: the free license may be node-locked to the machine it was activated on,
+#       which can stop it validating on GitHub's ephemeral runners.
+# ---------------------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  wlt:
+    name: .wlt regression suite
+    runs-on: ubuntu-latest
+    container:
+      image: wolframresearch/wolframengine:latest
+      options: --user root
+    env:
+      WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Run the .wlt regression suite
+        run: wolframscript -file Tests/ci-run.wls
