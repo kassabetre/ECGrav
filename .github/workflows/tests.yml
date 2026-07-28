@@ -8,21 +8,19 @@ name: Tests
 # ---------------------------------------------------------------------------------------
 # LICENSING -- REQUIRED one-time setup before this workflow can run
 # ---------------------------------------------------------------------------------------
-# The Wolfram Engine needs a license. Choose one option and add the matching repository
-# secret under  Settings -> Secrets and variables -> Actions:
+# This workflow uses option (B): the FREE Wolfram Engine for Developers, activated fresh
+# each run from your Wolfram account (no node-locking, no Service Credits).
+#   1. Get a free Wolfram Engine license: https://www.wolfram.com/engine/  (needs a Wolfram
+#      ID; the free Engine is tied to that account).
+#   2. Add two repository secrets under  Settings -> Secrets and variables -> Actions:
+#          WOLFRAM_ID    = your Wolfram ID (the account email)
+#          WOLFRAM_PASS  = your Wolfram ID password
 #
-#   (A) On-demand entitlement  [what this file uses; officially supported for CI]
-#       Secret  WOLFRAMSCRIPT_ENTITLEMENTID = your Wolfram license entitlement ID.
-#       wolframscript checks a license out of the Wolfram Cloud each run. NOTE: on-demand
-#       kernels draw on your Wolfram Service Credits, and the suite calls LaunchKernels[],
-#       so several kernels may be billed per run -- keep the trigger scope small.
-#
-#   (B) Free Wolfram Engine for Developers  [zero cost, but fiddlier / not guaranteed]
-#       Activate the free engine once locally (it writes ~/.WolframEngine/Licensing/mathpass),
-#       store that file's contents as a secret (e.g. WOLFRAM_MATHPASS), and add a step
-#       before "Run the suite" that writes it to /root/.WolframEngine/Licensing/mathpass.
-#       Caveat: the free license may be node-locked to the machine it was activated on,
-#       which can stop it validating on GitHub's ephemeral runners.
+# To switch to option (A), on-demand entitlement (officially supported, but draws Wolfram
+# Service Credits per run -- including one per LaunchKernels[] kernel): drop the "Activate"
+# step and the WOLFRAM_ID / WOLFRAM_PASS env below, then set
+#     WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+# in env and add that one secret. Nothing else changes.
 # ---------------------------------------------------------------------------------------
 
 on:
@@ -38,10 +36,18 @@ jobs:
       image: wolframresearch/wolframengine:latest
       options: --user root
     env:
-      WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+      WOLFRAM_ID: ${{ secrets.WOLFRAM_ID }}
+      WOLFRAM_PASS: ${{ secrets.WOLFRAM_PASS }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      # Activate the free Engine for this run; the license persists on the container
+      # filesystem for the following step.
+      - name: Activate the free Wolfram Engine
+        run: |
+          wolframscript -authenticate "$WOLFRAM_ID" "$WOLFRAM_PASS"
+          wolframscript -activate
 
       - name: Run the .wlt regression suite
         run: wolframscript -file Tests/ci-run.wls
