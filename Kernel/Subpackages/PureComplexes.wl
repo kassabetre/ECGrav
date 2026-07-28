@@ -194,7 +194,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`PureComplexQ[facets_List]:=If[Length[DeleteDuplicates[Length/@facets]]==1,Return[True],Return[False]];
+ECGrav`PureComplexQ[facets_List]:=If[Length[DeleteDuplicates[Length/@facets]]==1,True,False];
 
 (* Catch-all Pattern *)
 ECGrav`PureComplexQ[args___]:=(Message[ECGrav`PureComplexQ::argerr, args];
@@ -207,7 +207,7 @@ $Failed);
 
 (* Primary Pattern *)
 ECGrav`PureGraphQ[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
-If[Length[DeleteDuplicates[Map[Length,clqs]]]==1,Return[True],Return[False]]
+If[Length[DeleteDuplicates[Map[Length,clqs]]]==1,True,False]
 ];
 
 (* Catch-all Pattern *)
@@ -223,9 +223,9 @@ $Failed);
 ECGrav`CliqueComplexQ[facetsLst_List]:=
 (*Given a list of maximal cliques, it checks whether or not it passes the clique condition test*)
 Module[{threeSubsets=Subsets[facetsLst,{3}],fIsInAClique},
-If[Length[facetsLst]<3,Return[True]];
+Catch[If[Length[facetsLst]<3,Throw[True, "ECGravReturn$1"]];
 fIsInAClique[candClq_List]:=AnyTrue[facetsLst,SubsetQ[#,candClq]&];
-AllTrue[threeSubsets,fIsInAClique[Union[Intersection[#[[1]],#[[2]]],Intersection[#[[1]],#[[3]]],Intersection[#[[2]],#[[3]]]]]&]
+AllTrue[threeSubsets,fIsInAClique[Union[Intersection[#[[1]],#[[2]]],Intersection[#[[1]],#[[3]]],Intersection[#[[2]],#[[3]]]]]&], "ECGravReturn$1"]
 ];
 
 (* Catch-all Pattern *)
@@ -244,42 +244,42 @@ $Failed);
 (* Primary Pattern *)
 ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
-	If[i>size,Message[ECGrav`Sph::vtxnotfound, i];
-	Return[{}]];
-	If[rowcolsToKeep=={},Return[{}]];
-	If[size==0,Return[{}]];
-	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
+	Catch[If[i>size,Message[ECGrav`Sph::vtxnotfound, i];
+	Throw[{}, "ECGravReturn$2"]];
+	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$2"]];
+	If[size==0,Throw[{}, "ECGravReturn$2"]];
+	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep], "ECGravReturn$2"]
 ];
 
 (* Overload Pattern *)
 ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
-	If[Length[Amat]==0,Return[{}]];
+	Catch[If[Length[Amat]==0,Throw[{}, "ECGravReturn$3"]];
 	dm=GraphDistanceMatrix[AdjacencyGraph[Amat]];
 	rowcolsToKeep=Flatten[Position[dm[[i]],r]];
-	If[rowcolsToKeep=={},Return[{}]];
-	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
+	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$3"]];
+	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep], "ECGravReturn$3"]
 ];
 
 (* Overload Pattern *)
 ECGrav`Sph[g_Graph,i_Integer]:=
 Module[{},
-	If[VertexCount[g]==0,Return[{}]];
+	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$4"]];
 	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Sph::vtxnotfound, i];{}
 	];
 
-	Subgraph[g,AdjacencyList[g,i]]
+	Subgraph[g,AdjacencyList[g,i]], "ECGravReturn$4"]
 ];
 
 (* Overload Pattern *)
 ECGrav`Sph[g_Graph,i_Integer,r_Integer]:=
 With[{sphVertices=Select[VertexList[g],GraphDistance[g,i,#]==r&]},
 	
-	If[VertexCount[g]==0,Return[{}]];
+	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$5"]];
 	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Sph::vtxnotfound, i];{}
 	];
 
-	Subgraph[g,sphVertices]
+	Subgraph[g,sphVertices], "ECGravReturn$5"]
 ];
 
 (* Catch-all Pattern *)
@@ -295,10 +295,10 @@ $Failed);
 
 ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
-	If[i>size,Message[ECGrav`Bll::vtxnotfound, i];
-	Return[{}]];
-	If[size==0,Return[{}]];
-	If[rowcolsToKeep=={},Return[{}]];
+	Catch[If[i>size,Message[ECGrav`Bll::vtxnotfound, i];
+	Throw[{}, "ECGravReturn$6"]];
+	If[size==0,Throw[{}, "ECGravReturn$6"]];
+	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$6"]];
 	Join[
 		Transpose[
 			Join[
@@ -307,28 +307,28 @@ With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 			]
 		],
 		PadRight[Table[1,{Length[rowcolsToKeep]}],Length[rowcolsToKeep]+1]
-	]
+	], "ECGravReturn$6"]
 ];
 
 (* Overload Pattern *)
 ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
-	If[Length[Amat]==0,Return[{}]];
+	Catch[If[Length[Amat]==0,Throw[{}, "ECGravReturn$7"]];
 	dm=GraphDistanceMatrix[AdjacencyGraph[Amat]];
 	rowcolsToKeep=Flatten[Position[dm[[1]],_?(#<=r&)]];
-	If[rowcolsToKeep=={},Return[{}]];
-	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep]
+	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$7"]];
+	Part[Transpose[Amat[[rowcolsToKeep]]],rowcolsToKeep], "ECGravReturn$7"]
 ];
 
 (* Overload Pattern *)
 ECGrav`Bll[g_Graph,i_Integer]:=
 (*Unit ball in a graph g at vertex i*)
 With[{unitBallVertices=Union[{i},AdjacencyList[g,i]]},
-	If[VertexCount[g]==0,Return[{}]];
+	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$8"]];
 	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Bll::vtxnotfound, i];{}
 	];
 
-Subgraph[g,unitBallVertices]
+Subgraph[g,unitBallVertices], "ECGravReturn$8"]
 
 ];
 
@@ -336,11 +336,11 @@ Subgraph[g,unitBallVertices]
 ECGrav`Bll[g_Graph,i_Integer,r_Integer]:=
 (*Ball of radius r in a graph g at vertex i*)
 With[{ballVertices=Select[VertexList[g],GraphDistance[g,i,#]<=r&]},
-	If[VertexCount[g]==0,Return[{}]];
+	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$9"]];
 	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Bll::vtxnotfound, i];{}
 	];
 
-	Subgraph[g,Union[{i},ballVertices]]
+	Subgraph[g,Union[{i},ballVertices]], "ECGravReturn$9"]
 
 ];
 
@@ -444,8 +444,8 @@ ECGrav`HyperDeg[g_Graph,clq_List]:=
 (*Computes the degree of the clique clq given as a list of vertices. 
 Checks whether or not the input is a clique in the graph*)
 With[{spheres=Table[AdjacencyList[g,v],{v,clq}]},
-If[CompleteGraphQ[Subgraph[g,clq]]==False,Return[]];
-Length[Intersection@@spheres]
+Catch[If[CompleteGraphQ[Subgraph[g,clq]]==False,Throw[Null, "ECGravReturn$10"]];
+Length[Intersection@@spheres], "ECGravReturn$10"]
 ];
 
 (* Overload Pattern *)
@@ -453,8 +453,8 @@ ECGrav`HyperDeg[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatte
 (*Computes the degree of the clique clq given as a list of vertices. 
 Checks whether or not the input is a clique in the graph*)
 With[{g=AdjacencyGraph[Amat]},
-If[CompleteGraphQ[Subgraph[g,clq]]==False,Return[]];
-ECGrav`HyperDeg[g,clq]
+Catch[If[CompleteGraphQ[Subgraph[g,clq]]==False,Throw[Null, "ECGravReturn$11"]];
+ECGrav`HyperDeg[g,clq], "ECGravReturn$11"]
 ];
 
 (* Overload Pattern *)
@@ -463,8 +463,8 @@ ECGrav`HyperDeg[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 (*Computes the hyperdegree of the face clq given as a list of vertices. 
 Checks whether or not the input is a face in the graph*)
 With[{lnk=ECGrav`Lnk[facetsLst,clq]},
-	If[NoneTrue[facetsLst,SubsetQ[#,clq]&],Return[]];
-	Total[Length/@lnk]
+	Catch[If[NoneTrue[facetsLst,SubsetQ[#,clq]&],Throw[Null, "ECGravReturn$12"]];
+	Total[Length/@lnk], "ECGravReturn$12"]
 ];
 
 (* Catch-all Pattern *)
@@ -481,10 +481,10 @@ ECGrav`FVector[g_Graph]:=
 (*Computes the f-vector of the graph g which is the vector {f0,f1,...} of 
 the number of vertices, number of edges, etc. *)
 With[{n0=VertexCount[g],n1=EdgeCount[g],maxClqs=FindClique[g,\[Infinity],All]},
-	If[n1==0,Return[{n0}]];
+	Catch[If[n1==0,Throw[{n0}, "ECGravReturn$13"]];
 	Join[{n0,n1},
 		Table[Length[Union@@(Subsets[#,{q}]&/@maxClqs)],{q,3,Max[Length/@maxClqs]}]
-	]
+	], "ECGravReturn$13"]
 ];
 
 (* Overload Pattern *)
@@ -492,8 +492,8 @@ ECGrav`FVector[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten
 (*Computes the f-vector of the graph given by its adjacency matrix Amat which is the 
 vector {f0,f1,...} of the number of vertices, number of edges, etc. *)
 With[{n0=Length[Amat],n1=Total[Amat,2]/2,maxClqs=FindClique[AdjacencyGraph[Amat],\[Infinity],All]},
-If[n1==0,Return[{n0}]];
-Join[{n0,n1},Table[Length[Union@@(Subsets[#,{q}]&/@maxClqs)],{q,3,Max[Length/@maxClqs]}]]
+Catch[If[n1==0,Throw[{n0}, "ECGravReturn$14"]];
+Join[{n0,n1},Table[Length[Union@@(Subsets[#,{q}]&/@maxClqs)],{q,3,Max[Length/@maxClqs]}]], "ECGravReturn$14"]
 ];
 
 (* Overload Pattern *)
@@ -502,8 +502,8 @@ ECGrav`FVector[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 (*Computes the hyperdegree of the face clq given as a list of vertices. 
 Checks whether or not the input is a face in the graph*)
 With[{n0=Length[DeleteDuplicates[Flatten[facetsLst]]],maxFacetSize=Max[Length/@facetsLst]},
-If[n0==0,Return[{}]];
-Join[{n0},Table[Length[Union@@(Subsets[#,{q}]&/@facetsLst)],{q,2,maxFacetSize}]]
+Catch[If[n0==0,Throw[{}, "ECGravReturn$15"]];
+Join[{n0},Table[Length[Union@@(Subsets[#,{q}]&/@facetsLst)],{q,2,maxFacetSize}]], "ECGravReturn$15"]
 ];
 
 (* Catch-all Pattern *)
@@ -568,7 +568,7 @@ ECGrav`KFaceDistance[facets_List/;Depth[facets]==3,clq1_List/;Depth[clq1]==2,clq
  are contained in a bigger clique and 0 otherwise. *)
 
 Module[{d=Length[clq1],dests,pos1,pos2,clqGraphAmat},
-If[Complement[clq1,clq2]=={},Return[0]];
+Catch[If[Complement[clq1,clq2]=={},Throw[0, "ECGravReturn$16"]];
 (*If the two cliques are the same sets, then the distance between them is zero.*)
 
 dests=Union@@(Subsets[#,{d}]&/@facets);
@@ -585,7 +585,7 @@ clqGraphAmat =
 			],
 {j,dests}];
 
-GraphDistance[AdjacencyGraph[clqGraphAmat],pos1,pos2]
+GraphDistance[AdjacencyGraph[clqGraphAmat],pos1,pos2], "ECGravReturn$16"]
 
 ];
 
@@ -610,7 +610,7 @@ bigger clique and 0 otherwise. *)
 
 Module[{dests,clqGraphAmat},
 
-If[facedim==1,Return[GraphDistanceMatrix[ECGrav`GraphFromCliques[facets]]]];
+Catch[If[facedim==1,Throw[GraphDistanceMatrix[ECGrav`GraphFromCliques[facets]], "ECGravReturn$17"]];
 
 dests=Union@@(Subsets[#,{facedim}]&/@facets);
 
@@ -623,7 +623,7 @@ clqGraphAmat =
 		],
 {j,dests}];
 
-GraphDistanceMatrix[AdjacencyGraph[clqGraphAmat]]
+GraphDistanceMatrix[AdjacencyGraph[clqGraphAmat]], "ECGravReturn$17"]
 
 ];
 
@@ -653,7 +653,7 @@ connected if they are contained in a bigger face. *)
 
 Module[{tooSmallFacets,isolated,destinations,clqGraphAmat},
 
-If[k==1,Return[ConnectedComponents[ECGrav`GraphFromCliques[facets]]]];
+Catch[If[k==1,Throw[ConnectedComponents[ECGrav`GraphFromCliques[facets]], "ECGravReturn$18"]];
 
 tooSmallFacets=Select[facets,Length[#]<=k&];
 isolated={#}&/@
@@ -675,7 +675,7 @@ clqGraphAmat =
 Join[
 	(Union@@Part[destinations,#])&/@ConnectedComponents[AdjacencyGraph[clqGraphAmat]],
 	isolated
-	]
+	], "ECGravReturn$18"]
 
 ];
 
@@ -745,8 +745,8 @@ Max[Length/@kpcomps]/VertexCount[g]
 
 (* Overload Pattern *)
 ECGrav`FractionInLargestKPathComponent[g_Graph]:=With[{k=Length@@FindClique[g]},
-If[k==1,Return[1/VertexCount[g]]];(*graph is fully isolated*)
-ECGrav`FractionInLargestKPathComponent[g,k-1]
+Catch[If[k==1,Throw[1/VertexCount[g], "ECGravReturn$19"]];(*graph is fully isolated*)
+ECGrav`FractionInLargestKPathComponent[g,k-1], "ECGravReturn$19"]
 ];
 
 (* Overload Pattern *)
@@ -798,23 +798,23 @@ ECGrav`EulerChi[facetsLst_List/;(Depth[facetsLst]==3&&Max[facetsLst]>1)]:=
 clique complex), it finds the Euler Characteristic by counting all simplices.*)
 Module[{connectedComponents=ECGrav`ConnectedComplexComponents[facetsLst],sortedfacetsLst,maxDim,altSignVector,fVector},
 
-	If[Length[facetsLst]==1,Return[1]];
+	Catch[If[Length[facetsLst]==1,Throw[1, "ECGravReturn$20"]];
 	If[Length[connectedComponents]==1,
 		sortedfacetsLst=Sort[#]&/@facetsLst;
 		maxDim=Max[Length/@facetsLst];
 		altSignVector=Table[(-1)^(i+1),{i,1,maxDim}];
 		fVector=Table[Length[DeleteDuplicates[Join@@(Subsets[#,{i}]&/@sortedfacetsLst)]],{i,1,maxDim}];
-		Return[altSignVector . fVector],
-		Return[Total[ECGrav`EulerChi[#]&/@connectedComponents]]
-	]
+		Throw[altSignVector . fVector, "ECGravReturn$20"],
+		Throw[Total[ECGrav`EulerChi[#]&/@connectedComponents], "ECGravReturn$20"]
+	], "ECGravReturn$20"]
 ];
 
 (* Overload Pattern *)
 ECGrav`EulerChi[Amat_List/;(Depth[Amat]==3&&Max[Amat]<=1)]:=
 (*Given adjacency matrix of a graph, it computes its Euler Characteristic by counting all simplices.*)
 With[{maxCliques=FindClique[AdjacencyGraph[Amat],\[Infinity],All]},
-If[Amat=={{1}},Return[1]];
-ECGrav`EulerChi[maxCliques]];
+Catch[If[Amat=={{1}},Throw[1, "ECGravReturn$21"]];
+ECGrav`EulerChi[maxCliques], "ECGravReturn$21"]];
 
 (* Overload Pattern *)
 ECGrav`EulerChi[g_Graph]:=
@@ -838,7 +838,7 @@ ECGrav`RmsPurity[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 (*Given a complex, it computes its mean purity = 1/|F| sum_{fi,fj}(dim(f_i)-dim(fj))^2, 
 where fi, fj run over all facets. If there's just one facet it 
 outputs 0. *)
-If[Length[facetsLst]==1,Return[0],StandardDeviation[Length/@facetsLst]]
+If[Length[facetsLst]==1,0,StandardDeviation[Length/@facetsLst]]
 
 (* Overload Pattern *)
 ECGrav`RmsPurity[g_Graph]:=
@@ -847,7 +847,7 @@ where fi, fj run over all maximal cliques. If there's just one maximal clique it
 outputs 0. *)
 
 With[{clqsLst=FindClique[g,\[Infinity],All]},
-	If[Length[clqsLst]==1,Return[0]];StandardDeviation[Length/@clqsLst]
+	Catch[If[Length[clqsLst]==1,Throw[0, "ECGravReturn$22"]];StandardDeviation[Length/@clqsLst], "ECGravReturn$22"]
 ];
 
 (* Overload Pattern *)
@@ -872,10 +872,10 @@ if n is the purity of the graph minus one since all codimension 1
 faces have degree 1 or 2. ratio of the number of vertices in the largest 
 connected component to th etotal numbe rof vertices in the graph.  *)*)
 Module[{clqsLst=FindClique[g,\[Infinity],All],maxDim,nfaces},
-maxDim=Max[Length/@clqsLst];
+Catch[maxDim=Max[Length/@clqsLst];
 nfaces=Union@@(Subsets[#,{n}]&/@clqsLst);
-If[maxDim<=1,Return[2]];(*a bunch of isolated vertices have degree 0 each so the output would be 2*)
-Mean[((ECGrav`HyperDeg[g,#]&/@nfaces-3/2)^2-1/4)]
+If[maxDim<=1,Throw[2, "ECGravReturn$23"]];(*a bunch of isolated vertices have degree 0 each so the output would be 2*)
+Mean[((ECGrav`HyperDeg[g,#]&/@nfaces-3/2)^2-1/4)], "ECGravReturn$23"]
 ];
 
 (* Overload Pattern *)
@@ -915,22 +915,22 @@ $Failed);
 ECGrav`AvgKDim[g_Graph]:=
 (*Computes the inductive (Knill) dimension of a graph as defined by Oliver Knill.*)
 Block[{n,ne,isolatedVertices,ni,components,joinComponents,joinCount,cliques,temp,clqAssoc,numClqSizes,w,gm,degassoc,iassoc,rassoc,resultassoc,ComputeDeg,ComputeI,ComputeR,curClqs,curClqFaces,curI,curR,curval,curdeg,dimg},
-n=VertexCount[g];
+Catch[n=VertexCount[g];
 ne=EdgeCount[g];
-If[n==0,Return[-1]];
-If[n==1||ne==0,Return[0]];
-If[ne==n (n-1)/2,Return[ n-1]];
-If[ne==n (n-1)/2-1, Return[ n-2]];
+If[n==0,Throw[-1, "ECGravReturn$24"]];
+If[n==1||ne==0,Throw[0, "ECGravReturn$24"]];
+If[ne==n (n-1)/2,Throw[n-1, "ECGravReturn$24"]];
+If[ne==n (n-1)/2-1, Throw[n-2, "ECGravReturn$24"]];
 
 isolatedVertices=Select[VertexList[g],VertexDegree[g,#]==0&];
 ni=Length[isolatedVertices];
 If[ni>0,
-Return[ECGrav`AvgKDim[Subgraph[g,Complement[VertexList[g],isolatedVertices]]]*(n-ni)/n]
+Throw[ECGrav`AvgKDim[Subgraph[g,Complement[VertexList[g],isolatedVertices]]]*(n-ni)/n, "ECGravReturn$24"]
 ];
-If[TreeGraphQ[g],Return[1]];
+If[TreeGraphQ[g],Throw[1, "ECGravReturn$24"]];
 
 components=ConnectedGraphComponents[g];
-If[Length[components]>1,Return[Sum[VertexCount[components[[i]]]*ECGrav`AvgKDim[components[[i]]],{i,Length[components]}]/n]];
+If[Length[components]>1,Throw[Sum[VertexCount[components[[i]]]*ECGrav`AvgKDim[components[[i]]],{i,Length[components]}]/n, "ECGravReturn$24"]];
 
 (************************************************************
 Check if the graph is a join of subgraphs.
@@ -938,8 +938,7 @@ Check if the graph is a join of subgraphs.
 joinComponents=ConnectedGraphComponents[GraphComplement[g]];
 joinCount=Length[joinComponents];
 
-If[joinCount>1,Return[joinCount-1+Sum[ECGrav`AvgKDim[Subgraph[g,VertexList[i]]],{i,joinComponents}]
-]
+If[joinCount>1,Throw[joinCount-1+Sum[ECGrav`AvgKDim[Subgraph[g,VertexList[i]]],{i,joinComponents}], "ECGravReturn$24"]
 ];
 
 
@@ -950,7 +949,7 @@ numClqSizes=Length[clqAssoc];
 w=Max[Keys[clqAssoc]];
 
 
-If[numClqSizes==1,Return[w-1]];
+If[numClqSizes==1,Throw[w-1, "ECGravReturn$24"]];
 
 degassoc=<||>;
 iassoc=<||>;
@@ -958,39 +957,39 @@ rassoc=<||>;
 resultassoc=<||>;
 
 ComputeDeg[clq1_List]:=Block[{spheres,deg},
-deg=Lookup[degassoc,Key[clq1],-1];
-If[deg>=0,Return[deg]];
+Catch[deg=Lookup[degassoc,Key[clq1],-1];
+If[deg>=0,Throw[deg, "ECGravReturn$25"]];
 spheres=Table[AdjacencyList[g,v],{v,clq1}];
 (*Print["spheres",spheres]*);
 deg=Length[Intersection@@spheres];
 degassoc[clq1]=deg;
-deg
+deg, "ECGravReturn$25"]
 ];
 
 ComputeI[clq2_List]:=Block[{spheres,sph,isolatedNodes,isolatedNodesCt},
-isolatedNodesCt=Lookup[iassoc,Key[clq2],-1];
-If[isolatedNodesCt>=0,Return[isolatedNodesCt]];
+Catch[isolatedNodesCt=Lookup[iassoc,Key[clq2],-1];
+If[isolatedNodesCt>=0,Throw[isolatedNodesCt, "ECGravReturn$26"]];
 spheres=Table[AdjacencyList[g,v],{v,clq2}];
 sph=Subgraph[g,Intersection@@spheres];
 isolatedNodes=Select[VertexList[sph],VertexDegree[sph,#]==0&];
 isolatedNodesCt=Length[isolatedNodes];
 iassoc[clq2]=isolatedNodesCt;
-isolatedNodesCt
+isolatedNodesCt, "ECGravReturn$26"]
 ];
 
 ComputeR[clq3_List]:=Block[{k,rval,deg,faces,faceRvals},
-rval=Lookup[rassoc,Key[clq3],-1];
-If[rval>=0,Return[rval]];
+Catch[rval=Lookup[rassoc,Key[clq3],-1];
+If[rval>=0,Throw[rval, "ECGravReturn$27"]];
 
 k=Length[clq3];
-If[k==1,rval=1/VertexDegree[g,clq3[[1]]];rassoc[clq3]=rval;Return[rval]
+If[k==1,rval=1/VertexDegree[g,clq3[[1]]];rassoc[clq3]=rval;Throw[rval, "ECGravReturn$27"]
 ];
 deg=Lookup[degassoc,Key[clq3],ComputeDeg[clq3]];
 faces=Subsets[clq3,{k-1}];
 faceRvals=Table[Lookup[rassoc,Key[i],ComputeR[i]],{i,faces}];
 rval=Total[faceRvals]/deg;
 rassoc[clq3]=rval;
-rval
+rval, "ECGravReturn$27"]
 ];
 
 Do[
@@ -1006,7 +1005,7 @@ resultassoc[k]=curval;
 ];
 
 dimg=w-(1/n)*Total[resultassoc];
-dimg
+dimg, "ECGravReturn$24"]
 ];
 
 (* Overload Pattern *)
@@ -1112,13 +1111,13 @@ bottoming out at a single cycle (the 1-sphere) and at two isolated vertices (the
 This is the topological manifold condition only and does NOT test sphere-ness -- a graph whose
 clique complex is a torus returns True. Use DSphereQ to test whether it is a sphere.*)
 Module[{n=VertexCount[g],vlist=VertexList[g],clqs=FindClique[g,\[Infinity],All],numClqSizes,dim,spheres},
-If[EdgeCount[g]==0,If[n==2,Return[True],Return[False]]];
+Catch[If[EdgeCount[g]==0,If[n==2,Throw[True, "ECGravReturn$28"],Throw[False, "ECGravReturn$28"]]];
 numClqSizes=DeleteDuplicates[Length/@clqs];
-If[Length[numClqSizes]>1,Return[False]];
+If[Length[numClqSizes]>1,Throw[False, "ECGravReturn$28"]];
 dim=numClqSizes[[1]];
-If[dim==2,Return[PathGraphQ[g]&&!TreeGraphQ[g]]];
+If[dim==2,Throw[PathGraphQ[g]&&!TreeGraphQ[g], "ECGravReturn$28"]];
 spheres=Table[ECGrav`Sph[g,i],{i,vlist}];
-AllTrue[spheres,ECGrav`ClosedDGraphQ[#]&]
+AllTrue[spheres,ECGrav`ClosedDGraphQ[#]&], "ECGravReturn$28"]
 ];
 
 (* Catch-all Pattern *)
@@ -1154,14 +1153,14 @@ $Failed);
 ECGrav`DGraphQ[g_Graph]:=
 (*Returns true of the graph is a geometric graph and false if not.*)
 Module[{n=VertexCount[g],vlist=VertexList[g],clqs=FindClique[g,\[Infinity],All],numClqSizes,dim,spheres},
-If[EdgeCount[g]==0,If[n<=2,Return[True],Return[False]]];
-If[CompleteGraphQ[g],Return[True]];(*Complete graphs are d-graphs*)
+Catch[If[EdgeCount[g]==0,If[n<=2,Throw[True, "ECGravReturn$29"],Throw[False, "ECGravReturn$29"]]];
+If[CompleteGraphQ[g],Throw[True, "ECGravReturn$29"]];(*Complete graphs are d-graphs*)
 numClqSizes=DeleteDuplicates[Length/@clqs];
-If[Length[numClqSizes]>1,Return[False]];
+If[Length[numClqSizes]>1,Throw[False, "ECGravReturn$29"]];
 dim=numClqSizes[[1]];
-If[dim==2,Return[PathGraphQ[g]]];
+If[dim==2,Throw[PathGraphQ[g], "ECGravReturn$29"]];
 spheres=Table[ECGrav`Sph[g,i],{i,vlist}];
-AllTrue[spheres,ECGrav`DGraphQ[#]&]
+AllTrue[spheres,ECGrav`DGraphQ[#]&], "ECGravReturn$29"]
 ];
 
 (* Catch-all Pattern *)
@@ -1178,9 +1177,9 @@ ECGrav`DGraphBoundary[g_Graph]:=
 (*Outputs the induced subgraph which is the boundary of the graph g. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
 Module[{vlist=VertexList[g],interiorPoints,bdryPoints},
 (*If[!DGraphQ[g],Return["Error! The graph is not geometric."]];*)
-interiorPoints=Select[vlist,ECGrav`ClosedDGraphQ[ECGrav`Sph[g,#]]&];(*interior vertices have a sphere link; ClosedDGraphQ preserves the original behaviour of this test (it was DSphereQ, which used to be the closed-manifold predicate)*)
+Catch[interiorPoints=Select[vlist,ECGrav`ClosedDGraphQ[ECGrav`Sph[g,#]]&];(*interior vertices have a sphere link; ClosedDGraphQ preserves the original behaviour of this test (it was DSphereQ, which used to be the closed-manifold predicate)*)
 bdryPoints=Complement[vlist,interiorPoints];
-Return[Subgraph[g,bdryPoints]]
+Throw[Subgraph[g,bdryPoints], "ECGravReturn$30"], "ECGravReturn$30"]
 ];
 
 (* Overload Pattern *)
@@ -1188,8 +1187,8 @@ ECGrav`DGraphBoundary[Amat_List]:=
 (*Outputs the induced subgraph which is the boundary of the graph with adjacency matrix 
 Amat. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
 With[{bdryGraph=ECGrav`DGraphBoundary[AdjacencyGraph[Amat]]},
-	If[VertexCount[bdryGraph]==0,Return[{}]];
-	Normal[AdjacencyMatrix[bdryGraph]]
+	Catch[If[VertexCount[bdryGraph]==0,Throw[{}, "ECGravReturn$31"]];
+	Normal[AdjacencyMatrix[bdryGraph]], "ECGravReturn$31"]
 ];
 
 (* Catch-all Pattern *)
@@ -1206,23 +1205,23 @@ ECGrav`CombinatorialManifoldQ[facelst_List]:=
 (*Given an input simplicial complex as a list of facets, it checks whether or not it is a combinatorial manifold. 
 Returns true if a combinatorial manifold and false if not.*)
 Module[{purity,codim1faces,links},
-If[facelst=={},Return[True]];(*The empty graph is the -1 sphere*)
-If[Length[facelst]==1,Return[True]];
+Catch[If[facelst=={},Throw[True, "ECGravReturn$32"]];(*The empty graph is the -1 sphere*)
+If[Length[facelst]==1,Throw[True, "ECGravReturn$32"]];
 (*an n-simplex is a combinatorial manifold, an n-ball *)
-If[Length[DeleteDuplicates[Length/@facelst]]>1,Return[False]];(*the complex has to be pure*)
+If[Length[DeleteDuplicates[Length/@facelst]]>1,Throw[False, "ECGravReturn$32"]];(*the complex has to be pure*)
 
 purity=Length[facelst[[1]]];
 If[purity==1,
-If[Length[facelst]<=2,Return[True],Return[False]]
+If[Length[facelst]<=2,Throw[True, "ECGravReturn$32"],Throw[False, "ECGravReturn$32"]]
 ];
 If[purity==2,
-If[PathGraphQ[ECGrav`GraphFromCliques[facelst]],Return[True],Return[False]]
+If[PathGraphQ[ECGrav`GraphFromCliques[facelst]],Throw[True, "ECGravReturn$32"],Throw[False, "ECGravReturn$32"]]
 ];
-If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Return[False]];(*the complex has to be connected*)
+If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$32"]];(*the complex has to be connected*)
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]>2&],Return[False]];
+If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]>2&],Throw[False, "ECGravReturn$32"]];
 links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
-AllTrue[links,ECGrav`CombinatorialManifoldQ[#]&]
+AllTrue[links,ECGrav`CombinatorialManifoldQ[#]&], "ECGravReturn$32"]
 ];
 
 (* Catch-all Pattern *)
@@ -1243,28 +1242,28 @@ recursively a closed combinatorial manifold. Returns True or False. This tests t
 topological manifold condition only and does NOT test sphere-ness -- a torus, Klein
 bottle, or sphere all return True. Use CombinatorialSphereQ to test for a sphere.*)
 Module[{purity,codim1faces,links},
-If[facelst=={},Return[True]];(*The empty complex is closed (the -1 sphere)*)
-If[Length[facelst]==1,Return[False]];
+Catch[If[facelst=={},Throw[True, "ECGravReturn$33"]];(*The empty complex is closed (the -1 sphere)*)
+If[Length[facelst]==1,Throw[False, "ECGravReturn$33"]];
 (*a single n-simplex is an n-ball: it has boundary, so it is not closed *)
-If[Length[DeleteDuplicates[Length/@facelst]]>1,Return[False]];(*the complex has to be pure*)
+If[Length[DeleteDuplicates[Length/@facelst]]>1,Throw[False, "ECGravReturn$33"]];(*the complex has to be pure*)
 
 purity=Length[facelst[[1]]];
 
 If[purity==1,
-	If[Length[facelst]==2,Return[True],Return[False]]
+	If[Length[facelst]==2,Throw[True, "ECGravReturn$33"],Throw[False, "ECGravReturn$33"]]
 ];(*the only closed 0-manifold is S^0 = two points*)
 
-If[purity==2,Return[With[{g=ECGrav`GraphFromCliques[facelst]},
-	If[PathGraphQ[g]&&!AcyclicGraphQ[g],True,False]]]
+If[purity==2,Throw[With[{g=ECGrav`GraphFromCliques[facelst]},
+	If[PathGraphQ[g]&&!AcyclicGraphQ[g],True,False]], "ECGravReturn$33"]
 ];(*the only closed 1-manifold is a single cycle*)
 
-If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Return[False]];(*the complex has to be connected*)
+If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$33"]];(*the complex has to be connected*)
 
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Return[False]];(*closed: every ridge lies in exactly two facets*)
+If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Throw[False, "ECGravReturn$33"]];(*closed: every ridge lies in exactly two facets*)
 
 links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
-AllTrue[links,ECGrav`ClosedCombinatorialManifoldQ[#]&]
+AllTrue[links,ECGrav`ClosedCombinatorialManifoldQ[#]&], "ECGravReturn$33"]
 ];
 
 (* Catch-all Pattern *)
@@ -1287,10 +1286,10 @@ In dimension >= 3 the Euler-characteristic condition is necessary but not suffic
 (recognizing PL spheres is not algorithmically decidable in general), so there the test
 is a homology-level filter. Returns True or False.*)
 Module[{purity},
-If[facelst=={},Return[True]];(*The empty complex is the -1 sphere*)
-If[!ECGrav`ClosedCombinatorialManifoldQ[facelst],Return[False]];(*a sphere is first of all a closed manifold*)
+Catch[If[facelst=={},Throw[True, "ECGravReturn$34"]];(*The empty complex is the -1 sphere*)
+If[!ECGrav`ClosedCombinatorialManifoldQ[facelst],Throw[False, "ECGravReturn$34"]];(*a sphere is first of all a closed manifold*)
 purity=Length[facelst[[1]]];
-ECGrav`EulerChi[facelst]==1+(-1)^(purity-1)
+ECGrav`EulerChi[facelst]==1+(-1)^(purity-1), "ECGravReturn$34"]
 ];
 
 (* Catch-all Pattern *)
@@ -1307,19 +1306,19 @@ ECGrav`OrientableCombinatorialManifoldQ[inputfacetsLst_List]:=
 (*Checks whether or not a pseudo-combinatorial manifold given as a set of facets is 
 orientable. Does not check whether or not the input is a combinatorial pseudomanifold *)
 Module[{p=Length[inputfacetsLst[[1]]],q=Length[inputfacetsLst],facetsLst=Sort/@inputfacetsLst,orientations,RelativeOrientation,edgeList,graph,spanningtree,m1,m2,unexploredEdges},
-If[q<=2,Return[True]];
-If[p<=2,Return[True]];
+Catch[If[q<=2,Throw[True, "ECGravReturn$35"]];
+If[p<=2,Throw[True, "ECGravReturn$35"]];
 
 RelativeOrientation[simplex1_List,simplex2_List]:=
 (*gives the relative orientation between neighboring facets*)
 Block[{sharedFace=Intersection[simplex1,simplex2],remaining1,pos1,remaining2,pos2},(*Find the vertex not in the shared face for each simplex*)
-If[Length[sharedFace]!=Length[simplex1]-1,Return[0]];(*relative orientation of non-adjacent is set to 0*)
+Catch[If[Length[sharedFace]!=Length[simplex1]-1,Throw[0, "ECGravReturn$36"]];(*relative orientation of non-adjacent is set to 0*)
 remaining1=First@Complement[simplex1,sharedFace];
 remaining2=First@Complement[simplex2,sharedFace];
 pos1=Position[simplex1,remaining1][[1,1]];
 pos2=Position[simplex2,remaining2][[1,1]];
 
-((-1)^pos1)*Signature[Delete[simplex1,pos1]]*(-1)^pos2*Signature[Delete[simplex2,pos2]]
+((-1)^pos1)*Signature[Delete[simplex1,pos1]]*(-1)^pos2*Signature[Delete[simplex2,pos2]], "ECGravReturn$36"]
 ];
 
 orientations=<|Table[i->i,{i,facetsLst}]|>;
@@ -1343,7 +1342,7 @@ unexploredEdges=Complement[Sort/@edgeList,Sort/@EdgeList[spanningtree],SameTest-
 (*Print["unexploredEdges ",unexploredEdges];
 Print["checks on unexplored edges ",<|Table[i->RelativeOrientation[orientations[[Key[i[[1]]]]],orientations[[Key[i[[2]]]]]],{i,unexploredEdges}]|>];*)
 
-AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientations[[Key[#[[2]]]]]]==-1&]
+AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientations[[Key[#[[2]]]]]]==-1&], "ECGravReturn$35"]
 ];
 
 
@@ -1352,21 +1351,21 @@ ECGrav`OrientableCombinatorialManifoldQ[g_Graph]:=
 (*Checks whether or not the clique complex of the graph g is an orientable. 
 Does not check whether or not the input is a combinatorial pseudomanifold *)
 Module[{facetsLst=Sort/@FindClique[g,\[Infinity],All],p,q,orientations,RelativeOrientation,edgeList,graph,spanningtree,m1,m2,unexploredEdges},
-p=Length[facetsLst[[1]]];
+Catch[p=Length[facetsLst[[1]]];
 q=Length[facetsLst];
-If[q<=2,Return[True]];
-If[p<=2,Return[True]];
+If[q<=2,Throw[True, "ECGravReturn$37"]];
+If[p<=2,Throw[True, "ECGravReturn$37"]];
 
 RelativeOrientation[simplex1_List,simplex2_List]:=
 (*gives the relative orientation between neighboring facets*)
 Block[{sharedFace=Intersection[simplex1,simplex2],remaining1,pos1,remaining2,pos2},(*Find the vertex not in the shared face for each simplex*)
-If[Length[sharedFace]!=Length[simplex1]-1,Return[0]];(*relative orientation of non-adjacent is set to 0*)
+Catch[If[Length[sharedFace]!=Length[simplex1]-1,Throw[0, "ECGravReturn$38"]];(*relative orientation of non-adjacent is set to 0*)
 remaining1=First@Complement[simplex1,sharedFace];
 remaining2=First@Complement[simplex2,sharedFace];
 pos1=Position[simplex1,remaining1][[1,1]];
 pos2=Position[simplex2,remaining2][[1,1]];
 
-((-1)^pos1)*Signature[Delete[simplex1,pos1]]*(-1)^pos2*Signature[Delete[simplex2,pos2]]
+((-1)^pos1)*Signature[Delete[simplex1,pos1]]*(-1)^pos2*Signature[Delete[simplex2,pos2]], "ECGravReturn$38"]
 ];
 
 orientations=<|Table[i->i,{i,facetsLst}]|>;
@@ -1390,7 +1389,7 @@ unexploredEdges=Complement[Sort/@edgeList,Sort/@EdgeList[spanningtree],SameTest-
 (*Print["unexploredEdges ",unexploredEdges];
 Print["checks on unexplored edges ",<|Table[i->RelativeOrientation[orientations[[Key[i[[1]]]]],orientations[[Key[i[[2]]]]]],{i,unexploredEdges}]|>];*)
 
-AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientations[[Key[#[[2]]]]]]==-1&]
+AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientations[[Key[#[[2]]]]]]==-1&], "ECGravReturn$37"]
 ];
 
 
@@ -1506,9 +1505,9 @@ unique integer to the set between 0 and numLabels choose length(set).
 E.g., Rank[{0,1},3] = 0, and  Rank[{1,2},3]=3.
 ***************************************)
 Module[{setSize=Length[set],result},
-If[AnyTrue[set,#>=numLabels&],Return[]];
+Catch[If[AnyTrue[set,#>=numLabels&],Throw[Null, "ECGravReturn$39"]];
 result=Sum[Sum[Binomial[numLabels-k-j,setSize-k],{j,1,set[[k]]-k+1}],{k,1,setSize}];
-result
+result, "ECGravReturn$39"]
 ];
 
 (* Catch-all Pattern *)
@@ -1528,8 +1527,8 @@ set which is a sorted setSize-subset of {0,1,,...,numLabels-1}.
 E.g., UnrankComb[0,3,2] = {0,1}, and  UnrankComb[2,3,2] = {1,2}.
 ***************************************)
 Module[{result={},lCur,iCur,iNext,lowVal,highVal,stopnum},
-If[Binomial[numLabels,setSize]<=l,
-Return[];
+Catch[If[Binomial[numLabels,setSize]<=l,
+Throw[Null, "ECGravReturn$40"];
 ];
 lCur=l;
 iCur=0;
@@ -1569,7 +1568,7 @@ iNext=iCur+1;
 ,{k,1,setSize}
 ];
 
-result
+result, "ECGravReturn$40"]
 ];
 
 (* Catch-all Pattern *)
@@ -1632,8 +1631,8 @@ ECGrav`GraphIsContained[glist_List/;GraphQ[glist[[1]]],g_Graph/;GraphQ[g]]:=
 (*Given a list of graphs glist and a new graph g, it returns True if there is a graph 
 isomorphic to g in glist, False otherwise. It stops checking at the first occurence 
 of isimorphic graph.*)
-If[VertexCount[g]==0,Return[True],
-Return[AnyTrue[glist,IsomorphicGraphQ[g,#]&]]
+If[VertexCount[g]==0,True,
+AnyTrue[glist,IsomorphicGraphQ[g,#]&]
 ];
 
 (* Overload Pattern *)
@@ -1641,7 +1640,7 @@ ECGrav`GraphIsContained[Amats_List/;SquareMatrixQ[Amats[[1]]],Am_List/;SquareMat
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
 
-(*Given a list of adjacency matrices  Amats and a new adjacency matrix Am, it returns True if there is a graph isomorphic to Am in glist, False otherwise. It stops checking at the first occurence of isimorphic graph.*)If[Length[Am[[1]]]==0,Return[True],Return[AnyTrue[Amats,IsomorphicGraphQ[AdjacencyGraph[Am],AdjacencyGraph[#]]&]]
+(*Given a list of adjacency matrices  Amats and a new adjacency matrix Am, it returns True if there is a graph isomorphic to Am in glist, False otherwise. It stops checking at the first occurence of isimorphic graph.*)If[Length[Am[[1]]]==0,True,AnyTrue[Amats,IsomorphicGraphQ[AdjacencyGraph[Am],AdjacencyGraph[#]]&]
 ];
 
 (* Catch-all Pattern *)
@@ -1757,7 +1756,7 @@ ECGrav`IsContainedClqComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;(Depth[
 (****************************)
 (*Last updated: 09/13/2023  *)
 (****************************)(*Given a list of clique complexes cmpxesLst (each given as a list of maximal cliques)  and a single other clique complex cmpx, it returns True if there is a graph isomorphic to clq in clqsLst, False otherwise. It stops checking at the first occurence of isimorphic graph.*)
-If[Length[cmpx]==0||cmpx=={{}},Return[True],AnyTrue[cmpxesLst,IsomorphicGraphQ[ECGrav`GraphFromCliques[cmpx],ECGrav`GraphFromCliques[#]]&]
+If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,IsomorphicGraphQ[ECGrav`GraphFromCliques[cmpx],ECGrav`GraphFromCliques[#]]&]
 ];
 
 (* Catch-all Pattern *)
@@ -1823,13 +1822,13 @@ ECGrav`ChooseNonIsomorphicClqComplexes[li_List/;(Depth[{li}]==6&&Length[li]>1)]:
 where no two graphs originally in different sublists are isomorphic. This method does not check whether or not graphs WITHIN a sublist are non-isomorphic.*)Block[{result=li[[1]],length=Length[li]},
 
 
-If[length==1,Return[result]];
+Catch[If[length==1,Throw[result, "ECGravReturn$41"]];
 
 Do[
 result=Join[result,Select[li[[n]],!ECGrav`IsContainedClqComp[result,#]&]];
 ,{n,2,length}];
 
-result
+result, "ECGravReturn$41"]
 ];
 
 (* Catch-all Pattern *)
@@ -1857,13 +1856,13 @@ ECGrav`IsomorphicSimplicialComplexQ[c1_List,c2_List]:=
 It does so by brute force enumeration of all isomorphism between their respective underlying graphs and testing if any of the isomorphisms are bijections of the facets*)
 *)
 With[{isomorphisms=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[c1],ECGrav`GraphFromCliques[c2],All]]},
-If[c1=={}&&c2=={},Return[True]];
-If[Length[isomorphisms]==0,Return[False]];
+Catch[If[c1=={}&&c2=={},Throw[True, "ECGravReturn$42"]];
+If[Length[isomorphisms]==0,Throw[False, "ECGravReturn$42"]];
 
 If[Length[Select[isomorphisms, Complement[Sort/@(c1/.#),Sort/@c2]=={}&
-]]>0,Return[True]];
+]]>0,Throw[True, "ECGravReturn$42"]];
 
-False
+False, "ECGravReturn$42"]
 ];
 
 (* Catch-all Pattern *)
@@ -1882,7 +1881,7 @@ ECGrav`IsContainedSimplicialComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;
 (* Last Updated: 03/05/2024  *)
 (*****************************)*)
 (*Given a list of pure simplicial complexes cmpxesLst (each given as a list of facets of equal size)  and a single other pure simplicial complex cmpx, it returns True if there is a complex isomorphic to cmpx in cmpxesLst, False otherwise. It stops checking at the first occurence of isomorphic complex.*)
-If[Length[cmpx]==0||cmpx=={{}},Return[True],AnyTrue[cmpxesLst,ECGrav`IsomorphicSimplicialComplexQ[cmpx,#]&]
+If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,ECGrav`IsomorphicSimplicialComplexQ[cmpx,#]&]
 ];
 
 (* Catch-all Pattern *)
@@ -1938,13 +1937,13 @@ ECGrav`ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==5)]:=
 Block[{result=li[[1]],length=Length[li]},
 
 
-If[length==1,Return[result]];
+Catch[If[length==1,Throw[result, "ECGravReturn$43"]];
 
 Do[
 result=Join[result,Select[li[[n]],!ECGrav`IsContainedSimplicialComp[result,#]&]];
 ,{n,2,length}];
 
-result
+result, "ECGravReturn$43"]
 ];
 
 (* Catch-all Pattern *)
@@ -1981,13 +1980,13 @@ ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[facetsL
 
 Module[{purity,g,VertexFacetDegree,leafsLst,relabelingRule,reducedFacetsParentsAsn,relabeledreducedFacetsParentsAsn,reducedGraph, reducedAutG,canonicalReducedFacets, thereAreMissingCanonicalReducedFacets,isPermutationOfFacets,relabeledfacetsLst},
 
-If[Length[facetsLst]==1,Return[Length[facetsLst[[1]]]!]];
+Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$44"]];
 
 
 g=ECGrav`GraphFromCliques[facetsLst];
 
 
-If[!ConnectedGraphQ[g],Return[]
+If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$44"]
 ];
 
 VertexFacetDegree[v_Integer]:=Length[Select[facetsLst,MemberQ[#,v]&]];
@@ -2027,7 +2026,7 @@ If[thereAreMissingCanonicalReducedFacets!={},reducedAutG=PermutationGroup[Select
 ];
 
 
-GroupOrder[reducedAutG]*Product[Length[i]!,{i,leafsLst}]
+GroupOrder[reducedAutG]*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$44"]
 
 ];
 
@@ -2082,7 +2081,7 @@ ECGrav`PureComplexAutomorphismGroup[facetsLst_List]:=
 *)
 Module[{facets,g,relabelingRule,autGroup, missingfacets,doesntMixupMissingAndNonMissing},
 
-g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+Catch[g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 
 
 (*The facets have to be labeled from 1 to glen so that the action of the graph automorphism will be well defined.*)
@@ -2090,7 +2089,7 @@ g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
 
 
-If[Length[facetsLst]==1,Return[{SymmetricGroup[Length[facetsLst[[1]]]],Reverse/@relabelingRule}]];
+If[Length[facetsLst]==1,Throw[{SymmetricGroup[Length[facetsLst[[1]]]],Reverse/@relabelingRule}, "ECGravReturn$45"]];
 
 facets=Sort/@(facetsLst/.relabelingRule);
 
@@ -2108,7 +2107,7 @@ If[missingfacets!={},autGroup=PermutationGroup[Select[GroupElements[autGroup],do
 ];
 
 
-{autGroup,(Reverse/@relabelingRule)}
+{autGroup,(Reverse/@relabelingRule)}, "ECGravReturn$45"]
 
 ];
 
@@ -2142,14 +2141,14 @@ ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[facetsLst_Lis
 Module[{purity,g,VertexFacetDegree,leafsLst,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, thereAreMissingCanonicalReducedFacets,isPermutationOfFacets,reducedAutGorder},
 
 
-If[Length[facetsLst]==1,Return[Length[facetsLst[[1]]]!]];
+Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$46"]];
 
-If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Return[]];
+If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravReturn$46"]];
 
 g=ECGrav`GraphFromCliques[facetsLst];
 
 
-If[!ConnectedGraphQ[g],Return[]
+If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$46"]
 ];
 
 VertexFacetDegree[v_Integer]:=Length[Select[facetsLst,MemberQ[#,v]&]];
@@ -2181,7 +2180,7 @@ If[thereAreMissingCanonicalReducedFacets!={},reducedAutGorder=Length[Select[Grou
 ];
 
 
-reducedAutGorder*Product[Length[i]!,{i,leafsLst}]
+reducedAutGorder*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$46"]
 
 ];
 
@@ -2273,14 +2272,14 @@ ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[facetsLs
 *)
 Module[{purity,g,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, missingCanonicalReducedFacets,doesntMixupMissingAndNonMissing,reducedFacetStabilizerGroup},
 
-If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Return[]];
+Catch[If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravReturn$47"]];
 
-If[Length[facetsLst]==1,Return[1]];
+If[Length[facetsLst]==1,Throw[1, "ECGravReturn$47"]];
 
 g=ECGrav`GraphFromCliques[facetsLst];
 
 
-If[!ConnectedGraphQ[g],Return[]
+If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$47"]
 ];
 
 purity=Length[facetsLst[[1]]];
@@ -2310,7 +2309,7 @@ If[missingCanonicalReducedFacets!={},reducedAutG=PermutationGroup[Select[GroupEl
 reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
 
 
-GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup]
+GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$47"]
 
 ];
 
@@ -2363,7 +2362,7 @@ of facets *)
 *)
 Module[{facets,g,relabelingRule,autGroup, missingfacets,facetStabilizerGroup,doesntMixupMissingAndNonMissing},
 
-If[Length[facetsLst]==1,Return[SymmetricGroup[1]]];
+Catch[If[Length[facetsLst]==1,Throw[SymmetricGroup[1], "ECGravReturn$48"]];
 
 g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 
@@ -2394,9 +2393,9 @@ facetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseS
 
 (*If[GroupOrder[facetStabilizerGroup]==1,Return[autGroup/.(Reverse/@relabelingRule)]];*)
 
-If[GroupOrder[facetStabilizerGroup]==1,Return[autGroup]];
+If[GroupOrder[facetStabilizerGroup]==1,Throw[autGroup, "ECGravReturn$48"]];
 
-(PermutationGroup[DeleteDuplicates[RightCosetRepresentative[facetStabilizerGroup,#]&/@GroupElements[autGroup]]])/.(Reverse/@relabelingRule)
+(PermutationGroup[DeleteDuplicates[RightCosetRepresentative[facetStabilizerGroup,#]&/@GroupElements[autGroup]]])/.(Reverse/@relabelingRule), "ECGravReturn$48"]
 
 ];
 
@@ -2430,12 +2429,12 @@ clique complex or not, it assumes it is. It returns Null if it is not connected.
 Module[{purity,g,leafsLst,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, reducedFacetStabilizerGroup},
 
 
-If[Length[facetsLst]==1,Return[Length[facetsLst[[1]]]!]];
+Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$49"]];
 
 g=ECGrav`GraphFromCliques[facetsLst];
 
 
-If[!ConnectedGraphQ[g],Return[]
+If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$49"]
 ];
 
 purity=Length[facetsLst[[1]]];
@@ -2458,7 +2457,7 @@ reducedAutG=GraphAutomorphismGroup[reducedGraph];
 reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
 
 
-GroupOrder[reducedFacetStabilizerGroup]*Product[Length[i]!,{i,leafsLst}]
+GroupOrder[reducedFacetStabilizerGroup]*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$49"]
 
 ];
 
@@ -2510,12 +2509,12 @@ ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[facetsLst_Lis
 Module[{purity,g,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, reducedFacetStabilizerGroup},
 
 
-If[Length[facetsLst]==1,Return[1]];
+Catch[If[Length[facetsLst]==1,Throw[1, "ECGravReturn$50"]];
 
 g=ECGrav`GraphFromCliques[facetsLst];
 
 
-If[!ConnectedGraphQ[g],Return[]
+If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$50"]
 ];
 
 purity=Length[facetsLst[[1]]];
@@ -2534,7 +2533,7 @@ reducedAutG=GraphAutomorphismGroup[reducedGraph];
 reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
 
 
-GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup]
+GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$50"]
 
 ];
 
@@ -2587,7 +2586,7 @@ It does not check whether the complex is a clique complex or not, it assumes it 
 *)
 Module[{facets,g,relabelingRule,autGroup,facetStabilizerGroup},
 
-If[Length[facetsLst]==1,Return[SymmetricGroup[1]]];
+Catch[If[Length[facetsLst]==1,Throw[SymmetricGroup[1], "ECGravReturn$51"]];
 
 g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
 
@@ -2606,10 +2605,10 @@ autGroup=GraphAutomorphismGroup[g];
 facetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[autGroup,#]]&/@facets)];
 
 
-If[GroupOrder[facetStabilizerGroup]==1,Return[autGroup]];
+If[GroupOrder[facetStabilizerGroup]==1,Throw[autGroup, "ECGravReturn$51"]];
 
 
-(PermutationGroup[DeleteDuplicates[RightCosetRepresentative[facetStabilizerGroup,#]&/@GroupElements[autGroup]]])/.(Reverse/@relabelingRule)
+(PermutationGroup[DeleteDuplicates[RightCosetRepresentative[facetStabilizerGroup,#]&/@GroupElements[autGroup]]])/.(Reverse/@relabelingRule), "ECGravReturn$51"]
 
 ];
 
@@ -3516,7 +3515,7 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 buildOneComplex[]:=
 Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},acceptanceProb},
 
-	allVertices=Range[nV];
+	Catch[allVertices=Range[nV];
 	While[facets=={},
 		
 		(* Pick a random composition *)
@@ -3561,12 +3560,12 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nV]!)/(nV!))*
 					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];
 								
-		If[RandomReal[]<=acceptanceProb,Return[facets],facets={}];
+		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$52"],facets={}];
 		
 
 	];
 	
-	facets
+	facets, "ECGravReturn$52"]
 ];
 
 If[numSamples>20,
@@ -3636,7 +3635,7 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 buildOneComplex[]:=
 Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},acceptanceProb},
 
-	While[facets=={},
+	Catch[While[facets=={},
 
 		(*Pick number of vertices*)
 		numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
@@ -3689,11 +3688,11 @@ Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},unco
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nmin]!)/(numTotVertices!))*
 					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];
 								
-		If[RandomReal[]<=acceptanceProb,Return[facets],facets={}];
+		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$53"],facets={}];
 
 	];
 	
-	facets
+	facets, "ECGravReturn$53"]
 ];
 
 If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],Table[buildOneComplex[],{numSamples}]]
@@ -3937,7 +3936,7 @@ Module[{result,purity=Length[seedComplex[[1]]],
 		nV=Length[DeleteDuplicates[Flatten[seedComplex]]],
 		minNv,data,allVertexLabels,step},
 
-If[HoldNumberOfVerticesFixed==False,Return[ECGrav`RandomPureSimplicialComplexMCMCSweep[seedComplex,labelingChoise,NN]]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMCSweep[seedComplex,labelingChoise,NN], "ECGravReturn$54"]];
 
 minNv=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
 
@@ -4017,7 +4016,7 @@ step[]:=(*Performs one spin flip step*)
 
 	result=data;
 
-	result
+	result, "ECGravReturn$54"]
 ];
 
 
@@ -4192,8 +4191,8 @@ Module[{result,
 		eqlTime=20000,
 		maxNumSweeps=25000},
 
-If[HoldNumberOfVerticesFixed==False,
-	Return[ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex, labelingChoise]]
+Catch[If[HoldNumberOfVerticesFixed==False,
+	Throw[ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex, labelingChoise], "ECGravReturn$55"]
 ];
 
 (************)
@@ -4321,7 +4320,7 @@ PlotLabel->"t from 1 to 2 times eqlT ",PlotLegends->{"seedComplex","leastEvenlyC
 
 result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
 
-result
+result, "ECGravReturn$55"]
 
 ];
 
@@ -4448,7 +4447,7 @@ ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumbe
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],nV=Length[DeleteDuplicates[Flatten[seedComplex]]],data,sweepOutput,observablesTable,
 	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps},
 
-If[HoldNumberOfVerticesFixed==False,Return[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise]]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise], "ECGravReturn$56"]];
 
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 	"state"-><|"complex"->Sort[Sort/@seedComplex],"edgeCount"->Length[Union@@(Subsets[#,{2}]&/@(Sort/@seedComplex))],"weight"->1.0,"energy" ->0.0|>|>;
@@ -4508,7 +4507,7 @@ If[fluctuatingObservableIndices=={},
 ];
 
 
-data
+data, "ECGravReturn$56"]
 
 ];
 
@@ -4617,7 +4616,7 @@ ECGrav`RandomPureSimplicialComplexMCMC[seedComplex_List, HoldNumberOfVerticesFix
 
 Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 
-If[HoldNumberOfVerticesFixed==False,Return[ECGrav`RandomPureSimplicialComplexMCMC[seedComplex, operators,labelingChoise, numSamples]]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMC[seedComplex, operators,labelingChoise, numSamples], "ECGravReturn$57"]];
 
 PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 
@@ -4678,7 +4677,7 @@ measurements=
 		]
 	][[2,1]];
 
-{measurements,data}
+{measurements,data}, "ECGravReturn$57"]
 
 ];
 
@@ -4749,7 +4748,7 @@ ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput_Association,HoldNumberOfVer
 Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 
 
-If[HoldNumberOfVerticesFixed==False,Return[ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput, operators,labelingChoise, numSamples]]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput, operators,labelingChoise, numSamples], "ECGravReturn$58"]];
 
 data=priorRunInput;
 
@@ -4775,7 +4774,7 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-{measurements,data}
+{measurements,data}, "ECGravReturn$58"]
 
 ];
 
@@ -4811,15 +4810,15 @@ decreasing list of available vertex space.  *)
 *)
 Module[{facets={Range[purity]},pstingSites=Subsets[Range[purity],{purity-1}]},
 
-If[purity<2,
-If[facetOrder==1,Return[facets]];
-Return[]
+Catch[If[purity<2,
+If[facetOrder==1,Throw[facets, "ECGravReturn$59"]];
+Throw[Null, "ECGravReturn$59"]
 ];
 
 If[facetOrder==0,
-Return[]];
+Throw[Null, "ECGravReturn$59"]];
 
-If[facetOrder==1,Return[facets]
+If[facetOrder==1,Throw[facets, "ECGravReturn$59"]
 ];
 
 
@@ -4829,7 +4828,7 @@ Do[
 
 ];
 
-{facets,pstingSites}
+{facets,pstingSites}, "ECGravReturn$59"]
 
 ];
 
@@ -4867,8 +4866,8 @@ Module[{purity=Length[facetsLst[[1]]],glen,g,relabelingRule,autGroup,facets,newf
 	FindAllowedPastingSites,PasteSites,randomOrderOfPastingSites,allAllowedPSites,
 	success,relabelingRules},
 
-If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Return[]];If[DeleteDuplicates[Length/@facetsLst][[1]]!=purity,
-Return[]];
+Catch[If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravReturn$60"]];If[DeleteDuplicates[Length/@facetsLst][[1]]!=purity,
+Throw[Null, "ECGravReturn$60"]];
 
 
 glen=Length[DeleteDuplicates[Flatten[facetsLst]]];
@@ -4891,7 +4890,7 @@ newPastingSites=Sort[Sort/@(apastingSites/.relabelingRule)];
 newclqVset=Range[glen+1,glen+purity];(*vertex set for the new clique to be added*)
 
 
-If[apastingSites=={},Return[{Join[facets,{newclqVset}],Subsets[newclqVset,{purity-1}]}]];
+If[apastingSites=={},Throw[{Join[facets,{newclqVset}],Subsets[newclqVset,{purity-1}]}, "ECGravReturn$60"]];
 (*If apastingSites=={}, the manifold has no boundaries, so the program will return the 
 manifold and the new disconnected facet*)
 
@@ -4940,11 +4939,11 @@ SelectFirst[distances,#<=2&,-1]==-1 (*If there are no pairs with distance of 2 o
 
 AllowedPartnerSitesQ[candPsite_List]:=(*Given candPsite, a candidate partnersite list of codim 1 faces in the current complex( which will end up being part of the new facet that will be added) it checks whether or not a "slit" will be formed after pasting the new facet. A slit is basically two codim 1 faces that end up being identified at all their vertices. Returns True if the candPsite is ok, and False otherwise. *)
 Block[{vset=Union@@candPsite,facetComplements},
-If[Length[candPsite]<2,Return[True]];
+Catch[If[Length[candPsite]<2,Throw[True, "ECGravReturn$61"]];
 facetComplements=Complement[Subsets[vset,{purity-1}],candPsite];
 
 
-NoneTrue[Tuples[{facets,facetComplements}],SubsetQ[#[[1]],#[[2]]]&]
+NoneTrue[Tuples[{facets,facetComplements}],SubsetQ[#[[1]],#[[2]]]&], "ECGravReturn$61"]
 ];
 
 FindAllowedPastingSites[ ]:=(*Finds the list of all lists of codimension 1 faces in the current allowed by the pasting rules sites in the complex.*)Module[{allPastingSites,validPastingSites,validPastingSiteOrbits,allUniquePastingSites},
@@ -4983,7 +4982,7 @@ RandomSample[allUniquePastingSites]
 PasteSites[bsite_List,psite_List]:=(*Given a list of binding site p-1)-faces (bsite) in the new facet and partnering pasting sites psite in the complex, this method pasts the two. It does so by creating a rule which relabels all vertices in the graph with their corresponding label in bsite. This pasting is a surjective (many to one) function from the vertex list of the partnering sites in psite to the vertex set of the binding sites in the clique. The method has side effect, it modifies newfacets. It returns 1 if succesful and 0 otherwise.*)
 Block[{psiteApexSet,bsiteApexSet,psiteSet,bsiteSet,rules,tgraph},
 
-newfacets=facets;
+Catch[newfacets=facets;
 
 
 (*care must be taken to make sure vertices that are in the intersection of two or more cliques in psite are also mapped to vertices that are intersections in bsite. psiteApexSet and bsiteApexSet collect such vertices. Then these vertices are mapped to eachother.*)
@@ -5007,13 +5006,13 @@ rules=DeleteDuplicates[Thread[psiteSet->bsiteSet]];
 
 (*(** Check 1. Check that the matching from psite to bsite is a function, i.e., each vertex in psite is mapped to atmost one vertex in bsite **)*)
 
-If[CheckMatchingFunctionness[psiteSet,bsiteSet]==False,(*Print["Can not paste. No function from psite to bsite. Returning 0. "];*)Return[0]
+If[CheckMatchingFunctionness[psiteSet,bsiteSet]==False,(*Print["Can not paste. No function from psite to bsite. Returning 0. "];*)Throw[0, "ECGravReturn$62"]
 ];
 
 (*(** Check 2.  For each member of bsiteApexSet, check that its preimage, i.e, all vertices in psite mapped to the same vertex in bsiteApexSet have distance of greater than 2. **)*)
 
 If[CheckVertexDistance[psiteSet,bsiteSet]==False,(*Print["Two or more vertices of separations less than 3 will be identified by this pasting. Returning 0 "];*)
-Return[0]
+Throw[0, "ECGravReturn$62"]
 ];
 
 
@@ -5038,7 +5037,7 @@ newPastingSites=Sort[Sort/@newPastingSites];
 (*tgraph=GraphFromCliques[newfacets];*)
 
 
-1
+1, "ECGravReturn$62"]
 
 ];
 
@@ -5120,7 +5119,7 @@ relabelingRules=Thread[DeleteDuplicates[Flatten[newfacets]]
 (*If[Length[Union@(Sort/@newfacets)]<=Length[facetsLst],Print["WARNING!! WARNING!! 
 	current complex ",facetsLst," new complex ",newfacets ]];*)
 
-{Sort[Sort/@(newfacets/.relabelingRules)], Sort[Sort/@(newPastingSites/.relabelingRules)]}
+{Sort[Sort/@(newfacets/.relabelingRules)], Sort[Sort/@(newPastingSites/.relabelingRules)]}, "ECGravReturn$60"]
 
 ];
 

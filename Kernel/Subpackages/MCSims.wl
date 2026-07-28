@@ -809,12 +809,12 @@ $Failed);
 ECGrav`H1dCombManifold[Amat_List,J_]:=
 (*(1/N0)(-2N1+2N3+HIsing+1+)*)
 With[{numV=Length[Amat],Amsq=Amat . Amat},
-If[numV<=0,Return[0.0]];
+Catch[If[numV<=0,Throw[0.0, "ECGravReturn$1"]];
 (J/(numV))*(
 	ECGrav`HWeightedFaceCounts[Amat,0.0,-2.0,2.0,0.0,0.0]
 	+(Total[Amsq,2] - Tr[Amsq])/2.0
 	+ 1.0*numV
-	+ 1.0*Length[ConnectedComponents[AdjacencyGraph[Amat]]]-1.0)
+	+ 1.0*Length[ConnectedComponents[AdjacencyGraph[Amat]]]-1.0), "ECGravReturn$1"]
 
 ];
 
@@ -986,7 +986,7 @@ deltaEtable=<|Table[i->0,{i,edgeList}]|>;
 
 step[]:=Block[{negatives,flipSpin},
 
-Do[
+Catch[Do[
 
 deltaEtable[[Key[i]]]=delH[Amcur,i[[1]],i[[2]]];
 ,{i,edgeList}];
@@ -999,10 +999,10 @@ flipSpin=Keys[TakeSmallest[negatives,1]][[1]];
 
 
 Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amcur[[flipSpin[[1]],flipSpin[[2]]]]+1,2],
-Return[0](* unable to find a flip that lowers the energy*)
+Throw[0, "ECGravReturn$2"](* unable to find a flip that lowers the energy*)
 ];
 
-1 (*success*)
+1, "ECGravReturn$2"] (*success*)
 ];
 
 printCase=Max[Floor[(cutoff*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for cutoff<5*)
@@ -1278,7 +1278,7 @@ Print["finalstate ", finalState];*)
 step[bta_]:=
 Block[{delE,expdelE,flipSpin,accept},
 
-	flipSpin=RandomChoice[edgeList];
+	Catch[flipSpin=RandomChoice[edgeList];
 	delE = N[delH[Amcur,delHparams,flipSpin[[1]],flipSpin[[2]]],precision];
 		
 	accept = 0;
@@ -1287,7 +1287,7 @@ Block[{delE,expdelE,flipSpin,accept},
 		If[RandomReal[]<=expdelE,accept =1];
 	];
 
-If[accept ==0, Return[0]];
+If[accept ==0, Throw[0, "ECGravReturn$3"]];
 
 If[accept==1,
 
@@ -1326,7 +1326,7 @@ Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excited
 
 ];
 
-1 (*success*)
+1, "ECGravReturn$3"] (*success*)
 ];
 
 printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)
@@ -1411,7 +1411,7 @@ Print["finalstate ", finalState];*)
 step[bta_Real]:=
 Block[{delE,expdelE,flipSpin,accept},
 
-flipSpin=RandomChoice[edgeList];
+Catch[flipSpin=RandomChoice[edgeList];
 Amnext[[flipSpin[[1]],flipSpin[[2]]]]=Amnext[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amnext[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
 
 
@@ -1427,7 +1427,7 @@ If[delE<=0,accept = 1,
 	If[RandomReal[]<=expdelE,accept =1];
 ];
 
-If[accept==0,Amnext=Amcur;Return[0]];
+If[accept==0,Amnext=Amcur;Throw[0, "ECGravReturn$4"]];
 
 If[accept==1,
 
@@ -1461,7 +1461,7 @@ Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excited
 
 ];
 
-1 (*success*)
+1, "ECGravReturn$4"] (*success*)
 ];
 
 printCase=Max[Floor[(NN*1.0)/5.0],1];(*at least 1 so Mod[_,printCase] is defined for NN<5*)

@@ -4,7 +4,7 @@ Working plan for turning ECGrav into a well-documented, openly shared Wolfram
 Language paclet. Checkboxes track progress; phases are roughly ordered by
 priority. This is a living document — update it as items land.
 
-_Status snapshot: 2026-07-24 — Phase 2 (documentation) complete; Phase 3 (quality & CI) in progress: the three known bugs are resolved and regression-tested (suite 63 → 69)._
+_Status snapshot: 2026-07-28 — Phase 2 (documentation) complete; Phase 3 (quality & CI) nearly complete: the three known bugs are resolved, test coverage expanded (suite 63 → 87), GitHub Actions CI is live and green, and the ~120 `ReturnAmbiguous` warnings are cleaned up. Remaining Phase 3 item: the subpackage `BeginPackage` convention._
 
 **Decisions made**
 - License: **MIT** ✅
@@ -137,7 +137,10 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
       parallel tempering, simulated annealing, gradient descent, the random-complex
       generators, and the free-energy extrapolation family
 - [ ] Add CI (GitHub Actions) running the `.wlt` suite via Wolfram Engine on push/PR
-- [ ] Address the ~119 `ReturnAmbiguous` warnings (bare `Return` inside `If`/`With`)
+- [x] Address the ~119 `ReturnAmbiguous` warnings (bare `Return` inside `If`/`With`) —
+      done: all ~120 (116 in `PureComplexes.wl`, 4 in `MCSims.wl`) converted to explicit
+      tagged `Catch`/`Throw` (7 whole-body `If[c,Return,Return]` predicates simplified to
+      `If[c,a,b]`); behaviour-preserving, suite still 87/87, CodeInspector now reports 0
 - [ ] Decide on the subpackage `BeginPackage` convention: every symbol is
       hand-qualified as `ECGrav\`Foo` because the subpackages open
       `BeginPackage["ECGrav\`MCSims\`"]` with no exports — fix or document it so a

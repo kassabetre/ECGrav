@@ -37,6 +37,13 @@ Phase 3 (quality & CI) work, staged for the next release (1.3.0).
   so a graph whose clique complex is a torus wrongly returned `True`. `DGraphBoundary`'s
   interior-point test was repointed to `ClosedDGraphQ` to preserve its behaviour (the two
   agree on all genuine geometric graphs).
+- Internal refactor, no behaviour change: the kernel's early-exit `Return`s are now
+  explicit tagged `Catch`/`Throw`, clearing all ~120 `ReturnAmbiguous` code-analysis
+  warnings (116 in `PureComplexes.wl`, 4 in `MCSims.wl`). `Return[expr]` inside
+  `If`/`With`/`While` has a dynamically-scoped exit point that the code analyzer flags as
+  ambiguous; each affected function body is now wrapped in `Catch[…, "tag"]` with its
+  guards throwing that unique tag, and seven whole-body `If[c, Return[a], Return[b]]`
+  predicates were simplified to `If[c, a, b]`. The full 87-test suite passes unchanged.
 
 ### Fixed
 - `CombinatorialSphereQ[torus]` (and Klein bottle, projective plane) no longer returns
