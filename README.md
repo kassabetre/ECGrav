@@ -22,6 +22,10 @@ ECGrav provides two complementary toolkits:
 > **Status:** 1.3.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
+For the mathematics of the model — the energy functionals, observables, and
+statistical mechanics, plus background on the emergent-gravity motivation — see
+**[Theory.md](Theory.md)**.
+
 ---
 
 ## Requirements
