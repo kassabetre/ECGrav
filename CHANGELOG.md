@@ -6,7 +6,14 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
-Phase 3 (quality & CI) work, staged for the next release (1.3.0).
+## [1.3.0] - 2026-07-28
+
+Phase 3 (quality & CI). The three known bugs are fixed, test coverage expanded
+(63 → 87 tests), GitHub Actions CI runs the suite on every push/PR, all ~120
+`ReturnAmbiguous` code-analysis warnings are cleared, and the subpackage context
+convention was simplified to a single `ECGrav`` public namespace. No public API
+was removed; the two `CombinatorialSphereQ` / `DSphereQ` changes below are the
+only behavioural (breaking) changes.
 
 ### Added
 - `ClosedCombinatorialManifoldQ` — tests whether a pure simplicial complex (given as a
@@ -134,7 +141,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.2.0
 [1.1.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.1.0
 [1.0.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.0.0
