@@ -3,7 +3,7 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-14.2%2B-red.svg)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684435.svg)](https://doi.org/10.5281/zenodo.21684435)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
 A Wolfram Language paclet for studying models in which geometry — and ultimately
 gravity — **emerges from the statistical mechanics of combinatorial structures**
