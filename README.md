@@ -1,8 +1,9 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-14.2%2B-red.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684435.svg)](https://doi.org/10.5281/zenodo.21684435)
 
 A Wolfram Language paclet for studying models in which geometry — and ultimately
 gravity — **emerges from the statistical mechanics of combinatorial structures**
@@ -164,9 +165,11 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.3.0). Earlier releases are preserved as git tags:
+current release (1.3.1). Earlier releases are preserved as git tags:
 
-- `v1.3.0` — current: Phase 3 quality & CI — bug fixes, expanded test suite (87 tests),
+- `v1.3.1` — current: documentation & tooling — model specification (`Theory.md`),
+  citation metadata + Zenodo DOI, and a reproducible build script
+- `v1.3.0` — Phase 3 quality & CI: bug fixes, expanded test suite (87 tests),
   GitHub Actions CI, and the collapse to a single `ECGrav` public context
 - `v1.2.0` — cleanup, regression test suite, bug fixes, MIT license
 - `v1.1.0`, `v1.0.0` — the earlier codebase (preserved for reference)
