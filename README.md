@@ -40,12 +40,27 @@ PacletDirectoryLoad["/path/to/ECGrav"];   (* the cloned repo directory *)
 Needs["ECGrav`"];
 ```
 
-### Option 2 — build and install the paclet
+### Option 2 — install a released paclet
+
+Download `ECGrav-<version>.paclet` from the
+[GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-Needs["PacletTools`"];
-PacletBuild["/path/to/ECGrav"];
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.2.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav-1.3.0.paclet"];
+Needs["ECGrav`"];
+```
+
+### Option 3 — build the paclet from source
+
+Build the distributable paclet with the bundled script (it regenerates the docs and
+verifies the archive), then install what it produced:
+
+```bash
+wolframscript -file build.wls
+```
+
+```wolfram
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.3.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 

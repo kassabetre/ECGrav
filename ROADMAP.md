@@ -156,12 +156,18 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 ## Phase 4 — Release & distribution
 
-- [ ] Adopt semantic-versioning discipline and tag releases
-- [x] Attach the built `.paclet` to GitHub releases (`v1.2.0`)
-- [ ] Decide distribution channel: Wolfram Paclet Repository submission vs.
-      install-from-GitHub-release
-- [ ] Turn the manual steps in `BuildingAndInstallingPaclets.nb` into a
-      reproducible build script
+- [x] Adopt semantic-versioning discipline and tag releases (annotated tags `v1.2.0`,
+      `v1.3.0`; each release is a dedicated `Release X.Y.Z` commit with the `.paclet`
+      artifact swapped in)
+- [x] Attach the built `.paclet` to GitHub releases (`v1.2.0`; `v1.3.0` attaches
+      `build/ECGrav-1.3.0.paclet`)
+- [x] Decide distribution channel — **install-from-GitHub-release** for now (download the
+      attached `.paclet` and `PacletInstall` it). A Wolfram Paclet Repository submission can
+      revisit later if wider discoverability is wanted.
+- [x] Turn the manual steps in `BuildingAndInstallingPaclets.nb` into a reproducible build
+      script — `build.wls` at the repo root (`wolframscript -file build.wls`): cleans
+      `.DS_Store`, runs `PacletTools`PacletBuild`, and verifies the archive (version, no doc
+      failures, bundled sources byte-identical to the tree) with a 0/1 exit code.
 
 ## Phase 5 — Scientific documentation (optional, high value for research code)
 
