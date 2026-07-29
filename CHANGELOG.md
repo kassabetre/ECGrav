@@ -6,6 +6,25 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-07-29
+
+Documentation and tooling only — no changes to the package's functions or public API,
+and the installable paclet is unchanged in content from 1.3.0.
+
+### Added
+- `Theory.md` — a specification of the model (configuration space, observables with
+  exact `SpectralDim` / `HausdorffDim` / `EulerChi` / Betti-number definitions, the
+  Hamiltonians, and the statistical mechanics), plus a marked outline for the physics
+  background. Linked from the README.
+- `CITATION.cff` — citation metadata (enables GitHub's "Cite this repository"); the
+  project is registered with Zenodo for a DOI.
+- `build.wls` — a reproducible, self-verifying paclet build script
+  (`wolframscript -file build.wls`) that scripts the manual build steps.
+
+### Changed
+- README: restructured Installation into three options (load source / install a
+  released paclet / build from source) and refreshed the version references.
+
 ## [1.3.0] - 2026-07-28
 
 Phase 3 (quality & CI). The three known bugs are fixed, test coverage expanded
@@ -141,7 +160,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.3.1
 [1.3.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.2.0
 [1.1.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.1.0
