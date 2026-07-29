@@ -17,7 +17,6 @@
 (*Begin MCSims Package*)
 
 
-BeginPackage["ECGrav`MCSims`"]
 
 
 (* ::Title:: *)
@@ -28,7 +27,6 @@ BeginPackage["ECGrav`MCSims`"]
 (*MCSims Private*)
 
 
-Begin["`Private`"] (* Begin private context *)
 
 
 (* ::Chapter:: *)
@@ -48,12 +46,12 @@ Begin["`Private`"] (* Begin private context *)
 
 (* Primary Pattern *)
 (*Computes the log of the sum of exponentials of the list*)
-ECGrav`LogSumExp[lst_List]:=With[{mn=Mean[lst]},
+LogSumExp[lst_List]:=With[{mn=Mean[lst]},
 mn+Log[Total[Exp[lst-mn]]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`LogSumExp[args___]:=(Message[ECGrav`LogSumExp::argerr, args];
+LogSumExp[args___]:=(Message[LogSumExp::argerr, args];
 $Failed);
 
 
@@ -62,7 +60,7 @@ $Failed);
 
 
 (* Primary Pattern*)
-ECGrav`CorrelationTime[t_Integer,tbl_List]:=
+CorrelationTime[t_Integer,tbl_List]:=
 (*Given a list of values (e.g. magnetization), it computes the correlation at time t.*)
 With[{s1=(1/(Length[tbl]-t))*Sum[tbl[[i]]*tbl[[i+t]],{i,1,Length[tbl]-t}],s2=(1/(Length[tbl]-t)^2)*(Sum[tbl[[i]],{i,1,Length[tbl]-t}])*(Sum[tbl[[i+t]],{i,1,Length[tbl]-t}])},
 (*
@@ -72,7 +70,7 @@ s1-s2
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CorrelationTime[args___]:=(Message[ECGrav`CorrelationTime::argerr, args];
+CorrelationTime[args___]:=(Message[CorrelationTime::argerr, args];
 $Failed);
 
 
@@ -81,7 +79,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`EmpCorrelationTime[t_Integer,tbl_List]:=
+EmpCorrelationTime[t_Integer,tbl_List]:=
 (*Computes the Empirical autocorrelation time based on the lecture by Evertz, 2020*)
 Block[{tmax=Length[tbl],xt,yt,num, denom},
 xt=(1/(tmax-t))*Sum[tbl[[i]],{i,1,tmax-t}];
@@ -95,7 +93,7 @@ num/denom
 ];
 
 (* Catch-all Pattern *)
-ECGrav`EmpCorrelationTime[args___]:=(Message[ECGrav`EmpCorrelationTime::argerr, args];
+EmpCorrelationTime[args___]:=(Message[EmpCorrelationTime::argerr, args];
 $Failed);
 
 
@@ -104,15 +102,15 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`ErrorBootstrap[formula_,data_List]:=
+ErrorBootstrap[formula_,data_List]:=
 (*Computes the uncertainty in the value of formula[data] computed using the 
 bootstrap or resampling method. Section 3.4.3 of Newman & Barkema*)
 With[{n=Length[data]},
-StandardDeviation[ParallelTable[formula[RandomChoice[data,n]],{200},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]]
+StandardDeviation[ParallelTable[formula[RandomChoice[data,n]],{200},DistributedContexts->{$Context,"ECGrav`Private`"}]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ErrorBootstrap[args___]:=(Message[ECGrav`ErrorBootstrap::argerr, args];
+ErrorBootstrap[args___]:=(Message[ErrorBootstrap::argerr, args];
 $Failed);
 
 
@@ -121,13 +119,13 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`SpecificHeat[etable_List,NN_Integer,beta_Real]:=
+SpecificHeat[etable_List,NN_Integer,beta_Real]:=
 (*specific heat per site given number of sites NN, inverse temperature beta, and a 
 table of energies*)
 (beta^2/NN)*Variance[etable];
 
 (* Catch-all Pattern *)
-ECGrav`SpecificHeat[args___]:=(Message[ECGrav`SpecificHeat::argerr, args];
+SpecificHeat[args___]:=(Message[SpecificHeat::argerr, args];
 $Failed);
 
 
@@ -136,7 +134,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`DSpecificHeat[etable_List,NN_Integer,beta_Real]:=
+DSpecificHeat[etable_List,NN_Integer,beta_Real]:=
 (*Gives the derivative of specific heat per site wrt temperature given number of sites NN, 
 inverse temperature beta, and a table of energies*)
 With[{meanE=Mean[etable],meanEsq = Mean[etable^2],meanEcube=Mean[etable^3]},
@@ -144,7 +142,7 @@ With[{meanE=Mean[etable],meanEsq = Mean[etable^2],meanEcube=Mean[etable^3]},
 ];
 
 (* Catch-all Pattern *)
-ECGrav`DSpecificHeat[args___]:=(Message[ECGrav`DSpecificHeat::argerr, args];
+DSpecificHeat[args___]:=(Message[DSpecificHeat::argerr, args];
 $Failed);
 
 
@@ -153,13 +151,13 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`Susceptibility[obsTable_List,NN_Integer,beta_Real]:=
+Susceptibility[obsTable_List,NN_Integer,beta_Real]:=
 (*susceptibility per site given number of sites NN, inverse temperature beta, 
 and a table of magnetizations*)
 (beta*NN)*Variance[obsTable];
 
 (* Catch-all Pattern *)
-ECGrav`Susceptibility[args___]:=(Message[ECGrav`Susceptibility::argerr, args];
+Susceptibility[args___]:=(Message[Susceptibility::argerr, args];
 $Failed);
 
 
@@ -168,7 +166,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`InternalEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
+InternalEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
 (*Computes the value of the interval energy at the value of the inverse temperature bf.
 It requires two inputs:,
 1. minusBetaF - an association of inverse temperatures and the corresponding value of -beta*free energy, e.g. <|0.1 -> -2.3, 2.5 -> 34.2|>
@@ -176,7 +174,7 @@ It requires two inputs:,
 Note, the beta values which are the keys for both associations have to be equal as sets! Also, the lengths of the lists of energy measurements have to be equal for all betas.
 *)
 With[{betas=Keys[minusBetaF],obsLength=Length[energyMeasurements[[1]]]},
-(Exp[-ECGrav`NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
+(Exp[-NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
 Sum[
 Sum[(energyMeasurements[[Key[betas[[i]]]]][[s]])/
 (Sum[
@@ -187,7 +185,7 @@ obsLength*Exp[(bf-betas[[j]])*energyMeasurements[[Key[betas[[i]]]]][[s]]]*Exp[-m
 ];
 
 (* Catch-all Pattern *)
-ECGrav`InternalEnergy[args___]:=(Message[ECGrav`InternalEnergy::argerr, args];
+InternalEnergy[args___]:=(Message[InternalEnergy::argerr, args];
 $Failed);
 
 
@@ -196,7 +194,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CvOverT[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
+CvOverT[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
 
 (*Cv/T*)
 
@@ -208,19 +206,19 @@ Note, the beta values which are the keys for both associations have to be equal 
 *)
 With[{betas=Keys[minusBetaF],obsLength=Length[energyMeasurements[[1]]]},
 bf^2(*/(vCount*vCount)**)(
-Exp[-ECGrav`NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]]*
+Exp[-NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]]*
 Sum[
 Sum[(energyMeasurements[[Key[betas[[i]]]]][[s]])^2/
 (Sum[
 obsLength*Exp[-minusBetaF[[Key[betas[[j]]]]]]*Exp[(bf-betas[[j]])*(energyMeasurements[[Key[betas[[i]]]]][[s]])]
 ,{j,1,Length[betas]}])
 ,{s,1,obsLength}]
-,{i,1,Length[betas]}]-(ECGrav`InternalEnergy[bf,minusBetaF,energyMeasurements])^2
+,{i,1,Length[betas]}]-(InternalEnergy[bf,minusBetaF,energyMeasurements])^2
 )
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CvOverT[args___]:=(Message[ECGrav`CvOverT::argerr, args];
+CvOverT[args___]:=(Message[CvOverT::argerr, args];
 $Failed);
 
 
@@ -230,7 +228,7 @@ $Failed);
 
 (*Primary pattern*)
 
-ECGrav`ComputeMinusBetaTimesFreeEnergy[dat_Association]:=
+ComputeMinusBetaTimesFreeEnergy[dat_Association]:=
 (*Computes the value of -beta*free energy at the values of the inverse temperature beta
 given as the keys in the association dat. 
 
@@ -261,18 +259,18 @@ deltab=Reap[
 	iterNum++;
 
 	nextFs=ParallelTable[
-		ECGrav`LogSumExp[
+		LogSumExp[
 			Flatten[
 				Table[
 					Table[
-					-ECGrav`LogSumExp[
+					-LogSumExp[
 						Table[
 							logntab[[j]]-curFs[[j]]+(betas[[k]]-betas[[j]])*(dat[[Key[betas[[i]]],s]])
 						,{j,1,numTemps}]]
 					,{s,1,ntab[[i]]}]
 				,{i,1,numTemps}]]
 			]
-	,{k,1,numTemps},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}];
+	,{k,1,numTemps},DistributedContexts->{$Context,"ECGrav`Private`"}];
 
 	del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTemps}]];
 
@@ -293,7 +291,7 @@ output
 
 (*Overload for external fields*)
 (*Overload pattern*)
-ECGrav`ComputeMinusBetaTimesFreeEnergy[dat_Association/;VectorQ[Keys[dat]],bt_Real]:=
+ComputeMinusBetaTimesFreeEnergy[dat_Association/;VectorQ[Keys[dat]],bt_Real]:=
 (*Computes the value of -beta*free energy at the values of the external field values
 given as the keys in the association dat at the inverse temperature bt. 
 
@@ -329,11 +327,11 @@ deltab=Reap[
 		iterNum++;
 
 		nextFs=ParallelTable[
-			ECGrav`LogSumExp[
+			LogSumExp[
 				Flatten[
 					Table[
 						Table[
-							-ECGrav`LogSumExp[
+							-LogSumExp[
 								Table[
 									logntab[[j]]-curFs[[j]]+
 									bt*(extFieldVals[[k]]-extFieldVals[[j]])*(dat[[Key[extFieldVals[[i]]],s]])
@@ -341,7 +339,7 @@ deltab=Reap[
 						,{s,1,ntab[[i]]}]
 					,{i,1,numTotSims}]]
 			]
-		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}];
+		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`Private`"}];
 
 
 del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTotSims}]];
@@ -369,7 +367,7 @@ output
 
 
 (*Overload pattern for multiple external fields*)
-ECGrav`ComputeMinusBetaTimesFreeEnergy[dat_Association/;MatrixQ[Keys[dat]],bt_Real]:=
+ComputeMinusBetaTimesFreeEnergy[dat_Association/;MatrixQ[Keys[dat]],bt_Real]:=
 (*Computes the value of -beta*free energy at the values of the external field values
 given as the keys in the association dat at the inverse temperature bt. 
 
@@ -405,11 +403,11 @@ deltab=Reap[
 		iterNum++;
 
 		nextFs=ParallelTable[
-			ECGrav`LogSumExp[
+			LogSumExp[
 				Flatten[
 					Table[
 						Table[
-							-ECGrav`LogSumExp[
+							-LogSumExp[
 								Table[
 									logntab[[j]]-curFs[[j]]+
 									bt*(extFieldVals[[k]]-extFieldVals[[j]]) . (dat[[Key[extFieldVals[[i]]],s]])
@@ -417,7 +415,7 @@ deltab=Reap[
 						,{s,1,ntab[[i]]}]
 					,{i,1,numTotSims}]]
 			]
-		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}];
+		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`Private`"}];
 
 
 del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTotSims}]];
@@ -439,7 +437,7 @@ output
 
 
 (* Catch-all Pattern *)
-ECGrav`ComputeMinusBetaTimesFreeEnergy[args___]:=(Message[ECGrav`ComputeMinusBetaTimesFreeEnergy::argerr, args];
+ComputeMinusBetaTimesFreeEnergy[args___]:=(Message[ComputeMinusBetaTimesFreeEnergy::argerr, args];
 $Failed);
 
 
@@ -449,7 +447,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`NegativeBetaTimesFreeEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
+NegativeBetaTimesFreeEnergy[bf_Real,minusBetaF_Association,energyMeasurements_Association]:=
 
 (*************************************)
 (***  Last updated on: 03/13/2026  ***)
@@ -468,11 +466,11 @@ betas.
 With[{betas=Keys[minusBetaF],nValuesAssn=Length/@energyMeasurements,
 	lognValuesAssn=Log[1.0*Length[#]]&/@energyMeasurements},
 
-	ECGrav`LogSumExp[
+	LogSumExp[
 		Flatten[
 			Table[
 				Table[
-					-ECGrav`LogSumExp[
+					-LogSumExp[
 						Table[
 							lognValuesAssn[[Key[betas[[j]]]]]-minusBetaF[[Key[betas[[j]]]]]
 							+(bf-betas[[j]])*(energyMeasurements[[Key[betas[[i]]],s]])
@@ -486,7 +484,7 @@ With[{betas=Keys[minusBetaF],nValuesAssn=Length/@energyMeasurements,
 ];
 
 (* Overload Pattern *)
-ECGrav`NegativeBetaTimesFreeEnergy[betaFixed_Real,targetExtField_List,
+NegativeBetaTimesFreeEnergy[betaFixed_Real,targetExtField_List,
 	minusBetaF_Association,conjugateExtFieldMeasurements_Association]:=
 (*Computes the value of -beta*free energy at the value of the inverse temperature betaFixed and target external field targetExtField., 
 Inputs are:,
@@ -502,11 +500,11 @@ With[{externalFieldValues=Keys[minusBetaF],
 	nValuesAssn=Length/@conjugateExtFieldMeasurements,
 	lognValuesAssn=Log[1.0*Length[#]]&/@conjugateExtFieldMeasurements},
 
-ECGrav`LogSumExp[
+LogSumExp[
 	Flatten[
 		Table[
 			Table[
-				-ECGrav`LogSumExp[
+				-LogSumExp[
 					Table[
 						lognValuesAssn[[Key[j]]]-minusBetaF[[Key[j]]]
 						+betaFixed*(targetExtField-j) . (conjugateExtFieldMeasurements[[Key[i],s]])
@@ -517,7 +515,7 @@ ECGrav`LogSumExp[
 ];
 
 (* Catch-all Pattern *)
-ECGrav`NegativeBetaTimesFreeEnergy[args___]:=(Message[ECGrav`NegativeBetaTimesFreeEnergy::argerr, args];
+NegativeBetaTimesFreeEnergy[args___]:=(Message[NegativeBetaTimesFreeEnergy::argerr, args];
 $Failed);
 
 
@@ -526,7 +524,7 @@ $Failed);
 
 
 (* Primary Pattern*)
-ECGrav`ExtrapolatedExpectationValue[bf_Real,minusBetaF_Association,
+ExtrapolatedExpectationValue[bf_Real,minusBetaF_Association,
 	energyMeasurements_Association, measuredObservableValues_Association]:=
 (*************************************)
 (***  Last updated on: 03/13/2026  ***)
@@ -541,7 +539,7 @@ Note, the beta values which are the keys for both associations have to be equal 
 Note, the beta values which are the keys for both associations have to be equal as sets! Also, the lengths of the lists of energy measurements have to be equal for all betas,
 *)
 With[{betas=Keys[minusBetaF],nValuesAssn=Length/@energyMeasurements},
-(Exp[-ECGrav`NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
+(Exp[-NegativeBetaTimesFreeEnergy[bf,minusBetaF,energyMeasurements]])*
 	Sum[
 		Sum[(measuredObservableValues[[Key[betas[[i]]],s]])/
 			(Sum[
@@ -552,7 +550,7 @@ With[{betas=Keys[minusBetaF],nValuesAssn=Length/@energyMeasurements},
 ];
 
 (* Overload Pattern*)
-ECGrav`ExtrapolatedExpectationValue[betaFixed_Real,targetExtField_List,
+ExtrapolatedExpectationValue[betaFixed_Real,targetExtField_List,
 	minusBetaF_Association,conjugateExtFieldMeasurements_Association,
 	measuredObservableValues_Association]:=
 (*************************************)
@@ -571,7 +569,7 @@ Note, the J values which are the keys for all the associations have to be equal 
 *)
 With[{extFieldVals=Keys[minusBetaF],
 	nValuesAssn=Length/@conjugateExtFieldMeasurements,
-	minusBetaTimesFreeEnergy=ECGrav`NegativeBetaTimesFreeEnergy[betaFixed,targetExtField,minusBetaF,conjugateExtFieldMeasurements]},
+	minusBetaTimesFreeEnergy=NegativeBetaTimesFreeEnergy[betaFixed,targetExtField,minusBetaF,conjugateExtFieldMeasurements]},
 
 (*Print["betaFixed ",betaFixed," targetExtField ",targetExtField," minusBetaF ",minusBetaF];
 Print[" extFieldVals ",extFieldVals," obsLength ",obsLength, " minusBetaTimesFreeEnergy ",minusBetaTimesFreeEnergy];
@@ -588,7 +586,7 @@ Print[" measuredObservableValues ",measuredObservableValues];*)
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ExtrapolatedExpectationValue[args___]:=(Message[ECGrav`ExtrapolatedExpectationValue::argerr, args];
+ExtrapolatedExpectationValue[args___]:=(Message[ExtrapolatedExpectationValue::argerr, args];
 $Failed);
 
 
@@ -597,7 +595,7 @@ $Failed);
 
 
 (*Primary definition*)
-ECGrav`ConstrainedProbConjugateField[betaFixed_Real,targetExtField_List/;VectorQ[targetExtField]
+ConstrainedProbConjugateField[betaFixed_Real,targetExtField_List/;VectorQ[targetExtField]
 	,minusBetaF_Association,conjugateExtFieldMeasurements_Association]:=
 (*************************************)
 (***  Last updated on: 03/13/2026  ***)
@@ -634,7 +632,7 @@ logWeights=Flatten[
 	Table[
 		Table[
 			-betaFixed*targetExtField . conjugateExtFieldMeasurements[[Key[i],s]]
-			-ECGrav`LogSumExp[
+			-LogSumExp[
 			Table[
 				lognValuesAssn[[Key[j]]]-minusBetaF[[Key[j]]]-betaFixed*(j) . (conjugateExtFieldMeasurements[[Key[i],s]])
 			,{j,externalFieldValues}]]
@@ -683,7 +681,7 @@ result
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ConstrainedProbConjugateField[args___]:=(Message[ECGrav`ConstrainedProbConjugateField::argerr, args];
+ConstrainedProbConjugateField[args___]:=(Message[ConstrainedProbConjugateField::argerr, args];
 $Failed);
 
 
@@ -700,19 +698,19 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HIsing[Am_List,J_Real,L_Real]:=
+HIsing[Am_List,J_Real,L_Real]:=
 (*J/2 sum_{i!=j}A^2_{ij} + L/2 sum_{i!=j}A_{ij}*)
 With[{Amsq=Am . Am},
 (J/2)*(Total[Amsq,2]-Tr[Amsq])+(L/2)*Total[Am,2]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`HIsing[args___[params___]]:=(Message[ECGrav`HIsing::argerr, args];
+HIsing[args___[params___]]:=(Message[HIsing::argerr, args];
 $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`delHIsing[Am_List,J_,L_,a_Integer,b_Integer]:=
+delHIsing[Am_List,J_,L_,a_Integer,b_Integer]:=
 (* computes HIsing[Amnew] - HIsing[Am] where Amnew if found by toggling Am at 
 row a and col b. HIsing = J/2 sum_{i!=j}A^2_{ij} + L/2 sum_{i!=j}A_{ij} *)
 With[{n=Length[Am],togab=If[Am[[a,b]]==0,1,-1]},
@@ -720,7 +718,7 @@ togab*(J*(Total[Am[[a]]]+Total[Am[[b]]]-2Am[[a,b]])+L)
 ];
 
 (* Catch-all Pattern *)
-ECGrav`delHIsing[args___[params___]]:=(Message[ECGrav`delHIsing::argerr, args];
+delHIsing[args___[params___]]:=(Message[delHIsing::argerr, args];
 $Failed);
 
 
@@ -729,7 +727,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HWeightedFaceCounts[Am_List,J1_,J2_,J3_,J4_, J5_]:=
+HWeightedFaceCounts[Am_List,J1_,J2_,J3_,J4_, J5_]:=
 (*J1*(# of vertices) + J2*(number of edges)+... + J5*(number of 5-cliques).*)
 Block[{n=Length[Am],clqs=FindClique[AdjacencyGraph[Am],\[Infinity],All],maxClq,fvect},
 maxClq=Max[Length/@clqs];
@@ -744,7 +742,7 @@ Do[fvect[[q]]=Length[Union@@(Subsets[#,{q}]&/@clqs)],{q,4,Min[5,maxClq]}];
 ];
 
 (* Catch-all Pattern *)
-ECGrav`HWeightedFaceCounts[args___]:=(Message[ECGrav`HWeightedFaceCounts::argerr, args];
+HWeightedFaceCounts[args___]:=(Message[HWeightedFaceCounts::argerr, args];
 $Failed);
 
 
@@ -753,7 +751,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HEdgeDeg[Am_List,J_Real,D1_Real,D2_Real]:=
+HEdgeDeg[Am_List,J_Real,D1_Real,D2_Real]:=
 (*J/(2N)*(Tr(A^4-A(2D1K + 2D2I)A)+D1^2*n(n-1)).*)
 With[{n=Length[Am],Amsq=Am . Am},
 (J/(2*n))*((Tr[Amsq . Amsq]
@@ -761,12 +759,12 @@ With[{n=Length[Am],Amsq=Am . Am},
 ];
 
 (* Catch-all Pattern *)
-ECGrav`HEdgeDeg[args___]:=(Message[ECGrav`HEdgeDeg::argerr, args];
+HEdgeDeg[args___]:=(Message[HEdgeDeg::argerr, args];
 $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`delHEdgeDeg[Am_List,J_Real, D1_Real, D2_Real,Amsq_List,a_Integer,b_Integer]:=
+delHEdgeDeg[Am_List,J_Real, D1_Real, D2_Real,Amsq_List,a_Integer,b_Integer]:=
 (*If you toggle edge {a,b} in Am to get Amnew, and Amsq = Am.Am, then this function 
 gives the energy difference delta = HEdgeDeg[Amnew]-HEdgeDeg[Am].*)
 With[{n=Length[Am],togab=If[Am[[a,b]]==0,1,-1]},
@@ -774,7 +772,7 @@ J*(togab-2*D2+2*(1-D1*togab)*(Amsq[[a,a]]+Amsq[[b,b]])+4*togab*(Amsq[[a]] . Am[[
 ];
 
 (* Overload Pattern *)
-ECGrav`delHEdgeDeg[Am_List,J_Real, D1_Real, D2_Real,a_Integer,b_Integer]:=
+delHEdgeDeg[Am_List,J_Real, D1_Real, D2_Real,a_Integer,b_Integer]:=
 (*If you toggle edge {a,b} in Am to get Amnew, and Amsq = Am.Am, then this function 
 gives the energy difference delta = HEdgeDeg[Amnew]-HEdgeDeg[Am].*)
 With[{Amsq=Am . Am,n=Length[Am],togab=If[Am[[a,b]]==0,1,-1]},
@@ -782,7 +780,7 @@ J*(togab-2*D2+2*(1-D1*togab)*(Amsq[[a,a]]+Amsq[[b,b]])+4*togab*(Amsq[[a]] . Am[[
 ];
 
 (* Catch-all Pattern *)
-ECGrav`delHEdgeDeg[args___]:=(Message[ECGrav`delHEdgeDeg::argerr, args];
+delHEdgeDeg[args___]:=(Message[delHEdgeDeg::argerr, args];
 $Failed);
 
 
@@ -791,13 +789,13 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HLaplacian[Amat_List,J_Real]:=
+HLaplacian[Amat_List,J_Real]:=
 (*Sum_{ij} deg(i)L_{ij}deg(j), where L is the graph Laplacian, L = Diag[deg] - Amat*)
 With[{degv={Total[#]}&/@Amat,Lmat=DiagonalMatrix[Total/@Amat]-Amat},
 J*(Transpose[degv] . Lmat . degv)[[1,1]]];
 
 (* Catch-all Pattern *)
-ECGrav`HLaplacian[args___]:=(Message[ECGrav`HLaplacian::argerr, args];
+HLaplacian[args___]:=(Message[HLaplacian::argerr, args];
 $Failed);
 
 
@@ -806,12 +804,12 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`H1dCombManifold[Amat_List,J_]:=
+H1dCombManifold[Amat_List,J_]:=
 (*(1/N0)(-2N1+2N3+HIsing+1+)*)
 With[{numV=Length[Amat],Amsq=Amat . Amat},
 Catch[If[numV<=0,Throw[0.0, "ECGravReturn$1"]];
 (J/(numV))*(
-	ECGrav`HWeightedFaceCounts[Amat,0.0,-2.0,2.0,0.0,0.0]
+	HWeightedFaceCounts[Amat,0.0,-2.0,2.0,0.0,0.0]
 	+(Total[Amsq,2] - Tr[Amsq])/2.0
 	+ 1.0*numV
 	+ 1.0*Length[ConnectedComponents[AdjacencyGraph[Amat]]]-1.0), "ECGravReturn$1"]
@@ -819,7 +817,7 @@ Catch[If[numV<=0,Throw[0.0, "ECGravReturn$1"]];
 ];
 
 (* Catch-all Pattern *)
-ECGrav`H1dCombManifold[args___]:=(Message[ECGrav`H1dCombManifold::argerr, args];
+H1dCombManifold[args___]:=(Message[H1dCombManifold::argerr, args];
 $Failed);
 
 
@@ -828,40 +826,40 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`H2dCombManifold[Amat_List,J_]:=
+H2dCombManifold[Amat_List,J_]:=
 (*Gives 2D combinatorial manifolds as ground states*)
 With[{numV=Length[Amat],vList=Range[Length[Amat]],edgeList=Select[Position[Amat,1],#[[1]]<#[[2]]&]},
 		
 J*(
-	1.0*ECGrav`HWeightedFaceCounts[Amat,0.0,1.0,-(3.0),(4.0),0.0]
+	1.0*HWeightedFaceCounts[Amat,0.0,1.0,-(3.0),(4.0),0.0]
 
-	+(1.0)*Total[Binomial[ECGrav`HyperDeg[Amat,#],2]&/@edgeList]
+	+(1.0)*Total[Binomial[HyperDeg[Amat,#],2]&/@edgeList]
 	
 	+(1.0*numV)*Abs[Length[ConnectedComponents[AdjacencyGraph[Amat]]]-1]
 
 	+(1.0)*Total[
-		(Abs[Length[ConnectedComponents[AdjacencyGraph[#]]]-1])&/@(ECGrav`Sph[Amat,#]&/@vList)]	
+		(Abs[Length[ConnectedComponents[AdjacencyGraph[#]]]-1])&/@(Sph[Amat,#]&/@vList)]	
 	)
 ];
 
 (* Catch-all Pattern *)
-ECGrav`H2dCombManifold[args___]:=(Message[ECGrav`H2dCombManifold::argerr, args];
+H2dCombManifold[args___]:=(Message[H2dCombManifold::argerr, args];
 $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`delH2dCombManifold[Amat_List,J_,i_Integer,j_Integer]:=
+delH2dCombManifold[Amat_List,J_,i_Integer,j_Integer]:=
 (*the change in H2dCombManifold when edge {i,j} is toggled*)
 Module[{numV=Length[Amat],g=AdjacencyGraph[Amat],AmatNew,gNew,sphIntG,sphIntVertices},
 	AmatNew=Amat;
 	AmatNew[[i,j]]=AmatNew[[j,i]]=Mod[Amat[[i,j]]+1,2];
 	gNew=AdjacencyGraph[AmatNew];
-	sphIntG=Subgraph[g,Intersection[VertexList[ECGrav`Sph[g,i]],VertexList[ECGrav`Sph[g,j]]]];
+	sphIntG=Subgraph[g,Intersection[VertexList[Sph[g,i]],VertexList[Sph[g,j]]]];
 	sphIntVertices=VertexList[sphIntG];
 
 	J*(
-		Join[{0,-(2*Amat[[i,j]]-1)},PadRight[-(2*Amat[[i,j]]-1)*ECGrav`FVector[sphIntG],3]] . {0.0,1.0,-(3.0),(4.0),0.0}
-			+(1.0)*(-(2*Amat[[i,j]]-1)(Sum[ECGrav`HyperDeg[g,k],{k,Sort/@Tuples[{{i,j},sphIntVertices}]}]+Binomial[Length[sphIntVertices],2])+2*Amat[[i,j]]*Length[sphIntVertices])
+		Join[{0,-(2*Amat[[i,j]]-1)},PadRight[-(2*Amat[[i,j]]-1)*FVector[sphIntG],3]] . {0.0,1.0,-(3.0),(4.0),0.0}
+			+(1.0)*(-(2*Amat[[i,j]]-1)(Sum[HyperDeg[g,k],{k,Sort/@Tuples[{{i,j},sphIntVertices}]}]+Binomial[Length[sphIntVertices],2])+2*Amat[[i,j]]*Length[sphIntVertices])
 
 		+(1.0*numV)*(Length[ConnectedComponents[AdjacencyGraph[AmatNew]]]-Length[ConnectedComponents[AdjacencyGraph[Amat]]])
 
@@ -875,7 +873,7 @@ Module[{numV=Length[Amat],g=AdjacencyGraph[Amat],AmatNew,gNew,sphIntG,sphIntVert
 					2*(2*Amat[[i,j]]-1),
 
 				True,(*Print["case 4"];*)
-					Total[(Abs[Length[ConnectedComponents[ECGrav`Sph[gNew,#]]]-1]-Abs[Length[ConnectedComponents[ECGrav`Sph[g,#]]]-1])&/@Join[{i,j},sphIntVertices]]
+					Total[(Abs[Length[ConnectedComponents[Sph[gNew,#]]]-1]-Abs[Length[ConnectedComponents[Sph[g,#]]]-1])&/@Join[{i,j},sphIntVertices]]
 
 			]
 
@@ -883,7 +881,7 @@ Module[{numV=Length[Amat],g=AdjacencyGraph[Amat],AmatNew,gNew,sphIntG,sphIntVert
 ];
 
 (* Catch-all Pattern *)
-ECGrav`delH2dCombManifold[args___]:=(Message[ECGrav`delH2dCombManifold::argerr, args];
+delH2dCombManifold[args___]:=(Message[delH2dCombManifold::argerr, args];
 $Failed);
 
 
@@ -892,18 +890,18 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`H2dPseudoCombManifold[Amat_List,J_]:=
+H2dPseudoCombManifold[Amat_List,J_]:=
 (*(1/N0)(-2N1+2N3+HIsing+1)*)
 With[{numV=Length[Amat],vList=Range[Length[Amat]],edgeList=Select[Position[Amat,1],#[[1]]<#[[2]]&]},
-J*(ECGrav`HWeightedFaceCounts[Amat,0.0,1.0,-(1.0/numV+3.0),4.0,0.0]
+J*(HWeightedFaceCounts[Amat,0.0,1.0,-(1.0/numV+3.0),4.0,0.0]
 
-	+1.0*Total[Binomial[ECGrav`HyperDeg[Amat,#],2]&/@edgeList]
-	+1.0*Length[ECGrav`KpathConnectedComponents[AdjacencyGraph[Amat],2]]-1.0
+	+1.0*Total[Binomial[HyperDeg[Amat,#],2]&/@edgeList]
+	+1.0*Length[KpathConnectedComponents[AdjacencyGraph[Amat],2]]-1.0
   )
 ];
 
 (* Catch-all Pattern *)
-ECGrav`H2dPseudoCombManifold[args___]:=(Message[ECGrav`H2dPseudoCombManifold::argerr, args];
+H2dPseudoCombManifold[args___]:=(Message[H2dPseudoCombManifold::argerr, args];
 $Failed);
 
 
@@ -922,7 +920,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`LowEnergyStates[ensemble_List,H_,level_Integer]:=
+LowEnergyStates[ensemble_List,H_,level_Integer]:=
 (****************************************)
 (*   (* Last updated 01/15/2025. *) *)
 (*   (* Note: list of states as values. *) *) 
@@ -942,19 +940,19 @@ mastertuplesParts];*)
 
 partialresult=Join@@ParallelTable[
 	TakeSmallestBy[p,H[#]&,UpTo[level]],{p,mastertuplesParts},
-		DistributedContexts->{$Context, "ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+		DistributedContexts->{$Context, "ECGrav`Private`","ECGrav`Private`"}];
 	
 
 minstates=TakeSmallestBy[partialresult,H[#]&,UpTo[level]];
 
 (*<|Table[GraphPlot[AdjacencyGraph[i],ImageSize->{70,70}]->H[i],{i,minstates}]|>*)
 
-ECGrav`ChooseNonIsomorphicGraphs[#]&/@(GroupBy[minstates,H[#]&])
+ChooseNonIsomorphicGraphs[#]&/@(GroupBy[minstates,H[#]&])
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`LowEnergyStates[args___]:=(Message[ECGrav`LowEnergyStates::argerr, args];
+LowEnergyStates[args___]:=(Message[LowEnergyStates::argerr, args];
 $Failed);
 
 
@@ -969,7 +967,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`GradDescent[seedAmat_List,delH_,cutoff_Integer]:=
+GradDescent[seedAmat_List,delH_,cutoff_Integer]:=
 (*This program runs the gradient descent algorithm.,
 Inputs are:, 
 1. seedAmat - a seed graph as an adjacency matrix, 
@@ -1029,7 +1027,7 @@ Amcur
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GradDescent[args___]:=(Message[ECGrav`GradDescent::argerr, args];
+GradDescent[args___]:=(Message[GradDescent::argerr, args];
 $Failed);
 
 
@@ -1044,7 +1042,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`SGradDescent[seedAmat_List, hamiltonian_,delH_,beta_Real,NN_Integer]:=
+SGradDescent[seedAmat_List, hamiltonian_,delH_,beta_Real,NN_Integer]:=
 
 (*This program runs stochastic gradient descent with softmax at parameter beta.,
 Inputs are:, 
@@ -1125,7 +1123,7 @@ numsteps++;
 ];
 
 (* Overload Pattern *)
-ECGrav`SGradDescent[seedAmat_List, hamiltonian_,beta_Real,NN_Integer]:=
+SGradDescent[seedAmat_List, hamiltonian_,beta_Real,NN_Integer]:=
 
 (*This program runs stochastic gradient descent with softmax at parameter beta. It is 
 an overload that doesn't require the formula for delH (E(newgraph) - E(curgraph) when 
@@ -1209,7 +1207,7 @@ numsteps++;
 ];
 
 (* Catch-all Pattern *)
-ECGrav`SGradDescent[args___]:=(Message[ECGrav`SGradDescent::argerr, args];
+SGradDescent[args___]:=(Message[SGradDescent::argerr, args];
 $Failed);
 
 
@@ -1224,7 +1222,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],
+SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],
 	betai_Real,betaf_Real,roundLength_Integer,NN_Integer]:=                     
 (*************************************)
 (***  Last updated on: 01/15/2025  ***)
@@ -1357,7 +1355,7 @@ result
 ];
 
 (* Overload Pattern *)
-ECGrav`SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],betai_Real,betaf_Real,roundLength_Integer,NN_Integer]:=                     
+SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],betai_Real,betaf_Real,roundLength_Integer,NN_Integer]:=                     
 
 (*************************************)
 (***  Last updated on: 01/15/2025  ***)
@@ -1492,7 +1490,7 @@ result
 ];
 
 (* Catch-all Pattern *)
-ECGrav`SimulatedAnnealing[args___]:=(Message[ECGrav`SimulatedAnnealing::argerr, args];
+SimulatedAnnealing[args___]:=(Message[SimulatedAnnealing::argerr, args];
 $Failed);
 
 
@@ -1511,7 +1509,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],function_,Hamiltonian_,beta_]:=
+ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],function_,Hamiltonian_,beta_]:=
 (*(*****************************)
 (* Last Updated: 01/31/2025  *)
 (*****************************)*)
@@ -1536,13 +1534,13 @@ result = 0.0;
 
 boltzmanWeights=ParallelMap[
 Exp[-beta*Hamiltonian[#]]&,
-ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+ensemble,DistributedContexts->{$Context,"ECGrav`Private`","ECGrav`Private`"}];
 
 
 funcvalues=Transpose[
 	ParallelMap[
 		Through[function[#]]&,ensemble,
-		DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}]
+		DistributedContexts->{$Context,"ECGrav`Private`","ECGrav`Private`"}]
 	];
 
 
@@ -1567,7 +1565,7 @@ Table[{partitionZ[[i]],freeF[[i]],result[[i]]},{i,1,Length[degenValues]}]
    matching, which throws Part::partd when the caller passes a list of observable
    *functions* (matching the overload above, whose 3rd arg is a bare function_). MatrixQ
    short-circuits on non-matrix input, so no message leaks; a numeric matrix still matches. *)
-ECGrav`ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],obsValues_List/;MatrixQ[obsValues,NumericQ],Hamiltonian_,beta_]:=
+ExactExpectationValue[ensemble_List,degenValues_List/;NumericQ[degenValues[[1,1]]],obsValues_List/;MatrixQ[obsValues,NumericQ],Hamiltonian_,beta_]:=
 (*(*****************************)
 (* Last Updated: 02/07/2025  *)
 (*****************************)*)
@@ -1602,7 +1600,7 @@ result = 0.0;
 
 boltzmanWeights=ParallelMap[
 Exp[-beta*Hamiltonian[#]]&,
-ensemble,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`","ECGrav`MCSims`Private`"}];
+ensemble,DistributedContexts->{$Context,"ECGrav`Private`","ECGrav`Private`"}];
 
 
 partitionZ=Total/@Table[degenValues[[i]]*boltzmanWeights,{i,1,Length[degenValues]}];
@@ -1622,7 +1620,7 @@ Table[{partitionZ[[i]],freeF[[i]],result[[i]]},{i,1,Length[degenValues]}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ExactExpectationValue[args___]:=(Message[ECGrav`ExactExpectationValue::argerr, args];
+ExactExpectationValue[args___]:=(Message[ExactExpectationValue::argerr, args];
 $Failed);
 
 
@@ -1641,7 +1639,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`GraphMetropolis[seedAmat_List, beta_Real, hamiltonian_,observables_,maxSweep_Integer]:=
+GraphMetropolis[seedAmat_List, beta_Real, hamiltonian_,observables_,maxSweep_Integer]:=
 
 (*(*****************************)
 (* Last Updated: 08/26/2025  *)
@@ -1714,7 +1712,7 @@ Sow[Flatten[{numsweeps,hamiltonian[Amat],Through[observables [Amat]]}]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GraphMetropolis[args___]:=(Message[ECGrav`GraphMetropolis::argerr, args];
+GraphMetropolis[args___]:=(Message[GraphMetropolis::argerr, args];
 $Failed);
 
 
@@ -1734,7 +1732,7 @@ $Failed);
 (*GraphSweepReplica Primary*)
 
 
-ECGrav`GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_[hparams___],
+GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],NN_Integer,minEToBeat_Real,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 11/16/2025  ***)
@@ -1855,7 +1853,7 @@ result
 
 
 (*Overload without delH *)
-ECGrav`GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_[hparams___],NN_Integer,minEToBeat_Real,UnlabeledVerticesYes_Integer]:=
+GraphSweepReplica[seedGraph_List,beta_Real,hamiltonian_[hparams___],NN_Integer,minEToBeat_Real,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 11/16/2025  ***)
 (*************************************)
@@ -1979,7 +1977,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphSweepReplica[args___[argparams___]]:=(Message[ECGrav`GraphSweepReplica::argerr, args];
+GraphSweepReplica[args___[argparams___]]:=(Message[GraphSweepReplica::argerr, args];
 $Failed);
 
 
@@ -1991,7 +1989,7 @@ $Failed);
 (*GraphEquilibriate *)
 
 
-ECGrav`GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_[hparams___],delH_[delHparams___],UnlabeledVerticesYes_Integer]:=
+GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_[hparams___],delH_[delHparams___],UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 03/04/2026  ***)
 (*************************************)
@@ -2044,7 +2042,7 @@ Sow[{data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["energy"]]],data[
 Do[
 
 
-sweepOutput=ECGrav`GraphSweepReplica[data[[Key[replicaName]]][[Key["graph"]]],beta,
+sweepOutput=GraphSweepReplica[data[[Key[replicaName]]][[Key["graph"]]],beta,
 				hamiltonian[hparams],delH[delHparams],1,data[[Key["minEnergy"]]],
 				UnlabeledVerticesYes];
 
@@ -2127,7 +2125,7 @@ result
 
 
 (* Overload without delH *)
-ECGrav`GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_[hparams___],UnlabeledVerticesYes_Integer]:=
+GraphEquilibriate[seedGraph_List, beta_Real, hamiltonian_[hparams___],UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 3/04/2026  ***)
 (*************************************)
@@ -2181,7 +2179,7 @@ Reap[
 	Do[
 
 
-		sweepOutput=ECGrav`GraphSweepReplica[data[[Key[replicaName],Key["graph"]]],
+		sweepOutput=GraphSweepReplica[data[[Key[replicaName],Key["graph"]]],
 						beta,hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 						UnlabeledVerticesYes];
 
@@ -2265,7 +2263,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphEquilibriate[args___]:=(Message[ECGrav`GraphEquilibriate::argerr, args];
+GraphEquilibriate[args___]:=(Message[GraphEquilibriate::argerr, args];
 $Failed);
 
 
@@ -2277,7 +2275,7 @@ $Failed);
 (*GraphComputeCorrelationTime Primary*)
 
 
-ECGrav`GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
+GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],eqlT_Integer, minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 1/30/2025  ***)
@@ -2336,7 +2334,7 @@ PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}
 empair=Reap[EorMTable=
 	Table[
 		If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-			sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
+			sweepOutput=GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
 									hamiltonian[hparams],delH[delHparams],1,
 									data[[Key["minEnergy"]]],UnlabeledVerticesYes];
 
@@ -2368,7 +2366,7 @@ If[Length[DeleteDuplicates[EorMTable]]>1,
 (*If the magnetizations have all equal value, then correlation time can not be 
 computed, so this loop will be exited with the default corrT left at 2 *)
 
-	norm=ECGrav`CorrelationTime[0,EorMTable];
+	norm=CorrelationTime[0,EorMTable];
 
 
 	If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
@@ -2376,7 +2374,7 @@ computed, so this loop will be exited with the default corrT left at 2 *)
 
 	corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 		PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
-		ECGrav`CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
+		CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
 	]/norm;
 
 
@@ -2401,7 +2399,7 @@ result
 
 
 (* Overload without delH *)
-ECGrav`GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],eqlT_Integer, 
+GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],eqlT_Integer, 
 	minEToBeat_Real,EnergyOrMag_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 3/04/2026  ***)
@@ -2460,7 +2458,7 @@ PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}
 empair=Reap[EorMTable=
 Table[
 If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
+sweepOutput=GraphSweepReplica[data[[Key["state"]]][[Key["graph"]]],beta,
 									hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 									UnlabeledVerticesYes];
 
@@ -2494,7 +2492,7 @@ If[Length[DeleteDuplicates[EorMTable]]>1,
 
 (*If the magnetizations have all equal value, then correlation time can not be computed, so this loop will be exited with the default corrT left at 2 *)
 
-norm=ECGrav`CorrelationTime[0,EorMTable];
+norm=CorrelationTime[0,EorMTable];
 
 
 If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
@@ -2502,7 +2500,7 @@ If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
 corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 	PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
-	ECGrav`CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
+	CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
 ]/norm;
 
 
@@ -2528,7 +2526,7 @@ result
 (*GraphComputeCorrelationTime with operators*)
 
 
-ECGrav`GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
+GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],eqlT_Integer, minEToBeat_Real,operators_/;MatchQ[operators,{__Function}],
 	UnlabeledVerticesYes_Integer]:=
 (*************************************)
@@ -2580,7 +2578,7 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	Transpose[
 		Table[
 			If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-				sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"],Key["graph"]]],beta,
+				sweepOutput=GraphSweepReplica[data[[Key["state"],Key["graph"]]],beta,
 								hamiltonian[hparams],delH[delHparams],1,data[[Key["minEnergy"]]],
 								UnlabeledVerticesYes];
 
@@ -2612,26 +2610,26 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		If[Length[DeleteDuplicates[observablesTable[[i]]]]>1,i,
 			Which[
 				i==1,
-				Message[ECGrav`GraphComputeCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
+				Message[GraphComputeCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
 				i==2,
-				Message[ECGrav`GraphComputeCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
+				Message[GraphComputeCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 				i>2,
-				Message[ECGrav`GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+				Message[GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
 		Nothing],
 	{i,1,Length[observablesTable]}];
 
 
 	If[fluctuatingObservableIndices=={},
-		Message[ECGrav`GraphComputeCorrelationTime::alldefault,
+		Message[GraphComputeCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
 		corrTable=Table[
 
-			norm=ECGrav`CorrelationTime[0,observablesTable[[i]]];
+			norm=CorrelationTime[0,observablesTable[[i]]];
 			If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
 			Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 				PrintTemporary["      computing corrT at t = ",t]];
-				ECGrav`CorrelationTime[t,observablesTable[[i]]],
+				CorrelationTime[t,observablesTable[[i]]],
 			{t,0,numsweeps-10}]/norm
 
 
@@ -2671,7 +2669,7 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 (* Overload without delH *)
 
-ECGrav`GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
+GraphComputeCorrelationTime[seedGraph_List,beta_Real,hamiltonian_[hparams___],
 	eqlT_Integer, minEToBeat_Real,operators_/;MatchQ[operators,{__Function}],
 	UnlabeledVerticesYes_Integer]:=
 (*************************************)
@@ -2721,7 +2719,7 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	Transpose[
 		Table[
 			If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-				sweepOutput=ECGrav`GraphSweepReplica[data[[Key["state"],Key["graph"]]],beta,
+				sweepOutput=GraphSweepReplica[data[[Key["state"],Key["graph"]]],beta,
 								hamiltonian[hparams],1,data[[Key["minEnergy"]]],
 								UnlabeledVerticesYes];
 
@@ -2750,12 +2748,12 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		(*If the magnetizations have all equal value, then correlation time can not be computed, 
 		so this loop will be exited with the default corrT left at 2 *)
 
-		norm=ECGrav`CorrelationTime[0,oTbl];
+		norm=CorrelationTime[0,oTbl];
 		If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
 		Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
 			PrintTemporary["      computing corrT at t = ",t]];
-			ECGrav`CorrelationTime[t,oTbl],
+			CorrelationTime[t,oTbl],
 		{t,0,numsweeps-10}]/norm
 
 		]
@@ -2785,7 +2783,7 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphComputeCorrelationTime[args___]:=(Message[ECGrav`GraphComputeCorrelationTime::argerr, args];
+GraphComputeCorrelationTime[args___]:=(Message[GraphComputeCorrelationTime::argerr, args];
 $Failed);
 
 
@@ -2797,7 +2795,7 @@ $Failed);
 (*GraphMultiHistogram Primary betaMin to betaHigh*)
 
 
-ECGrav`GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
+GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
 	hamiltonian_[hparams___],delH_[delHparams___],obs_/;MatchQ[obs,{__Function}],NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 10/10/2025  ***)
@@ -2861,9 +2859,9 @@ stopnum++;
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
+		i->GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
 									delH[delHparams],UnlabeledVerticesYes]
-		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -2898,10 +2896,10 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 		ParallelTable[
-			i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
+			i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 								hamiltonian[hparams],delH[delHparams],locrepl[[Key[i],Key["eqlT"]]],
 								locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes]
-			,{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+			,{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -2953,11 +2951,11 @@ Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["m
 	(* Each replica will be swept corrT times *)
 
 
-	<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
+	<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 			hamiltonian[hparams],delH[delHparams],locrepl[[Key[i],Key["corrT"]]],
 			locMinEtoBeat,UnlabeledVerticesYes]|>,
 
-	{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+	{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -2999,7 +2997,7 @@ chart=Union[chart,AssociationThread[btTable[[-1]],measurements[[1;;2]]]];
 If[(btTable[[-1,1]]>btTable[[-1,2]]),Break[]];
 
 (* sqrt of the specific heat at current temp*)
-curRootSpecificHeat=Table[Sqrt[ECGrav`SpecificHeat[chart[[Key[i]]][[All,3]],1,i]],{i,btTable[[-1]]}];
+curRootSpecificHeat=Table[Sqrt[SpecificHeat[chart[[Key[i]]][[All,3]],1,i]],{i,btTable[[-1]]}];
 (*Total specific heat, not specific heat per site!*)
 
 
@@ -3035,7 +3033,7 @@ energyAsn=<|Table[i->chart[[Key[i]]][[All,3]],{i,Keys[chart]}]|>;
 
 (*mBetaF=computeBFs[energyAsn];*)
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[energyAsn];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[energyAsn];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas};
 
@@ -3045,7 +3043,7 @@ result
 
 
 (*Overload betaLow to betaHigh without delH*)
-ECGrav`GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
+GraphMultiHistogram[seedGraph_List,betaLow_Real,betaHigh_Real,
 	hamiltonian_[hparams___],
 	obs_/;MatchQ[obs,{__Function}],NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
@@ -3113,9 +3111,9 @@ stopnum++;
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
+		i->GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
 				UnlabeledVerticesYes]
-		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		,{i,btTable[[-1]]},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -3150,9 +3148,9 @@ If[candminE<groundStates[[Key["minEnergy"]]],
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 		ParallelTable[
-			i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
+			i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 					hamiltonian[hparams],locrepl[[Key[i],Key["eqlT"]]],locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes]
-			,{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+			,{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -3204,10 +3202,10 @@ Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["m
 	(* Each replica will be swept corrT times *)
 
 
-	<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
+	<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],i,
 		hamiltonian[hparams],locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
 
-	{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+	{i,btTable[[-1]]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -3256,7 +3254,7 @@ chart=Union[chart,AssociationThread[btTable[[-1]],measurements[[1;;2]]]];
 If[(btTable[[-1,1]]>btTable[[-1,2]]),Break[]];
 
 (* sqrt of the specific heat at current temp*)
-curRootSpecificHeat=Table[Sqrt[ECGrav`SpecificHeat[chart[[Key[i]]][[All,3]],1,i]],{i,btTable[[-1]]}];
+curRootSpecificHeat=Table[Sqrt[SpecificHeat[chart[[Key[i]]][[All,3]],1,i]],{i,btTable[[-1]]}];
 (*Total specific heat, not specific heat per site!*)
 
 
@@ -3288,7 +3286,7 @@ btTable=Sort[Flatten[btTable]];
 *)
 
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas};
 
@@ -3301,7 +3299,7 @@ result
 (*GraphMultiHistogram Overload 1 betaTable*)
 
 
-ECGrav`GraphMultiHistogram[seedGraph_List,btTable_List/;VectorQ[btTable],hamiltonian_[hparams___],
+GraphMultiHistogram[seedGraph_List,btTable_List/;VectorQ[btTable],hamiltonian_[hparams___],
 	delH_[delHparams___],obs_/;MatchQ[obs,{__Function}],NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 12/02/2026  ***)
@@ -3349,7 +3347,7 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 (********************)
 *)
 
-Tempoutput=Association[ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+Tempoutput=Association[ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
 
@@ -3374,7 +3372,7 @@ AppendTo[groundStates,"minEstates"->Union@@Values[Select[Tempoutput[[All,1]],#[[
 (***************************************)
 *)
 
-Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},ParallelTable[i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],replicas[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams],replicas[[Key[i],Key["eqlT"]]],locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes],{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},ParallelTable[i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]],replicas[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams],replicas[[Key[i],Key["eqlT"]]],locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes],{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ]
 ];
 
@@ -3508,9 +3506,9 @@ If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 Tempoutput=Association[With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 ParallelTable[
 
-<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams],locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
+<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams],locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
 
-{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ]
 ];
 
@@ -3578,7 +3576,7 @@ Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],Max[-(hi
 *)
 
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas,histories};
 
@@ -3589,7 +3587,7 @@ result
 
 
 (*Overload without delH *)
-ECGrav`GraphMultiHistogram[seedGraph_List,btTable_List/;VectorQ[btTable],hamiltonian_[hparams___],
+GraphMultiHistogram[seedGraph_List,btTable_List/;VectorQ[btTable],hamiltonian_[hparams___],
 obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 12/02/2026  ***)
@@ -3638,9 +3636,9 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 *)
 
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],
+	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],
 		UnlabeledVerticesYes],{i,Length[btTable]},
-		DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+		DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
 
@@ -3667,11 +3665,11 @@ AppendTo[groundStates,"minEstates"->Union@@Values[Select[Tempoutput[[All,1]],#[[
 
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
-		ParallelTable[i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],
+		ParallelTable[i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],
 			Key["graph"]]],replicas[[Key[i],Key["beta"]]],hamiltonian[hparams],
 			replicas[[Key[i],Key["eqlT"]]],locMinEtoBeat,EnergyOrMag,
 			UnlabeledVerticesYes],{i,numRep},
-			DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+			DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -3805,11 +3803,11 @@ If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 	ParallelTable[
-	<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],
+	<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]],
 		locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams],locrepl[[Key[i],
 		Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
 
-	{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+	{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	]
 ];
 
@@ -3880,7 +3878,7 @@ Do[histories[[Key[i],Key["history"]]]=(histories[[Key[i],Key["history"],Max[-(hi
 *)
 
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[chart[[All,All,3]]];
 
 result={groundStates,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>,replicas,histories};
 
@@ -3895,7 +3893,7 @@ result
 
 
 (*Overload with multiple external fields*)
-ECGrav`GraphMultiHistogram[seedGraph_List,bt_Real,hamiltonian_[hparams___],
+GraphMultiHistogram[seedGraph_List,bt_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],externalFieldTable_List/;MatrixQ[externalFieldTable],
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],obs_/;MatchQ[obs,{__Function}],NN_Integer,
 	UnlabeledVerticesYes_Integer]:=
@@ -3963,10 +3961,10 @@ PrintTemporary[" Starting multihistogram with replica swap and delH and at beta 
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphEquilibriate[seedGraph,bt
+		i->GraphEquilibriate[seedGraph,bt
 					,Apply[hamiltonian,externalFieldTable[[i]]]
 					,Apply[delH,externalFieldTable[[i]]],UnlabeledVerticesYes]
-	,{i,Length[externalFieldTable]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+	,{i,Length[externalFieldTable]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
 
@@ -3985,12 +3983,12 @@ groundStates=Tempoutput[[All,1]];
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphComputeCorrelationTime[
+		i->GraphComputeCorrelationTime[
 			replicas[[Key[i],Key["state"],Key["graph"]]],bt
 			,Apply[hamiltonian,externalFieldTable[[i]]]
 			,Apply[delH,externalFieldTable[[i]]],replicas[[Key[i],Key["eqlT"]]]
 			,groundStates[[Key[i],Key["minEnergy"]]],conjugateObs,UnlabeledVerticesYes]
-		,{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}
+		,{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}
 	]
 ];
 
@@ -4117,12 +4115,12 @@ While[numsweeps<=NN,
 	Tempoutput=Association[
 		ParallelTable[
 			(* Each replica will be swept corrT times *)
-			<|i->ECGrav`GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]]
+			<|i->GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]]
 				,bt,Apply[hamiltonian,externalFieldTable[[i]]],Apply[delH,externalFieldTable[[i]]]
 				,replicas[[Key[i],Key["corrT"]]],groundStates[[Key[i],Key["minEnergy"]]]
 				,UnlabeledVerticesYes]|>,
 
-			{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}
+			{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}
 			]
 	];
 
@@ -4208,7 +4206,7 @@ Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i]
 (**********************************************)
 *)
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,4]],bt];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[chart[[All,All,4]],bt];
 
 result={<|Table[replicas[[Key[i],Key["externalField"]]]->groundStates[[Key[i]]],{i,Keys[replicas]}]|>
 	,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->bt,"externalField"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>
@@ -4220,7 +4218,7 @@ result
 
 
 (*Overload with multiple external fields no delH*)
-ECGrav`GraphMultiHistogram[seedGraph_List,bt_Real,hamiltonian_[hparams___],
+GraphMultiHistogram[seedGraph_List,bt_Real,hamiltonian_[hparams___],
 	externalFieldTable_List/;MatrixQ[externalFieldTable],
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],obs_/;MatchQ[obs,{__Function}],NN_Integer,
 	UnlabeledVerticesYes_Integer]:=
@@ -4285,10 +4283,10 @@ PrintTemporary[" Starting multihistogram with replical swap with delH and with b
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphEquilibriate[seedGraph,bt
+		i->GraphEquilibriate[seedGraph,bt
 					,Apply[hamiltonian,externalFieldTable[[i]]]
 					,UnlabeledVerticesYes]
-	,{i,Length[externalFieldTable]},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]
+	,{i,Length[externalFieldTable]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
 
@@ -4308,12 +4306,12 @@ groundStates=Tempoutput[[All,1]];
 
 Tempoutput=Association[
 	ParallelTable[
-		i->ECGrav`GraphComputeCorrelationTime[
+		i->GraphComputeCorrelationTime[
 			replicas[[Key[i],Key["state"],Key["graph"]]],bt
 			,Apply[hamiltonian,externalFieldTable[[i]]]
 			,replicas[[Key[i],Key["eqlT"]]]
 			,groundStates[[Key[i],Key["minEnergy"]]],conjugateObs,UnlabeledVerticesYes]
-		,{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}
+		,{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}
 	]
 ];
 
@@ -4439,12 +4437,12 @@ While[numsweeps<=NN,
 	Tempoutput=Association[
 		ParallelTable[
 			(* Each replica will be swept corrT times *)
-			<|i->ECGrav`GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]]
+			<|i->GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]]
 				,bt,Apply[hamiltonian,externalFieldTable[[i]]]
 				,replicas[[Key[i],Key["corrT"]]],groundStates[[Key[i],Key["minEnergy"]]]
 				,UnlabeledVerticesYes]|>,
 
-			{i,numRep},DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}
+			{i,numRep},DistributedContexts->{$Context,"ECGrav`Private`"}
 			]
 	];
 
@@ -4530,7 +4528,7 @@ Do[If[histories[[Key[i],Key["swapAccept"]]]<Length[histories[[Key[i]
 *)
 
 
-mBetaF=ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All,All,4]],bt];
+mBetaF=ComputeMinusBetaTimesFreeEnergy[chart[[All,All,4]],bt];
 
 result={<|Table[replicas[[Key[i],Key["externalField"]]]->groundStates[[Key[i]]],{i,Keys[replicas]}]|>
 	,<|Table[i-><|"minusBetaF"->mBetaF[[Key[i]]],"beta"->bt,"externalField"->i,"data"->chart[[Key[i]]]|>,{i,Keys[chart]}]|>
@@ -4546,7 +4544,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphMultiHistogram[args___]:=(Message[ECGrav`GraphMultiHistogram::argerr, args];
+GraphMultiHistogram[args___]:=(Message[GraphMultiHistogram::argerr, args];
 $Failed);
 
 
@@ -4558,7 +4556,7 @@ $Failed);
 (*GraphCEITempSchedule Primary*)
 
 
-ECGrav`GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
+GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,
 	hamiltonian_[hparams___],
 	delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
@@ -4592,7 +4590,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
        entropyVals,tempSchedule},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],
+hist=GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
 
 
@@ -4610,9 +4608,9 @@ incrementVal=(1.0/betaLow-1.0/betaHigh)/(20*vCount);
 
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
-		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
+		ParallelTable[{i,CvOverT[1.0/i,mbf,msrments]},
 			{i,1.0/betaHigh,1.0/betaLow,incrementVal},
-			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
@@ -4652,7 +4650,7 @@ result
 (*GraphCEITempSchedule Overload 1 no delH*)
 
 
-ECGrav`GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
+GraphCEITempSchedule[seedGraph_List,betaLow_Real,betaHigh_Real,hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 (*************************************)
 (***  Last updated on: 10/10/2025  ***)
 (*************************************)
@@ -4689,7 +4687,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
        entropyVals,tempSchedule},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
+hist=GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
 
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
@@ -4706,9 +4704,9 @@ incrementVal=(1.0/betaLow-1.0/betaHigh)/(20*vCount);
 
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
-		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
+		ParallelTable[{i,CvOverT[1.0/i,mbf,msrments]},
 			{i,1.0/betaHigh,1.0/betaLow,incrementVal},
-			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
@@ -4748,13 +4746,13 @@ result
 (*GraphCEITempSchedule Overload 2 betaTable*)
 
 
-ECGrav`GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
+GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
 	delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,incrementVal,
         CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
+hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
 
 
@@ -4772,9 +4770,9 @@ incrementVal=(1.0/Min[btTable]-1.0/Max[btTable])/(20*vCount);
 
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
-		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
+		ParallelTable[{i,CvOverT[1.0/i,mbf,msrments]},
 		{i,1.0/Max[btTable],1.0/Min[btTable],incrementVal},
-		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
@@ -4814,12 +4812,12 @@ result
 (*GraphCEITempSchedule Overload 3 betaTable and no delH*)
 
 
-ECGrav`GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
+GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,incrementVal,
         CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
+hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
 
 
 minusbetaFTable=hist[[2,All,"minusBetaF"]];
@@ -4836,9 +4834,9 @@ incrementVal=(1.0/Min[btTable]-1.0/Max[btTable])/(20*vCount);
 
 
 CvOverTtab=With[{mbf=minusbetaFTable,msrments=chart},
-		ParallelTable[{i,ECGrav`CvOverT[1.0/i,mbf,msrments]},
+		ParallelTable[{i,CvOverT[1.0/i,mbf,msrments]},
 		{i,1.0/Max[btTable],1.0/Min[btTable],incrementVal},
-		DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Print["CvOverT table 1 through 100 ",CvOverTtab];*)
@@ -4879,7 +4877,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphCEITempSchedule[args___]:=(Message[ECGrav`GraphCEITempSchedule::argerr, args];
+GraphCEITempSchedule[args___]:=(Message[GraphCEITempSchedule::argerr, args];
 $Failed);
 
 
@@ -4891,7 +4889,7 @@ $Failed);
 (*GraphCTLSchedule for beta with input beta list*)
 
 
-ECGrav`GraphCTLSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
+GraphCTLSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
 	delH_[delHparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer,
 	numReplicas_Integer]:=
 (*************************************)
@@ -4921,7 +4919,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	interpolatedThermodynamicLength,targetSteps,betaSchedule,b},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
+hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 	delH[delHparams],obs,NN,UnlabeledVerticesYes];
 
 
@@ -4932,15 +4930,15 @@ betaMin=Min[Keys[minusbetaFAssn]];
 betaMax=Max[Keys[minusbetaFAssn]];
 
 
-thermodynamicSpeed[b_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy^2]
-		-(ECGrav`ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy])^2];
+thermodynamicSpeed[b_]:=Sqrt[ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy^2]
+		-(ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy])^2];
 
 
 incrementValue=(betaMax-betaMin)/(10.0*vCount);
 
 
 thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]},
-	{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -4972,7 +4970,7 @@ result={betaSchedule,hist};
 result
 ];
 
-ECGrav`GraphCTLSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
+GraphCTLSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
 	obs_,NN_Integer,UnlabeledVerticesYes_Integer,numReplicas_Integer]:=
 (*************************************)
 (***  Last updated on: 02/16/2026  ***)
@@ -5001,7 +4999,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	betaSchedule,b},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,
+hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,
 	UnlabeledVerticesYes];
 
 minusbetaFAssn=hist[[2,All,"minusBetaF"]];
@@ -5011,14 +5009,14 @@ betaMin=Min[Keys[minusbetaFAssn]];
 betaMax=Max[Keys[minusbetaFAssn]];
 
 
-thermodynamicSpeed[b_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy^2]
-	-(ECGrav`ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy])^2];
+thermodynamicSpeed[b_]:=Sqrt[ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy^2]
+	-(ExtrapolatedExpectationValue[b,minusbetaFAssn,chartEnergy,chartEnergy])^2];
 
 
 incrementValue=(betaMax-betaMin)/(10.0*vCount);
 
 thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
-	,{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	,{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -5057,7 +5055,7 @@ result
 (*GraphCTLSchedule for  beta with input from a previous run*)
 
 
-ECGrav`GraphCTLSchedule[betaMin_Real,betaMax_Real,minusbetaF_Association,
+GraphCTLSchedule[betaMin_Real,betaMax_Real,minusbetaF_Association,
 	energyValues_Association,numReplicas_Integer]:=
 (*************************************)
 (***  Last updated on: 02/16/2026  ***)
@@ -5079,13 +5077,13 @@ Module[{result,thermodynamicSpeed,incrementValue,thermodynamicSpeedTable,
 	interpolatedThermodynamicLength,targetSteps,betaSchedule,b},
 
 
-thermodynamicSpeed[b_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues^2]
-	-(ECGrav`ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues])^2];
+thermodynamicSpeed[b_]:=Sqrt[ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues^2]
+	-(ExtrapolatedExpectationValue[b,minusbetaF,energyValues,energyValues])^2];
 
 incrementValue=(betaMax-betaMin)/(100.0);
 
 thermodynamicSpeedTable=ParallelTable[{b,thermodynamicSpeed[b]}
-	,{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	,{b,betaMin,betaMax*(1.1),incrementValue},DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -5121,7 +5119,7 @@ result
 (*GraphCTLSchedule for a single external field at a fixed beta with input external field  list*)
 
 
-ECGrav`GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
+GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],
 	externalFieldTable_List/;(MatrixQ[externalFieldTable]&&Length[externalFieldTable[[1]]]==1),
 	conjugateObs_/;MatchQ[conjugateObs,{_Function}],
@@ -5161,7 +5159,7 @@ PrintTemporary[" Starting GraphCTLSchedule for external field at a fixed beta ",
 	," with input external field schedule, ",externalFieldTable," numReplicas "
 	,numReplicas];
 	
-hist=ECGrav`GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],delH[delHparams],
+hist=GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],delH[delHparams],
 	externalFieldTable,conjugateObs,obs,NN,UnlabeledVerticesYes];
 
 minusbetaFAssn=hist[[2,All,"minusBetaF"]];
@@ -5173,9 +5171,9 @@ hMax=Max[Keys[minusbetaFAssn]];
 
 
 thermodynamicSpeed[h_]:=
-	Sqrt[ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,
+	Sqrt[ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,
 							chartConjugateField,chartConjugateField[[All,All,1]]^2]
-		-(ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,
+		-(ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,
 					chartConjugateField[[All,All,1]]])^2];
 
 
@@ -5183,7 +5181,7 @@ incrementValue=(hMax-hMin)/(10.0*vCount);
 
 thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 	,{h,hMin-0.2*Abs[hMax-hMin],hMax+0.2*Abs[hMax-hMin],incrementValue},
-	DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -5223,7 +5221,7 @@ result
 ];
 
 
-ECGrav`GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
+GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
 	externalFieldTable_List/;(MatrixQ[externalFieldTable]&&Length[externalFieldTable[[1]]]==1),
 	conjugateObs_/;MatchQ[conjugateObs,{_Function}],
 	obs_/;MatchQ[obs,{__Function}],NN_Integer,
@@ -5258,7 +5256,7 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	neighbors,edges,replicaLabels},
 
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
+hist=GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
 	externalFieldTable,conjugateObs,obs,NN,UnlabeledVerticesYes];
 
 minusbetaFAssn=hist[[2,All,"minusBetaF"]];
@@ -5269,15 +5267,15 @@ hMin=Min[Keys[minusbetaFAssn]];
 hMax=Max[Keys[minusbetaFAssn]];
 
 
-thermodynamicSpeed[h_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,chartConjugateField[[All,All,1]]^2]
-	-(ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,chartConjugateField[[All,All,1]]])^2];
+thermodynamicSpeed[h_]:=Sqrt[ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,chartConjugateField[[All,All,1]]^2]
+	-(ExtrapolatedExpectationValue[bt,{h},minusbetaFAssn,chartConjugateField,chartConjugateField[[All,All,1]]])^2];
 
 
 incrementValue=(hMax-hMin)/(10.0*vCount);
 
 thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 	,{h,hMin-0.2*Abs[hMax-hMin],hMax+0.2*Abs[hMax-hMin],incrementValue},
-	DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -5321,7 +5319,7 @@ result
 (*GraphCTLSchedule for a single external field at a fixed beta with input from a previous run*)
 
 
-ECGrav`GraphCTLSchedule[bt_Real,hMin_Real,hMax_Real,minusbetaF_Association,
+GraphCTLSchedule[bt_Real,hMin_Real,hMax_Real,minusbetaF_Association,
 	conjugateFieldMeasurements_Association,numReplicas_Integer]:=
 (*************************************)
 (***  Last updated on: 03/05/2026  ***)
@@ -5351,16 +5349,16 @@ PrintTemporary[" Starting GraphCTLSchedule for external field at a fixed beta ",
 	," with input from a previous run of GraphMultiHistogram, numReplicas "
 	,numReplicas];	
 
-thermodynamicSpeed[h_]:=Sqrt[ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaF,
+thermodynamicSpeed[h_]:=Sqrt[ExtrapolatedExpectationValue[bt,{h},minusbetaF,
 	conjugateFieldMeasurements,conjugateFieldMeasurements[[All,All,1]]^2]
-	-(ECGrav`ExtrapolatedExpectationValue[bt,{h},minusbetaF,conjugateFieldMeasurements,
+	-(ExtrapolatedExpectationValue[bt,{h},minusbetaF,conjugateFieldMeasurements,
 	conjugateFieldMeasurements[[All,All,1]]])^2];
 
 incrementValue=(hMax-hMin)/(100.0);
 
 thermodynamicSpeedTable=ParallelTable[{h,thermodynamicSpeed[h]}
 	,{h,hMin-0.2*Abs[hMax-hMin],hMax+0.2*Abs[hMax-hMin],incrementValue}
-	,DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}];
+	,DistributedContexts->{$Context, "ECGrav`Private`"}];
 
 interpolatedThermodynamicSpeed=Interpolation[thermodynamicSpeedTable];
 
@@ -5404,7 +5402,7 @@ result
 
 
 (*Primary pattern*)
-ECGrav`GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
+GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],
 	externalFieldTable_List/;(MatrixQ[externalFieldTable]&&Length[externalFieldTable[[1]]]>1),
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],
@@ -5445,7 +5443,7 @@ Module[
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
 	fields",externalFieldTable," at beta ",bt," numReplicas ",numReplicas];
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],delH[delHparams],
+hist=GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],delH[delHparams],
 		externalFieldTable,conjugateObs,obs,NN,UnlabeledVerticesYes];
 
 
@@ -5471,10 +5469,10 @@ sigmaInterpolationAsn=<|
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
-					{hVars,Max[0.0,ECGrav`ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					{hVars,Max[0.0,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
 						chartConjugateField,chartConjugateField[[All,All,i]]
 						*chartConjugateField[[All,All,j]]]]},y,
-						DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}])
+						DistributedContexts->{$Context,"ECGrav`Private`"}])
 			,{i,1,j}]
 	,{j,1,numVars}]|>;
 
@@ -5516,7 +5514,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 densityPoints=
 	Thread[{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
-							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
+							DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
 
 Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
@@ -5577,7 +5575,7 @@ result
 
 
 (*Overload without delH *)
-ECGrav`GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],externalFieldTable_List/;(MatrixQ[externalFieldTable]&&Length[externalFieldTable[[1]]]>1),conjugateObs_/;MatchQ[conjugateObs,{__Function}],obs_/;MatchQ[obs,{__Function}],NN_Integer,UnlabeledVerticesYes_Integer,numReplicas_Integer]:=
+GraphCTLSchedule[seedGraph_List,bt_Real,hamiltonian_[hparams___],externalFieldTable_List/;(MatrixQ[externalFieldTable]&&Length[externalFieldTable[[1]]]>1),conjugateObs_/;MatchQ[conjugateObs,{__Function}],obs_/;MatchQ[obs,{__Function}],NN_Integer,UnlabeledVerticesYes_Integer,numReplicas_Integer]:=
 (*************************************)
 (***  Last updated on: 02/25/2026  ***)
 (*************************************)
@@ -5612,7 +5610,7 @@ Module[
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
 	fields",externalFieldTable," at beta ",bt," numReplicas ",numReplicas];
 
-hist=ECGrav`GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
+hist=GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
 		externalFieldTable,conjugateObs,obs,NN,UnlabeledVerticesYes];
 
 
@@ -5638,10 +5636,10 @@ sigmaInterpolationAsn=<|
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
-					{hVars,Max[0.0,ECGrav`ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					{hVars,Max[0.0,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
 						chartConjugateField,chartConjugateField[[All,All,i]]
 						*chartConjugateField[[All,All,j]]]]},y,
-						DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}])
+						DistributedContexts->{$Context,"ECGrav`Private`"}])
 			,{i,1,j}]
 	,{j,1,numVars}]|>;
 
@@ -5683,7 +5681,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 densityPoints=
 	Thread[{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]
 		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
-							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
+							DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
 
 Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
@@ -5746,7 +5744,7 @@ result
 
 
 (*Primary pattern*)
-ECGrav`GraphCTLSchedule[bt_Real,hMins_List/;VectorQ[hMins],hMaxs_List/;VectorQ[hMaxs],minusbetaF_Association,
+GraphCTLSchedule[bt_Real,hMins_List/;VectorQ[hMins],hMaxs_List/;VectorQ[hMaxs],minusbetaF_Association,
 	conjugateFieldMeasurements_Association,numReplicas_Integer]:=
 (*************************************)
 (***  Last updated on: 03/05/2026  ***)
@@ -5790,10 +5788,10 @@ Table[
 	Table[
 		{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
 			/.{y__}:>Join@@ParallelTable[
-					{hVars, Max[0.0,ECGrav`ExtrapolatedExpectationValue[bt,hVars,
+					{hVars, Max[0.0,ExtrapolatedExpectationValue[bt,hVars,
 							minusbetaF,conjugateFieldMeasurements,conjugateFieldMeasurements[[All,All,i]]
 							*conjugateFieldMeasurements[[All,All,j]]]]},y,
-							DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}])
+							DistributedContexts->{$Context,"ECGrav`Private`"}])
 		,{i,1,j}]
 ,{j,1,numVars}]|>;
 
@@ -5831,7 +5829,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 
 densityPoints=Thread[
 	{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]/.{y__}:>Flatten[
-		(ParallelTable[{hVars,rho@@hVars},y,DistributedContexts->{$Context,"ECGrav`MCSims`Private`"}]),1];
+		(ParallelTable[{hVars,rho@@hVars},y,DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
 
 Print[" rho = Sqrt[det[g]] Plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
@@ -5903,7 +5901,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphCTLSchedule[args___]:=(Message[ECGrav`GraphCTLSchedule::argerr, args];
+GraphCTLSchedule[args___]:=(Message[GraphCTLSchedule::argerr, args];
 $Failed);
 
 
@@ -5915,7 +5913,7 @@ $Failed);
 (*GraphParallelTempering Primary*)
 
 
-ECGrav`GraphParallelTempering[seedGraph_List, btTable_List,
+GraphParallelTempering[seedGraph_List, btTable_List,
 	hamiltonian_[hparams___],delH_[delHparams___],obs_,EnergyOrMag_Integer,
 	NN_Integer,UnlabeledVerticesYes_Integer,minEtoBeat_Real]:=
 
@@ -5961,9 +5959,9 @@ numRep=Length[btTable];
 (**      Equilibriate          **)
 (******************************)*)
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,btTable[[i]],
+	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],
 		hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]}
-	,DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+	,DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -5991,10 +5989,10 @@ If[minEtoBeat<groundStates[[Key["minEnergy"]]],
 
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
-	ParallelTable[i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]]
+	ParallelTable[i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]]
 		,replicas[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams]
 		,replicas[[Key[i],Key["eqlT"]]],locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes]
-		,{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}
+		,{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}
 		]
 	]
 ];
@@ -6093,11 +6091,11 @@ If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 	ParallelTable[
-		<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
+		<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
 			,locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams]
 			,locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
 
-	{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+	{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 	]
 ];
 
@@ -6149,7 +6147,7 @@ result
 ];
 
 
-ECGrav`GraphParallelTempering[seedGraph_List, btTable_List,
+GraphParallelTempering[seedGraph_List, btTable_List,
 	hamiltonian_[hparams___],obs_,EnergyOrMag_Integer,NN_Integer,UnlabeledVerticesYes_Integer,minEtoBeat_Real]:=
 
 (*************************************)
@@ -6194,8 +6192,8 @@ numRep=Length[btTable];
 (**      Equilibriate          **)
 (******************************)*)
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams]
-		,UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams]
+		,UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -6223,10 +6221,10 @@ If[minEtoBeat<groundStates[[Key["minEnergy"]]],
 
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
-		ParallelTable[i->ECGrav`GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]]
+		ParallelTable[i->GraphComputeCorrelationTime[locrepl[[Key[i],Key["state"],Key["graph"]]]
 		,replicas[[Key[i],Key["beta"]]],hamiltonian[hparams],replicas[[Key[i],Key["eqlT"]]]
 		,locMinEtoBeat,EnergyOrMag,UnlabeledVerticesYes],{i,numRep}
-		,DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		,DistributedContexts->{$Context, "ECGrav`Private`"}]
 	]
 ];
 
@@ -6325,11 +6323,11 @@ measurements=Reap[
 			With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 
 		ParallelTable[
-			<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
+			<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
 			,locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams]
 			,locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>
 			,{i,numRep}
-			,DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			,DistributedContexts->{$Context, "ECGrav`Private`"}]
 			]
 		];
 
@@ -6384,7 +6382,7 @@ result
 (*Overload GraphParallelTempering with previous beta replica as input*)
 
 
-ECGrav`GraphParallelTempering[inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]>1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]==1)
+GraphParallelTempering[inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]>1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]==1)
 	,hamiltonian_[hparams___],delH_[delHparams___],obs_
 	,NN_Integer,UnlabeledVerticesYes_Integer,minEtoBeat_Real]:=
 
@@ -6498,10 +6496,10 @@ While[numsweeps<=NN,
 	Tempoutput=Association[
 		With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 			ParallelTable[
-				<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
+				<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
 				,locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams],delH[delHparams]
 				,locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
-			{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 		]
 	];
 
@@ -6549,7 +6547,7 @@ result
 ];
 
 
-ECGrav`GraphParallelTempering[inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]>1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]==1)
+GraphParallelTempering[inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]>1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]==1)
 	,minEtoBeat_Real,hamiltonian_[hparams___],obs_,NN_Integer
 	,UnlabeledVerticesYes_Integer]:=
 
@@ -6663,10 +6661,10 @@ If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 Tempoutput=Association[
 	With[{locrepl=replicas,locMinEtoBeat=groundStates[[Key["minEnergy"]]]},
 		ParallelTable[
-			<|i->ECGrav`GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
+			<|i->GraphSweepReplica[locrepl[[Key[i],Key["state"],Key["graph"]]]
 			,locrepl[[Key[i],Key["beta"]]],hamiltonian[hparams]
 			,locrepl[[Key[i],Key["corrT"]]],locMinEtoBeat,UnlabeledVerticesYes]|>,
-		{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 	]
 ];
 
@@ -6723,7 +6721,7 @@ result
 
 
 (*Primary pattern*)
-ECGrav`GraphParallelTempering[seedGraph_List, bt_Real,hamiltonian_[hparams___],
+GraphParallelTempering[seedGraph_List, bt_Real,hamiltonian_[hparams___],
 	delH_[delHparams___],replicaSwapEdgesLabels_List,
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],
 	obs_/;MatchQ[obs,{__Function}],
@@ -6775,10 +6773,10 @@ PrintTemporary["Running PT for graph with numRep ",numRep," at beta ",bt,
 (******************************)*)
 
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,bt,
+	ParallelTable[i->GraphEquilibriate[seedGraph,bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 		Apply[delH,replicaSwapEdgesLabels[[2,Key[i]]]],UnlabeledVerticesYes]
-	,{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+	,{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Prepare replicas*)
@@ -6791,13 +6789,13 @@ groundStates=Tempoutput[[All,1]];
 (******************************)*)
 
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphComputeCorrelationTime[
+	ParallelTable[i->GraphComputeCorrelationTime[
 		replicas[[Key[i],Key["state"],Key["graph"]]],bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 		Apply[delH,replicaSwapEdgesLabels[[2,Key[i]]]],
 		replicas[[Key[i],Key["eqlT"]]],
 		groundStates[[Key[i],Key["minEnergy"]]],conjugateObs,UnlabeledVerticesYes]
-		,{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		,{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -6925,7 +6923,7 @@ measurements=Reap[
 
 		Tempoutput=Association[
 			ParallelTable[
-				<|i->ECGrav`GraphSweepReplica[
+				<|i->GraphSweepReplica[
 						replicas[[Key[i],Key["state"],Key["graph"]]],bt,
 						Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 						Apply[delH,replicaSwapEdgesLabels[[2,Key[i]]]],
@@ -6935,7 +6933,7 @@ measurements=Reap[
 				|>,
 
 			{i,numRep},
-			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			DistributedContexts->{$Context, "ECGrav`Private`"}]
 		];
 
 		(*Update replicas*)
@@ -6992,7 +6990,7 @@ result
 
 
 (*Overload pattern without delH *)
-ECGrav`GraphParallelTempering[seedGraph_List, bt_Real,hamiltonian_[hparams___],
+GraphParallelTempering[seedGraph_List, bt_Real,hamiltonian_[hparams___],
 	replicaSwapEdgesLabels_List,
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],
 	obs_/;MatchQ[obs,{__Function}],
@@ -7045,10 +7043,10 @@ PrintTemporary["Running PT for graph with numRep ",numRep," at beta ",bt,
 (******************************)*)
 
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphEquilibriate[seedGraph,bt,
+	ParallelTable[i->GraphEquilibriate[seedGraph,bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 		UnlabeledVerticesYes]
-	,{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+	,{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 (*Prepare replicas*)
@@ -7061,12 +7059,12 @@ groundStates=Tempoutput[[All,1]];
 (******************************)*)
 
 Tempoutput=Association[
-	ParallelTable[i->ECGrav`GraphComputeCorrelationTime[
+	ParallelTable[i->GraphComputeCorrelationTime[
 		replicas[[Key[i],Key["state"],Key["graph"]]],bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 		replicas[[Key[i],Key["eqlT"]]],
 		groundStates[[Key[i],Key["minEnergy"]]],conjugateObs,UnlabeledVerticesYes]
-		,{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+		,{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 ];
 
 
@@ -7194,7 +7192,7 @@ measurements=Reap[
 
 		Tempoutput=Association[
 			ParallelTable[
-				<|i->ECGrav`GraphSweepReplica[
+				<|i->GraphSweepReplica[
 						replicas[[Key[i],Key["state"],Key["graph"]]],bt,
 						Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 						replicas[[Key[i],Key["corrT"]]],
@@ -7203,7 +7201,7 @@ measurements=Reap[
 				|>,
 
 			{i,numRep},
-			DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			DistributedContexts->{$Context, "ECGrav`Private`"}]
 		];
 
 		(*Update replicas*)
@@ -7263,7 +7261,7 @@ result
 (*Overload GraphParallelTempering with one or more external fields with input of previous external field replica as input*)
 
 
-ECGrav`GraphParallelTempering[
+GraphParallelTempering[
 	inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]==1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]>1),
 	hamiltonian_[hparams___],delH_[delHparams___],replicaSwapEdgesLabels_List,
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],
@@ -7420,7 +7418,7 @@ measurements=Reap[
 
 		Tempoutput=Association[
 			ParallelTable[
-				<|i->ECGrav`GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]],
+				<|i->GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]],
 					bt,
 					Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 					Apply[delH,replicaSwapEdgesLabels[[2,Key[i]]]],
@@ -7428,7 +7426,7 @@ measurements=Reap[
 					groundStates[[Key[i],Key["minEnergy"]]],
 					UnlabeledVerticesYes]
 				|>,
-			{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 
 		];
 
@@ -7485,7 +7483,7 @@ result
 
 
 (*Overload with no delH *)
-ECGrav`GraphParallelTempering[
+GraphParallelTempering[
 	inputReplicas_Association/;(Length[DeleteDuplicates[inputReplicas[[All,"beta"]]]]==1&&Length[DeleteDuplicates[inputReplicas[[All,"externalField"]]]]>1),
 	hamiltonian_[hparams___],replicaSwapEdgesLabels_List,
 	conjugateObs_/;MatchQ[conjugateObs,{__Function}],
@@ -7641,14 +7639,14 @@ measurements=Reap[
 
 		Tempoutput=Association[
 			ParallelTable[
-				<|i->ECGrav`GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]],
+				<|i->GraphSweepReplica[replicas[[Key[i],Key["state"],Key["graph"]]],
 					bt,
 					Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
 					replicas[[Key[i],Key["corrT"]]],
 					groundStates[[Key[i],Key["minEnergy"]]],
 					UnlabeledVerticesYes]
 				|>,
-			{i,numRep},DistributedContexts->{$Context, "ECGrav`MCSims`Private`"}]
+			{i,numRep},DistributedContexts->{$Context, "ECGrav`Private`"}]
 
 		];
 
@@ -7709,7 +7707,7 @@ result
 
 
 (* Catch-all Pattern *)
-ECGrav`GraphParallelTempering[args___]:=(Message[ECGrav`GraphParallelTempering::argerr, args];
+GraphParallelTempering[args___]:=(Message[GraphParallelTempering::argerr, args];
 $Failed);
 
 
@@ -7718,9 +7716,6 @@ $Failed);
 
 
 (* End private context *)
-End[]
 
 (* Protect exported symbols *)
-Protect @@ Names["ECGrav`MCSims`*"];
 
-EndPackage[]

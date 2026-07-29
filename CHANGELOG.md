@@ -44,6 +44,14 @@ Phase 3 (quality & CI) work, staged for the next release (1.3.0).
   ambiguous; each affected function body is now wrapped in `Catch[…, "tag"]` with its
   guards throwing that unique tag, and seven whole-body `If[c, Return[a], Return[b]]`
   predicates were simplified to `If[c, a, b]`. The full 87-test suite passes unchanged.
+- Internal refactor, no behaviour change: the two subpackages (`MCSims.wl`,
+  `PureComplexes.wl`) no longer open their own `BeginPackage["ECGrav`Sub`"]` context.
+  They are now loaded as plain includes into the single `ECGrav`` public context that
+  `ECGrav.wl` establishes, and the ~890 hand-qualified `ECGrav`Foo` prefixes were dropped.
+  Public functions resolve through their up-front `::usage` declarations; any undeclared
+  symbol falls into `ECGrav`Private`` and is automatically private, so adding a function
+  without a usage message can no longer make it silently vanish from the API. All 113
+  public symbols remain present, documented, and `Protected`; the suite stays at 87/87.
 
 ### Fixed
 - `CombinatorialSphereQ[torus]` (and Klein bottle, projective plane) no longer returns

@@ -4,7 +4,7 @@ Working plan for turning ECGrav into a well-documented, openly shared Wolfram
 Language paclet. Checkboxes track progress; phases are roughly ordered by
 priority. This is a living document — update it as items land.
 
-_Status snapshot: 2026-07-28 — Phase 2 (documentation) complete; Phase 3 (quality & CI) nearly complete: the three known bugs are resolved, test coverage expanded (suite 63 → 87), GitHub Actions CI is live and green, and the ~120 `ReturnAmbiguous` warnings are cleaned up. Remaining Phase 3 item: the subpackage `BeginPackage` convention._
+_Status snapshot: 2026-07-28 — Phase 2 (documentation) complete; **Phase 3 (quality & CI) complete**: the three known bugs are resolved, test coverage expanded (suite 63 → 87), GitHub Actions CI is live and green, the ~120 `ReturnAmbiguous` warnings are cleaned up, and the subpackage context convention is fixed (single `ECGrav`` public context; see below)._
 
 **Decisions made**
 - License: **MIT** ✅
@@ -141,10 +141,18 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
       done: all ~120 (116 in `PureComplexes.wl`, 4 in `MCSims.wl`) converted to explicit
       tagged `Catch`/`Throw` (7 whole-body `If[c,Return,Return]` predicates simplified to
       `If[c,a,b]`); behaviour-preserving, suite still 87/87, CodeInspector now reports 0
-- [ ] Decide on the subpackage `BeginPackage` convention: every symbol is
-      hand-qualified as `ECGrav\`Foo` because the subpackages open
-      `BeginPackage["ECGrav\`MCSims\`"]` with no exports — fix or document it so a
-      new function added without the qualifier doesn't silently vanish
+- [x] Decide on the subpackage `BeginPackage` convention — **done (Option A):** the two
+      subpackages no longer open their own `BeginPackage["ECGrav\`Sub\`"]`. `ECGrav.wl`
+      declares every public `::usage` up front and loads `MCSims.wl` / `PureComplexes.wl`
+      as plain includes inside its `Begin["\`Private\`"]`, so all files share the single
+      `ECGrav\`` public context. The ~890 hand-qualified `ECGrav\`Foo` prefixes were
+      dropped: a public function resolves via its pre-declared usage, and any undeclared
+      symbol lands in `ECGrav\`Private\`` — automatically private, so the public/private
+      switch is simply "has a usage message" and a forgotten name can no longer silently
+      vanish. Private helpers (the 5 `*Conn`) moved from `ECGrav\`PureComplexes\`Private\``
+      to `ECGrav\`Private\``; `DistributedContexts` strings were repointed accordingly.
+      Behaviour-preserving: suite 87/87, all 113 public symbols present, documented, and
+      `Protected`.
 
 ## Phase 4 — Release & distribution
 

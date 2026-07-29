@@ -17,7 +17,6 @@
 (*Begin PureComplexes Package*)
 
 
-BeginPackage["ECGrav`PureComplexes`"];
 
 
 (* ::Title:: *)
@@ -32,22 +31,22 @@ BeginPackage["ECGrav`PureComplexes`"];
 (*PureComplexes Private*)
 
 
-Begin["`Private`"] (* Begin private context *)
 
 
 (* Private helper messages ------------------------------------------------------
    Error messages for the internal connected-complex automorphism/stabilizer
    helpers (SimplicialComplexAutomorphismGroupOrderConn, PureComplexAutomorphismGroupOrderConn,
    PureComplexFacetAutomorphismGroupOrderConn, CliqueFacetStabilizerGroupOrderConn,
-   CliqueFacetAutomorphismGroupOrderConn). These live in this subpackage's Private
-   context and are NOT public: the public non-Conn functions call them on each
-   already-connected component. The messages are defensive diagnostics only. *)
+   CliqueFacetAutomorphismGroupOrderConn). Being undeclared (no usage message), these
+   resolve into the package-private ECGrav`Private` context and are NOT public: the
+   public non-Conn functions call them on each already-connected component. The messages
+   are defensive diagnostics only. *)
 
-ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected complex of the form SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List].";
-ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexAutomorphismGroupOrderConn[facetsLst_List].";
-ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List].";
-ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetStabilizerGroupOrderConn[facetsLst_List].";
-ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetAutomorphismGroupOrderConn[facetsLst_List].";
+SimplicialComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected complex of the form SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List].";
+PureComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexAutomorphismGroupOrderConn[facetsLst_List].";
+PureComplexFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List].";
+CliqueFacetStabilizerGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetStabilizerGroupOrderConn[facetsLst_List].";
+CliqueFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetAutomorphismGroupOrderConn[facetsLst_List].";
 
 
 (* ::Chapter:: *)
@@ -67,18 +66,18 @@ ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn::argerr="Inte
 
 
 (* Primary Pattern *)
-ECGrav`FacetIncidenceMatrix[facetsLst_List]:=
+FacetIncidenceMatrix[facetsLst_List]:=
 With[{facetOrder=Length[facetsLst],vlist=DeleteDuplicates[Flatten[facetsLst]]},
 	Table[Table[If[MemberQ[i,j],1,0],{j,vlist}],{i,facetsLst}]
 ];
 
 (* Overload Pattern *)
-ECGrav`FacetIncidenceMatrix[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
-	ECGrav`FacetIncidenceMatrix[clqs]
+FacetIncidenceMatrix[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
+	FacetIncidenceMatrix[clqs]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`FacetIncidenceMatrix[args___]:=(Message[ECGrav`FacetIncidenceMatrix::argerr, args];
+FacetIncidenceMatrix[args___]:=(Message[FacetIncidenceMatrix::argerr, args];
 $Failed);
 
 
@@ -87,7 +86,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FacetAdjacencyMatrix[facetsLst_List]:=Module[{clqOrder=Length[facetsLst],facetAdjMat=DiagonalMatrix[Length/@facetsLst]},
+FacetAdjacencyMatrix[facetsLst_List]:=Module[{clqOrder=Length[facetsLst],facetAdjMat=DiagonalMatrix[Length/@facetsLst]},
 Do[
 Do[
 facetAdjMat[[i,j]]=facetAdjMat[[j,i]]=Length[Intersection[facetsLst[[i]],facetsLst[[j]]]]
@@ -97,12 +96,12 @@ facetAdjMat
 ];
 
 (* Overload Pattern *)
-ECGrav`FacetAdjacencyMatrix[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
-ECGrav`FacetAdjacencyMatrix[clqs]
+FacetAdjacencyMatrix[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
+FacetAdjacencyMatrix[clqs]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`FacetAdjacencyMatrix[args___]:=(Message[ECGrav`FacetAdjacencyMatrix::argerr, args];
+FacetAdjacencyMatrix[args___]:=(Message[FacetAdjacencyMatrix::argerr, args];
 $Failed);
 
 
@@ -111,12 +110,12 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`GraphFromCliques[clqs_List]:=With[{vertexlist=DeleteDuplicates[Flatten[clqs]],edgelist=UndirectedEdge@@@(DeleteDuplicates[Flatten[Subsets[Sort[#],{2}]&/@clqs,1]])},
+GraphFromCliques[clqs_List]:=With[{vertexlist=DeleteDuplicates[Flatten[clqs]],edgelist=UndirectedEdge@@@(DeleteDuplicates[Flatten[Subsets[Sort[#],{2}]&/@clqs,1]])},
 Graph[vertexlist,edgelist]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GraphFromCliques[args___]:=(Message[ECGrav`GraphFromCliques::argerr, args];
+GraphFromCliques[args___]:=(Message[GraphFromCliques::argerr, args];
 $Failed);
 
 
@@ -125,13 +124,13 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`GraphFromFacetIncidence[incidenceMat_List/;MatrixQ[incidenceMat]]:=
+GraphFromFacetIncidence[incidenceMat_List/;MatrixQ[incidenceMat]]:=
 With[{clqsLst=Table[Pick[Range[Length[incidenceMat[[1]]]],i,1],{i,incidenceMat}]},
-ECGrav`GraphFromCliques[clqsLst]
+GraphFromCliques[clqsLst]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GraphFromFacetIncidence[args___]:=(Message[ECGrav`GraphFromFacetIncidence::argerr, args];
+GraphFromFacetIncidence[args___]:=(Message[GraphFromFacetIncidence::argerr, args];
 $Failed);
 
 
@@ -140,13 +139,13 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CliquesFromFacetIncidence[incidenceMat_List/;MatrixQ[incidenceMat]]:=
+CliquesFromFacetIncidence[incidenceMat_List/;MatrixQ[incidenceMat]]:=
 With[{clqsLst=Table[Pick[Range[Length[incidenceMat[[1]]]],i,1],{i,incidenceMat}]},
 clqsLst
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliquesFromFacetIncidence[args___]:=(Message[ECGrav`CliquesFromFacetIncidence::argerr, args];
+CliquesFromFacetIncidence[args___]:=(Message[CliquesFromFacetIncidence::argerr, args];
 $Failed);
 
 
@@ -155,7 +154,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`ComplexFromFacetLabeledVertexList[facetLabeledVertices_List]:=
+ComplexFromFacetLabeledVertexList[facetLabeledVertices_List]:=
 With[{facetLabels=DeleteDuplicates[Flatten[facetLabeledVertices]],cmlxAsn=<|Table[i->facetLabeledVertices[[i]],{i,1,Length[facetLabeledVertices]}]|>},
 Sort[
 	Sort/@Table[
@@ -167,7 +166,7 @@ Sort[
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ComplexFromFacetLabeledVertexList[args___]:=(Message[ECGrav`ComplexFromFacetLabeledVertexList::argerr, args];
+ComplexFromFacetLabeledVertexList[args___]:=(Message[ComplexFromFacetLabeledVertexList::argerr, args];
 $Failed);
 
 
@@ -176,7 +175,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FacetLabeledVertexListFromComplex[facetsLst_List]:=
+FacetLabeledVertexListFromComplex[facetsLst_List]:=
 With[{vlist=DeleteDuplicates[Flatten[facetsLst]],
 cmlxAsn=<|Table[i->facetsLst[[i]],{i,1,Length[facetsLst]}]|>},
 (*ReverseSort[Table[Keys[Select[cmlxAsn,MemberQ[#,v]&]],{v,vlist}]]*)
@@ -185,7 +184,7 @@ GatherBy[ReverseSortBy[Table[Keys[Select[cmlxAsn,MemberQ[#,v]&]],{v,vlist}],Leng
 ];
 
 (* Catch-all Pattern *)
-ECGrav`FacetLabeledVertexListFromComplex[args___]:=(Message[ECGrav`FacetLabeledVertexListFromComplex::argerr, args];
+FacetLabeledVertexListFromComplex[args___]:=(Message[FacetLabeledVertexListFromComplex::argerr, args];
 $Failed);
 
 
@@ -194,10 +193,10 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`PureComplexQ[facets_List]:=If[Length[DeleteDuplicates[Length/@facets]]==1,True,False];
+PureComplexQ[facets_List]:=If[Length[DeleteDuplicates[Length/@facets]]==1,True,False];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexQ[args___]:=(Message[ECGrav`PureComplexQ::argerr, args];
+PureComplexQ[args___]:=(Message[PureComplexQ::argerr, args];
 $Failed);
 
 
@@ -206,12 +205,12 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`PureGraphQ[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
+PureGraphQ[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},
 If[Length[DeleteDuplicates[Map[Length,clqs]]]==1,True,False]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureGraphQ[args___]:=(Message[ECGrav`PureGraphQ::argerr, args];
+PureGraphQ[args___]:=(Message[PureGraphQ::argerr, args];
 $Failed);
 
 
@@ -220,7 +219,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CliqueComplexQ[facetsLst_List]:=
+CliqueComplexQ[facetsLst_List]:=
 (*Given a list of maximal cliques, it checks whether or not it passes the clique condition test*)
 Module[{threeSubsets=Subsets[facetsLst,{3}],fIsInAClique},
 Catch[If[Length[facetsLst]<3,Throw[True, "ECGravReturn$1"]];
@@ -229,7 +228,7 @@ AllTrue[threeSubsets,fIsInAClique[Union[Intersection[#[[1]],#[[2]]],Intersection
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueComplexQ[args___]:=(Message[ECGrav`CliqueComplexQ::argerr, args];
+CliqueComplexQ[args___]:=(Message[CliqueComplexQ::argerr, args];
 $Failed);
 
 
@@ -242,9 +241,9 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
+Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
-	Catch[If[i>size,Message[ECGrav`Sph::vtxnotfound, i];
+	Catch[If[i>size,Message[Sph::vtxnotfound, i];
 	Throw[{}, "ECGravReturn$2"]];
 	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$2"]];
 	If[size==0,Throw[{}, "ECGravReturn$2"]];
@@ -252,7 +251,7 @@ With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 ];
 
 (* Overload Pattern *)
-ECGrav`Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
+Sph[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
 	Catch[If[Length[Amat]==0,Throw[{}, "ECGravReturn$3"]];
 	dm=GraphDistanceMatrix[AdjacencyGraph[Amat]];
@@ -262,28 +261,28 @@ Module[{rowcolsToKeep,dm},
 ];
 
 (* Overload Pattern *)
-ECGrav`Sph[g_Graph,i_Integer]:=
+Sph[g_Graph,i_Integer]:=
 Module[{},
 	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$4"]];
-	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Sph::vtxnotfound, i];{}
+	If[MemberQ[VertexList[g],i]==False,Message[Sph::vtxnotfound, i];{}
 	];
 
 	Subgraph[g,AdjacencyList[g,i]], "ECGravReturn$4"]
 ];
 
 (* Overload Pattern *)
-ECGrav`Sph[g_Graph,i_Integer,r_Integer]:=
+Sph[g_Graph,i_Integer,r_Integer]:=
 With[{sphVertices=Select[VertexList[g],GraphDistance[g,i,#]==r&]},
 	
 	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$5"]];
-	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Sph::vtxnotfound, i];{}
+	If[MemberQ[VertexList[g],i]==False,Message[Sph::vtxnotfound, i];{}
 	];
 
 	Subgraph[g,sphVertices], "ECGravReturn$5"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`Sph[args___]:=(Message[ECGrav`Sph::argerr, args];
+Sph[args___]:=(Message[Sph::argerr, args];
 $Failed);
 
 
@@ -293,9 +292,9 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
+Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer]:=
 With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
-	Catch[If[i>size,Message[ECGrav`Bll::vtxnotfound, i];
+	Catch[If[i>size,Message[Bll::vtxnotfound, i];
 	Throw[{}, "ECGravReturn$6"]];
 	If[size==0,Throw[{}, "ECGravReturn$6"]];
 	If[rowcolsToKeep=={},Throw[{}, "ECGravReturn$6"]];
@@ -311,7 +310,7 @@ With[{size = Length[Amat],rowcolsToKeep=Flatten[Position[Amat[[i]],1]]},
 ];
 
 (* Overload Pattern *)
-ECGrav`Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
+Bll[Amat_List/;(SymmetricMatrixQ[Amat]&&SubsetQ[{0,1},Sort[DeleteDuplicates[Flatten[Amat]]]]),i_Integer,r_Integer]:=
 Module[{rowcolsToKeep,dm},
 	Catch[If[Length[Amat]==0,Throw[{}, "ECGravReturn$7"]];
 	dm=GraphDistanceMatrix[AdjacencyGraph[Amat]];
@@ -321,11 +320,11 @@ Module[{rowcolsToKeep,dm},
 ];
 
 (* Overload Pattern *)
-ECGrav`Bll[g_Graph,i_Integer]:=
+Bll[g_Graph,i_Integer]:=
 (*Unit ball in a graph g at vertex i*)
 With[{unitBallVertices=Union[{i},AdjacencyList[g,i]]},
 	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$8"]];
-	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Bll::vtxnotfound, i];{}
+	If[MemberQ[VertexList[g],i]==False,Message[Bll::vtxnotfound, i];{}
 	];
 
 Subgraph[g,unitBallVertices], "ECGravReturn$8"]
@@ -333,11 +332,11 @@ Subgraph[g,unitBallVertices], "ECGravReturn$8"]
 ];
 
 (* Overload Pattern *)
-ECGrav`Bll[g_Graph,i_Integer,r_Integer]:=
+Bll[g_Graph,i_Integer,r_Integer]:=
 (*Ball of radius r in a graph g at vertex i*)
 With[{ballVertices=Select[VertexList[g],GraphDistance[g,i,#]<=r&]},
 	Catch[If[VertexCount[g]==0,Throw[{}, "ECGravReturn$9"]];
-	If[MemberQ[VertexList[g],i]==False,Message[ECGrav`Bll::vtxnotfound, i];{}
+	If[MemberQ[VertexList[g],i]==False,Message[Bll::vtxnotfound, i];{}
 	];
 
 	Subgraph[g,Union[{i},ballVertices]], "ECGravReturn$9"]
@@ -345,7 +344,7 @@ With[{ballVertices=Select[VertexList[g],GraphDistance[g,i,#]<=r&]},
 ];
 
 (* Catch-all Pattern *)
-ECGrav`Bll[args___]:=(Message[ECGrav`Bll::argerr, args];
+Bll[args___]:=(Message[Bll::argerr, args];
 $Failed);
 
 
@@ -353,14 +352,14 @@ $Failed);
 (*Lnk*)
 
 
-ECGrav`Lnk[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),q_List/;Depth[q]==2]:=
+Lnk[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),q_List/;Depth[q]==2]:=
 (*Returns the link of the face q in the complex given by the list of facets facetsLst*)
 With[{link=Select[facetsLst,SubsetQ[#,q]&],rules=Table[i->Nothing,{i,q}]},
 	link/.rules
 ];
 
 (* Catch-all Pattern *)
-ECGrav`Lnk[args___]:=(Message[ECGrav`Lnk::argerr, args];
+Lnk[args___]:=(Message[Lnk::argerr, args];
 $Failed);
 
 
@@ -368,12 +367,12 @@ $Failed);
 (*Str*)
 
 
-ECGrav`Str[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),q_List/;Depth[q]==2]:=
+Str[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),q_List/;Depth[q]==2]:=
 (*Returns the link of the face q in the complex given by the list of facets facetsLst*)
 Select[facetsLst,SubsetQ[#,q]&];
 
 (* Catch-all Pattern *)
-ECGrav`Str[args___]:=(Message[ECGrav`Str::argerr, args];
+Str[args___]:=(Message[Str::argerr, args];
 $Failed);
 
 
@@ -386,11 +385,11 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`Deg[Amat_List,i_Integer]:=(*Given an adjacency matrix of a graph Amat, and a vertex i, it gives the degree of the vertex*)
+Deg[Amat_List,i_Integer]:=(*Given an adjacency matrix of a graph Amat, and a vertex i, it gives the degree of the vertex*)
 Total[Amat[[i]]];
 
 (* Catch-all Pattern *)
-ECGrav`Deg[args___]:=(Message[ECGrav`Deg::argerr, args];
+Deg[args___]:=(Message[Deg::argerr, args];
 $Failed);
 
 
@@ -399,17 +398,17 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`AvgDeg[Amat_List/;!GraphQ[Amat]]:=
+AvgDeg[Amat_List/;!GraphQ[Amat]]:=
 (*The average degree of a graph given as an adjacency matrix Amat*)
 (1/Length[Amat])*Total[Amat,2];
 
 (* Overload Pattern *)
-ECGrav`AvgDeg[g_Graph]:=
+AvgDeg[g_Graph]:=
 (*The average degree of a graph given as a graph object g*)
 (1/VertexCount[g])*Total[VertexDegree[g]];
 
 (* Catch-all Pattern *)
-ECGrav`AvgDeg[args___]:=(Message[ECGrav`AvgDeg::argerr, args];
+AvgDeg[args___]:=(Message[AvgDeg::argerr, args];
 $Failed);
 
 
@@ -418,20 +417,20 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FacetDeg[facetsLst_List,v_Integer]:=
+FacetDeg[facetsLst_List,v_Integer]:=
 (*Given a simplicial complex as a list facetsLst of facets and a vertex v, 
 it computes the facet degree (number of facets containing the vertex) *)
 Length[Select[facetsLst,MemberQ[#,v]&]];
 
 (* Overload Pattern *)
-ECGrav`FacetDeg[facetsLst_List]:=
+FacetDeg[facetsLst_List]:=
 (*Given a simplicial complex, it lists the facet degrees of all vertices  *)
 With[{vertices=Sort[DeleteDuplicates[Flatten[facetsLst]]]},
-ECGrav`FacetDeg[facetsLst,#]&/@vertices
+FacetDeg[facetsLst,#]&/@vertices
 ];
 
 (* Catch-all Pattern *)
-ECGrav`FacetDeg[args___]:=(Message[ECGrav`FacetDeg::argerr, args];
+FacetDeg[args___]:=(Message[FacetDeg::argerr, args];
 $Failed);
 
 
@@ -440,7 +439,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HyperDeg[g_Graph,clq_List]:=
+HyperDeg[g_Graph,clq_List]:=
 (*Computes the degree of the clique clq given as a list of vertices. 
 Checks whether or not the input is a clique in the graph*)
 With[{spheres=Table[AdjacencyList[g,v],{v,clq}]},
@@ -449,26 +448,26 @@ Length[Intersection@@spheres], "ECGravReturn$10"]
 ];
 
 (* Overload Pattern *)
-ECGrav`HyperDeg[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),clq_List]:=
+HyperDeg[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),clq_List]:=
 (*Computes the degree of the clique clq given as a list of vertices. 
 Checks whether or not the input is a clique in the graph*)
 With[{g=AdjacencyGraph[Amat]},
 Catch[If[CompleteGraphQ[Subgraph[g,clq]]==False,Throw[Null, "ECGravReturn$11"]];
-ECGrav`HyperDeg[g,clq], "ECGravReturn$11"]
+HyperDeg[g,clq], "ECGravReturn$11"]
 ];
 
 (* Overload Pattern *)
-ECGrav`HyperDeg[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
+HyperDeg[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 	Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1}),clq_List]:=
 (*Computes the hyperdegree of the face clq given as a list of vertices. 
 Checks whether or not the input is a face in the graph*)
-With[{lnk=ECGrav`Lnk[facetsLst,clq]},
+With[{lnk=Lnk[facetsLst,clq]},
 	Catch[If[NoneTrue[facetsLst,SubsetQ[#,clq]&],Throw[Null, "ECGravReturn$12"]];
 	Total[Length/@lnk], "ECGravReturn$12"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`HyperDeg[args___]:=(Message[ECGrav`HyperDeg::argerr, args];
+HyperDeg[args___]:=(Message[HyperDeg::argerr, args];
 $Failed);
 
 
@@ -477,7 +476,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FVector[g_Graph]:=
+FVector[g_Graph]:=
 (*Computes the f-vector of the graph g which is the vector {f0,f1,...} of 
 the number of vertices, number of edges, etc. *)
 With[{n0=VertexCount[g],n1=EdgeCount[g],maxClqs=FindClique[g,\[Infinity],All]},
@@ -488,7 +487,7 @@ With[{n0=VertexCount[g],n1=EdgeCount[g],maxClqs=FindClique[g,\[Infinity],All]},
 ];
 
 (* Overload Pattern *)
-ECGrav`FVector[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1})]:=
+FVector[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1})]:=
 (*Computes the f-vector of the graph given by its adjacency matrix Amat which is the 
 vector {f0,f1,...} of the number of vertices, number of edges, etc. *)
 With[{n0=Length[Amat],n1=Total[Amat,2]/2,maxClqs=FindClique[AdjacencyGraph[Amat],\[Infinity],All]},
@@ -497,7 +496,7 @@ Join[{n0,n1},Table[Length[Union@@(Subsets[#,{q}]&/@maxClqs)],{q,3,Max[Length/@ma
 ];
 
 (* Overload Pattern *)
-ECGrav`FVector[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
+FVector[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 	Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1})]:=
 (*Computes the hyperdegree of the face clq given as a list of vertices. 
 Checks whether or not the input is a face in the graph*)
@@ -507,7 +506,7 @@ Join[{n0},Table[Length[Union@@(Subsets[#,{q}]&/@facetsLst)],{q,2,maxFacetSize}]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`FVector[args___]:=(Message[ECGrav`FVector::argerr, args];
+FVector[args___]:=(Message[FVector::argerr, args];
 $Failed);
 
 
@@ -516,7 +515,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`GVolume[Amat_List,Dmat_List,r_Integer,i_Integer]:=
+GVolume[Amat_List,Dmat_List,r_Integer,i_Integer]:=
 (*Volume of the ball in the graph with adjacency matrix Amat, where the distance 
 between nodes is given by Dmat, centered at node i and having radius r*)
 With[{n=Length[Amat],inball=Table[If[Dmat[[i,j]]<=r,1,0],{j,n}]},
@@ -524,7 +523,7 @@ Total[inball]-1
 ];
 
 (* Overload Pattern *)
-ECGrav`GVolume[g_Graph,Dmat_List,r_Integer,i_Integer]:=
+GVolume[g_Graph,Dmat_List,r_Integer,i_Integer]:=
 (*Volume of the ball in the graph with adjacency matrix Amat, where the distance 
 between nodes is given by Dmat, centered at node i and having radius r*)
 With[{n=VertexCount[g],inball=Table[If[Dmat[[i,j]]<=r,1,0],{j,n}]},
@@ -532,7 +531,7 @@ Total[inball]-1
 ];
 
 (* Overload Pattern *)
-ECGrav`GVolume[Amat_List,r_Integer,i_Integer]:=
+GVolume[Amat_List,r_Integer,i_Integer]:=
 (*Volume of the ball in the graph with adjacency matrix Amat, centered at node i 
 and having radius r*)
 With[{n=Length[Amat],dmat=GraphDistanceMatrix[AdjacencyGraph[Amat]]},
@@ -540,7 +539,7 @@ Total[Table[If[dmat[[i,j]]<=r,1,0],{j,n}]]-1
 ];
 
 (* Overload Pattern *)
-ECGrav`GVolume[g_Graph,r_Integer,i_Integer]:=
+GVolume[g_Graph,r_Integer,i_Integer]:=
 (*Volume of the ball in the graph with adjacency matrix Amat, centered at node i 
 and having radius r*)
 With[{n=VertexCount[g],dmat=GraphDistanceMatrix[g]},
@@ -548,7 +547,7 @@ Total[Table[If[dmat[[i,j]]<=r,1,0],{j,n}]]-1
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GVolume[args___]:=(Message[ECGrav`GVolume::argerr, args];
+GVolume[args___]:=(Message[GVolume::argerr, args];
 $Failed);
 
 
@@ -557,7 +556,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`KFaceDistance[facets_List/;Depth[facets]==3,clq1_List/;Depth[clq1]==2,clq2_List/;Depth[clq2]==2]:=
+KFaceDistance[facets_List/;Depth[facets]==3,clq1_List/;Depth[clq1]==2,clq2_List/;Depth[clq2]==2]:=
 
 (*Given a list of maximal cliques (facets) of a clique complex or a graph and two equal
  cardinality faces, clq1 and clq2 of cardinality d in the graph,  
@@ -590,7 +589,7 @@ GraphDistance[AdjacencyGraph[clqGraphAmat],pos1,pos2], "ECGravReturn$16"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`KFaceDistance[args___]:=(Message[ECGrav`KFaceDistance::argerr, args];
+KFaceDistance[args___]:=(Message[KFaceDistance::argerr, args];
 $Failed);
 
 
@@ -599,7 +598,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`KFaceDistanceMatrix[facets_List, facedim_Integer]:=
+KFaceDistanceMatrix[facets_List, facedim_Integer]:=
 (*Given a list of maximal cliques (facets) of a clique complex or a graph and 
 dimensionality clqdim, this method computes the clique distance matrix between 
 every pair of faces of cardinality clqdim, where each path steps on only 
@@ -610,7 +609,7 @@ bigger clique and 0 otherwise. *)
 
 Module[{dests,clqGraphAmat},
 
-Catch[If[facedim==1,Throw[GraphDistanceMatrix[ECGrav`GraphFromCliques[facets]], "ECGravReturn$17"]];
+Catch[If[facedim==1,Throw[GraphDistanceMatrix[GraphFromCliques[facets]], "ECGravReturn$17"]];
 
 dests=Union@@(Subsets[#,{facedim}]&/@facets);
 
@@ -628,7 +627,7 @@ GraphDistanceMatrix[AdjacencyGraph[clqGraphAmat]], "ECGravReturn$17"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`KFaceDistanceMatrix[args___]:=(Message[ECGrav`KFaceDistanceMatrix::argerr, args];
+KFaceDistanceMatrix[args___]:=(Message[KFaceDistanceMatrix::argerr, args];
 $Failed);
 
 
@@ -637,7 +636,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`KpathConnectedComponents[facets_List,k_Integer]:=
+KpathConnectedComponents[facets_List,k_Integer]:=
 
 (*(*****************************)
 (* Last Updated: 01/17/2026  *)
@@ -653,7 +652,7 @@ connected if they are contained in a bigger face. *)
 
 Module[{tooSmallFacets,isolated,destinations,clqGraphAmat},
 
-Catch[If[k==1,Throw[ConnectedComponents[ECGrav`GraphFromCliques[facets]], "ECGravReturn$18"]];
+Catch[If[k==1,Throw[ConnectedComponents[GraphFromCliques[facets]], "ECGravReturn$18"]];
 
 tooSmallFacets=Select[facets,Length[#]<=k&];
 isolated={#}&/@
@@ -680,13 +679,13 @@ Join[
 ];
 
 (* Overload Pattern *)
-ECGrav`KpathConnectedComponents[g_Graph,k_Integer]:=
+KpathConnectedComponents[g_Graph,k_Integer]:=
 With[{clqs=FindClique[g,\[Infinity],All]},
-	ECGrav`KpathConnectedComponents[clqs,k]
+	KpathConnectedComponents[clqs,k]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`KpathConnectedComponents[args___]:=(Message[ECGrav`KpathConnectedComponents::argerr, args];
+KpathConnectedComponents[args___]:=(Message[KpathConnectedComponents::argerr, args];
 $Failed);
 
 
@@ -695,16 +694,16 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`ConnectedComplexComponents[facelst_List]:=
+ConnectedComplexComponents[facelst_List]:=
 (*Given an input simplicial complex as a list of facets, it gives a list of simplicial
  complexes which are connected. 
  E.g.ECGrav`ConnectedComplexComponents[{{1,2},{3,4}}] = {{{1,2}},{{3,4}}} *)
-With[{connectedvertices=ConnectedComponents[ECGrav`GraphFromCliques[facelst]]},
+With[{connectedvertices=ConnectedComponents[GraphFromCliques[facelst]]},
 Table[Select[facelst,SubsetQ[i,#]&],{i,connectedvertices}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ConnectedComplexComponents[args___]:=(Message[ECGrav`ConnectedComplexComponents::argerr, args];
+ConnectedComplexComponents[args___]:=(Message[ConnectedComplexComponents::argerr, args];
 $Failed);
 
 
@@ -713,7 +712,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FractionInLargestComponent[g_Graph]:=
+FractionInLargestComponent[g_Graph]:=
 (*
 (*Notes: *)
 (*Given a graph, it computes the ratio of the number of vertices in the largest 
@@ -723,10 +722,10 @@ largestComponentLength/numV
 ];
 
 (* Overload Pattern *)
-ECGrav`FractionInLargestComponent[amat_List]:=ECGrav`FractionInLargestComponent[AdjacencyGraph[amat]];
+FractionInLargestComponent[amat_List]:=FractionInLargestComponent[AdjacencyGraph[amat]];
 
 (* Catch-all Pattern *)
-ECGrav`FractionInLargestComponent[args___]:=(Message[ECGrav`FractionInLargestComponent::argerr, args];
+FractionInLargestComponent[args___]:=(Message[FractionInLargestComponent::argerr, args];
 $Failed);
 
 
@@ -735,28 +734,28 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FractionInLargestKPathComponent[g_Graph,k_Integer]:=
+FractionInLargestKPathComponent[g_Graph,k_Integer]:=
 (*
 (*Given a graph, it computes the ratio of the number of vertices in the largest 
 connected component to the total number of vertices in the graph.  *)*)
-With[{kpcomps=ECGrav`KpathConnectedComponents[g,k]},
+With[{kpcomps=KpathConnectedComponents[g,k]},
 Max[Length/@kpcomps]/VertexCount[g]
 ];
 
 (* Overload Pattern *)
-ECGrav`FractionInLargestKPathComponent[g_Graph]:=With[{k=Length@@FindClique[g]},
+FractionInLargestKPathComponent[g_Graph]:=With[{k=Length@@FindClique[g]},
 Catch[If[k==1,Throw[1/VertexCount[g], "ECGravReturn$19"]];(*graph is fully isolated*)
-ECGrav`FractionInLargestKPathComponent[g,k-1], "ECGravReturn$19"]
+FractionInLargestKPathComponent[g,k-1], "ECGravReturn$19"]
 ];
 
 (* Overload Pattern *)
-ECGrav`FractionInLargestKPathComponent[amat_List,k_Integer]:=ECGrav`FractionInLargestKPathComponent[AdjacencyGraph[amat],k];
+FractionInLargestKPathComponent[amat_List,k_Integer]:=FractionInLargestKPathComponent[AdjacencyGraph[amat],k];
 
 (* Overload Pattern *)
-ECGrav`FractionInLargestKPathComponent[amat_List]:=ECGrav`FractionInLargestKPathComponent[AdjacencyGraph[amat]];
+FractionInLargestKPathComponent[amat_List]:=FractionInLargestKPathComponent[AdjacencyGraph[amat]];
 
 (* Catch-all Pattern *)
-ECGrav`FractionInLargestKPathComponent[args___]:=(Message[ECGrav`FractionInLargestKPathComponent::argerr, args];
+FractionInLargestKPathComponent[args___]:=(Message[FractionInLargestKPathComponent::argerr, args];
 $Failed);
 
 
@@ -765,10 +764,10 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CliqueOrder[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},Length[clqs]];
+CliqueOrder[g_Graph]:=With[{clqs=FindClique[g,\[Infinity],All]},Length[clqs]];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueOrder[args___]:=(Message[ECGrav`CliqueOrder::argerr, args];
+CliqueOrder[args___]:=(Message[CliqueOrder::argerr, args];
 $Failed);
 
 
@@ -777,10 +776,10 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`FacetOrder[facetsLst_List]:=Length[facetsLst];
+FacetOrder[facetsLst_List]:=Length[facetsLst];
 
 (* Catch-all Pattern *)
-ECGrav`FacetOrder[args___]:=(Message[ECGrav`FacetOrder::argerr, args];
+FacetOrder[args___]:=(Message[FacetOrder::argerr, args];
 $Failed);
 
 
@@ -789,14 +788,14 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`EulerChi[facetsLst_List/;(Depth[facetsLst]==3&&Max[facetsLst]>1)]:=
+EulerChi[facetsLst_List/;(Depth[facetsLst]==3&&Max[facetsLst]>1)]:=
 (*(*****************************)
 (* Last Updated: 04/02/2026  *)
 (*****************************)*)
 
 (*Given the list of facets of a simplicial complex (not necessarily 
 clique complex), it finds the Euler Characteristic by counting all simplices.*)
-Module[{connectedComponents=ECGrav`ConnectedComplexComponents[facetsLst],sortedfacetsLst,maxDim,altSignVector,fVector},
+Module[{connectedComponents=ConnectedComplexComponents[facetsLst],sortedfacetsLst,maxDim,altSignVector,fVector},
 
 	Catch[If[Length[facetsLst]==1,Throw[1, "ECGravReturn$20"]];
 	If[Length[connectedComponents]==1,
@@ -805,26 +804,26 @@ Module[{connectedComponents=ECGrav`ConnectedComplexComponents[facetsLst],sortedf
 		altSignVector=Table[(-1)^(i+1),{i,1,maxDim}];
 		fVector=Table[Length[DeleteDuplicates[Join@@(Subsets[#,{i}]&/@sortedfacetsLst)]],{i,1,maxDim}];
 		Throw[altSignVector . fVector, "ECGravReturn$20"],
-		Throw[Total[ECGrav`EulerChi[#]&/@connectedComponents], "ECGravReturn$20"]
+		Throw[Total[EulerChi[#]&/@connectedComponents], "ECGravReturn$20"]
 	], "ECGravReturn$20"]
 ];
 
 (* Overload Pattern *)
-ECGrav`EulerChi[Amat_List/;(Depth[Amat]==3&&Max[Amat]<=1)]:=
+EulerChi[Amat_List/;(Depth[Amat]==3&&Max[Amat]<=1)]:=
 (*Given adjacency matrix of a graph, it computes its Euler Characteristic by counting all simplices.*)
 With[{maxCliques=FindClique[AdjacencyGraph[Amat],\[Infinity],All]},
 Catch[If[Amat=={{1}},Throw[1, "ECGravReturn$21"]];
-ECGrav`EulerChi[maxCliques], "ECGravReturn$21"]];
+EulerChi[maxCliques], "ECGravReturn$21"]];
 
 (* Overload Pattern *)
-ECGrav`EulerChi[g_Graph]:=
+EulerChi[g_Graph]:=
 (*Given a graph it computes its Euler Characteristic by counting all simplices.*)
 With[{maxCliques=FindClique[g,\[Infinity],All]},
-ECGrav`EulerChi[maxCliques]
+EulerChi[maxCliques]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`EulerChi[args___]:=(Message[ECGrav`EulerChi::argerr, args];
+EulerChi[args___]:=(Message[EulerChi::argerr, args];
 $Failed);
 
 
@@ -833,7 +832,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`RmsPurity[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
+RmsPurity[facetsLst_List/;(Depth[facetsLst]==3&&Length[facetsLst]>=1&&
 	Sort[DeleteDuplicates[Flatten[facetsLst]]]!={0,1})]:=
 (*Given a complex, it computes its mean purity = 1/|F| sum_{fi,fj}(dim(f_i)-dim(fj))^2, 
 where fi, fj run over all facets. If there's just one facet it 
@@ -841,7 +840,7 @@ outputs 0. *)
 If[Length[facetsLst]==1,0,StandardDeviation[Length/@facetsLst]]
 
 (* Overload Pattern *)
-ECGrav`RmsPurity[g_Graph]:=
+RmsPurity[g_Graph]:=
 (*Given a graph, it computes its mean purity = 1/|F| sum_{fi,fj}(dim(f_i)-dim(fj))^2, 
 where fi, fj run over all maximal cliques. If there's just one maximal clique it 
 outputs 0. *)
@@ -851,11 +850,11 @@ With[{clqsLst=FindClique[g,\[Infinity],All]},
 ];
 
 (* Overload Pattern *)
-ECGrav`RmsPurity[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1})]:=
-ECGrav`RmsPurity[AdjacencyGraph[Amat]];
+RmsPurity[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1})]:=
+RmsPurity[AdjacencyGraph[Amat]];
 
 (* Catch-all Pattern *)
-ECGrav`RmsPurity[args___]:=(Message[ECGrav`RmsPurity::argerr, args];
+RmsPurity[args___]:=(Message[RmsPurity::argerr, args];
 $Failed);
 
 
@@ -864,7 +863,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`Branchedness[g_Graph,n_Integer]:=
+Branchedness[g_Graph,n_Integer]:=
 (*
 (*Given a graph and a dimension n, it computes the rms value of the degree of 
 the n facets, minus 3/2. This quantity will be zero for pseudo manifolds 
@@ -875,31 +874,31 @@ Module[{clqsLst=FindClique[g,\[Infinity],All],maxDim,nfaces},
 Catch[maxDim=Max[Length/@clqsLst];
 nfaces=Union@@(Subsets[#,{n}]&/@clqsLst);
 If[maxDim<=1,Throw[2, "ECGravReturn$23"]];(*a bunch of isolated vertices have degree 0 each so the output would be 2*)
-Mean[((ECGrav`HyperDeg[g,#]&/@nfaces-3/2)^2-1/4)], "ECGravReturn$23"]
+Mean[((HyperDeg[g,#]&/@nfaces-3/2)^2-1/4)], "ECGravReturn$23"]
 ];
 
 (* Overload Pattern *)
-ECGrav`Branchedness[g_Graph]:=
+Branchedness[g_Graph]:=
 With[{dMad=Length@@FindClique[g]},
-	ECGrav`Branchedness[g,dMad-1]
+	Branchedness[g,dMad-1]
 ];
 
 (* Overload Pattern: adjacency-matrix input *)
-ECGrav`Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]]),n_Integer]:=
-	ECGrav`Branchedness[AdjacencyGraph[amat],n];
+Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]]),n_Integer]:=
+	Branchedness[AdjacencyGraph[amat],n];
 
 (* Overload Pattern: adjacency-matrix input *)
-ECGrav`Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]])]:=
-	ECGrav`Branchedness[AdjacencyGraph[amat]];
+Branchedness[amat_List/;(SymmetricMatrixQ[amat]&&SubsetQ[{0,1},DeleteDuplicates[Flatten[amat]]])]:=
+	Branchedness[AdjacencyGraph[amat]];
 
 (* Overload Pattern: facet-list input, interpreted as a clique complex *)
-ECGrav`Branchedness[facetsLst_List,n_Integer]:=ECGrav`Branchedness[ECGrav`GraphFromCliques[facetsLst],n];
+Branchedness[facetsLst_List,n_Integer]:=Branchedness[GraphFromCliques[facetsLst],n];
 
 (* Overload Pattern: facet-list input, interpreted as a clique complex *)
-ECGrav`Branchedness[facetsLst_List]:=ECGrav`Branchedness[ECGrav`GraphFromCliques[facetsLst]];
+Branchedness[facetsLst_List]:=Branchedness[GraphFromCliques[facetsLst]];
 
 (* Catch-all Pattern *)
-ECGrav`Branchedness[args___]:=(Message[ECGrav`Branchedness::argerr, args];
+Branchedness[args___]:=(Message[Branchedness::argerr, args];
 $Failed);
 
 
@@ -912,7 +911,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`AvgKDim[g_Graph]:=
+AvgKDim[g_Graph]:=
 (*Computes the inductive (Knill) dimension of a graph as defined by Oliver Knill.*)
 Block[{n,ne,isolatedVertices,ni,components,joinComponents,joinCount,cliques,temp,clqAssoc,numClqSizes,w,gm,degassoc,iassoc,rassoc,resultassoc,ComputeDeg,ComputeI,ComputeR,curClqs,curClqFaces,curI,curR,curval,curdeg,dimg},
 Catch[n=VertexCount[g];
@@ -925,12 +924,12 @@ If[ne==n (n-1)/2-1, Throw[n-2, "ECGravReturn$24"]];
 isolatedVertices=Select[VertexList[g],VertexDegree[g,#]==0&];
 ni=Length[isolatedVertices];
 If[ni>0,
-Throw[ECGrav`AvgKDim[Subgraph[g,Complement[VertexList[g],isolatedVertices]]]*(n-ni)/n, "ECGravReturn$24"]
+Throw[AvgKDim[Subgraph[g,Complement[VertexList[g],isolatedVertices]]]*(n-ni)/n, "ECGravReturn$24"]
 ];
 If[TreeGraphQ[g],Throw[1, "ECGravReturn$24"]];
 
 components=ConnectedGraphComponents[g];
-If[Length[components]>1,Throw[Sum[VertexCount[components[[i]]]*ECGrav`AvgKDim[components[[i]]],{i,Length[components]}]/n, "ECGravReturn$24"]];
+If[Length[components]>1,Throw[Sum[VertexCount[components[[i]]]*AvgKDim[components[[i]]],{i,Length[components]}]/n, "ECGravReturn$24"]];
 
 (************************************************************
 Check if the graph is a join of subgraphs.
@@ -938,7 +937,7 @@ Check if the graph is a join of subgraphs.
 joinComponents=ConnectedGraphComponents[GraphComplement[g]];
 joinCount=Length[joinComponents];
 
-If[joinCount>1,Throw[joinCount-1+Sum[ECGrav`AvgKDim[Subgraph[g,VertexList[i]]],{i,joinComponents}], "ECGravReturn$24"]
+If[joinCount>1,Throw[joinCount-1+Sum[AvgKDim[Subgraph[g,VertexList[i]]],{i,joinComponents}], "ECGravReturn$24"]
 ];
 
 
@@ -1009,10 +1008,10 @@ dimg, "ECGravReturn$24"]
 ];
 
 (* Overload Pattern *)
-ECGrav`AvgKDim[Amat_List]:=With[{g=AdjacencyGraph[Amat]},ECGrav`AvgKDim[g]];
+AvgKDim[Amat_List]:=With[{g=AdjacencyGraph[Amat]},AvgKDim[g]];
 
 (* Catch-all Pattern *)
-ECGrav`AvgKDim[args___]:=(Message[ECGrav`AvgKDim::argerr, args];
+AvgKDim[args___]:=(Message[AvgKDim::argerr, args];
 $Failed);
 
 
@@ -1021,7 +1020,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`SpectralDim[Amat_List/;ArrayDepth[Amat]>1,s_Integer/;s>1]:=
+SpectralDim[Amat_List/;ArrayDepth[Amat]>1,s_Integer/;s>1]:=
 (* Spectral dimension for all nodes at step s *)
 Module[{n=Length[Amat],AmatPows= MatrixPower[Amat,s],totTable,Ps,avgP},
 
@@ -1034,14 +1033,14 @@ avgP=Total[Ps]/n;
 ];
 
 (* Overload Pattern *)
-ECGrav`SpectralDim[g_Graph,s_Integer/;s>1]:=
+SpectralDim[g_Graph,s_Integer/;s>1]:=
 (* Spectral dimension for all nodes at step s *)
 With[{Amat=Normal[AdjacencyMatrix[g]]},
-	ECGrav`SpectralDim[Amat,s]
+	SpectralDim[Amat,s]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`SpectralDim[args___]:=(Message[ECGrav`SpectralDim::argerr, args];
+SpectralDim[args___]:=(Message[SpectralDim::argerr, args];
 $Failed);
 
 
@@ -1050,48 +1049,48 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`HausdorffDim[Amat_List/;ArrayDepth[Amat]>1,Dmat_List, s_Integer/;s>1]:=
+HausdorffDim[Amat_List/;ArrayDepth[Amat]>1,Dmat_List, s_Integer/;s>1]:=
 (* Hausdorff dimension for the first node at step s when the distance between nodes is 
 given by the matrix Dmat*)
 Module[{n=Length[Amat],vol,result},
-vol=Sum[ECGrav`GVolume[Amat,Dmat,s,i],{i,n}]/n; (*The average volume over all nodes*)
+vol=Sum[GVolume[Amat,Dmat,s,i],{i,n}]/n; (*The average volume over all nodes*)
 (*vol=GVolume[Amat,Dmat,s,1];(*Vertex 1 picked at random*)*)
 result=Log[vol*1.0]/Log[s*1.0];
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`HausdorffDim[g_Graph,Dmat_List, s_Integer/;s>1]:=
+HausdorffDim[g_Graph,Dmat_List, s_Integer/;s>1]:=
 (* Hausdorff dimension for the first node at step s when the distance between nodes is 
 given by the matrix Dmat*)
 Module[{n=VertexCount[g],vol,result},
-vol=Sum[ECGrav`GVolume[g,Dmat,s,i],{i,n}]/n; (*The average volume over all nodes*)
+vol=Sum[GVolume[g,Dmat,s,i],{i,n}]/n; (*The average volume over all nodes*)
 (*vol=GVolume[Amat,Dmat,s,1];(*Vertex 1 picked at random*)*)
 result=Log[vol*1.0]/Log[s*1.0];
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`HausdorffDim[Amat_List/;ArrayDepth[Amat]>1,s_Integer/;s>1]:=
+HausdorffDim[Amat_List/;ArrayDepth[Amat]>1,s_Integer/;s>1]:=
 (* Hausdorff dimension for all nodes at step s *)
 Module[{n=Length[Amat],vol},
 n=Length[Amat];
-vol=Sum[ECGrav`GVolume[Amat,s,i],{i,n}]/n; (*The average volume over all nodes*)
+vol=Sum[GVolume[Amat,s,i],{i,n}]/n; (*The average volume over all nodes*)
 (*vol=GVolume[Amat,s,1]; (*Vertex 1 picked at random*) *)
 Log[vol*1.0]/Log[s*1.0]
 ];
 
 (* Overload Pattern *)
-ECGrav`HausdorffDim[g_Graph,s_Integer/;s>1]:=
+HausdorffDim[g_Graph,s_Integer/;s>1]:=
 (* Hausdorff dimension for all nodes at step s *)
 Module[{n=VertexCount[g],vol},
-vol=Sum[ECGrav`GVolume[g,s,i],{i,n}]/n; (*The average volume over all nodes*)
+vol=Sum[GVolume[g,s,i],{i,n}]/n; (*The average volume over all nodes*)
 (*vol=GVolume[Amat,s,1]; (*Vertex 1 picked at random*) *)
 Log[vol*1.0]/Log[s*1.0]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`HausdorffDim[args___]:=(Message[ECGrav`HausdorffDim::argerr, args];
+HausdorffDim[args___]:=(Message[HausdorffDim::argerr, args];
 $Failed);
 
 
@@ -1104,7 +1103,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`ClosedDGraphQ[g_Graph]:=
+ClosedDGraphQ[g_Graph]:=
 (*Outputs True if the clique complex of the graph g is a combinatorial manifold without
 boundary (a closed d-graph): the unit sphere of every vertex is recursively a closed d-graph,
 bottoming out at a single cycle (the 1-sphere) and at two isolated vertices (the 0-sphere).
@@ -1116,12 +1115,12 @@ numClqSizes=DeleteDuplicates[Length/@clqs];
 If[Length[numClqSizes]>1,Throw[False, "ECGravReturn$28"]];
 dim=numClqSizes[[1]];
 If[dim==2,Throw[PathGraphQ[g]&&!TreeGraphQ[g], "ECGravReturn$28"]];
-spheres=Table[ECGrav`Sph[g,i],{i,vlist}];
-AllTrue[spheres,ECGrav`ClosedDGraphQ[#]&], "ECGravReturn$28"]
+spheres=Table[Sph[g,i],{i,vlist}];
+AllTrue[spheres,ClosedDGraphQ[#]&], "ECGravReturn$28"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ClosedDGraphQ[args___]:=(Message[ECGrav`ClosedDGraphQ::argerr, args];
+ClosedDGraphQ[args___]:=(Message[ClosedDGraphQ::argerr, args];
 $Failed);
 
 
@@ -1130,18 +1129,18 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`DSphereQ[g_Graph]:=
+DSphereQ[g_Graph]:=
 (*Outputs True if the clique complex of the graph g is a combinatorial manifold homeomorphic
 to a sphere: a closed d-graph (see ClosedDGraphQ) whose clique complex additionally has the
 Euler characteristic of a sphere of the same dimension, chi = 1 + (-1)^d (d = dimension of the
 clique complex = one less than the largest clique). For surfaces this is exact -- only the
 2-sphere returns True, while a graph whose clique complex is a torus returns False; in
 dimension >= 3 the Euler-characteristic condition is necessary but not sufficient.*)
-If[!ECGrav`ClosedDGraphQ[g],False,
-	ECGrav`EulerChi[g]==1+(-1)^(Length[First[FindClique[g]]]-1)];
+If[!ClosedDGraphQ[g],False,
+	EulerChi[g]==1+(-1)^(Length[First[FindClique[g]]]-1)];
 
 (* Catch-all Pattern *)
-ECGrav`DSphereQ[args___]:=(Message[ECGrav`DSphereQ::argerr, args];
+DSphereQ[args___]:=(Message[DSphereQ::argerr, args];
 $Failed);
 
 
@@ -1150,7 +1149,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`DGraphQ[g_Graph]:=
+DGraphQ[g_Graph]:=
 (*Returns true of the graph is a geometric graph and false if not.*)
 Module[{n=VertexCount[g],vlist=VertexList[g],clqs=FindClique[g,\[Infinity],All],numClqSizes,dim,spheres},
 Catch[If[EdgeCount[g]==0,If[n<=2,Throw[True, "ECGravReturn$29"],Throw[False, "ECGravReturn$29"]]];
@@ -1159,12 +1158,12 @@ numClqSizes=DeleteDuplicates[Length/@clqs];
 If[Length[numClqSizes]>1,Throw[False, "ECGravReturn$29"]];
 dim=numClqSizes[[1]];
 If[dim==2,Throw[PathGraphQ[g], "ECGravReturn$29"]];
-spheres=Table[ECGrav`Sph[g,i],{i,vlist}];
-AllTrue[spheres,ECGrav`DGraphQ[#]&], "ECGravReturn$29"]
+spheres=Table[Sph[g,i],{i,vlist}];
+AllTrue[spheres,DGraphQ[#]&], "ECGravReturn$29"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`DGraphQ[args___]:=(Message[ECGrav`DGraphQ::argerr, args];
+DGraphQ[args___]:=(Message[DGraphQ::argerr, args];
 $Failed);
 
 
@@ -1173,26 +1172,26 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`DGraphBoundary[g_Graph]:=
+DGraphBoundary[g_Graph]:=
 (*Outputs the induced subgraph which is the boundary of the graph g. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
 Module[{vlist=VertexList[g],interiorPoints,bdryPoints},
 (*If[!DGraphQ[g],Return["Error! The graph is not geometric."]];*)
-Catch[interiorPoints=Select[vlist,ECGrav`ClosedDGraphQ[ECGrav`Sph[g,#]]&];(*interior vertices have a sphere link; ClosedDGraphQ preserves the original behaviour of this test (it was DSphereQ, which used to be the closed-manifold predicate)*)
+Catch[interiorPoints=Select[vlist,ClosedDGraphQ[Sph[g,#]]&];(*interior vertices have a sphere link; ClosedDGraphQ preserves the original behaviour of this test (it was DSphereQ, which used to be the closed-manifold predicate)*)
 bdryPoints=Complement[vlist,interiorPoints];
 Throw[Subgraph[g,bdryPoints], "ECGravReturn$30"], "ECGravReturn$30"]
 ];
 
 (* Overload Pattern *)
-ECGrav`DGraphBoundary[Amat_List]:=
+DGraphBoundary[Amat_List]:=
 (*Outputs the induced subgraph which is the boundary of the graph with adjacency matrix 
 Amat. The boudnary of a geometric graph is the induced subgraph over boundary nodes, i.e. those whose unit spheres are contractible, or paths. *)
-With[{bdryGraph=ECGrav`DGraphBoundary[AdjacencyGraph[Amat]]},
+With[{bdryGraph=DGraphBoundary[AdjacencyGraph[Amat]]},
 	Catch[If[VertexCount[bdryGraph]==0,Throw[{}, "ECGravReturn$31"]];
 	Normal[AdjacencyMatrix[bdryGraph]], "ECGravReturn$31"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`DGraphBoundary[args___]:=(Message[ECGrav`DGraphBoundary::argerr, args];
+DGraphBoundary[args___]:=(Message[DGraphBoundary::argerr, args];
 $Failed);
 
 
@@ -1201,7 +1200,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CombinatorialManifoldQ[facelst_List]:=
+CombinatorialManifoldQ[facelst_List]:=
 (*Given an input simplicial complex as a list of facets, it checks whether or not it is a combinatorial manifold. 
 Returns true if a combinatorial manifold and false if not.*)
 Module[{purity,codim1faces,links},
@@ -1215,17 +1214,17 @@ If[purity==1,
 If[Length[facelst]<=2,Throw[True, "ECGravReturn$32"],Throw[False, "ECGravReturn$32"]]
 ];
 If[purity==2,
-If[PathGraphQ[ECGrav`GraphFromCliques[facelst]],Throw[True, "ECGravReturn$32"],Throw[False, "ECGravReturn$32"]]
+If[PathGraphQ[GraphFromCliques[facelst]],Throw[True, "ECGravReturn$32"],Throw[False, "ECGravReturn$32"]]
 ];
-If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$32"]];(*the complex has to be connected*)
+If[Length[ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$32"]];(*the complex has to be connected*)
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]>2&],Throw[False, "ECGravReturn$32"]];
-links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
-AllTrue[links,ECGrav`CombinatorialManifoldQ[#]&], "ECGravReturn$32"]
+If[AnyTrue[codim1faces,HyperDeg[facelst,#]>2&],Throw[False, "ECGravReturn$32"]];
+links=Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
+AllTrue[links,CombinatorialManifoldQ[#]&], "ECGravReturn$32"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CombinatorialManifoldQ[args___]:=(Message[ECGrav`CombinatorialManifoldQ::argerr, args];
+CombinatorialManifoldQ[args___]:=(Message[CombinatorialManifoldQ::argerr, args];
 $Failed);
 
 
@@ -1234,7 +1233,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`ClosedCombinatorialManifoldQ[facelst_List]:=
+ClosedCombinatorialManifoldQ[facelst_List]:=
 (*Given an input pure simplicial complex as a list of facets, checks whether it is a
 combinatorial manifold without boundary (a closed combinatorial manifold): connected,
 pure, every codimension-1 face contained in exactly two facets, and every vertex link
@@ -1253,21 +1252,21 @@ If[purity==1,
 	If[Length[facelst]==2,Throw[True, "ECGravReturn$33"],Throw[False, "ECGravReturn$33"]]
 ];(*the only closed 0-manifold is S^0 = two points*)
 
-If[purity==2,Throw[With[{g=ECGrav`GraphFromCliques[facelst]},
+If[purity==2,Throw[With[{g=GraphFromCliques[facelst]},
 	If[PathGraphQ[g]&&!AcyclicGraphQ[g],True,False]], "ECGravReturn$33"]
 ];(*the only closed 1-manifold is a single cycle*)
 
-If[Length[ECGrav`ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$33"]];(*the complex has to be connected*)
+If[Length[ConnectedComplexComponents[facelst]]>1,Throw[False, "ECGravReturn$33"]];(*the complex has to be connected*)
 
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-If[AnyTrue[codim1faces,ECGrav`HyperDeg[facelst,#]!=2&],Throw[False, "ECGravReturn$33"]];(*closed: every ridge lies in exactly two facets*)
+If[AnyTrue[codim1faces,HyperDeg[facelst,#]!=2&],Throw[False, "ECGravReturn$33"]];(*closed: every ridge lies in exactly two facets*)
 
-links=ECGrav`Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
-AllTrue[links,ECGrav`ClosedCombinatorialManifoldQ[#]&], "ECGravReturn$33"]
+links=Lnk[facelst,{#}]&/@DeleteDuplicates[Flatten[facelst]];
+AllTrue[links,ClosedCombinatorialManifoldQ[#]&], "ECGravReturn$33"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ClosedCombinatorialManifoldQ[args___]:=(Message[ECGrav`ClosedCombinatorialManifoldQ::argerr, args];
+ClosedCombinatorialManifoldQ[args___]:=(Message[ClosedCombinatorialManifoldQ::argerr, args];
 $Failed);
 
 
@@ -1276,7 +1275,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CombinatorialSphereQ[facelst_List]:=
+CombinatorialSphereQ[facelst_List]:=
 (*Given an input pure simplicial complex as a list of facets, checks whether it is a
 combinatorial sphere. A combinatorial d-sphere is a closed combinatorial manifold
 (see ClosedCombinatorialManifoldQ) that additionally has the Euler characteristic of the
@@ -1287,13 +1286,13 @@ In dimension >= 3 the Euler-characteristic condition is necessary but not suffic
 is a homology-level filter. Returns True or False.*)
 Module[{purity},
 Catch[If[facelst=={},Throw[True, "ECGravReturn$34"]];(*The empty complex is the -1 sphere*)
-If[!ECGrav`ClosedCombinatorialManifoldQ[facelst],Throw[False, "ECGravReturn$34"]];(*a sphere is first of all a closed manifold*)
+If[!ClosedCombinatorialManifoldQ[facelst],Throw[False, "ECGravReturn$34"]];(*a sphere is first of all a closed manifold*)
 purity=Length[facelst[[1]]];
-ECGrav`EulerChi[facelst]==1+(-1)^(purity-1), "ECGravReturn$34"]
+EulerChi[facelst]==1+(-1)^(purity-1), "ECGravReturn$34"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CombinatorialSphereQ[args___]:=(Message[ECGrav`CombinatorialSphereQ::argerr, args];
+CombinatorialSphereQ[args___]:=(Message[CombinatorialSphereQ::argerr, args];
 $Failed);
 
 
@@ -1302,7 +1301,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`OrientableCombinatorialManifoldQ[inputfacetsLst_List]:=
+OrientableCombinatorialManifoldQ[inputfacetsLst_List]:=
 (*Checks whether or not a pseudo-combinatorial manifold given as a set of facets is 
 orientable. Does not check whether or not the input is a combinatorial pseudomanifold *)
 Module[{p=Length[inputfacetsLst[[1]]],q=Length[inputfacetsLst],facetsLst=Sort/@inputfacetsLst,orientations,RelativeOrientation,edgeList,graph,spanningtree,m1,m2,unexploredEdges},
@@ -1347,7 +1346,7 @@ AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientat
 
 
 (* Overload Pattern *)
-ECGrav`OrientableCombinatorialManifoldQ[g_Graph]:=
+OrientableCombinatorialManifoldQ[g_Graph]:=
 (*Checks whether or not the clique complex of the graph g is an orientable. 
 Does not check whether or not the input is a combinatorial pseudomanifold *)
 Module[{facetsLst=Sort/@FindClique[g,\[Infinity],All],p,q,orientations,RelativeOrientation,edgeList,graph,spanningtree,m1,m2,unexploredEdges},
@@ -1394,7 +1393,7 @@ AllTrue[unexploredEdges,RelativeOrientation[orientations[[Key[#[[1]]]]],orientat
 
 
 (* Catch-all Pattern *)
-ECGrav`OrientableCombinatorialManifoldQ[args___]:=(Message[ECGrav`OrientableCombinatorialManifoldQ::argerr, args];
+OrientableCombinatorialManifoldQ[args___]:=(Message[OrientableCombinatorialManifoldQ::argerr, args];
 $Failed);
 
 
@@ -1403,21 +1402,21 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CombinatorialBoundary[facelst_List]:=
+CombinatorialBoundary[facelst_List]:=
 (*Given an input simplicial complex as a list of facets, it returns the boundary. 
 It first checks whether or not the manifold is a combinatorial manifold and returns 
 $Failed if the complex is not a combinatorial manifold with a warning. *)
 Module[{purity=Length[facelst[[1]]],codim1faces},
 
-If[ECGrav`CombinatorialManifoldQ[facelst],
+If[CombinatorialManifoldQ[facelst],
 codim1faces=Union@@(Subsets[#,{purity-1}]&/@facelst);
-Select[codim1faces,ECGrav`HyperDeg[facelst,#]==1&],
-Message[ECGrav`CombinatorialBoundary::notmanifold];$Failed]
+Select[codim1faces,HyperDeg[facelst,#]==1&],
+Message[CombinatorialBoundary::notmanifold];$Failed]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CombinatorialBoundary[args___]:=(Message[ECGrav`CombinatorialBoundary::argerr, args];
+CombinatorialBoundary[args___]:=(Message[CombinatorialBoundary::argerr, args];
 $Failed);
 
 
@@ -1426,7 +1425,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CountHoles[g_Graph,k_Integer]:=
+CountHoles[g_Graph,k_Integer]:=
 (*Gives the number of k-holes, i.e., the kth Betti number of a graph. 
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@FindClique[g,Infinity,All]},
@@ -1434,7 +1433,7 @@ ResourceFunction["BettiNumbers"][simplices][[k]]
 ];
 
 (* Overload Pattern *)
-ECGrav`CountHoles[g_Graph]:=
+CountHoles[g_Graph]:=
 (*Gives the number of k-holes, i.e., the kth Betti number of a graph. 
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@FindClique[g,Infinity,All]},
@@ -1442,7 +1441,7 @@ ResourceFunction["BettiNumbers"][simplices]
 ];
 
 (* Overload Pattern *)
-ECGrav`CountHoles[maxClqLst_List,k_Integer]:=
+CountHoles[maxClqLst_List,k_Integer]:=
 (*Gives the number of k-holes, i.e., the kth Betti number of a simplicial complex. 
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@maxClqLst},
@@ -1450,7 +1449,7 @@ ResourceFunction["BettiNumbers"][simplices][[k]]
 ];
 
 (* Overload Pattern *)
-ECGrav`CountHoles[maxClqLst_List]:=
+CountHoles[maxClqLst_List]:=
 (*Gives the number of k-holes, i.e., the kth Betti number of a simplicial complex. 
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@maxClqLst},
@@ -1458,7 +1457,7 @@ ResourceFunction["BettiNumbers"][simplices]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CountHoles[args___]:=(Message[ECGrav`CountHoles::argerr, args];
+CountHoles[args___]:=(Message[CountHoles::argerr, args];
 $Failed);
 
 
@@ -1467,15 +1466,15 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`Visualize2DComplex[facelst_List]:=
+Visualize2DComplex[facelst_List]:=
 (*Given an input simplicial complex as a list of facets, it returns a 3D embedding. *)
 Module[{facets,cmap,coord,scoords},
 
-cmap=FindGraphIsomorphism[ECGrav`GraphFromCliques[facelst],CanonicalGraph[ECGrav`GraphFromCliques[facelst]]];
+cmap=FindGraphIsomorphism[GraphFromCliques[facelst],CanonicalGraph[GraphFromCliques[facelst]]];
 
 facets=facelst/.cmap[[1]];
 
-coord=GraphEmbedding[CanonicalGraph[ECGrav`GraphFromCliques[facets]],"SpringEmbedding",3];
+coord=GraphEmbedding[CanonicalGraph[GraphFromCliques[facets]],"SpringEmbedding",3];
 (*"SpringElectricalEmbedding","SpringEmbedding","HighDimensionalEmbedding","CircularEmbedding","SpiralEmbedding","RandomEmbedding","RadialEmbedding","SpectralEmbedding","StarEmbedding"}*)
 (*Graphics3D[{Opacity[1.7],Yellow,GraphicsComplex[coord,Polygon[facets]]}];*)
 scoords=Map[Part[coord,#]&,facets];
@@ -1484,7 +1483,7 @@ Graphics3D[{Opacity[0.9],Table[Simplex[i],{i,scoords}]}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`Visualize2DComplex[args___]:=(Message[ECGrav`Visualize2DComplex::argerr, args];
+Visualize2DComplex[args___]:=(Message[Visualize2DComplex::argerr, args];
 $Failed);
 
 
@@ -1498,7 +1497,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`RankComb[set_List,numLabels_Integer]:=
+RankComb[set_List,numLabels_Integer]:=
 (***************************************
 Given a sorted set which is a subset of the set {0,1,,...,numLabels-1}, it assigns a 
 unique integer to the set between 0 and numLabels choose length(set).
@@ -1511,7 +1510,7 @@ result, "ECGravReturn$39"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`RankComb[args___]:=(Message[ECGrav`RankComb::argerr, args];
+RankComb[args___]:=(Message[RankComb::argerr, args];
 $Failed);
 
 
@@ -1520,7 +1519,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`UnrankComb[l_Integer,numLabels_Integer,setSize_Integer]:=
+UnrankComb[l_Integer,numLabels_Integer,setSize_Integer]:=
 (***************************************
 Given an integer l between 0 and (numLabels choose setSize)-1, it assigns a unique sorted 
 set which is a sorted setSize-subset of {0,1,,...,numLabels-1}.
@@ -1572,7 +1571,7 @@ result, "ECGravReturn$40"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`UnrankComb[args___]:=(Message[ECGrav`UnrankComb::argerr, args];
+UnrankComb[args___]:=(Message[UnrankComb::argerr, args];
 $Failed);
 
 
@@ -1581,29 +1580,29 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`NumPureComplexes[pp_Integer,qq_Integer,nn_Integer]:=
+NumPureComplexes[pp_Integer,qq_Integer,nn_Integer]:=
 (*Gives the number of vertex labeled pure simplicial complexes of purity p, facet order q, 
 and number of vertices n. Computes recursively and uses memoization*)
-Block[{ECGrav`NumPureComplexes},
+Block[{NumPureComplexes},
 
-ECGrav`NumPureComplexes[p_Integer,q_Integer,n_Integer]:=ECGrav`NumPureComplexes[p,q,n]=
+NumPureComplexes[p_Integer,q_Integer,n_Integer]:=NumPureComplexes[p,q,n]=
 Which[q<0,0,q==1&&n==p,1,q==1&&n!=p,0,True,
-(((Binomial[n,p]-(q-1))/q)*ECGrav`NumPureComplexes[p,q-1,n]
-	+(Binomial[n,p]/q)*Sum[Binomial[p,k]*ECGrav`NumPureComplexes[p,q-1,n-k],{k,1,p}])];
+(((Binomial[n,p]-(q-1))/q)*NumPureComplexes[p,q-1,n]
+	+(Binomial[n,p]/q)*Sum[Binomial[p,k]*NumPureComplexes[p,q-1,n-k],{k,1,p}])];
 	
-ECGrav`NumPureComplexes[pp,qq,nn]
+NumPureComplexes[pp,qq,nn]
 
 ];
 
 (* Overload Pattern *)
-ECGrav`NumPureComplexes[p_Integer,q_Integer]:=
+NumPureComplexes[p_Integer,q_Integer]:=
 (*The number of pure simplicial complexes of purity p, clique order q, and number of vertices n*)
 With[{n0=Catch[Do[If[Binomial[nn,p]>=q,Throw[nn]],{nn,p,p*q}]]},
-	Total[Table[ECGrav`NumPureComplexes[p,q,n],{n,n0,p*q}]]
+	Total[Table[NumPureComplexes[p,q,n],{n,n0,p*q}]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`NumPureComplexes[args___]:=(Message[ECGrav`NumPureComplexes::argerr, args];
+NumPureComplexes[args___]:=(Message[NumPureComplexes::argerr, args];
 $Failed);
 
 
@@ -1622,7 +1621,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`GraphIsContained[glist_List/;GraphQ[glist[[1]]],g_Graph/;GraphQ[g]]:=
+GraphIsContained[glist_List/;GraphQ[glist[[1]]],g_Graph/;GraphQ[g]]:=
 (*
 (*****************************)
 (* Last Updated: 07/26/2023  *)
@@ -1636,7 +1635,7 @@ AnyTrue[glist,IsomorphicGraphQ[g,#]&]
 ];
 
 (* Overload Pattern *)
-ECGrav`GraphIsContained[Amats_List/;SquareMatrixQ[Amats[[1]]],Am_List/;SquareMatrixQ[Am]]:=(*(*****************************)
+GraphIsContained[Amats_List/;SquareMatrixQ[Amats[[1]]],Am_List/;SquareMatrixQ[Am]]:=(*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
 
@@ -1644,7 +1643,7 @@ ECGrav`GraphIsContained[Amats_List/;SquareMatrixQ[Amats[[1]]],Am_List/;SquareMat
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GraphIsContained[args___]:=(Message[ECGrav`GraphIsContained::argerr, args];
+GraphIsContained[args___]:=(Message[GraphIsContained::argerr, args];
 $Failed);
 
 
@@ -1653,8 +1652,8 @@ $Failed);
 
 
 (* Primary Pattern *)
-SetAttributes[ECGrav`ChooseNonIsomorphicGraphs,Flat];
-ECGrav`ChooseNonIsomorphicGraphs[li__List/;Length[{li}]>1&&GraphQ[{li}[[1,1]]]]:=
+SetAttributes[ChooseNonIsomorphicGraphs,Flat];
+ChooseNonIsomorphicGraphs[li__List/;Length[{li}]>1&&GraphQ[{li}[[1,1]]]]:=
 (*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
@@ -1662,13 +1661,13 @@ ECGrav`ChooseNonIsomorphicGraphs[li__List/;Length[{li}]>1&&GraphQ[{li}[[1,1]]]]:
 (*Given an arbitrary number of lists of graphs, it merges them into one list of graphs where no two graphs belonging to different input lists are isomorphic. This method does not check if the graphs WITHIN a given list are non-isomorphic.*)
 Block[{result={li}[[1]],length=Length[{li}]},
 Do[
-result=Join[result,Select[{li}[[n]],!ECGrav`GraphIsContained[result,#]&]];
+result=Join[result,Select[{li}[[n]],!GraphIsContained[result,#]&]];
 ,{n,2,length}];
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[li_List/;GraphQ[li[[1]]]]:=
+ChooseNonIsomorphicGraphs[li_List/;GraphQ[li[[1]]]]:=
 (*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
@@ -1683,32 +1682,32 @@ remaining=Select[remaining,IsomorphicGraphQ[First[remaining],#]==False&];
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[li_List/;GraphQ[li[[1,1]]]]:=
+ChooseNonIsomorphicGraphs[li_List/;GraphQ[li[[1,1]]]]:=
 (*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
 
 (*Given a list of lists of graphs, it merges them into one list where no two graphs originally in different sublists are isomorphic. This method does not check whether or not graphs WITHIN a sublist are non-isomorphic.*)Block[{result=li[[1]],length=Length[li]},
 Do[
-result=Join[result,Select[li[[n]],!ECGrav`GraphIsContained[result,#]&]];
+result=Join[result,Select[li[[n]],!GraphIsContained[result,#]&]];
 ,{n,2,length}];
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[li__List/;Length[{li}]>1&&SquareMatrixQ[{li}[[1,1]]]]:=(*(*****************************)
+ChooseNonIsomorphicGraphs[li__List/;Length[{li}]>1&&SquareMatrixQ[{li}[[1,1]]]]:=(*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
 
 (*Given an arbitrary number of lists of adjacency matrices of graphs, it merges them into one list of graphs where no two graphs belonging to different input lists are isomorphic. This method does not check if the graphs WITHIN a given list are non-isomorphic.*)Block[{result={li}[[1]],length=Length[{li}]},
 Do[
-result=Join[result,Select[{li}[[n]],!ECGrav`GraphIsContained[result,#]&]];
+result=Join[result,Select[{li}[[n]],!GraphIsContained[result,#]&]];
 ,{n,2,length}];
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[li_List/;MatrixQ[li[[1]]]]:=
+ChooseNonIsomorphicGraphs[li_List/;MatrixQ[li[[1]]]]:=
 
 (*(*****************************)
 (* Last Updated: 07/26/2023  *)
@@ -1724,20 +1723,20 @@ remaining=Select[remaining,IsomorphicGraphQ[AdjacencyGraph[First[remaining]],Adj
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[li_List/;SquareMatrixQ[li[[1,1]]]]:=(*(*****************************)
+ChooseNonIsomorphicGraphs[li_List/;SquareMatrixQ[li[[1,1]]]]:=(*(*****************************)
 (* Last Updated: 07/26/2023  *)
 (*****************************)*)
 
 (*Given a list of lists of adjacency matrices, it merges them into one list where no two graphs originally in different sublists are isomorphic. This method does not check whether or not graphs WITHIN a sublist are non-isomorphic.*)
 Block[{result=li[[1]],length=Length[li]},
 Do[
-result=Join[result,Select[li[[n]],!ECGrav`GraphIsContained[result,#]&]];
+result=Join[result,Select[li[[n]],!GraphIsContained[result,#]&]];
 ,{n,2,length}];
 result
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ChooseNonIsomorphicGraphs[args___]:=(Message[ECGrav`ChooseNonIsomorphicGraphs::argerr, args];
+ChooseNonIsomorphicGraphs[args___]:=(Message[ChooseNonIsomorphicGraphs::argerr, args];
 $Failed);
 
 
@@ -1752,15 +1751,15 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`IsContainedClqComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;(Depth[cmpx]==3||cmpx=={})]:=
+IsContainedClqComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;(Depth[cmpx]==3||cmpx=={})]:=
 (****************************)
 (*Last updated: 09/13/2023  *)
 (****************************)(*Given a list of clique complexes cmpxesLst (each given as a list of maximal cliques)  and a single other clique complex cmpx, it returns True if there is a graph isomorphic to clq in clqsLst, False otherwise. It stops checking at the first occurence of isimorphic graph.*)
-If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,IsomorphicGraphQ[ECGrav`GraphFromCliques[cmpx],ECGrav`GraphFromCliques[#]]&]
+If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,IsomorphicGraphQ[GraphFromCliques[cmpx],GraphFromCliques[#]]&]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`IsContainedClqComp[args___]:=(Message[ECGrav`IsContainedClqComp::argerr, args];
+IsContainedClqComp[args___]:=(Message[IsContainedClqComp::argerr, args];
 $Failed);
 
 
@@ -1769,8 +1768,8 @@ $Failed);
 
 
 (* Primary Pattern *)
-SetAttributes[ECGrav`ChooseNonIsomorphicClqComplexes,Flat];
-ECGrav`ChooseNonIsomorphicClqComplexes[li__List/;(Depth[{li}]==5&&Length[{li}]>1)]:=
+SetAttributes[ChooseNonIsomorphicClqComplexes,Flat];
+ChooseNonIsomorphicClqComplexes[li__List/;(Depth[{li}]==5&&Length[{li}]>1)]:=
 (*
 (*****************************)
 (* Last Updated: 09/13/2023  *)
@@ -1785,14 +1784,14 @@ Block[{result={li}[[1]],length=Length[{li}]},
 
 
 Do[
-result=Join[result,Select[{li}[[n]],!ECGrav`IsContainedClqComp[result,#]&]];
+result=Join[result,Select[{li}[[n]],!IsContainedClqComp[result,#]&]];
 ,{n,2,length}];
 
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicClqComplexes[li_List/;(Depth[li]==4&&Length[{li}]==1)]:=
+ChooseNonIsomorphicClqComplexes[li_List/;(Depth[li]==4&&Length[{li}]==1)]:=
 (*(*****************************)
 (* Last Updated: 09/13/2023  *)
 (*****************************)*)
@@ -1805,7 +1804,7 @@ Block[{result={},remaining=li},
 result=Reap[
 While[Length[remaining]>0,
 Sow[First[remaining]];
-remaining=Select[remaining,IsomorphicGraphQ[ECGrav`GraphFromCliques[First[remaining]],ECGrav`GraphFromCliques[#]]==False&];
+remaining=Select[remaining,IsomorphicGraphQ[GraphFromCliques[First[remaining]],GraphFromCliques[#]]==False&];
 ];
 ][[2,1]];
 
@@ -1813,7 +1812,7 @@ result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicClqComplexes[li_List/;(Depth[{li}]==6&&Length[li]>1)]:=
+ChooseNonIsomorphicClqComplexes[li_List/;(Depth[{li}]==6&&Length[li]>1)]:=
 (*(*****************************)
 (* Last Updated: 09/30/2025  *)
 (*****************************)*)
@@ -1825,14 +1824,14 @@ where no two graphs originally in different sublists are isomorphic. This method
 Catch[If[length==1,Throw[result, "ECGravReturn$41"]];
 
 Do[
-result=Join[result,Select[li[[n]],!ECGrav`IsContainedClqComp[result,#]&]];
+result=Join[result,Select[li[[n]],!IsContainedClqComp[result,#]&]];
 ,{n,2,length}];
 
 result, "ECGravReturn$41"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ChooseNonIsomorphicClqComplexes[args___]:=(Message[ECGrav`ChooseNonIsomorphicClqComplexes::argerr, args];
+ChooseNonIsomorphicClqComplexes[args___]:=(Message[ChooseNonIsomorphicClqComplexes::argerr, args];
 $Failed);
 
 
@@ -1847,7 +1846,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`IsomorphicSimplicialComplexQ[c1_List,c2_List]:=
+IsomorphicSimplicialComplexQ[c1_List,c2_List]:=
 (*
 (****************************)
 (*Last updated: 03/05/2024  *)
@@ -1855,7 +1854,7 @@ ECGrav`IsomorphicSimplicialComplexQ[c1_List,c2_List]:=
 (*Checks whether two pure simplicial complexes given as lists of facets are isomorphic or not(i.e. whether or not there is a bijection of the vertex sets that is also a bijection of the facets.)
 It does so by brute force enumeration of all isomorphism between their respective underlying graphs and testing if any of the isomorphisms are bijections of the facets*)
 *)
-With[{isomorphisms=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[c1],ECGrav`GraphFromCliques[c2],All]]},
+With[{isomorphisms=Normal[FindGraphIsomorphism[GraphFromCliques[c1],GraphFromCliques[c2],All]]},
 Catch[If[c1=={}&&c2=={},Throw[True, "ECGravReturn$42"]];
 If[Length[isomorphisms]==0,Throw[False, "ECGravReturn$42"]];
 
@@ -1866,7 +1865,7 @@ False, "ECGravReturn$42"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`IsomorphicSimplicialComplexQ[args___]:=(Message[ECGrav`IsomorphicSimplicialComplexQ::argerr, args];
+IsomorphicSimplicialComplexQ[args___]:=(Message[IsomorphicSimplicialComplexQ::argerr, args];
 $Failed);
 
 
@@ -1875,17 +1874,17 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`IsContainedSimplicialComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;(Depth[cmpx]==3||cmpx=={})]:=
+IsContainedSimplicialComp[cmpxesLst_List/;Depth[cmpxesLst]==4,cmpx_List/;(Depth[cmpx]==3||cmpx=={})]:=
 (*
 (*****************************)
 (* Last Updated: 03/05/2024  *)
 (*****************************)*)
 (*Given a list of pure simplicial complexes cmpxesLst (each given as a list of facets of equal size)  and a single other pure simplicial complex cmpx, it returns True if there is a complex isomorphic to cmpx in cmpxesLst, False otherwise. It stops checking at the first occurence of isomorphic complex.*)
-If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,ECGrav`IsomorphicSimplicialComplexQ[cmpx,#]&]
+If[Length[cmpx]==0||cmpx=={{}},True,AnyTrue[cmpxesLst,IsomorphicSimplicialComplexQ[cmpx,#]&]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`IsContainedSimplicialComp[args___]:=(Message[ECGrav`IsContainedSimplicialComp::argerr, args];
+IsContainedSimplicialComp[args___]:=(Message[IsContainedSimplicialComp::argerr, args];
 $Failed);
 
 
@@ -1894,8 +1893,8 @@ $Failed);
 
 
 (* Primary Pattern *)
-SetAttributes[ECGrav`ChooseNonIsomorphicSimplicialComplexes, Flat];
-ECGrav`ChooseNonIsomorphicSimplicialComplexes[li__List/;(Depth[{li}]==5&&Length[{li}]>1)]:=
+SetAttributes[ChooseNonIsomorphicSimplicialComplexes, Flat];
+ChooseNonIsomorphicSimplicialComplexes[li__List/;(Depth[{li}]==5&&Length[{li}]>1)]:=
 (*
 (*****************************)
 (* Last Updated: 03/05/2024  *)
@@ -1904,14 +1903,14 @@ ECGrav`ChooseNonIsomorphicSimplicialComplexes[li__List/;(Depth[{li}]==5&&Length[
 
 
 Do[
-result=Join[result,Select[{li}[[n]],!ECGrav`IsContainedSimplicialComp[result,#]&]];
+result=Join[result,Select[{li}[[n]],!IsContainedSimplicialComp[result,#]&]];
 ,{n,2,length}];
 
 result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==4&&Length[{li}]==1)]:=(*(*****************************)
+ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==4&&Length[{li}]==1)]:=(*(*****************************)
 (* Last Updated: 03/05/2024  *)
 (*****************************)*)
 
@@ -1920,7 +1919,7 @@ ECGrav`ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==4&&Length[{li
 result=Reap[
 While[Length[remaining]>0,
 Sow[First[remaining]];
-remaining=Select[remaining[[2;;-1]],ECGrav`IsomorphicSimplicialComplexQ[First[remaining],#]==False&];
+remaining=Select[remaining[[2;;-1]],IsomorphicSimplicialComplexQ[First[remaining],#]==False&];
 ];
 ][[2,1]];
 
@@ -1928,7 +1927,7 @@ result
 ];
 
 (* Overload Pattern *)
-ECGrav`ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==5)]:=
+ChooseNonIsomorphicSimplicialComplexes[li_List/;(Depth[li]==5)]:=
 (*(*****************************)
 (* Last Updated: 03/05/2024  *)
 (*****************************)*)
@@ -1940,14 +1939,14 @@ Block[{result=li[[1]],length=Length[li]},
 Catch[If[length==1,Throw[result, "ECGravReturn$43"]];
 
 Do[
-result=Join[result,Select[li[[n]],!ECGrav`IsContainedSimplicialComp[result,#]&]];
+result=Join[result,Select[li[[n]],!IsContainedSimplicialComp[result,#]&]];
 ,{n,2,length}];
 
 result, "ECGravReturn$43"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`ChooseNonIsomorphicSimplicialComplexes[args___]:=(Message[ECGrav`ChooseNonIsomorphicSimplicialComplexes::argerr, args];
+ChooseNonIsomorphicSimplicialComplexes[args___]:=(Message[ChooseNonIsomorphicSimplicialComplexes::argerr, args];
 $Failed);
 
 
@@ -1966,7 +1965,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List]:=
+SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List]:=
 
 (*
 (****************************************)
@@ -1983,7 +1982,7 @@ Module[{purity,g,VertexFacetDegree,leafsLst,relabelingRule,reducedFacetsParentsA
 Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$44"]];
 
 
-g=ECGrav`GraphFromCliques[facetsLst];
+g=GraphFromCliques[facetsLst];
 
 
 If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$44"]
@@ -2000,10 +1999,10 @@ reducedFacetsParentsAsn=<|Table[With[{leafs=leafsLst[[i]]},
 If[Length[leafs]>=1,Sort[Join[{leafs[[1]]},Complement[facetsLst[[i]],leafs]]],facetsLst[[i]]]->facetsLst[[i]]],{i,1,Length[facetsLst]}]|>;
 
 
-reducedGraph=CanonicalGraph[ECGrav`GraphFromCliques[Keys[reducedFacetsParentsAsn]]];
+reducedGraph=CanonicalGraph[GraphFromCliques[Keys[reducedFacetsParentsAsn]]];
 
 
-relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[Keys[reducedFacetsParentsAsn]],reducedGraph][[1]]];
+relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[Keys[reducedFacetsParentsAsn]],reducedGraph][[1]]];
 
 
 relabeledreducedFacetsParentsAsn=<|Table[Sort[(i/.relabelingRule)]->reducedFacetsParentsAsn[[Key[i]]],{i,Keys[reducedFacetsParentsAsn]}]|>;
@@ -2031,7 +2030,7 @@ GroupOrder[reducedAutG]*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$44"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn::argerr, args];
+SimplicialComplexAutomorphismGroupOrderConn[args___]:=(Message[SimplicialComplexAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2040,7 +2039,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`SimplicialComplexAutomorphismGroupOrder[facetsLst_List]:=
+SimplicialComplexAutomorphismGroupOrder[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 2/22/2024. *) *)
@@ -2050,15 +2049,15 @@ ECGrav`SimplicialComplexAutomorphismGroupOrder[facetsLst_List]:=
 (*Given a general simplicial complex (not necessarily clique complex and not necessarily pure) that may or may not be connected, it computes the order of the automorphism group. It uses SimplicialComplexAutomorphismGroupOrderConn to compute the automorphism group orders of each component and then combines them. *)
 (*Note: It only works by first relabeling the complex into canonically labeled complex*)
 *)
-With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
+With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`PureComplexes`Private`SimplicialComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(SimplicialComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`SimplicialComplexAutomorphismGroupOrder[args___]:=(Message[ECGrav`SimplicialComplexAutomorphismGroupOrder::argerr, args];
+SimplicialComplexAutomorphismGroupOrder[args___]:=(Message[SimplicialComplexAutomorphismGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2069,7 +2068,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexAutomorphismGroup[facetsLst_List]:=
+PureComplexAutomorphismGroup[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 1/19/2024. *) *)
@@ -2081,12 +2080,12 @@ ECGrav`PureComplexAutomorphismGroup[facetsLst_List]:=
 *)
 Module[{facets,g,relabelingRule,autGroup, missingfacets,doesntMixupMissingAndNonMissing},
 
-Catch[g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+Catch[g=CanonicalGraph[GraphFromCliques[facetsLst]];
 
 
 (*The facets have to be labeled from 1 to glen so that the action of the graph automorphism will be well defined.*)
 
-relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
+relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[facetsLst],g][[1]]];
 
 
 If[Length[facetsLst]==1,Throw[{SymmetricGroup[Length[facetsLst[[1]]]],Reverse/@relabelingRule}, "ECGravReturn$45"]];
@@ -2112,7 +2111,7 @@ If[missingfacets!={},autGroup=PermutationGroup[Select[GroupElements[autGroup],do
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexAutomorphismGroup[args___]:=(Message[ECGrav`PureComplexAutomorphismGroup::argerr, args];
+PureComplexAutomorphismGroup[args___]:=(Message[PureComplexAutomorphismGroup::argerr, args];
 $Failed);
 
 
@@ -2123,7 +2122,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[facetsLst_List]:=
+PureComplexAutomorphismGroupOrderConn[facetsLst_List]:=
 
 (*
 (****************************************)
@@ -2145,7 +2144,7 @@ Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$46"]]
 
 If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravReturn$46"]];
 
-g=ECGrav`GraphFromCliques[facetsLst];
+g=GraphFromCliques[facetsLst];
 
 
 If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$46"]
@@ -2162,9 +2161,9 @@ reducedFacets=Table[With[{leafs=Select[i,VertexFacetDegree[#]==1&]},
 If[Length[leafs]>=1,Sort[Join[{leafs[[1]]},Complement[i,leafs]]],i]],{i,facetsLst}];
 
 
-reducedGraph=CanonicalGraph[ECGrav`GraphFromCliques[reducedFacets]];
+reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
 
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
+canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
 
 
 reducedAutG=GraphAutomorphismGroup[reducedGraph];
@@ -2185,7 +2184,7 @@ reducedAutGorder*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$46"]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn::argerr, args];
+PureComplexAutomorphismGroupOrderConn[args___]:=(Message[PureComplexAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2194,7 +2193,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`PureComplexAutomorphismGroupOrder[facetsLst_List]:=
+PureComplexAutomorphismGroupOrder[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 1/19/2024. *) *)
@@ -2204,15 +2203,15 @@ ECGrav`PureComplexAutomorphismGroupOrder[facetsLst_List]:=
 (*Given a pure simplicial complex (not necessarily clique complex) that may or may not be connected, it computes the automorphism group order. It uses PureComplexAutomorphismGroupOrderConn to compute the automorphism group orders of each component and then combines them. *)
 (*Note: It only works by first relabeling the complex into canonically labeled complex, so the output group will have different labeleing convention than the input unless the input is canonically labeled*)
 *)
-With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
+With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`PureComplexes`Private`PureComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(PureComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexAutomorphismGroupOrder[args___]:=(Message[ECGrav`PureComplexAutomorphismGroupOrder::argerr, args];
+PureComplexAutomorphismGroupOrder[args___]:=(Message[PureComplexAutomorphismGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2221,7 +2220,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`PureComplexFacetStabilizerGroupOrder[facetsLst_List]:=
+PureComplexFacetStabilizerGroupOrder[facetsLst_List]:=
 (*Given a simplicial complex as a list of facets, it computes the order of the 
 	facet stabilizer group. It does not check whether the complex is a clique complex or not, 
 	it assumes it is. *)
@@ -2251,7 +2250,7 @@ With[{
 
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexFacetStabilizerGroupOrder[args___]:=(Message[ECGrav`PureComplexFacetStabilizerGroupOrder::argerr, args];
+PureComplexFacetStabilizerGroupOrder[args___]:=(Message[PureComplexFacetStabilizerGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2262,7 +2261,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List]:=
+PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/13/2024. *) *)
@@ -2276,7 +2275,7 @@ Catch[If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravRetur
 
 If[Length[facetsLst]==1,Throw[1, "ECGravReturn$47"]];
 
-g=ECGrav`GraphFromCliques[facetsLst];
+g=GraphFromCliques[facetsLst];
 
 
 If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$47"]
@@ -2288,9 +2287,9 @@ reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
 If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
 
 
-reducedGraph=CanonicalGraph[ECGrav`GraphFromCliques[reducedFacets]];
+reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
 
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
+canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
 
 
 reducedAutG=GraphAutomorphismGroup[reducedGraph];
@@ -2314,7 +2313,7 @@ GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$4
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn::argerr, args];$Failed);
+PureComplexFacetAutomorphismGroupOrderConn[args___]:=(Message[PureComplexFacetAutomorphismGroupOrderConn::argerr, args];$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2322,7 +2321,7 @@ ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[args___]
 
 
 (* Primary Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroupOrder[facetsLst_List]:=
+PureComplexFacetAutomorphismGroupOrder[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/13/2024. *) *)
@@ -2331,15 +2330,15 @@ ECGrav`PureComplexFacetAutomorphismGroupOrder[facetsLst_List]:=
 (****************************************)
 (*Given a pure simplicial complex (not necessarily a clique complex) as a list of facets, it computes the order of the facet automorphism group. It does not check whether the complex is pure or not, it assumes it is. *)
 *)
-With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],ECGrav`IsomorphicSimplicialComplexQ[#1,#2]&]},
+With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicSimplicialComplexQ[#1,#2]&]},
 
 
-Product[(ECGrav`PureComplexes`Private`PureComplexFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(PureComplexFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroupOrder[args___]:=(Message[ECGrav`PureComplexFacetAutomorphismGroupOrder::argerr, args];
+PureComplexFacetAutomorphismGroupOrder[args___]:=(Message[PureComplexFacetAutomorphismGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2350,7 +2349,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroup[facetsLst_List]:=
+PureComplexFacetAutomorphismGroup[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/09/2024. *) *)
@@ -2364,12 +2363,12 @@ Module[{facets,g,relabelingRule,autGroup, missingfacets,facetStabilizerGroup,doe
 
 Catch[If[Length[facetsLst]==1,Throw[SymmetricGroup[1], "ECGravReturn$48"]];
 
-g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+g=CanonicalGraph[GraphFromCliques[facetsLst]];
 
 
 (*The facets have to be labeled from 1 to glen so that the action of the graph automorphism will be well defined.*)
 
-relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
+relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[facetsLst],g][[1]]];
 
 
 facets=Sort/@(facetsLst/.relabelingRule);
@@ -2400,7 +2399,7 @@ If[GroupOrder[facetStabilizerGroup]==1,Throw[autGroup, "ECGravReturn$48"]];
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexFacetAutomorphismGroup[args___]:=(Message[ECGrav`PureComplexFacetAutomorphismGroup::argerr, args];
+PureComplexFacetAutomorphismGroup[args___]:=(Message[PureComplexFacetAutomorphismGroup::argerr, args];
 $Failed);
 
 
@@ -2415,7 +2414,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[facetsLst_List]:=
+CliqueFacetStabilizerGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/09/2024. *) *)
@@ -2431,7 +2430,7 @@ Module[{purity,g,leafsLst,reducedFacets,reducedGraph, reducedAutG,canonicalReduc
 
 Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$49"]];
 
-g=ECGrav`GraphFromCliques[facetsLst];
+g=GraphFromCliques[facetsLst];
 
 
 If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$49"]
@@ -2447,9 +2446,9 @@ reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
 If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
 
 
-reducedGraph=CanonicalGraph[ECGrav`GraphFromCliques[reducedFacets]];
+reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
 
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
+canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
 
 
 reducedAutG=GraphAutomorphismGroup[reducedGraph];
@@ -2462,7 +2461,7 @@ GroupOrder[reducedFacetStabilizerGroup]*Product[Length[i]!,{i,leafsLst}], "ECGra
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn::argerr, args];
+CliqueFacetStabilizerGroupOrderConn[args___]:=(Message[CliqueFacetStabilizerGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2471,7 +2470,7 @@ $Failed);
 
 
 (* Primary Pattern *)
-ECGrav`CliqueFacetStabilizerGroupOrder[facetsLst_List]:=
+CliqueFacetStabilizerGroupOrder[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/13/2024. *) *)
@@ -2479,15 +2478,15 @@ ECGrav`CliqueFacetStabilizerGroupOrder[facetsLst_List]:=
 (*   (* Notes:  *) *)
 (****************************************)
 (*Given a clique complex as a list of facets, it computes the order of the facet stabilizer group. It does not check whether the complex is a clique complex or not, it assumes it is. *)
-*)With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[ECGrav`GraphFromCliques[#1],ECGrav`GraphFromCliques[#2]]&]},
+*)With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[GraphFromCliques[#1],GraphFromCliques[#2]]&]},
 
 
-Product[(ECGrav`PureComplexes`Private`CliqueFacetStabilizerGroupOrderConn[i[[1]]]^(i[[2]])),{i,components}]
+Product[(CliqueFacetStabilizerGroupOrderConn[i[[1]]]^(i[[2]])),{i,components}]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueFacetStabilizerGroupOrder[args___]:=(Message[ECGrav`CliqueFacetStabilizerGroupOrder::argerr, args];
+CliqueFacetStabilizerGroupOrder[args___]:=(Message[CliqueFacetStabilizerGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2498,7 +2497,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[facetsLst_List]:=
+CliqueFacetAutomorphismGroupOrderConn[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/09/2024. *) *)
@@ -2511,7 +2510,7 @@ Module[{purity,g,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets,
 
 Catch[If[Length[facetsLst]==1,Throw[1, "ECGravReturn$50"]];
 
-g=ECGrav`GraphFromCliques[facetsLst];
+g=GraphFromCliques[facetsLst];
 
 
 If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$50"]
@@ -2523,9 +2522,9 @@ reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
 If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
 
 
-reducedGraph=CanonicalGraph[ECGrav`GraphFromCliques[reducedFacets]];
+reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
 
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
+canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
 
 
 reducedAutG=GraphAutomorphismGroup[reducedGraph];
@@ -2538,7 +2537,7 @@ GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$5
 ];
 
 (* Catch-all Pattern *)
-ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[args___]:=(Message[ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn::argerr, args];
+CliqueFacetAutomorphismGroupOrderConn[args___]:=(Message[CliqueFacetAutomorphismGroupOrderConn::argerr, args];
 $Failed);
 
 
@@ -2548,7 +2547,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`CliqueFacetAutomorphismGroupOrder[facetsLst_List]:=
+CliqueFacetAutomorphismGroupOrder[facetsLst_List]:=
 (*
 (****************************************)
 (*   (* Last updated 02/13/2024. *) *)
@@ -2556,15 +2555,15 @@ ECGrav`CliqueFacetAutomorphismGroupOrder[facetsLst_List]:=
 (*   (* Notes:  *) *)
 (****************************************)
 (*Given a clique complex as a list of facets, it computes the order of the facet automorphism group. It does not check whether the complex is a clique complex or not, it assumes it is. *)
-*)With[{components=Tally[ECGrav`ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[ECGrav`GraphFromCliques[#1],ECGrav`GraphFromCliques[#2]]&]},
+*)With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[GraphFromCliques[#1],GraphFromCliques[#2]]&]},
 
 
-Product[(ECGrav`PureComplexes`Private`CliqueFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
+Product[(CliqueFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
 
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueFacetAutomorphismGroupOrder[args___]:=(Message[ECGrav`CliqueFacetAutomorphismGroupOrder::argerr, args];
+CliqueFacetAutomorphismGroupOrder[args___]:=(Message[CliqueFacetAutomorphismGroupOrder::argerr, args];
 $Failed);
 
 
@@ -2575,7 +2574,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`CliqueFacetAutomorphismGroup[facetsLst_List]:=(*
+CliqueFacetAutomorphismGroup[facetsLst_List]:=(*
 (****************************************)
 (*   (* Last updated 09/30/2025. *) *)
 (*   (* Version: 1.0 *) *) 
@@ -2588,12 +2587,12 @@ Module[{facets,g,relabelingRule,autGroup,facetStabilizerGroup},
 
 Catch[If[Length[facetsLst]==1,Throw[SymmetricGroup[1], "ECGravReturn$51"]];
 
-g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+g=CanonicalGraph[GraphFromCliques[facetsLst]];
 
 
 (*The facets have to be labeled from 1 to glen so that the action of the graph automorphism will be well defined.*)
 
-relabelingRule=Normal[FindGraphIsomorphism[ECGrav`GraphFromCliques[facetsLst],g][[1]]];
+relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[facetsLst],g][[1]]];
 
 
 facets=Sort/@(facetsLst/.relabelingRule);
@@ -2613,7 +2612,7 @@ If[GroupOrder[facetStabilizerGroup]==1,Throw[autGroup, "ECGravReturn$51"]];
 ];
 
 (* Catch-all Pattern *)
-ECGrav`CliqueFacetAutomorphismGroup[args___]:=(Message[ECGrav`CliqueFacetAutomorphismGroup::argerr, args];
+CliqueFacetAutomorphismGroup[args___]:=(Message[CliqueFacetAutomorphismGroup::argerr, args];
 $Failed);
 
 
@@ -2636,7 +2635,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`GenerateAllVertexLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer, nV_Integer}]:=
+GenerateAllVertexLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer, nV_Integer}]:=
 (*
 (****************************************)
 (*   (* Last updated 08/26/2023. *) *)
@@ -2727,16 +2726,16 @@ result+1(* the +1 turns the vertex labels from {0,1,...n-1} to {1,2,...,n}*)
 ];
 
 (* Overload Pattern *)
-ECGrav`GenerateAllVertexLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer}]:=
+GenerateAllVertexLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer}]:=
 With[{nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]]},
 	Join@@ParallelTable[
-		ECGrav`GenerateAllVertexLabeledPureSimplicialComplexes[{purity,facetOrder,n}],
-	{n,nmin,purity*facetOrder},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}]
+		GenerateAllVertexLabeledPureSimplicialComplexes[{purity,facetOrder,n}],
+	{n,nmin,purity*facetOrder},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ]
 
 
 (* Catch-all Pattern *)
-ECGrav`GenerateAllVertexLabeledPureSimplicialComplexes[args___]:=(Message[ECGrav`GenerateAllVertexLabeledPureSimplicialComplexes::argerr, args];
+GenerateAllVertexLabeledPureSimplicialComplexes[args___]:=(Message[GenerateAllVertexLabeledPureSimplicialComplexes::argerr, args];
 $Failed);
 
 
@@ -2751,7 +2750,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`GenerateAllFacetLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer}]:=
+GenerateAllFacetLabeledPureSimplicialComplexes[{purity_Integer,facetOrder_Integer}]:=
 (*
 (****************************************)
 (*   (* Last updated 10/11/2024. *) *)
@@ -2800,7 +2799,7 @@ BuildComplex[]:=
 		curSXLst=nextSxLst;
 
 		nextSxLst=Join@@(
-			ParallelMap[AddOneVertex[#]&,curSXLst,DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}]);
+			ParallelMap[AddOneVertex[#]&,curSXLst,DistributedContexts->{$Context,"ECGrav`Private`"}]);
 		finishedSXLst=Join[finishedSXLst,Select[nextSxLst,Length[Join@@#]==purity*facetOrder&]];
 		nextSxLst=Complement[nextSxLst,finishedSXLst];
 
@@ -2834,7 +2833,7 @@ result
 ];
 
 (* Catch-all Pattern *)
-ECGrav`GenerateAllFacetLabeledPureSimplicialComplexes[args___]:=(Message[ECGrav`GenerateAllFacetLabeledPureSimplicialComplexes::argerr, args];
+GenerateAllFacetLabeledPureSimplicialComplexes[args___]:=(Message[GenerateAllFacetLabeledPureSimplicialComplexes::argerr, args];
 $Failed);
 
 
@@ -2853,7 +2852,7 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-ECGrav`RandomPQLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
+RandomPQLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
 (*
 (****************************************)
 (*   (* Last updated 08/01/2024. *) *)
@@ -2894,7 +2893,7 @@ Sort[facets]
 
 (* Overload Pattern *)
 
-ECGrav`RandomPQLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer},numSamples_Integer]:=
+RandomPQLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer},numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 10/03/2025. *) *)
@@ -2961,14 +2960,14 @@ If[numSamples<10^5,
 
 		Sort[facets]
 	
-	,{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}]
+	,{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}]
 	];
 
 result
 ];
 
 (* Catch-all Pattern *)
-ECGrav`RandomPQLabeledPureSimplicialComplex[args___]:=(Message[ECGrav`RandomPQLabeledPureSimplicialComplex::argerr, args];
+RandomPQLabeledPureSimplicialComplex[args___]:=(Message[RandomPQLabeledPureSimplicialComplex::argerr, args];
 $Failed);
 
 
@@ -2982,7 +2981,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
+RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 03/30/2026. *) *)
@@ -3012,13 +3011,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3077,14 +3076,14 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 	(*Table[buildOneComplex[],{numSamples}]*)
 
 	If[numSamples>10^4,
-		ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],
+		ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],
 		Table[buildOneComplex[],{numSamples}]]
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
+RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 03/30/2026. *) *)
@@ -3116,7 +3115,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[ECGrav`NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -3130,13 +3129,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3194,23 +3193,23 @@ Module[{facets={},numTotVertices,composition,allVertices,coveredVertices={},unco
 
 ];
 
-If[numSamples>10^4,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],Table[buildOneComplex[],{numSamples}]]
+If[numSamples>10^4,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],Table[buildOneComplex[],{numSamples}]]
 
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
+RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}]:=First[ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder, nV}, 1]];
+RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}]:=First[RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder, nV}, 1]];
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomVertexLabeledPureSimplicialComplex[args___]:=(Message[ECGrav`RandomVertexLabeledPureSimplicialComplex::argerr, args];
+RandomVertexLabeledPureSimplicialComplex[args___]:=(Message[RandomVertexLabeledPureSimplicialComplex::argerr, args];
 $Failed);
 
 
@@ -3224,7 +3223,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 04/29/2026. *) *)
@@ -3252,13 +3251,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3310,7 +3309,7 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 
 		,{k,1,facetOrder}];
 		
-		weight=1.0*ECGrav`PureComplexAutomorphismGroupOrder[facets]/nV!;
+		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/nV!;
 		
 		If[RandomReal[]>weight,facets={}];
 
@@ -3320,14 +3319,14 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 ];
 
 If[numSamples>20,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],
 		Table[buildOneComplex[],{numSamples}]]
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 05/01/2026. *) *)
@@ -3350,7 +3349,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[ECGrav`NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -3364,13 +3363,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3426,7 +3425,7 @@ Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},unco
 
 		,{k,1,facetOrder}];
 		
-		weight=1.0*ECGrav`PureComplexAutomorphismGroupOrder[facets]/(numTotVertices!);
+		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/(numTotVertices!);
 		
 		If[RandomReal[]>weight,facets={}];
 
@@ -3435,23 +3434,23 @@ Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},unco
 	facets
 ];
 
-If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],Table[buildOneComplex[],{numSamples}]]
 
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomUniformUnlabeledPureSimplicialComplex[args___]:=(Message[ECGrav`RandomUniformUnlabeledPureSimplicialComplex::argerr, args];
+RandomUniformUnlabeledPureSimplicialComplex[args___]:=(Message[RandomUniformUnlabeledPureSimplicialComplex::argerr, args];
 $Failed);
 
 
@@ -3465,7 +3464,7 @@ $Failed);
 
 (* Primary Pattern *)
 
-ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 04/29/2026. *) *)
@@ -3493,13 +3492,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3558,7 +3557,7 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 				(ECGrav`PureComplexFacetStabilizerGroupOrder[facets]);*)
 				
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nV]!)/(nV!))*
-					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];
+					(PureComplexFacetStabilizerGroupOrder[facets])];
 								
 		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$52"],facets={}];
 		
@@ -3569,14 +3568,14 @@ Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,n
 ];
 
 If[numSamples>20,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],
 		Table[buildOneComplex[],{numSamples}]]
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 05/01/2026. *) *)
@@ -3599,7 +3598,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[ECGrav`NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -3613,13 +3612,13 @@ Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
 		
 		Which[q>2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
 					,{k,0,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
 			q==2,
 				newkWeights=
-					Table[ECGrav`NumPureComplexes[purity,q-1,curVCount-k]
+					Table[NumPureComplexes[purity,q-1,curVCount-k]
 						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
 					,{k,1,purity}];
 				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
@@ -3686,7 +3685,7 @@ Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},unco
 					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];*)
 		
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nmin]!)/(numTotVertices!))*
-					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];
+					(PureComplexFacetStabilizerGroupOrder[facets])];
 								
 		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$53"],facets={}];
 
@@ -3695,23 +3694,23 @@ Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},unco
 	facets, "ECGravReturn$53"]
 ];
 
-If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}],Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],Table[buildOneComplex[],{numSamples}]]
 
 ];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
 
 
 (* Overload Pattern *)
 
-ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[args___]:=(Message[ECGrav`RandomUniformFacetLabeledPureSimplicialComplex::argerr, args];
+RandomUniformFacetLabeledPureSimplicialComplex[args___]:=(Message[RandomUniformFacetLabeledPureSimplicialComplex::argerr, args];
 $Failed);
 
 
@@ -3726,7 +3725,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
+RandomFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
 (*
 (****************************************)
 (*   (* Last updated 08/15/2024. *) *)
@@ -3799,14 +3798,14 @@ Sort[Sort/@result]
 ];
 
 (* Overload Pattern *)
-ECGrav`RandomFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer},numSamples_Integer]:=
+RandomFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer},numSamples_Integer]:=
 If[numSamples<10^4,
-	Table[ECGrav`RandomFacetLabeledPureSimplicialComplex[{purity,facetOrder}],{numSamples}],
-	ParallelTable[ECGrav`RandomFacetLabeledPureSimplicialComplex[{purity,facetOrder}],{numSamples},DistributedContexts->{$Context,"ECGrav`PureComplexes`Private`"}]
+	Table[RandomFacetLabeledPureSimplicialComplex[{purity,facetOrder}],{numSamples}],
+	ParallelTable[RandomFacetLabeledPureSimplicialComplex[{purity,facetOrder}],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`RandomFacetLabeledPureSimplicialComplex[args___]:=(Message[ECGrav`RandomFacetLabeledPureSimplicialComplex::argerr, args];
+RandomFacetLabeledPureSimplicialComplex[args___]:=(Message[RandomFacetLabeledPureSimplicialComplex::argerr, args];
 $Failed);
 
 
@@ -3821,7 +3820,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCSweep[seedComplex_List,labelingChoise_Integer,NN_Integer]:=
+RandomPureSimplicialComplexMCMCSweep[seedComplex_List,labelingChoise_Integer,NN_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 05/14/2026. *) *)
@@ -3850,10 +3849,10 @@ data[[Key["weight"]]]=
 			1.0/Binomial[purity*facetOrder,data[[Key["vertexCount"]]]],
 		labelingChoise==1,
 			(1.0/Binomial[purity*facetOrder,data[[Key["vertexCount"]]]])
-				*ECGrav`PureComplexFacetStabilizerGroupOrder[seedComplex]*(facetOrder!/(data[[Key["vertexCount"]]]!)),
+				*PureComplexFacetStabilizerGroupOrder[seedComplex]*(facetOrder!/(data[[Key["vertexCount"]]]!)),
 		labelingChoise==2,
 			(1.0/Binomial[purity*facetOrder,data[[Key["vertexCount"]]]])
-				*ECGrav`PureComplexAutomorphismGroupOrder[seedComplex]/((data[[Key["vertexCount"]]])!)];
+				*PureComplexAutomorphismGroupOrder[seedComplex]/((data[[Key["vertexCount"]]])!)];
 
 data[[Key["energy"]]]=-Log[data[[Key["weight"]]]];
 
@@ -3886,10 +3885,10 @@ Module[{
 			newComplexWeight=1.0/Binomial[purity*facetOrder,newVCount],
 		labelingChoise==1,
 			newComplexWeight=(1.0/Binomial[purity*facetOrder,newVCount])
-				*ECGrav`PureComplexFacetStabilizerGroupOrder[newComplex]*(facetOrder!/newVCount!),
+				*PureComplexFacetStabilizerGroupOrder[newComplex]*(facetOrder!/newVCount!),
 		labelingChoise==2,
 			newComplexWeight=(1.0/Binomial[purity*facetOrder,newVCount])
-				*ECGrav`PureComplexAutomorphismGroupOrder[newComplex]/(newVCount!)];
+				*PureComplexAutomorphismGroupOrder[newComplex]/(newVCount!)];
 
 	selectionProb=Min[1.0,1.0*newComplexWeight/curComplexWeight];
 
@@ -3915,7 +3914,7 @@ data
 
 (* Overload Pattern *)
 
-ECGrav`RandomPureSimplicialComplexMCMCSweep[seedComplex_List,HoldNumberOfVerticesFixed_?BooleanQ,labelingChoise_Integer,NN_Integer]:=
+RandomPureSimplicialComplexMCMCSweep[seedComplex_List,HoldNumberOfVerticesFixed_?BooleanQ,labelingChoise_Integer,NN_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 06/12/2026. *) *)
@@ -3936,7 +3935,7 @@ Module[{result,purity=Length[seedComplex[[1]]],
 		nV=Length[DeleteDuplicates[Flatten[seedComplex]]],
 		minNv,data,allVertexLabels,step},
 
-Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMCSweep[seedComplex,labelingChoise,NN], "ECGravReturn$54"]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMCSweep[seedComplex,labelingChoise,NN], "ECGravReturn$54"]];
 
 minNv=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
 
@@ -3949,9 +3948,9 @@ data[[Key["weight"]]]=
 		labelingChoise==0,
 			1.0,
 		labelingChoise==1,
-			ECGrav`PureComplexFacetStabilizerGroupOrder[seedComplex]*(1.0*(facetOrder!)/(nV!)),
+			PureComplexFacetStabilizerGroupOrder[seedComplex]*(1.0*(facetOrder!)/(nV!)),
 		labelingChoise==2,
-			1.0*ECGrav`PureComplexAutomorphismGroupOrder[seedComplex]]/(nV!);
+			1.0*PureComplexAutomorphismGroupOrder[seedComplex]]/(nV!);
 
 data[[Key["energy"]]]=-Log[data[[Key["weight"]]]];
 
@@ -3990,9 +3989,9 @@ step[]:=(*Performs one spin flip step*)
 		labelingChoise==0,
 			newComplexWeight=1.0,
 		labelingChoise==1,
-			newComplexWeight=ECGrav`PureComplexFacetStabilizerGroupOrder[newComplex]*(1.0*(facetOrder!)/(nV!)),
+			newComplexWeight=PureComplexFacetStabilizerGroupOrder[newComplex]*(1.0*(facetOrder!)/(nV!)),
 		labelingChoise==2,
-			newComplexWeight=1.0*ECGrav`PureComplexAutomorphismGroupOrder[newComplex]/(nV!)];
+			newComplexWeight=1.0*PureComplexAutomorphismGroupOrder[newComplex]/(nV!)];
 
 	selectionProb=Min[1.0,1.0*newComplexWeight/curComplexWeight];
 
@@ -4021,7 +4020,7 @@ step[]:=(*Performs one spin flip step*)
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCSweep[args___]:=(Message[ECGrav`RandomPureSimplicialComplexMCMCSweep::argerr, args];
+RandomPureSimplicialComplexMCMCSweep[args___]:=(Message[RandomPureSimplicialComplexMCMCSweep::argerr, args];
 $Failed);
 
 
@@ -4032,7 +4031,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex_List, labelingChoise_Integer]:=
+RandomPureSimplicialComplexMCMCEquilibriate[seedComplex_List, labelingChoise_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 05/05/2026. *) *)
@@ -4057,9 +4056,9 @@ data=<|"state"-><|"complex"->Sort[Sort/@seedComplex],
 				"weight"->1.0,"energy" ->0.0|>,
 		"maxNumV"-><|"complex"->Partition[Range[purity*facetOrder],purity],
 				"vertexCount"->purity*facetOrder,"weight"->1.0,"energy" ->0.0|>,
-		"minNumV"-><|"complex"->With[{minN=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]]},ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,minN}]],
+		"minNumV"-><|"complex"->With[{minN=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]]},RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,minN}]],
 				"vertexCount"->Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]],"weight"->1.0,"energy" ->0.0|>,
-		"random"-><|"complex"->ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder}],
+		"random"-><|"complex"->RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder}],
 				"vertexCount"->0,"weight"->1.0,"energy" ->0.0|>|>;
 
 data[["random","vertexCount"]]=Length[DeleteDuplicates[Flatten[data[["random","complex"]]]]];
@@ -4067,15 +4066,15 @@ data[["random","vertexCount"]]=Length[DeleteDuplicates[Flatten[data[["random","c
 
 Which[
 	labelingChoise==1,(*facet-labeled*)
-		data[["state","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[seedComplex]*(facetOrder!/(data[["state","vertexCount"]]!));
+		data[["state","weight"]]=PureComplexFacetStabilizerGroupOrder[seedComplex]*(facetOrder!/(data[["state","vertexCount"]]!));
 		data[["maxNumV","weight"]]=((purity!)^facetOrder)*(facetOrder!/(purity*facetOrder)!);
-		data[["minNumV","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[data[["minNumV","complex"]]]*(facetOrder!/data[["minNumV","vertexCount"]]!);
-		data[["random","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[data[["random","complex"]]]*(facetOrder!/data[["random","vertexCount"]]!),
+		data[["minNumV","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["minNumV","complex"]]]*(facetOrder!/data[["minNumV","vertexCount"]]!);
+		data[["random","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["random","complex"]]]*(facetOrder!/data[["random","vertexCount"]]!),
 	labelingChoise==2,(*unlabeled*)	
-		data[["state","weight"]]=ECGrav`PureComplexAutomorphismGroupOrder[seedComplex]/((data[["state","vertexCount"]])!);
+		data[["state","weight"]]=PureComplexAutomorphismGroupOrder[seedComplex]/((data[["state","vertexCount"]])!);
 		data[["maxNumV","weight"]]=(facetOrder!*(purity!)^facetOrder)/((purity*facetOrder)!);
-		data[["minNumV","weight"]]=ECGrav`PureComplexAutomorphismGroupOrder[data[["minNumV","complex"]]]/(data[["minNumV","vertexCount"]]!);
-		data[["random","weight"]]=ECGrav`PureComplexAutomorphismGroupOrder[data[["random","complex"]]]/(data[["random","vertexCount"]]!);
+		data[["minNumV","weight"]]=PureComplexAutomorphismGroupOrder[data[["minNumV","complex"]]]/(data[["minNumV","vertexCount"]]!);
+		data[["random","weight"]]=PureComplexAutomorphismGroupOrder[data[["random","complex"]]]/(data[["random","vertexCount"]]!);
 ];
 
 data[["state","energy"]]=-Log[1.0*data[["state","weight"]]];
@@ -4106,7 +4105,7 @@ Reap[
 		Sow[{data[[Key["state"],Key["energy"]]],data[[Key["maxNumV"],Key["energy"]]],data[[Key["minNumV"],Key["energy"]]],data[[Key["random"],Key["energy"]]]}];
 		Do[
 
-			sweepOutput=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[[Key[replicaName],Key["complex"]]],
+			sweepOutput=RandomPureSimplicialComplexMCMCSweep[data[[Key[replicaName],Key["complex"]]],
 				labelingChoise,1];
 
 			data[[Key[replicaName]]]=sweepOutput;
@@ -4161,7 +4160,7 @@ result
 
 (* Overload Pattern *)
 
-ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex_List, HoldNumberOfVerticesFixed_?BooleanQ, labelingChoise_Integer]:=
+RandomPureSimplicialComplexMCMCEquilibriate[seedComplex_List, HoldNumberOfVerticesFixed_?BooleanQ, labelingChoise_Integer]:=
 (*
 (****************************************)
 (*   (* Last updated 06/12/2026. *) *)
@@ -4192,7 +4191,7 @@ Module[{result,
 		maxNumSweeps=25000},
 
 Catch[If[HoldNumberOfVerticesFixed==False,
-	Throw[ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex, labelingChoise], "ECGravReturn$55"]
+	Throw[RandomPureSimplicialComplexMCMCEquilibriate[seedComplex, labelingChoise], "ECGravReturn$55"]
 ];
 
 (************)
@@ -4212,7 +4211,7 @@ makeLeastEvenlyConnectedComplex[]:=(*construct the complex with the least even c
 		allowedFacetOrderPair=First@(Select[facetOrderpairs,Total[#]==facetOrder&]);
 		
 		highlyConnectedIsland=
-			ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,allowedFacetOrderPair[[1]],nV-purity*allowedFacetOrderPair[[2]]}];
+			RandomVertexLabeledPureSimplicialComplex[{purity,allowedFacetOrderPair[[1]],nV-purity*allowedFacetOrderPair[[2]]}];
 		
 		unusedVertices=Complement[Range[nV],Union@@highlyConnectedIsland];
 		
@@ -4223,8 +4222,8 @@ makeLeastEvenlyConnectedComplex[]:=(*construct the complex with the least even c
 data=<|
 	"state"-><|"complex"->Sort[Sort/@seedComplex],"edgeCount"->Length[Union@@(Subsets[#,{2}]&/@(Sort/@seedComplex))],"weight"->1.0,"energy" ->0.0|>,
 	"leastEvenlyConnected"-><|"complex"->makeLeastEvenlyConnectedComplex[],"edgeCount"->0,"weight"->1.0,"energy" ->0.0|>,
-	"random1"-><|"complex"->ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,nV}],"edgeCount"->0,"weight"->1.0,"energy" ->0.0|>,
-	"random2"-><|"complex"->ECGrav`RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,nV}],"edgeCount"->0,"weight"->1.0,"energy" ->0.0|>|>;
+	"random1"-><|"complex"->RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,nV}],"edgeCount"->0,"weight"->1.0,"energy" ->0.0|>,
+	"random2"-><|"complex"->RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,nV}],"edgeCount"->0,"weight"->1.0,"energy" ->0.0|>|>;
 
 
 data[["leastEvenlyConnected","edgeCount"]]=Length[Union@@(Subsets[#,{2}]&/@(Sort/@data[["leastEvenlyConnected","complex"]]))];
@@ -4235,17 +4234,17 @@ Which[
 
 	labelingChoise==1,
 
-	data[["state","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[seedComplex]*(1.0*(facetOrder!)/(nV!));
-	data[["leastEvenlyConnected","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[data[["leastEvenlyConnected","complex"]]]*(1.0*(facetOrder!)/(nV!));
-	data[["random1","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[data[["random1","complex"]]]*(1.0*(facetOrder!)/(nV!));
-	data[["random2","weight"]]=ECGrav`PureComplexFacetStabilizerGroupOrder[data[["random2","complex"]]]*(1.0*(facetOrder!)/(nV!)),
+	data[["state","weight"]]=PureComplexFacetStabilizerGroupOrder[seedComplex]*(1.0*(facetOrder!)/(nV!));
+	data[["leastEvenlyConnected","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["leastEvenlyConnected","complex"]]]*(1.0*(facetOrder!)/(nV!));
+	data[["random1","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["random1","complex"]]]*(1.0*(facetOrder!)/(nV!));
+	data[["random2","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["random2","complex"]]]*(1.0*(facetOrder!)/(nV!)),
 
 	labelingChoise==2,
 
-	data[["state","weight"]]=1.0*ECGrav`PureComplexAutomorphismGroupOrder[seedComplex]/(nV!);
-	data[["leastEvenlyConnected","weight"]]=1.0*ECGrav`PureComplexAutomorphismGroupOrder[data[["leastEvenlyConnected","complex"]]]/(nV!);
-	data[["random1","weight"]]=1.0*ECGrav`PureComplexAutomorphismGroupOrder[data[["random1","complex"]]]/(nV!);
-	data[["random2","weight"]]=1.0*ECGrav`PureComplexAutomorphismGroupOrder[data[["random2","complex"]]]/(nV!)
+	data[["state","weight"]]=1.0*PureComplexAutomorphismGroupOrder[seedComplex]/(nV!);
+	data[["leastEvenlyConnected","weight"]]=1.0*PureComplexAutomorphismGroupOrder[data[["leastEvenlyConnected","complex"]]]/(nV!);
+	data[["random1","weight"]]=1.0*PureComplexAutomorphismGroupOrder[data[["random1","complex"]]]/(nV!);
+	data[["random2","weight"]]=1.0*PureComplexAutomorphismGroupOrder[data[["random2","complex"]]]/(nV!)
 
 ];
 
@@ -4274,7 +4273,7 @@ Reap[
 
 		Sow[{data[[Key["state"],Key["energy"]]],data[[Key["leastEvenlyConnected"],Key["energy"]]],data[[Key["random1"],Key["energy"]]],data[[Key["random2"],Key["energy"]]]}];
 		Do[
-			sweepOutput=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[[Key[replicaName],Key["complex"]]],HoldNumberOfVerticesFixed,
+			sweepOutput=RandomPureSimplicialComplexMCMCSweep[data[[Key[replicaName],Key["complex"]]],HoldNumberOfVerticesFixed,
 				labelingChoise,1];
 
 			data[[Key[replicaName]]]=sweepOutput;
@@ -4326,7 +4325,7 @@ result, "ECGravReturn$55"]
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[args___]:=(Message[ECGrav`RandomPureSimplicialComplexMCMCEquilibriate::argerr, args];
+RandomPureSimplicialComplexMCMCEquilibriate[args___]:=(Message[RandomPureSimplicialComplexMCMCEquilibriate::argerr, args];
 $Failed);
 
 
@@ -4337,7 +4336,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,eqlT_Integer, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,eqlT_Integer, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer]:=
 (*
 (****************************************)
@@ -4369,7 +4368,7 @@ observablesTable=
 Transpose[
 	Table[
 		If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-		sweepOutput=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[[Key["state"],Key["complex"]]],labelingChoise,1];
+		sweepOutput=RandomPureSimplicialComplexMCMCSweep[data[[Key["state"],Key["complex"]]],labelingChoise,1];
 		data[[Key["state"]]]=sweepOutput;
 		Flatten[{data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["vertexCount"]]],
 					Through[operators[data[[Key["state"],Key["complex"]]]]]}]
@@ -4386,25 +4385,25 @@ Table[
 	If[Length[DeleteDuplicates[observablesTable[[i]]]]>1,i,
 		Which[i==1,
 
-				Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
+				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
 
 			i==2,
-				Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
+				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 
 			i>2,
-				Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
 	Nothing],
 {i,1,Length[observablesTable]}];
 
 If[fluctuatingObservableIndices=={},
-		Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
 	corrTable=Table[
-		norm=ECGrav`CorrelationTime[0,observablesTable[[i]]];
+		norm=CorrelationTime[0,observablesTable[[i]]];
 		If[norm==0.0,norm=1.0];
 			(*the time 0 correlation can be 0 sometimes*)
 		Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,PrintTemporary["      computing corrT at t = ",t]];
-			ECGrav`CorrelationTime[t,observablesTable[[i]]],
+			CorrelationTime[t,observablesTable[[i]]],
 			{t,0,numsweeps-10}]/norm
 		,{i,fluctuatingObservableIndices}];
 	
@@ -4428,7 +4427,7 @@ data
 
 
 (* Overload Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumberOfVerticesFixed_?BooleanQ,eqlT_Integer, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumberOfVerticesFixed_?BooleanQ,eqlT_Integer, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer]:=
 (*
 (****************************************)
@@ -4447,7 +4446,7 @@ ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumbe
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],nV=Length[DeleteDuplicates[Flatten[seedComplex]]],data,sweepOutput,observablesTable,
 	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps},
 
-Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise], "ECGravReturn$56"]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise], "ECGravReturn$56"]];
 
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 	"state"-><|"complex"->Sort[Sort/@seedComplex],"edgeCount"->Length[Union@@(Subsets[#,{2}]&/@(Sort/@seedComplex))],"weight"->1.0,"energy" ->0.0|>|>;
@@ -4461,7 +4460,7 @@ observablesTable=
 Transpose[
 	Table[
 		If[Mod[i,Ceiling[numsweeps/5.0]]==0,PrintTemporary[" sweepno ",i]];
-		sweepOutput=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[[Key["state"],Key["complex"]]],HoldNumberOfVerticesFixed,labelingChoise,1];
+		sweepOutput=RandomPureSimplicialComplexMCMCSweep[data[[Key["state"],Key["complex"]]],HoldNumberOfVerticesFixed,labelingChoise,1];
 		data[[Key["state"]]]=sweepOutput;
 		Flatten[{data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["edgeCount"]]],
 					Through[operators[data[[Key["state"],Key["complex"]]]]]}]
@@ -4475,23 +4474,23 @@ fluctuatingObservableIndices=
 Table[
 	If[Length[DeleteDuplicates[observablesTable[[i]]]]>1,i,
 		Which[i==1,
-			Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
+			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
 			i==2,
-			Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
+			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 			i>2,
-			Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
 		Nothing],
 {i,1,Length[observablesTable]}];
 
 If[fluctuatingObservableIndices=={},
-		Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
 	corrTable=
 		Table[
-			norm=ECGrav`CorrelationTime[0,observablesTable[[i]]];If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
+			norm=CorrelationTime[0,observablesTable[[i]]];If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 			Table[
 				If[Mod[t,Ceiling[numsweeps/5.0]]==0,PrintTemporary["      computing corrT at t = ",t]];
-				ECGrav`CorrelationTime[t,observablesTable[[i]]],
+				CorrelationTime[t,observablesTable[[i]]],
 			{t,0,numsweeps-10}]/norm
 		,{i,fluctuatingObservableIndices}];
 	
@@ -4513,7 +4512,7 @@ data, "ECGravReturn$56"]
 
 
 (* Catch-all Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[args___]:=(Message[ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime::argerr, args];
+RandomPureSimplicialComplexMCMCCorrelationTime[args___]:=(Message[RandomPureSimplicialComplexMCMCCorrelationTime::argerr, args];
 $Failed);
 
 
@@ -4524,7 +4523,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMC[seedComplex_List, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMC[seedComplex_List, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer, numSamples_Integer]:=
 (*
 (****************************************)
@@ -4548,7 +4547,7 @@ PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 (********************)
 *)
 
-data=ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,labelingChoise];
+data=RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,labelingChoise];
 
 (*
 (***************************************)
@@ -4556,7 +4555,7 @@ data=ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,labelingChoi
 (***************************************)
 *)
 
-Tempoutput=ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex"]],data[["eqlT"]], operators,
+Tempoutput=RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex"]],data[["eqlT"]], operators,
 	labelingChoise];
 
 data[["corrT"]]=Tempoutput[[Key["corrT"]]];
@@ -4575,7 +4574,7 @@ measurements=Reap[
 
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
-		data[[Key["state"]]]=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],labelingChoise,data[["corrT"]]];
+		data[[Key["state"]]]=RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],labelingChoise,data[["corrT"]]];
 
 		If[Mod[numsweeps,1]==0,
 			Sow[
@@ -4599,7 +4598,7 @@ measurements=Reap[
 
 
 (* Overload Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMC[seedComplex_List, HoldNumberOfVerticesFixed_?BooleanQ, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMC[seedComplex_List, HoldNumberOfVerticesFixed_?BooleanQ, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer, numSamples_Integer]:=
 (*
 (****************************************)
@@ -4616,7 +4615,7 @@ ECGrav`RandomPureSimplicialComplexMCMC[seedComplex_List, HoldNumberOfVerticesFix
 
 Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 
-Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMC[seedComplex, operators,labelingChoise, numSamples], "ECGravReturn$57"]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMC[seedComplex, operators,labelingChoise, numSamples], "ECGravReturn$57"]];
 
 PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 
@@ -4627,7 +4626,7 @@ PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 *)
 
 
-data=ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,HoldNumberOfVerticesFixed,labelingChoise];
+data=RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,HoldNumberOfVerticesFixed,labelingChoise];
 
 
 (*
@@ -4637,7 +4636,7 @@ data=ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,HoldNumberOf
 *)
 
 	
-Tempoutput=ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex"]],HoldNumberOfVerticesFixed,data[["eqlT"]], operators,
+Tempoutput=RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex"]],HoldNumberOfVerticesFixed,data[["eqlT"]], operators,
 	labelingChoise];
 
 data[["corrT"]]=Tempoutput[[Key["corrT"]]];
@@ -4658,7 +4657,7 @@ measurements=
 
 			If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
-			data[[Key["state"]]]=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
+			data[[Key["state"]]]=RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
 										HoldNumberOfVerticesFixed,labelingChoise,data[["corrT"]]
 								];
 
@@ -4683,7 +4682,7 @@ measurements=
 
 
 (* Overload Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput_Association, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMC[priorRunInput_Association, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer, numSamples_Integer]:=
 (*
 (****************************************)
@@ -4711,7 +4710,7 @@ measurements=Reap[
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
 		data[[Key["state"]]]=
-			ECGrav`RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
+			RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
 				labelingChoise,data[["corrT"]]];
 
 		If[Mod[numsweeps,1]==0,
@@ -4730,7 +4729,7 @@ measurements=Reap[
 
 
 (* Overload Pattern *)
-ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput_Association,HoldNumberOfVerticesFixed_?BooleanQ, operators_/;MatchQ[operators,{__Function}],
+RandomPureSimplicialComplexMCMC[priorRunInput_Association,HoldNumberOfVerticesFixed_?BooleanQ, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer, numSamples_Integer]:=
 (*
 (****************************************)
@@ -4748,7 +4747,7 @@ ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput_Association,HoldNumberOfVer
 Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 
 
-Catch[If[HoldNumberOfVerticesFixed==False,Throw[ECGrav`RandomPureSimplicialComplexMCMC[priorRunInput, operators,labelingChoise, numSamples], "ECGravReturn$58"]];
+Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMC[priorRunInput, operators,labelingChoise, numSamples], "ECGravReturn$58"]];
 
 data=priorRunInput;
 
@@ -4760,7 +4759,7 @@ measurements=Reap[
 
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
 
-		data[[Key["state"]]]=ECGrav`RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
+		data[[Key["state"]]]=RandomPureSimplicialComplexMCMCSweep[data[["state","complex"]],
 										HoldNumberOfVerticesFixed,labelingChoise,data[["corrT"]]
 							];
 
@@ -4794,7 +4793,7 @@ measurements=Reap[
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`RandomUnlabeledPseudoManifold[{purity_Integer,facetOrder_Integer,connected_Integer:0}]:=
+RandomUnlabeledPseudoManifold[{purity_Integer,facetOrder_Integer,connected_Integer:0}]:=
 (*
 (****************************************)
 (*   (* Last updated 12/28/2024. *) *)
@@ -4824,7 +4823,7 @@ If[facetOrder==1,Throw[facets, "ECGravReturn$59"]
 
 Do[
 
-{facets,pstingSites} =ECGrav`AddRandomUnlabeledFacetToPseudoManifold[facets,pstingSites,connected],{n,1,facetOrder-1}
+{facets,pstingSites} =AddRandomUnlabeledFacetToPseudoManifold[facets,pstingSites,connected],{n,1,facetOrder-1}
 
 ];
 
@@ -4833,7 +4832,7 @@ Do[
 ];
 
 (* Catch-all Pattern *)
-ECGrav`RandomUnlabeledPseudoManifold[args___]:=(Message[ECGrav`RandomUnlabeledPseudoManifold::argerr, args];
+RandomUnlabeledPseudoManifold[args___]:=(Message[RandomUnlabeledPseudoManifold::argerr, args];
 $Failed);
 
 
@@ -4848,7 +4847,7 @@ $Failed);
 (* :Code Section *)
 
 (* Primary Pattern *)
-ECGrav`AddRandomUnlabeledFacetToPseudoManifold[facetsLst_List,apastingSites_List,connected_Integer:0]:=
+AddRandomUnlabeledFacetToPseudoManifold[facetsLst_List,apastingSites_List,connected_Integer:0]:=
 (*
 (****************************************)
 (*   (* Last updated 10/11/2025. *) *)
@@ -4874,10 +4873,10 @@ glen=Length[DeleteDuplicates[Flatten[facetsLst]]];
 
 (*facetAutGroup=PureComplexFacetAutomorphismGroup[facets];*)
 
-{autGroup,relabelingRule}={#1,Reverse/@#2}&@@ECGrav`PureComplexAutomorphismGroup[facetsLst];
+{autGroup,relabelingRule}={#1,Reverse/@#2}&@@PureComplexAutomorphismGroup[facetsLst];
 
 
-g=CanonicalGraph[ECGrav`GraphFromCliques[facetsLst]];
+g=CanonicalGraph[GraphFromCliques[facetsLst]];
 
 (*relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[facetsLst],g][[1]]];*)
 
@@ -5124,7 +5123,7 @@ relabelingRules=Thread[DeleteDuplicates[Flatten[newfacets]]
 ];
 
 (* Catch-all Pattern *)
-ECGrav`AddRandomUnlabeledFacetToPseudoManifold[args___]:=(Message[ECGrav`AddRandomUnlabeledFacetToPseudoManifold::argerr, args];
+AddRandomUnlabeledFacetToPseudoManifold[args___]:=(Message[AddRandomUnlabeledFacetToPseudoManifold::argerr, args];
 $Failed);
 
 
@@ -5133,10 +5132,7 @@ $Failed);
 
 
 (* End private context *)
-End[]
 
 (* Protect exported symbols *)
 
-Protect @@ Names["ECGrav`PureComplexes`*"];
 
-EndPackage[]
