@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-14.2%2B-red.svg)
 
 A Wolfram Language paclet for studying models in which geometry — and ultimately
@@ -110,7 +110,7 @@ build on this and emit diagnostic plots as they run.
 
 ## What's in the package
 
-ECGrav exports 111 public functions across two subpackages. A selection:
+ECGrav exports 113 public functions across two subpackages. A selection:
 
 ### Simplicial complexes & graphs
 
@@ -146,7 +146,7 @@ Documentation Center, along with an **ECGrav** guide (API by theme) and a
 
 ## Tests
 
-The `Tests/` directory holds a `.wlt` regression suite (63 tests) that loads the
+The `Tests/` directory holds a `.wlt` regression suite (87 tests) that loads the
 package **from source**:
 
 ```wolfram
@@ -160,9 +160,11 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.2.0). Earlier releases are preserved as git tags:
+current release (1.3.0). Earlier releases are preserved as git tags:
 
-- `v1.2.0` — current: cleanup, regression test suite, bug fixes, MIT license
+- `v1.3.0` — current: Phase 3 quality & CI — bug fixes, expanded test suite (87 tests),
+  GitHub Actions CI, and the collapse to a single `ECGrav` public context
+- `v1.2.0` — cleanup, regression test suite, bug fixes, MIT license
 - `v1.1.0`, `v1.0.0` — the earlier codebase (preserved for reference)
 
 ## License
