@@ -19,7 +19,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.2.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.3.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 ---
