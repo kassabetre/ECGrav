@@ -6,6 +6,35 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Changed
+- `HyperDeg[Amat_List, clq]` and `delH2dCombManifold` are now computed entirely from the
+  adjacency matrix and build no `Graph` object. Both are pure optimisations: outputs are
+  unchanged (verified `SameQ`-identical over 8142 `HyperDeg` and 3074 `delH2dCombManifold`
+  calls across 95 graphs — random over sizes 3–9 and four densities, plus empty, complete,
+  cycle, path, star, wheel, bipartite, disjoint-union and singleton graphs, both signs of
+  `J`, every vertex pair, and degenerate/duplicate cliques), and the 87-test suite passes.
+
+  - `HyperDeg[Amat, clq]` tests the clique condition as a sum over the induced submatrix
+    and counts common neighbours as `Total[Times@@Amat[[clqV]]]`. It previously ran
+    `CompleteGraphQ[Subgraph[...]]` and then delegated to the `Graph` overload, which ran
+    that same test a second time. **0.88 ms → 0.040 ms** (22×) at 8 vertices.
+  - `delH2dCombManifold` replaces `Sph`/`Subgraph` with adjacency-row intersections,
+    `FVector` (which called `FindClique`) with vertex/edge/triangle counts read off the
+    submatrix — only the first three f-vector entries survived its `PadRight[...,3]` — and
+    the `HyperDeg` sum over `Tuples` with a single dot product. **4.18 ms → 0.32 ms** (13×).
+  - `H2dCombManifold` speeds up as a side effect, since it calls the matrix `HyperDeg`:
+    **12.4 ms → 1.47 ms** (8.4×).
+
+  End to end this takes `GraphEquilibriate` at 8 vertices from 331 s to 122 s with an
+  identical trajectory (same `eqlT`, `minEnergy` and final energy). Callers that pass
+  `AdjacencyGraph[am]` to `HyperDeg` rather than `am` still take the slower `Graph` path.
+
+### Added
+- Private helpers `ConnectedComponentCountAM` and `LinkComponentCountAM` — component
+  counts of a graph and of a vertex link straight from an adjacency matrix, by boolean
+  transitive closure (repeated squaring), matching
+  `Length[ConnectedComponents[AdjacencyGraph[...]]]` including isolated vertices.
+
 ## [1.3.1] - 2026-07-29
 
 Documentation and tooling only — no changes to the package's functions or public API,

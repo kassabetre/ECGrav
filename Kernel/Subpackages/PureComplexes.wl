@@ -449,11 +449,25 @@ Length[Intersection@@spheres], "ECGravReturn$10"]
 
 (* Overload Pattern *)
 HyperDeg[Amat_List/;(SymmetricMatrixQ[Amat]&&Sort[DeleteDuplicates[Flatten[Amat]]]=={0,1}),clq_List]:=
-(*Computes the degree of the clique clq given as a list of vertices. 
-Checks whether or not the input is a clique in the graph*)
-With[{g=AdjacencyGraph[Amat]},
-Catch[If[CompleteGraphQ[Subgraph[g,clq]]==False,Throw[Null, "ECGravReturn$11"]];
-HyperDeg[g,clq], "ECGravReturn$11"]
+(*Computes the degree of the clique clq given as a list of vertices.
+Checks whether or not the input is a clique in the graph.
+
+Pure adjacency-matrix implementation: no Graph object is built, so this no longer
+pays for AdjacencyGraph + Subgraph + CompleteGraphQ (twice - the old version ran the
+CompleteGraphQ test here and then again inside the Graph overload it delegated to).
+
+clqV is a clique iff its induced submatrix Amat[[clqV,clqV]] has all Length[clqV]
+(Length[clqV]-1) off-diagonal entries equal to 1, i.e. iff those entries sum to that
+value (the diagonal of an adjacency matrix is 0, so it contributes nothing).
+
+The common neighbours of clqV are the columns where every row Amat[[v]], v in clqV,
+carries a 1, so their count is Total[Times@@Amat[[clqV]]]. Members of clqV are excluded
+automatically: for v in clqV the entry Amat[[v,v]] is 0, which zeroes that column of the
+product. For a single vertex this correctly reduces to its degree.*)
+With[{clqV=DeleteDuplicates[clq]},
+Catch[If[clqV=={},Throw[Null, "ECGravReturn$11"]];
+If[Total[Amat[[clqV,clqV]],2]!=Length[clqV](Length[clqV]-1),Throw[Null, "ECGravReturn$11"]];
+Total[Times@@Amat[[clqV]]], "ECGravReturn$11"]
 ];
 
 (* Overload Pattern *)

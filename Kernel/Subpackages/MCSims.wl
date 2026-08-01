@@ -847,37 +847,95 @@ H2dCombManifold[args___]:=(Message[H2dCombManifold::argerr, args];
 $Failed);
 
 
+(* Private helper *)
+ConnectedComponentCountAM[am_List]:=
+(*Number of connected components of the graph with adjacency matrix am, isolated
+vertices included - i.e. Length[ConnectedComponents[AdjacencyGraph[am]]] without
+building the Graph.
+
+Boolean transitive closure by repeated squaring: Unitize[(am+I)^(2^k)] records
+reachability within 2^k steps, and 2^Ceiling[Log2[n]] >= n exceeds the longest possible
+path, so after that many squarings two vertices lie in the same component iff their rows
+are equal. The component count is then the number of distinct rows.*)
+Module[{n=Length[am],reach},
+	If[n==0,
+		0,
+		reach=Unitize[am+IdentityMatrix[n]];
+		Do[reach=Unitize[reach . reach],{Ceiling[Log2[n]]}];
+		Length[DeleteDuplicates[reach]]
+	]
+];
+
+(* Private helper *)
+LinkComponentCountAM[am_List,v_Integer]:=
+(*Number of connected components of the link (sphere) of vertex v, i.e.
+Length[ConnectedComponents[Sph[AdjacencyGraph[am],v]]], done on the submatrix.
+An isolated v gives the empty submatrix and so 0 components, matching Sph's Subgraph.*)
+With[{nbrs=Flatten[Position[am[[v]],1]]},
+	ConnectedComponentCountAM[am[[nbrs,nbrs]]]
+];
+
 (* Primary Pattern *)
 delH2dCombManifold[Amat_List,J_,i_Integer,j_Integer]:=
-(*the change in H2dCombManifold when edge {i,j} is toggled*)
-Module[{numV=Length[Amat],g=AdjacencyGraph[Amat],AmatNew,gNew,sphIntG,sphIntVertices},
+(*the change in H2dCombManifold when edge {i,j} is toggled.
+
+Pure adjacency-matrix implementation - no Graph object is constructed anywhere. The
+three sources of Graph work in the original are replaced as follows:
+
+1. Sph[g,i]/Sph[g,j] and the induced Subgraph on their intersection become a plain
+   Intersection of the two adjacency rows plus the submatrix on those indices.
+2. FVector[sphIntG] (which called FindClique) becomes vertex, edge and triangle counts
+   read straight off that submatrix. Only the first three f-vector entries ever mattered:
+   the original truncated to three with PadRight[...,3], and triangles of a graph are
+   Tr[A^3]/6. The f2 slot is in fact weighted 0.0 by the dot product below, but it is
+   computed anyway so the term stays correct if that weight vector is ever changed.
+3. ConnectedComponents[...] becomes ConnectedComponentCountAM / LinkComponentCountAM.
+
+The HyperDeg sum also collapses: every pair {i,v} and {j,v} with v a common neighbour of
+i and j is genuinely an edge, so HyperDeg is just the common-neighbour count
+Amat[[i]].Amat[[v]], and summing over v factors into one dot product against the summed
+rows of the common neighbours.*)
+Module[{numV=Length[Amat],aij=Amat[[i,j]],flip,AmatNew,sphIntVertices,sphIntAmat,
+		f0,f1,f2,hyperDegSum,fVecTerm,degreeTerm,componentTerm,sphereTerm},
+
+	flip=-(2*aij-1);(*+1 when the edge is being added, -1 when it is being removed*)
+
 	AmatNew=Amat;
-	AmatNew[[i,j]]=AmatNew[[j,i]]=Mod[Amat[[i,j]]+1,2];
-	gNew=AdjacencyGraph[AmatNew];
-	sphIntG=Subgraph[g,Intersection[VertexList[Sph[g,i]],VertexList[Sph[g,j]]]];
-	sphIntVertices=VertexList[sphIntG];
+	AmatNew[[i,j]]=AmatNew[[j,i]]=Mod[aij+1,2];
 
-	J*(
-		Join[{0,-(2*Amat[[i,j]]-1)},PadRight[-(2*Amat[[i,j]]-1)*FVector[sphIntG],3]] . {0.0,1.0,-(3.0),(4.0),0.0}
-			+(1.0)*(-(2*Amat[[i,j]]-1)(Sum[HyperDeg[g,k],{k,Sort/@Tuples[{{i,j},sphIntVertices}]}]+Binomial[Length[sphIntVertices],2])+2*Amat[[i,j]]*Length[sphIntVertices])
+	sphIntVertices=Intersection[Flatten[Position[Amat[[i]],1]],Flatten[Position[Amat[[j]],1]]];
+	sphIntAmat=Amat[[sphIntVertices,sphIntVertices]];
 
-		+(1.0*numV)*(Length[ConnectedComponents[AdjacencyGraph[AmatNew]]]-Length[ConnectedComponents[AdjacencyGraph[Amat]]])
+	f0=Length[sphIntVertices];
+	f1=Total[sphIntAmat,2]/2;
+	f2=If[f0<3,0,Tr[MatrixPower[sphIntAmat,3]]/6];
 
-		+(1.0)*Which[Length[sphIntVertices]>1&&ConnectedGraphQ[sphIntG],(*Print["case 1"];*)
-					0,
+	fVecTerm=Join[{0,flip},flip*{f0,f1,f2}] . {0.0,1.0,-(3.0),(4.0),0.0};
 
-				(sphIntVertices=={}&&(Total[Amat[[i]]]+Total[Amat[[j]]]>0)&&(Total[Amat[[i]]]==0||Total[Amat[[j]]]==0)),(*Print["case 2"];*)
-					0,
-				
-				(sphIntVertices=={}&&(Total[Amat[[i]]]+Total[Amat[[j]]]==0)),(*Print["case 3"];*)
-					2*(2*Amat[[i,j]]-1),
+	hyperDegSum=If[sphIntVertices=={},
+		0,
+		(Amat[[i]]+Amat[[j]]) . Total[Amat[[sphIntVertices]]]
+	];
 
-				True,(*Print["case 4"];*)
-					Total[(Abs[Length[ConnectedComponents[Sph[gNew,#]]]-1]-Abs[Length[ConnectedComponents[Sph[g,#]]]-1])&/@Join[{i,j},sphIntVertices]]
+	degreeTerm=(1.0)*(flip*(hyperDegSum+Binomial[f0,2])+2*aij*f0);
 
-			]
+	componentTerm=(1.0*numV)*(ConnectedComponentCountAM[AmatNew]-ConnectedComponentCountAM[Amat]);
 
-		)
+	sphereTerm=(1.0)*Which[f0>1&&ConnectedComponentCountAM[sphIntAmat]==1,(*case 1*)
+				0,
+
+			(sphIntVertices=={}&&(Total[Amat[[i]]]+Total[Amat[[j]]]>0)&&(Total[Amat[[i]]]==0||Total[Amat[[j]]]==0)),(*case 2*)
+				0,
+
+			(sphIntVertices=={}&&(Total[Amat[[i]]]+Total[Amat[[j]]]==0)),(*case 3*)
+				2*(2*aij-1),
+
+			True,(*case 4*)
+				Total[(Abs[LinkComponentCountAM[AmatNew,#]-1]-Abs[LinkComponentCountAM[Amat,#]-1])&/@Join[{i,j},sphIntVertices]]
+
+		];
+
+	J*(fVecTerm+degreeTerm+componentTerm+sphereTerm)
 ];
 
 (* Catch-all Pattern *)
