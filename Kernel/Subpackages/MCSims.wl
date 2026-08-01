@@ -29,7 +29,7 @@
 (*Helper Functions*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Aggregating Data*)
 
 
@@ -685,7 +685,7 @@ $Failed);
 (*Hamiltonians*)
 
 
-(* ::Section:: *)
+(* ::Section::Closed:: *)
 (*Graph Hamiltonians*)
 
 
@@ -817,7 +817,7 @@ H1dCombManifold[args___]:=(Message[H1dCombManifold::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*H2dCombManifold*)
 
 
@@ -2074,6 +2074,7 @@ data[[Key["empty"],Key["energy"]]]=hamiltonian[data[[Key["empty"],Key["graph"]]]
 data[[Key["random"],Key["energy"]]]=hamiltonian[data[[Key["random"],Key["graph"]]],hparams];
 data[[Key["random"],Key["mag"]]]=Total[Flatten[data[[Key["random"],Key["graph"]]]]]*1.0/(vCount(vCount-1));
 
+Print["Equilibriating at beta ",beta, " hparams ",{hparams}];
 
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
