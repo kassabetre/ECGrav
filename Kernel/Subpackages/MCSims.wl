@@ -17,16 +17,12 @@
 (*Begin MCSims Package*)
 
 
-
-
 (* ::Title:: *)
 (*MCSims Public Functions*)
 
 
 (* ::Title:: *)
 (*MCSims Private*)
-
-
 
 
 (* ::Chapter:: *)
@@ -161,7 +157,7 @@ Susceptibility[args___]:=(Message[Susceptibility::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*InternalEnergy*)
 
 
@@ -222,7 +218,7 @@ CvOverT[args___]:=(Message[CvOverT::argerr, args];
 $Failed);
 
 
-(* ::Item:: *)
+(* ::Item::Closed:: *)
 (*ComputeMinusBetaTimesFreeEnergy*)
 
 
@@ -689,7 +685,7 @@ $Failed);
 (*Hamiltonians*)
 
 
-(* ::Section::Closed:: *)
+(* ::Section:: *)
 (*Graph Hamiltonians*)
 
 
@@ -821,7 +817,7 @@ H1dCombManifold[args___]:=(Message[H1dCombManifold::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*H2dCombManifold*)
 
 
@@ -2039,11 +2035,11 @@ GraphSweepReplica[args___[argparams___]]:=(Message[GraphSweepReplica::argerr, ar
 $Failed);
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GraphEquilibriate*)
 
 
-(* ::Item::Closed:: *)
+(* ::Item:: *)
 (*GraphEquilibriate *)
 
 
@@ -2214,6 +2210,7 @@ data[[Key["empty"],Key["energy"]]]=hamiltonian[data[[Key["empty"],Key["graph"]]]
 data[[Key["random"],Key["energy"]]]=hamiltonian[data[[Key["random"],Key["graph"]]],hparams];
 data[[Key["random"],Key["mag"]]]=Total[Flatten[data[[Key["random"],Key["graph"]]]]]*1.0/(vCount(vCount-1));
 
+PrintTemporary["Equilibriating at beta ",beta, " hparams ",{hparams}];
 
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
@@ -5963,7 +5960,7 @@ GraphCTLSchedule[args___]:=(Message[GraphCTLSchedule::argerr, args];
 $Failed);
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GraphParallelTempering*)
 
 
