@@ -6,6 +6,15 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-02
+
+Performance release. The Monte Carlo hot path no longer constructs `Graph` objects: the
+three functions it leans on are computed straight from the adjacency matrix, which is
+8–22× faster at 8 vertices and takes a `GraphEquilibriate` run there from 324 s to 21 s on
+an identical trajectory. No public function was added, removed or renamed, and every
+changed function was verified to return identical results. The one behavioural change is
+the new progress report from `GraphEquilibriate`, called out under Added.
+
 ### Changed
 - `HyperDeg[Amat_List, clq]` and `delH2dCombManifold` are now computed entirely from the
   adjacency matrix and build no `Graph` object. Both are pure optimisations: outputs are
@@ -50,6 +59,12 @@ semantic-ish; breaking changes are called out explicitly.
   `Subgraph` with `EulerChi` of a submatrix.
 
 ### Added
+- Both `GraphEquilibriate` overloads now emit a `PrintTemporary` progress line reporting
+  the inverse temperature and Hamiltonian parameters they were called with. This is the
+  one user-visible behavioural change in the release: the cell is removed automatically
+  when the evaluation finishes, so it leaves nothing in a saved notebook, and it does not
+  display at all from the parallel subkernels that `GraphParallelTempering` and the
+  temperature schedulers run it in.
 - Private helper `EulerChiAM` — the adjacency-matrix Euler-characteristic recursion behind
   the `EulerChi[Amat]` overload above.
 - Private helpers `ConnectedComponentCountAM` and `LinkComponentCountAM` — component

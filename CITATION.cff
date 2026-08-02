@@ -17,8 +17,8 @@ authors:
   - given-names: Khai
     family-names: Luong
     # orcid: "https://orcid.org/0000-0000-0000-0000"   # add if available
-version: 1.3.1
-date-released: "2026-07-29"
+version: 1.4.0
+date-released: "2026-08-02"
 license: MIT
 repository-code: "https://github.com/kassabetre/ECGrav"
 url: "https://github.com/kassabetre/ECGrav"
