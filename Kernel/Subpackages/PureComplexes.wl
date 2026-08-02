@@ -822,12 +822,40 @@ Module[{connectedComponents=ConnectedComplexComponents[facetsLst],sortedfacetsLs
 	], "ECGravReturn$20"]
 ];
 
+(* Private helper *)
+EulerChiAM[Amat_List]:=
+(*Euler characteristic of the clique complex of the graph with adjacency matrix Amat, i.e.
+chi = f1 - f2 + f3 - ... where fk is the number of k-cliques.
+
+Rather than enumerate the cliques, the alternating sum is accumulated directly. Writing
+	g[C] = Sum over cliques T contained in C, the empty one included, of (-1)^Length[T],
+and splitting on whether a chosen vertex v of C is used, gives the recursion
+	g[C] = g[C without v] - g[C intersect N[v]],      g[{}] = 1,
+while chi = Sum over NONEMPTY cliques of (-1)^(Length[T]+1) = 1 - g[V]. So one recursion
+over vertex subsets yields chi without ever listing a clique, and FindClique -- together
+with the Graph object it requires -- is avoided entirely.
+
+Vertex sets are integer bitmasks, and g is memoised on the Module-local symbol so the memo
+is discarded when the call returns. The chosen vertex is cleared from the candidate set
+before intersecting, so a self-loop on the diagonal cannot make it recur on itself; a
+1x1 matrix therefore gives 1 whether or not its single entry is a self-loop.*)
+Module[{n=Length[Amat],nbrMask,g},
+	If[n==0,
+		0,
+		nbrMask=Table[FromDigits[Reverse[Amat[[v]]],2],{v,n}];
+		g[0]=1;
+		g[c_]:=g[c]=With[{p=BitLength[c]-1},
+			g[BitClear[c,p]]-g[BitAnd[BitClear[c,p],nbrMask[[p+1]]]]];
+		1-g[2^n-1]
+	]
+];
+
 (* Overload Pattern *)
 EulerChi[Amat_List/;(Depth[Amat]==3&&Max[Amat]<=1)]:=
-(*Given adjacency matrix of a graph, it computes its Euler Characteristic by counting all simplices.*)
-With[{maxCliques=FindClique[AdjacencyGraph[Amat],\[Infinity],All]},
-Catch[If[Amat=={{1}},Throw[1, "ECGravReturn$21"]];
-EulerChi[maxCliques], "ECGravReturn$21"]];
+(*Given adjacency matrix of a graph, it computes its Euler Characteristic by counting all
+simplices. Read off the matrix alone -- no Graph object and no FindClique; see the
+EulerChiAM helper above.*)
+EulerChiAM[Amat];
 
 (* Overload Pattern *)
 EulerChi[g_Graph]:=

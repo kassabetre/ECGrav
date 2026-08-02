@@ -29,7 +29,29 @@ semantic-ish; breaking changes are called out explicitly.
   identical trajectory (same `eqlT`, `minEnergy` and final energy). Callers that pass
   `AdjacencyGraph[am]` to `HyperDeg` rather than `am` still take the slower `Graph` path.
 
+- `EulerChi[Amat]` no longer builds a `Graph` or calls `FindClique`. It accumulates the
+  alternating clique sum directly: with `g[C]` the signed count of cliques inside `C`,
+  `g[C] = g[C without v] - g[C intersect N[v]]` and `chi = 1 - g[V]`, so one memoised
+  recursion over vertex subsets (as bitmasks) gives `chi` without listing a clique.
+  **0.66 → 0.071 ms** at 8 vertices, **3.86 → 1.22 ms** at 30. Output is unchanged —
+  verified identical over 226 adjacency matrices (sizes 1–10 across seven densities
+  including 0.0 and 1.0, plus complete, cycle, path, star, wheel, bipartite, grid,
+  Petersen, disjoint unions, all-zero, `{{0}}`, `{{1}}`, `{{1,1},{1,1}}`), with `chi`
+  spanning −5 to 10; the facet-list and `Graph` overloads are untouched.
+
+  The `Amat == {{1}}` special case was removed as redundant: the chosen vertex is cleared
+  from the candidate set before intersecting, so a diagonal self-loop cannot make the
+  recursion revisit it and any 1×1 matrix yields 1.
+
+  This also gives callers a cheap edge-toggle delta. Toggling `{i,j}` adds or removes
+  exactly the cliques containing both `i` and `j` — each of them `{i,j}` plus a clique of
+  the link — so the f-vector shifts by two and the alternating sum collapses to
+  `s (EulerChi[link] - 1)` with `s = -(2 Amat[[i,j]] - 1)`, replacing an `FVector` of a
+  `Subgraph` with `EulerChi` of a submatrix.
+
 ### Added
+- Private helper `EulerChiAM` — the adjacency-matrix Euler-characteristic recursion behind
+  the `EulerChi[Amat]` overload above.
 - Private helpers `ConnectedComponentCountAM` and `LinkComponentCountAM` — component
   counts of a graph and of a vertex link straight from an adjacency matrix, by boolean
   transitive closure (repeated squaring), matching
