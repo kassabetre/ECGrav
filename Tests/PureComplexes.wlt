@@ -281,11 +281,101 @@ VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];
 (* Each generator must return a well-formed pure simplicial complex of the requested shape,
    whatever the random draw. Seeded only so a failure reproduces; the assertions themselves
    are seed-independent structural invariants.
-   NB: the parallel uniform samplers -- RandomUniformUnlabeledPureSimplicialComplex,
-   RandomUniformFacetLabeledPureSimplicialComplex, RandomVertexLabeledPureSimplicialComplex --
+   NB: RandomUniformUnlabeledPureSimplicialComplex and RandomUniformFacetLabeledPureSimplicialComplex
    are verified interactively but deliberately kept OUT of the suite: their first call in a
    fresh kernel pays a large one-time parallel-distribution cost (~30 s), not worth a
-   structural smoke test here. *)
+   structural smoke test here. RandomVertexLabeledPureSimplicialComplex IS covered below --
+   its serial path pays no such cost (7 ms in a fresh kernel), and its parallel branch costs
+   about 0.1 s once TestPrelude has launched the kernels. *)
+
+(* ---- RandomVertexLabeledPureSimplicialComplex ---- *)
+
+(* A sample is q distinct sorted p-subsets whose union is exactly [n]. {2,6,4} is included
+   because it is the degenerate end: six edges on four vertices is the whole of K4, so every
+   facet after the fourth brings no new vertex and goes through the repeat-rejection branch. *)
+VerificationTest[
+    Module[{specs}, SeedRandom[310];
+        specs = {{2, 3, 4}, {3, 4, 8}, {2, 5, 7}, {4, 3, 9}, {1, 5, 5}, {2, 6, 4}};
+        AllTrue[specs, Function[sp,
+            Module[{p = sp[[1]], q = sp[[2]], n = sp[[3]], s},
+                s = ECGrav`RandomVertexLabeledPureSimplicialComplex[sp, 300];
+                Length[s] === 300 && AllTrue[s, Function[c,
+                    Length[c] === q && Length[DeleteDuplicates[c]] === q &&
+                    AllTrue[c, Function[f, Length[f] === p && f === Sort[f]]] &&
+                    Union @@ c === Range[n]]]]]]],
+    True,
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-structure"
+];
+
+(* numSamples > 10^4 switches to ParallelTable. That branch used to distribute only
+   ECGrav`Private`, so the subkernels had no NumPureComplexes, the composition weights never
+   evaluated, and every sample came back as facet lists with unevaluated RandomSample[...]
+   expressions inside -- silently, and only above the threshold. *)
+VerificationTest[
+    Module[{s}, SeedRandom[311];
+        s = ECGrav`RandomVertexLabeledPureSimplicialComplex[{3, 2, 6}, 10001];
+        {Length[s], AllTrue[s, Function[c,
+            Length[c] === 2 && Length[DeleteDuplicates[c]] === 2 &&
+            AllTrue[c, Function[f, Length[f] === 3 && AllTrue[f, IntegerQ]]] &&
+            Union @@ c === Range[6]]]}],
+    {10001, True},
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-parallel-branch"
+];
+
+(* The generator is meant to be UNIFORM over vertex-labeled pure complexes -- that is what the
+   NumPureComplexes-weighted composition draw buys. Enumerate the 16 complexes at p=2,q=3,n=4
+   and chi-square the sample against uniform. BlockRandom keeps the seeding from disturbing the
+   rest of the suite; the threshold is loose, so this fails only on a genuinely wrong
+   distribution, and Total[counts] guards against a keying slip making it vacuous. *)
+VerificationTest[
+    BlockRandom[SeedRandom[312];
+        Module[{space, sample, counts, chi2},
+            space = Sort /@ Select[Subsets[Subsets[Range[4], {2}], {3}],
+                Union @@ # === Range[4] &];
+            sample = ECGrav`RandomVertexLabeledPureSimplicialComplex[{2, 3, 4}, 6400];
+            counts = Lookup[Counts[Sort /@ sample], space, 0];
+            chi2 = Total[(counts - 400)^2]/400.;
+            {Length[space], Total[counts],
+             SurvivalFunction[ChiSquareDistribution[Length[space] - 1], chi2] > 0.001}]],
+    {16, 6400, True},
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-uniform"
+];
+
+(* An empty sample space must fail loudly. Every composition weight carries a
+   NumPureComplexes factor, so on an empty space they are all zero and the draw cannot proceed;
+   the old code let that unevaluated result flow on and returned malformed "complexes". *)
+VerificationTest[
+    Quiet[ECGrav`RandomVertexLabeledPureSimplicialComplex[#, 2] & /@
+        {{3, 4, 100}, {2, 3, 7}, {3, 4, 3}, {3, 4, 2}, {3, 4, 0}, {3, 4, -3},
+         {0, 3, 4}, {3, 0, 5}, {3, -2, 5}, {0, 3}, {3, 0}}],
+    ConstantArray[$Failed, 11],
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-empty-space"
+];
+
+(* The one-complex overloads must propagate that $Failed rather than First[] into it. *)
+VerificationTest[
+    Quiet[{ECGrav`RandomVertexLabeledPureSimplicialComplex[{2, 4, 3}],
+           ECGrav`RandomVertexLabeledPureSimplicialComplex[{0, 3}],
+           ECGrav`RandomVertexLabeledPureSimplicialComplex[{2, 3, 4}, -5],
+           ECGrav`RandomVertexLabeledPureSimplicialComplex[{2, 3, 4}, 0]}],
+    {$Failed, $Failed, $Failed, {}},
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-degenerate-args"
+];
+
+(* Compositions are always feasible: each prefix of j facets covering v_j vertices must have
+   Binomial[v_j,p] >= j distinct p-subsets to draw from. The generator used to re-draw the whole
+   composition while this failed; that loop was dead, because a k is only ever drawn with
+   positive weight and a positive weight already implies the condition. This pins that down. *)
+VerificationTest[
+    Module[{s, comps}, SeedRandom[313];
+        s = ECGrav`RandomVertexLabeledPureSimplicialComplex[{2, 6, 8}, 500];
+        comps = Function[c, Module[{seen = {}},
+            Table[With[{k = Length[Complement[f, seen]]}, seen = Union[seen, f]; k], {f, c}]]] /@ s;
+        AllTrue[comps, Function[cp,
+            Total[cp] === 8 && AllTrue[Range[2, 6], Binomial[Total[Take[cp, #]], 2] >= # &]]]],
+    True,
+    TestID -> "RandomVertexLabeledPureSimplicialComplex-composition-feasible"
+];
 
 VerificationTest[
     Module[{c}, SeedRandom[301];

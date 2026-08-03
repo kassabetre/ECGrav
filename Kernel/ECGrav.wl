@@ -2344,10 +2344,15 @@ RandomVertexLabeledPureSimplicialComplex::usage="
 (* :Error Messages: *)	
 
 RandomVertexLabeledPureSimplicialComplex::argerr="Input should be of the form
-	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or 
+	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or
 	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer], or
 	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer}], or
 	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer}].";
+
+RandomVertexLabeledPureSimplicialComplex::empty="There is no pure simplicial complex of purity
+	`1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and facet
+	order must be at least 1, and the vertex count must satisfy p <= n <= p q with at least q
+	distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
