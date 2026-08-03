@@ -1621,26 +1621,97 @@ $Failed);
 (*NumPureComplexes*)
 
 
+(* Private helper *)
+NumPCKernel[p_Integer]:=NumPCKernel[p]=Reverse[Table[Binomial[p,k],{k,1,p}]];
+
+(* Private helper *)
+NumPCStep[p_Integer,1]:=NumPCStep[p,1]={1};
+
+(* Private helper *)
+NumPCStep[p_Integer,q_Integer]:=NumPCStep[p,q]=
+(*One row of the table: {N(p,q,n) : n=p,...,p q}, built from the q-1 row. Writing C(n) for
+Binomial[n,p], the recursion of the primary pattern below reads, term by term,
+	q N(p,q,n) = (C(n)-(q-1)) N(p,q-1,n) + C(n) Sum[Binomial[p,k] N(p,q-1,n-k),{k,1,p}],
+so a whole row is one vector expression. The inner sum is a fixed-kernel correlation of the
+previous row against {Binomial[p,p],...,Binomial[p,1]}, hence the p leading zeros. Every N is
+a count, so the right-hand side is divisible by q entrywise and the arithmetic stays in exact
+integers -- dividing once at the end avoids building a Rational, and its GCD, per term.*)
+Module[{len=p*(q-1)+1,prev,cvec,conv},
+	prev=PadRight[NumPCStep[p,q-1],len];
+	cvec=Table[Binomial[n,p],{n,p,p*q}];
+	conv=Take[ListCorrelate[NumPCKernel[p],Join[ConstantArray[0,p],prev]],len];
+	((cvec-(q-1))*prev+cvec*conv)/q
+];
+
+(* Private helper *)
+NumPCTop[p_Integer]:=0;
+
+(* Private helper *)
+NumPCRow[p_Integer,q_Integer]:=
+(*The memoised row for (p,q). Rows are filled bottom-up by an explicit loop rather than by
+letting NumPCStep recurse on itself, so the recursion depth stays at 1 instead of q: the
+older recursive form ran at q=300 but died on TerminatedEvaluation[RecursionLimit] by q=700.
+NumPCTop[p] is the highest row already built for this p, so a later call pays only for the
+rows it actually adds, in any order of q. The rows persist for the session -- that is the
+point, since the callers ask for many (q,n) at one fixed p -- and cost roughly 0.3 MB at
+p=3,q=50 and 2 MB at p=3,q=100, growing steeply beyond that.*)
+Module[{top=NumPCTop[p]},
+	If[q>top,
+		Do[NumPCStep[p,k],{k,top+1,q}];
+		NumPCTop[p]=q];
+	NumPCStep[p,q]
+];
+
+(* Private helper *)
+NumPCRec[pp_Integer,qq_Integer,nn_Integer]:=
+(*The original per-call recursion, kept only for degenerate purity (p<1) with q>=1, where the
+row picture does not apply; it reproduces those boundary values exactly as before. Memoised on
+the Block-local symbol, so the memo is discarded when the call returns.*)
+Block[{NumPCRec},
+
+NumPCRec[p_Integer,q_Integer,n_Integer]:=NumPCRec[p,q,n]=
+Which[q<0,0,q==1&&n==p,1,q==1&&n!=p,0,True,
+(((Binomial[n,p]-(q-1))/q)*NumPCRec[p,q-1,n]
+	+(Binomial[n,p]/q)*Sum[Binomial[p,k]*NumPCRec[p,q-1,n-k],{k,1,p}])];
+
+NumPCRec[pp,qq,nn]
+
+];
+
 (* Primary Pattern *)
 NumPureComplexes[pp_Integer,qq_Integer,nn_Integer]:=
-(*Gives the number of vertex labeled pure simplicial complexes of purity p, facet order q, 
-and number of vertices n. Computes recursively and uses memoization*)
-Block[{NumPureComplexes},
+(*Gives the number of vertex labeled pure simplicial complexes of purity p, facet order q,
+and number of vertices n. Computes bottom-up over q and memoizes a whole row of n at a time;
+see NumPCRow above. N(p,q,n) vanishes unless p<=n<=p q -- fewer than p vertices cannot carry
+a facet, and q facets of p vertices cannot cover more than p q of them -- so those n are
+answered without building any row.
 
-NumPureComplexes[p_Integer,q_Integer,n_Integer]:=NumPureComplexes[p,q,n]=
-Which[q<0,0,q==1&&n==p,1,q==1&&n!=p,0,True,
-(((Binomial[n,p]-(q-1))/q)*NumPureComplexes[p,q-1,n]
-	+(Binomial[n,p]/q)*Sum[Binomial[p,k]*NumPureComplexes[p,q-1,n-k],{k,1,p}])];
-	
-NumPureComplexes[pp,qq,nn]
-
+q==0 is the empty complex: it covers no vertices, so N(p,0,n) is 1 at n==0 and 0 otherwise, for
+every p. Feeding that into the recursion reproduces N(p,1,n)=KroneckerDelta[n,p], so the q==0
+row is the consistent seed one step below the q==1 row the table actually starts from. (Earlier
+versions had no q==0 branch at all and divided by q, returning Indeterminate.)*)
+Which[
+	qq<0,0,
+	qq==0,If[nn==0,1,0],
+	pp<1,NumPCRec[pp,qq,nn],
+	nn<pp||nn>pp*qq,0,
+	True,NumPCRow[pp,qq][[nn-pp+1]]
 ];
 
 (* Overload Pattern *)
 NumPureComplexes[p_Integer,q_Integer]:=
-(*The number of pure simplicial complexes of purity p, clique order q, and number of vertices n*)
-With[{n0=Catch[Do[If[Binomial[nn,p]>=q,Throw[nn]],{nn,p,p*q}]]},
-	Total[Table[NumPureComplexes[p,q,n],{n,n0,p*q}]]
+(*The number of pure simplicial complexes of purity p and facet order q, summed over the vertex
+count n. n0 is the first n carrying enough distinct p-subsets to supply q facets; below it every
+term is zero. When no n in p..p q qualifies -- which happens only for degenerate p or q -- there
+is nothing to sum and the answer is 0; earlier versions used the resulting n0=Null as a Table
+iterator bound and returned the expression unevaluated.*)
+Which[
+	q<0,0,
+	q==0,1,
+	True,
+	With[{n0=Catch[Do[If[Binomial[nn,p]>=q,Throw[nn]],{nn,p,p*q}]]},
+		If[IntegerQ[n0],Total[Table[NumPureComplexes[p,q,n],{n,n0,p*q}]],0]
+	]
 ];
 
 (* Catch-all Pattern *)

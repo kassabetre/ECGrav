@@ -52,7 +52,56 @@ VerificationTest[ECGrav`EulerChi[Table[0, {5}, {5}]], 5, TestID -> "EulerChi-5-i
 
 (* ---------- Counting / combinatorics ---------- *)
 
+(* NumPureComplexes[p,q,n] counts q-element sets of p-subsets of [n] whose union is all of
+   [n]. The values below were checked by direct enumeration of exactly that
+   (Select[Subsets[Subsets[Range[n],{p}],{q}], Union@@#===Range[n]&]), so they are oracles
+   independent of the recursion. NumPureComplexes[4,3,12]=5775 is independently 12!/(4!^3 3!),
+   the number of ways to partition 12 labelled vertices into 3 blocks of 4. *)
+
 VerificationTest[ECGrav`NumPureComplexes[3, 3], 2649, TestID -> "NumPureComplexes-3-3"];
+VerificationTest[ECGrav`NumPureComplexes[3, 3, 7], 945, TestID -> "NumPureComplexes-3-3-7"];
+VerificationTest[ECGrav`NumPureComplexes[3, 3, 9], 280, TestID -> "NumPureComplexes-3-3-9"];
+VerificationTest[ECGrav`NumPureComplexes[2, 4, 6], 330, TestID -> "NumPureComplexes-2-4-6"];
+VerificationTest[ECGrav`NumPureComplexes[3, 4, 8], 72380, TestID -> "NumPureComplexes-3-4-8"];
+VerificationTest[ECGrav`NumPureComplexes[2, 4], 900, TestID -> "NumPureComplexes-2-4"];
+VerificationTest[ECGrav`NumPureComplexes[3, 4], 441061, TestID -> "NumPureComplexes-3-4"];
+
+(* n outside p <= n <= p q is answered without building a row; both ends must give 0. *)
+VerificationTest[ECGrav`NumPureComplexes[3, 2, 2], 0, TestID -> "NumPureComplexes-n-below-p"];
+VerificationTest[ECGrav`NumPureComplexes[3, 2, 7], 0, TestID -> "NumPureComplexes-n-above-pq"];
+
+(* q<=0: the empty complex covers no vertices, so N(p,0,n) is 1 at n==0 and 0 otherwise, and
+   summing it over n gives 1. Negative q counts nothing. These returned Indeterminate (3-arg)
+   and an unevaluated Total[Table[..]] (2-arg) before. *)
+VerificationTest[ECGrav`NumPureComplexes[3, 0, 0], 1, TestID -> "NumPureComplexes-q0-n0"];
+VerificationTest[ECGrav`NumPureComplexes[3, 0, 5], 0, TestID -> "NumPureComplexes-q0-n-nonzero"];
+VerificationTest[ECGrav`NumPureComplexes[3, -1, 5], 0, TestID -> "NumPureComplexes-q-negative"];
+VerificationTest[ECGrav`NumPureComplexes[3, 0], 1, TestID -> "NumPureComplexes-2arg-q0"];
+VerificationTest[ECGrav`NumPureComplexes[2, -1], 0, TestID -> "NumPureComplexes-2arg-q-negative"];
+
+(* Degenerate purity: no n in p..p q carries enough distinct p-subsets, so the sum is empty. *)
+VerificationTest[ECGrav`NumPureComplexes[0, 3], 0, TestID -> "NumPureComplexes-2arg-p0"];
+
+(* The 2-arg overload must agree with summing the 3-arg form over every vertex count. *)
+VerificationTest[
+    ECGrav`NumPureComplexes[3, 5],
+    Total[Table[ECGrav`NumPureComplexes[3, 5, n], {n, 0, 15}]],
+    TestID -> "NumPureComplexes-2arg-equals-row-total"
+];
+
+(* Rows are cached per (p,q) behind a high-water mark, so a descending sweep of q must return
+   the same values as an ascending one. *)
+VerificationTest[
+    Table[ECGrav`NumPureComplexes[4, q, 12], {q, 9, 1, -1}],
+    Reverse[{0, 0, 5775, 57345750, 29179710945, 5551975972620, 627962951769615,
+        51166525553400015, 3312982055194610645}],
+    TestID -> "NumPureComplexes-descending-q"
+];
+
+(* Rows are filled by an explicit bottom-up loop, so recursion depth no longer grows with q;
+   the earlier recursive form died on TerminatedEvaluation[RecursionLimit] before q=700.
+   p=1 keeps the entries tiny: q singleton facets cover exactly q vertices. *)
+VerificationTest[ECGrav`NumPureComplexes[1, 800, 800], 1, TestID -> "NumPureComplexes-deep-q"];
 VerificationTest[ECGrav`RankComb[{0, 1, 2}, 5], 0, TestID -> "RankComb-first"];
 VerificationTest[
     ECGrav`UnrankComb[ECGrav`RankComb[{0, 1, 2}, 5], 5, 3],

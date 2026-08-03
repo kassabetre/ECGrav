@@ -1944,11 +1944,14 @@ UnrankComb::argerr="Input should be of teh form
 
 (* :Usage Messages: *)
 
-NumPureComplexes::usage = "NumPureComplexes[p_Integer, q_Integer, n_Integer] 
-gives the number of vertex labeled pure simplicial complexes of purity p, facet 
-order q, and number of vertices n. Computes recursively and uses memoization.
-NumPureComplexes[p_Integer, q_Integer] gives the number of pure simplicial complexes 
-of purity p, facet order q.";
+NumPureComplexes::usage = "NumPureComplexes[p_Integer, q_Integer, n_Integer]
+gives the number of vertex labeled pure simplicial complexes of purity p, facet
+order q, and number of vertices n. It is zero unless p <= n <= p q. Computes one whole
+row of n at a time, working up from q = 1, and memoizes the rows for the session.
+NumPureComplexes[p_Integer, q_Integer] gives the number of pure simplicial complexes
+of purity p, facet order q, summed over the vertex count.
+q = 0 is the empty complex: NumPureComplexes[p, 0, n] is 1 at n = 0 and 0 otherwise,
+and NumPureComplexes[p, 0] is 1. Negative q gives 0.";
 
 NumPureComplexes::argerr="Input should be of the form NumPureComplexes[p_Integer, q_Integer, n_Integer]
 	or NumPureComplexes[p_Integer, q_Integer].";
