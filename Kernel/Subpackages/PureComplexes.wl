@@ -1625,41 +1625,86 @@ $Failed);
 NumPCKernel[p_Integer]:=NumPCKernel[p]=Reverse[Table[Binomial[p,k],{k,1,p}]];
 
 (* Private helper *)
-NumPCStep[p_Integer,1]:=NumPCStep[p,1]={1};
-
-(* Private helper *)
-NumPCStep[p_Integer,q_Integer]:=NumPCStep[p,q]=
+NumPCAdvance[p_Integer,q_Integer,prevRow_List]:=
 (*One row of the table: {N(p,q,n) : n=p,...,p q}, built from the q-1 row. Writing C(n) for
 Binomial[n,p], the recursion of the primary pattern below reads, term by term,
 	q N(p,q,n) = (C(n)-(q-1)) N(p,q-1,n) + C(n) Sum[Binomial[p,k] N(p,q-1,n-k),{k,1,p}],
 so a whole row is one vector expression. The inner sum is a fixed-kernel correlation of the
 previous row against {Binomial[p,p],...,Binomial[p,1]}, hence the p leading zeros. Every N is
 a count, so the right-hand side is divisible by q entrywise and the arithmetic stays in exact
-integers -- dividing once at the end avoids building a Rational, and its GCD, per term.*)
+integers -- dividing once at the end avoids building a Rational, and its GCD, per term.
+Takes the previous row as an argument rather than reading the cache, so NumPCRow can use it
+both to fill the cache and to run past the cap without storing anything.*)
 Module[{len=p*(q-1)+1,prev,cvec,conv},
-	prev=PadRight[NumPCStep[p,q-1],len];
+	prev=PadRight[prevRow,len];
 	cvec=Table[Binomial[n,p],{n,p,p*q}];
 	conv=Take[ListCorrelate[NumPCKernel[p],Join[ConstantArray[0,p],prev]],len];
 	((cvec-(q-1))*prev+cvec*conv)/q
 ];
 
 (* Private helper *)
+NumPCStep[p_Integer,1]:=NumPCStep[p,1]={1};
+
+(* Private helper *)
+NumPCStep[p_Integer,q_Integer]:=NumPCStep[p,q]=NumPCAdvance[p,q,NumPCStep[p,q-1]];
+
+(* Private helper *)
 NumPCTop[p_Integer]:=0;
+
+(* Private helper: highest facet order whose rows are kept in the cache. -----------------
+   A row for (p,q) is p(q-1)+1 entries wide and the entries themselves grow with q, so the
+   cache costs on the order of p q^4 and has to stop somewhere. Measured cumulative size at
+   this cap: 2.5 MB at p=2, 6.3 MB at p=3, 11.8 MB at p=4, 28 MB at p=6, 51 MB at p=8. That
+   is far above any facet order the samplers in this package actually use.
+   Raise it, or set it to 0 to switch caching off, with
+	ECGrav`Private`$NumPCMaxCachedQ = 400;
+   and reclaim the memory with ECGrav`Private`NumPCClearCache[]. *)
+$NumPCMaxCachedQ=150;
 
 (* Private helper *)
 NumPCRow[p_Integer,q_Integer]:=
-(*The memoised row for (p,q). Rows are filled bottom-up by an explicit loop rather than by
-letting NumPCStep recurse on itself, so the recursion depth stays at 1 instead of q: the
-older recursive form ran at q=300 but died on TerminatedEvaluation[RecursionLimit] by q=700.
+(*The row for (p,q), cached up to $NumPCMaxCachedQ. Rows are filled bottom-up by an explicit
+loop rather than by letting NumPCStep recurse on itself, so the recursion depth stays at 1
+instead of q: the older recursive form ran at q=300 but died on
+TerminatedEvaluation[RecursionLimit] by q=700.
+
 NumPCTop[p] is the highest row already built for this p, so a later call pays only for the
 rows it actually adds, in any order of q. The rows persist for the session -- that is the
-point, since the callers ask for many (q,n) at one fixed p -- and cost roughly 0.3 MB at
-p=3,q=50 and 2 MB at p=3,q=100, growing steeply beyond that.*)
-Module[{top=NumPCTop[p]},
-	If[q>top,
-		Do[NumPCStep[p,k],{k,top+1,q}];
-		NumPCTop[p]=q];
-	NumPCStep[p,q]
+point, since the callers ask for many (q,n) at one fixed p.
+
+Past the cap the tail is advanced transiently and thrown away, which bounds the cache without
+losing the vectorised row recursion. It still seeds from the deepest cached row at or below q,
+so the cost past the cap is the tail alone, not a rebuild from q=1, and it is paid again on
+every call. Seeding is capped at q rather than at NumPCTop[p]: lowering $NumPCMaxCachedQ in a
+session that has already cached past the new value would otherwise leave NumPCTop[p] above q
+and return that higher row outright, with the advancing loop running empty.*)
+Module[{cap=$NumPCMaxCachedQ,target=Min[q,$NumPCMaxCachedQ],top=NumPCTop[p],row,q0},
+	If[target>top,
+		Do[NumPCStep[p,k],{k,top+1,target}];
+		NumPCTop[p]=target];
+	If[q<=cap,
+		NumPCStep[p,q],
+		q0=Min[NumPCTop[p],q];
+		row=If[q0>=1,NumPCStep[p,q0],{1}];
+		q0=Max[q0,1];
+		Do[row=NumPCAdvance[p,k,row],{k,q0+1,q}];
+		row
+	]
+];
+
+(* Private helper *)
+NumPCClearCache[]:=
+(*Drops every cached row and high-water mark, keeping only the definitions themselves -- the
+memoised entries are the DownValues whose left-hand side carries no Pattern. Returns the
+number of bytes reclaimed. Nothing else in the package holds on to a row, so calling this is
+always safe; it only costs the rebuilding.*)
+Module[{before,after,patterned=!FreeQ[First[#],Pattern]&},
+	before=Total[ByteCount/@{DownValues[NumPCStep],DownValues[NumPCTop],DownValues[NumPCKernel]}];
+	DownValues[NumPCStep]=Select[DownValues[NumPCStep],patterned];
+	DownValues[NumPCTop]=Select[DownValues[NumPCTop],patterned];
+	DownValues[NumPCKernel]=Select[DownValues[NumPCKernel],patterned];
+	after=Total[ByteCount/@{DownValues[NumPCStep],DownValues[NumPCTop],DownValues[NumPCKernel]}];
+	before-after
 ];
 
 (* Private helper *)

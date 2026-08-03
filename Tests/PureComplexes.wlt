@@ -102,6 +102,69 @@ VerificationTest[
    the earlier recursive form died on TerminatedEvaluation[RecursionLimit] before q=700.
    p=1 keeps the entries tiny: q singleton facets cover exactly q vertices. *)
 VerificationTest[ECGrav`NumPureComplexes[1, 800, 800], 1, TestID -> "NumPureComplexes-deep-q"];
+
+(* The cache cap and its reset are private by design -- they tune an implementation detail, not
+   the mathematics -- so the tests below have to name them in ECGrav`Private`. That is
+   deliberate, hence the suppression; it is scoped to this block so a genuine private-context
+   slip elsewhere in the file still shows up. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* Rows are cached only up to ECGrav`Private`$NumPCMaxCachedQ; past it the tail is advanced
+   transiently and discarded. Where that boundary falls must not change any value, so pin the
+   same row against literals with the cap below, straddling, and far above the q range. The
+   cache is deliberately NOT cleared between these, so a stale high-water mark left by one cap
+   would surface in the next. *)
+With[{expected = {0, 0, 0, 0, 8408400, 12234151930, 3513295545760, 465021334918140,
+        38280314838325560, 2271754355448413836, 105805316724776028360,
+        4080228574475590322786}},
+    VerificationTest[
+        Block[{ECGrav`Private`$NumPCMaxCachedQ = 4},
+            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 1, 12}]],
+        expected,
+        TestID -> "NumPureComplexes-cap-below-range"
+    ];
+    VerificationTest[
+        Block[{ECGrav`Private`$NumPCMaxCachedQ = 7},
+            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 12, 1, -1}]],
+        Reverse[expected],
+        TestID -> "NumPureComplexes-cap-straddling-descending"
+    ];
+    VerificationTest[
+        Block[{ECGrav`Private`$NumPCMaxCachedQ = 10000},
+            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 1, 12}]],
+        expected,
+        TestID -> "NumPureComplexes-cap-above-range"
+    ];
+];
+
+(* A cap of 0 switches caching off altogether and must still give the same answer. *)
+VerificationTest[
+    Block[{ECGrav`Private`$NumPCMaxCachedQ = 0}, ECGrav`NumPureComplexes[3, 8, 14]],
+    465021334918140,
+    TestID -> "NumPureComplexes-caching-disabled"
+];
+
+(* NumPCClearCache[] reclaims the rows and returns the bytes freed; nothing else holds a row,
+   so the next call must rebuild to the same values. *)
+VerificationTest[
+    (ECGrav`NumPureComplexes[4, 60, 120]; ECGrav`Private`NumPCClearCache[] > 0),
+    True,
+    TestID -> "NumPureComplexes-clear-cache-reclaims"
+];
+VerificationTest[
+    (ECGrav`Private`NumPCClearCache[]; ECGrav`Private`NumPCClearCache[]),
+    0,
+    TestID -> "NumPureComplexes-clear-cache-idempotent"
+];
+VerificationTest[
+    (ECGrav`Private`NumPCClearCache[];
+     {ECGrav`NumPureComplexes[3, 4, 8], ECGrav`NumPureComplexes[3, 3]}),
+    {72380, 2649},
+    TestID -> "NumPureComplexes-correct-after-clear"
+];
+
+(* :!CodeAnalysis::EndBlock:: *)
 VerificationTest[ECGrav`RankComb[{0, 1, 2}, 5], 0, TestID -> "RankComb-first"];
 VerificationTest[
     ECGrav`UnrankComb[ECGrav`RankComb[{0, 1, 2}, 5], 5, 3],
