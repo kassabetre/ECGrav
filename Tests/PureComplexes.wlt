@@ -307,18 +307,28 @@ VerificationTest[
     TestID -> "RandomVertexLabeledPureSimplicialComplex-structure"
 ];
 
-(* numSamples > 10^4 switches to ParallelTable. That branch used to distribute only
-   ECGrav`Private`, so the subkernels had no NumPureComplexes, the composition weights never
-   evaluated, and every sample came back as facet lists with unevaluated RandomSample[...]
-   expressions inside -- silently, and only above the threshold. *)
+(* The parallel threshold is private -- it tunes an implementation detail, not the mathematics --
+   so the two tests that pin a branch have to name it. Deliberate, hence the suppression, scoped
+   so a genuine private-context slip elsewhere still shows up. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* Above ECGrav`Private`$RandomComplexParallelThreshold the draw goes to ParallelTable. That
+   branch used to distribute only ECGrav`Private`, so the subkernels had no NumPureComplexes,
+   the composition weights never evaluated, and every sample came back as facet lists with
+   unevaluated RandomSample[...] expressions inside -- silently, and only above the threshold.
+   The threshold is forced low here so this keeps exercising the parallel path whatever the
+   shipped default becomes, and $KernelCount is asserted so that a kernel-less environment
+   fails loudly instead of quietly running the serial path and passing for the wrong reason. *)
 VerificationTest[
-    Module[{s}, SeedRandom[311];
-        s = ECGrav`RandomVertexLabeledPureSimplicialComplex[{3, 2, 6}, 10001];
-        {Length[s], AllTrue[s, Function[c,
-            Length[c] === 2 && Length[DeleteDuplicates[c]] === 2 &&
-            AllTrue[c, Function[f, Length[f] === 3 && AllTrue[f, IntegerQ]]] &&
-            Union @@ c === Range[6]]]}],
-    {10001, True},
+    Block[{ECGrav`Private`$RandomComplexParallelThreshold = 100},
+        Module[{s}, SeedRandom[311];
+            s = ECGrav`RandomVertexLabeledPureSimplicialComplex[{3, 2, 6}, 3000];
+            {$KernelCount > 0, Length[s], AllTrue[s, Function[c,
+                Length[c] === 2 && Length[DeleteDuplicates[c]] === 2 &&
+                AllTrue[c, Function[f, Length[f] === 3 && AllTrue[f, IntegerQ]]] &&
+                Union @@ c === Range[6]]]}]],
+    {True, 3000, True},
     TestID -> "RandomVertexLabeledPureSimplicialComplex-parallel-branch"
 ];
 
@@ -326,9 +336,13 @@ VerificationTest[
    NumPureComplexes-weighted composition draw buys. Enumerate the 16 complexes at p=2,q=3,n=4
    and chi-square the sample against uniform. BlockRandom keeps the seeding from disturbing the
    rest of the suite; the threshold is loose, so this fails only on a genuinely wrong
-   distribution, and Total[counts] guards against a keying slip making it vacuous. *)
+   distribution, and Total[counts] guards against a keying slip making it vacuous. Pinned to the
+   serial path: 6400 samples is over the parallel threshold, and parallel draws split the random
+   stream by kernel count, which would make the outcome differ from machine to machine rather
+   than being fixed by the seed. The parallel branch's distribution is checked out of suite. *)
 VerificationTest[
     BlockRandom[SeedRandom[312];
+      Block[{ECGrav`Private`$RandomComplexParallelThreshold = Infinity},
         Module[{space, sample, counts, chi2},
             space = Sort /@ Select[Subsets[Subsets[Range[4], {2}], {3}],
                 Union @@ # === Range[4] &];
@@ -336,10 +350,12 @@ VerificationTest[
             counts = Lookup[Counts[Sort /@ sample], space, 0];
             chi2 = Total[(counts - 400)^2]/400.;
             {Length[space], Total[counts],
-             SurvivalFunction[ChiSquareDistribution[Length[space] - 1], chi2] > 0.001}]],
+             SurvivalFunction[ChiSquareDistribution[Length[space] - 1], chi2] > 0.001}]]],
     {16, 6400, True},
     TestID -> "RandomVertexLabeledPureSimplicialComplex-uniform"
 ];
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* An empty sample space must fail loudly. Every composition weight carries a
    NumPureComplexes factor, so on an empty space they are all zero and the draw cannot proceed;

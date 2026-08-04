@@ -1694,16 +1694,16 @@ Module[{cap=$NumPCMaxCachedQ,target=Min[q,$NumPCMaxCachedQ],top=NumPCTop[p],row,
 
 (* Private helper *)
 NumPCClearCache[]:=
-(*Drops every cached row and high-water mark, keeping only the definitions themselves -- the
-memoised entries are the DownValues whose left-hand side carries no Pattern. Returns the
-number of bytes reclaimed. Nothing else in the package holds on to a row, so calling this is
+(*Drops everything memoised behind NumPureComplexes, and behind the composition weights that
+RandomVertexLabeledPureSimplicialComplex draws from, keeping only the definitions themselves --
+the memoised entries are the DownValues whose left-hand side carries no Pattern. Returns the
+number of bytes reclaimed. Nothing else in the package holds on to either, so calling this is
 always safe; it only costs the rebuilding.*)
-Module[{before,after,patterned=!FreeQ[First[#],Pattern]&},
-	before=Total[ByteCount/@{DownValues[NumPCStep],DownValues[NumPCTop],DownValues[NumPCKernel]}];
-	DownValues[NumPCStep]=Select[DownValues[NumPCStep],patterned];
-	DownValues[NumPCTop]=Select[DownValues[NumPCTop],patterned];
-	DownValues[NumPCKernel]=Select[DownValues[NumPCKernel],patterned];
-	after=Total[ByteCount/@{DownValues[NumPCStep],DownValues[NumPCTop],DownValues[NumPCKernel]}];
+Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
+		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF}},
+	before=Total[ByteCount/@Map[DownValues,cached]];
+	Scan[(DownValues[#]=Select[DownValues[#],patterned])&,cached];
+	after=Total[ByteCount/@Map[DownValues,cached]];
 	before-after
 ];
 
@@ -3137,6 +3137,131 @@ $Failed);
 (*RandomVertexLabeledPureSimplicialComplex*)
 
 
+(* Private helpers for RandomVertexLabeledPureSimplicialComplex. -----------------------------
+   These are deliberately top-level rather than Module-local closures inside the generator, and
+   take purity/facetOrder/nV as arguments instead of capturing them. A fresh Module per call
+   would mint new temporary symbols each time, and ParallelTable re-serialises those to every
+   subkernel on every call: measured at 0.06 s for {2,3,4} up to 0.26 s for {4,20,40}, growing
+   with the weight table and still 45% of the total at 20000 samples. Stable symbols distribute
+   once per session instead, which drops the fixed cost to a flat 0.010 s and is what lets the
+   parallel threshold below sit at 1000 rather than 10^4. *)
+
+(* Private helper *)
+RandomPureComplexCDFRow[purity_Integer,q_Integer,v_Integer]:=
+(*Cumulative composition weights for the qth facet, given that the first q facets cover v
+vertices. The weight of "the qth facet brings k new vertices" is
+	NumPureComplexes[p,q-1,v-k] (Binomial[v,v-k] Binomial[v-k,p-k] - [k==0](q-1)),
+i.e. the sub-complex on the other q-1 facets, times the choice of which v-k vertices they
+cover, times the choice of the qth facet itself; the [k==0] term drops the facets that would
+repeat one already present. Accumulated so a composition can be drawn with one RandomInteger
+and a scan, and kept in exact integers because the weights are counts running to hundreds of
+digits.*)
+	Accumulate@If[q>2,
+		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]-If[k==0,q-1,0]),{k,0,purity}],
+		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]),{k,1,purity}]];
+
+(* Private helper: facet order above which composition weights are recomputed instead of kept.
+   A row depends on (purity,q,v) alone -- never on the sample, and never on the vertex count of
+   the call -- so it is worth keeping: rebuilding these per sample was about 85% of the old
+   runtime, and they are now shared across calls as well, which is worth a further 1.1x to 1.3x
+   on repeated calls. Capping bounds what that retains, since a cached q also bounds v (a row
+   for facet index q is only ever asked for v <= p q). Measured cumulative size at this cap:
+   45 KB after sampling {3,16,30}, 200 KB by {4,20,40}, 2.6 MB by {4,100,200}. Same shape as
+   $NumPCMaxCachedQ, and cleared by the same NumPCClearCache[]. *)
+
+$RandomComplexMaxCachedQ=150;
+
+(* Private helper *)
+RandomPureComplexCDF[purity_Integer,q_Integer,v_Integer]:=
+	If[q<=$RandomComplexMaxCachedQ,
+		RandomPureComplexCDF[purity,q,v]=RandomPureComplexCDFRow[purity,q,v],
+		RandomPureComplexCDFRow[purity,q,v]];
+
+(* Private helper *)
+RandomPureComplexComposition[purity_Integer,facetOrder_Integer,nV_Integer]:=
+(*How many new vertices each facet brings, drawn back to front. The qth entry is sampled from
+the cumulative weights above by inverse transform: one RandomInteger in [1,total] and a scan
+for the first cumulative weight reaching it. q>2 offers k=0..purity, q==2 offers k=1..purity,
+and the first facet is all new by definition.*)
+Module[{newkTable=ConstantArray[0,facetOrder],curVCount=nV,cdf,r},
+
+	Do[
+		cdf=RandomPureComplexCDF[purity,q,curVCount];
+		r=RandomInteger[{1,Last[cdf]}];
+		newkTable[[q]]=LengthWhile[cdf,#<r&]+If[q>2,0,1];
+		curVCount-=newkTable[[q]];
+	,{q,facetOrder,2,-1}];
+
+	newkTable[[1]]=purity;
+
+	newkTable
+];
+
+(* Private helper *)
+RandomPureComplexFacets[purity_Integer,facetOrder_Integer,nV_Integer]:=
+(*One complex. The composition needs no feasibility re-draw: the old generator looped while any
+prefix of j facets covering v_j vertices had Binomial[v_j,purity]<j -- too few distinct
+p-subsets to fill j facets -- but a k is only ever drawn with positive weight, and a positive
+weight carries the factor NumPureComplexes[purity,q-1,v-k], which vanishes unless a complex
+with q-1 facets on those v-k vertices exists. That is the very condition being retested, so
+with the caller's guard pinning the top of the chain the loop could never fire, and it cost an
+O(facetOrder^2) rescan per sample.
+
+Vertices come from one random permutation of [nV] instead of repeated sampling of the uncovered
+set: the unused tail of a uniform permutation is a uniform random subset in uniform random
+order, so taking its next k entries is the same draw as RandomSample of the uncovered vertices,
+without the Complement bookkeeping.*)
+Module[{composition=RandomPureComplexComposition[purity,facetOrder,nV],
+		perm=RandomSample[Range[nV]],facets=ConstantArray[{},facetOrder],coveredCount=0,k,newfacet},
+
+	Do[
+		k=composition[[j]];
+		newfacet=Sort[Join[RandomSample[Take[perm,coveredCount],purity-k],
+			Take[perm,{coveredCount+1,coveredCount+k}]]];
+
+		(*A facet bringing no new vertex may repeat an earlier one; one bringing a new vertex
+		cannot. The k=0 weight above excludes the q-1 facets already placed, so it is only ever
+		drawn when an unused p-subset remains and this loop terminates.*)
+		If[k==0,
+			While[MemberQ[facets,newfacet],
+				newfacet=Sort[RandomSample[Take[perm,coveredCount],purity]]
+			];
+		];
+
+		coveredCount+=k;
+		facets[[j]]=newfacet;
+
+	,{j,1,facetOrder}];
+
+	facets
+];
+
+(* Private helper: sample count above which the draw is farmed out to ParallelTable. ---------
+   Set from the measured crossover on 11 subkernels with kernels already up: with the helpers
+   above hoisted, parallel overtakes serial at about 500 samples for {3,16,30}, 1000 for
+   {5,10,30} and 2000 for {3,6,10}. (Before hoisting the same measurement gave 6000 to 15000,
+   which is why the threshold used to be 10^4.) Tune with
+	ECGrav`Private`$RandomComplexParallelThreshold = 5000;
+   or set it to Infinity to keep the generator serial.
+
+   The $KernelCount test is the other half of the decision. ParallelTable launches kernels on
+   its own if none are running, which costs about 3.7 s -- more than forty times the whole
+   serial draw at the threshold, and a surprising bill for a call that looks small. With kernels
+   already up, distribution costs about 10 ms. So parallelise only when the session has already
+   paid for its kernels, and otherwise stay serial rather than quietly launching 11 of them. The
+   notebook workflow this package is used from calls LaunchKernels[] up front, as does
+   Tests/TestPrelude.wl, so the parallel path is live where it is wanted. *)
+
+$RandomComplexParallelThreshold=1000;
+
+(* Private helper *)
+RandomPureComplexSample[purity_Integer,facetOrder_Integer,nV_Integer,numSamples_Integer]:=
+	If[numSamples>$RandomComplexParallelThreshold&&$KernelCount>0,
+		ParallelTable[RandomPureComplexFacets[purity,facetOrder,nV],{numSamples},
+			DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+		Table[RandomPureComplexFacets[purity,facetOrder,nV],{numSamples}]];
+
+
 (* Primary Pattern *)
 
 RandomVertexLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
@@ -3158,15 +3283,13 @@ RandomVertexLabeledPureSimplicialComplex[{2,4,6},10] generates 10, 2-pure random
 simplicial complexes with 4 edges and 6 vertices.     *)
 *)
 *)
-Module[{compCDF,pickRandomComposition,buildOneComplex},
-
 Catch[
 
 If[numSamples<0,
 	Message[RandomVertexLabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
 	Throw[$Failed, "ECGravReturn$63"]];
 
-(*Refuse parameters with nothing to sample. Every composition weight below carries a factor
+(*Refuse parameters with nothing to sample. Every composition weight carries a factor
 NumPureComplexes[purity,q-1,...], so on an empty sample space they are all zero; the draw then
 fails and its unevaluated result feeds the next stage, which used to return "complexes" with
 RandomSample[...] expressions sitting inside them rather than failing.*)
@@ -3174,88 +3297,9 @@ If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
 	Message[RandomVertexLabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
 	Throw[$Failed, "ECGravReturn$63"]];
 
-(*Cumulative composition weights for the qth facet, given that the first q facets cover v
-vertices. The weight of "the qth facet brings k new vertices" is
-	NumPureComplexes[p,q-1,v-k] (Binomial[v,v-k] Binomial[v-k,p-k] - [k==0](q-1)),
-i.e. the sub-complex on the other q-1 facets, times the choice of which v-k vertices they
-cover, times the choice of the qth facet itself; the [k==0] term drops the facets that would
-repeat one already present. These depend only on (q,v) and not on the sample, so they are
-built once per (q,v) instead of once per sample -- rebuilding them was about 85% of the old
-runtime. They are accumulated so a composition can be drawn with one RandomInteger and a scan,
-and kept in exact integers because the weights are counts and run to hundreds of digits.
-Memoised on the Module-local symbol, so the table is discarded when the call returns.*)
-compCDF[q_Integer,v_Integer]:=compCDF[q,v]=
-	Accumulate@If[q>2,
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]-If[k==0,q-1,0]),{k,0,purity}],
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]),{k,1,purity}]];
+RandomPureComplexSample[purity,facetOrder,nV,numSamples]
 
-(*A subroutine to construct a composition given the total number of vertices*)
-pickRandomComposition[]:=
-Module[{newkTable=ConstantArray[0,facetOrder],curVCount=nV,cdf,r},
-
-	Do[
-		cdf=compCDF[q,curVCount];
-		r=RandomInteger[{1,Last[cdf]}];
-		(*index of the first cumulative weight reaching r; q>2 offers k=0..p, q==2 offers k=1..p*)
-		newkTable[[q]]=LengthWhile[cdf,#<r&]+If[q>2,0,1];
-		curVCount-=newkTable[[q]];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-
-	];
-
-buildOneComplex[]:=
-(*The composition needs no feasibility re-draw. The old version looped while any prefix v_j had
-Binomial[v_j,purity]<j -- too few distinct p-subsets to fill j facets -- but a k is only ever
-drawn with positive weight, and a positive weight carries the factor
-NumPureComplexes[purity,q-1,v-k], which vanishes unless a complex with q-1 facets on those v-k
-vertices exists. That is the very condition being retested, so with the guard above pinning the
-top of the chain the loop could never fire, and it cost an O(facetOrder^2) rescan per sample.
-
-Vertices come from one random permutation of [nV] instead of repeated sampling of the uncovered
-set: the unused tail of a uniform permutation is a uniform random subset in uniform random
-order, so taking its next k entries is the same draw as RandomSample of the uncovered vertices,
-without the Complement bookkeeping.*)
-Module[{composition=pickRandomComposition[],perm=RandomSample[Range[nV]],
-		facets=ConstantArray[{},facetOrder],coveredCount=0,k,newfacet},
-
-	Do[
-		k=composition[[j]];
-		newfacet=Sort[Join[RandomSample[Take[perm,coveredCount],purity-k],
-			Take[perm,{coveredCount+1,coveredCount+k}]]];
-
-		(*A facet bringing no new vertex may repeat an earlier one; one bringing a new vertex
-		cannot. The k=0 weight above excludes the q-1 facets already placed, so it is only ever
-		drawn when an unused p-subset remains and this loop terminates.*)
-		If[k==0,
-			While[MemberQ[facets,newfacet],
-				newfacet=Sort[RandomSample[Take[perm,coveredCount],purity]]
-			];
-		];
-
-		coveredCount+=k;
-		facets[[j]]=newfacet;
-
-	,{j,1,facetOrder}];
-
-
-	facets
-
-];
-
-
-	(*The subkernels need ECGrav` too, not just ECGrav`Private`: buildOneComplex reaches
-	NumPureComplexes through compCDF, and without it every parallel sample came back as an
-	unevaluated expression -- silently, for numSamples above the threshold only.*)
-	If[numSamples>10^4,
-		ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-		Table[buildOneComplex[],{numSamples}]]
-
-, "ECGravReturn$63"]
-];
+, "ECGravReturn$63"];
 
 
 (* Overload Pattern *)
@@ -3284,7 +3328,7 @@ complex with 4 edges.     *)
 3. After generating q facets, if their union doesn't cover [n], it goes back to step 1 and repeats.*)
 *)
 *)
-Module[{nmin,svTable,compCDF,pickRandomComposition,buildOneComplex},
+Module[{nmin,svTable},
 
 Catch[
 
@@ -3308,68 +3352,18 @@ svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrde
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
 
-(*Cumulative composition weights, exactly as in the three-argument pattern above. They depend
-only on (q,v), never on the vertex count drawn for a given sample, so one table serves every n
-this overload visits.*)
-compCDF[q_Integer,v_Integer]:=compCDF[q,v]=
-	Accumulate@If[q>2,
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]-If[k==0,q-1,0]),{k,0,purity}],
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]),{k,1,purity}]];
-
-(*A subroutine to construct a composition given the total number of vertices*)
-pickRandomComposition[locTotNumVertices_Integer]:=
-Module[{newkTable=ConstantArray[0,facetOrder],curVCount=locTotNumVertices,cdf,r},
-
-	Do[
-		cdf=compCDF[q,curVCount];
-		r=RandomInteger[{1,Last[cdf]}];
-		newkTable[[q]]=LengthWhile[cdf,#<r&]+If[q>2,0,1];
-		curVCount-=newkTable[[q]];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-
-	];
-
-buildOneComplex[]:=
-Module[{numTotVertices,composition,perm,facets=ConstantArray[{},facetOrder],coveredCount=0,k,newfacet},
-
-	(*Pick number of vertices*)
-	numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
-
-	(* Pick a random composition *)
-	composition=pickRandomComposition[numTotVertices];
-
-	(*Construct facets; see the three-argument pattern above for why there is no feasibility
-	re-draw and why one permutation replaces the covered/uncovered bookkeeping.*)
-	perm=RandomSample[Range[numTotVertices]];
-
-	Do[
-		k=composition[[j]];
-		newfacet=Sort[Join[RandomSample[Take[perm,coveredCount],purity-k],
-			Take[perm,{coveredCount+1,coveredCount+k}]]];
-
-		If[k==0,
-			While[MemberQ[facets,newfacet],
-				newfacet=Sort[RandomSample[Take[perm,coveredCount],purity]]
-			];
-		];
-
-		coveredCount+=k;
-		facets[[j]]=newfacet;
-
-	,{j,1,facetOrder}];
-
-
-	facets
-
-];
-
-If[numSamples>10^4,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-	Table[buildOneComplex[],{numSamples}]]
+(*Each sample picks its own vertex count from sv(p,q,n) and then hands off to the same shared
+builder as the three-argument pattern. The two tables are substituted in by With rather than
+referenced as Module locals, so the parallel branch ships them as literal data instead of
+having to distribute a pair of temporary symbols.*)
+With[{weights=svTable,vertexCounts=Range[nmin,purity*facetOrder]},
+	If[numSamples>$RandomComplexParallelThreshold&&$KernelCount>0,
+		ParallelTable[
+			RandomPureComplexFacets[purity,facetOrder,RandomChoice[weights->vertexCounts]],
+			{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+		Table[
+			RandomPureComplexFacets[purity,facetOrder,RandomChoice[weights->vertexCounts]],
+			{numSamples}]]]
 
 , "ECGravReturn$64"]
 
