@@ -3417,88 +3417,47 @@ RandomUniformUnlabeledPureSimplicialComplex[{2,4,6},10] generates 10, 2-pure ran
 complex with 4 edges and 6 vertices.     *)
 *)
 *)
-Module[{pickRandomComposition,buildOneComplex},
+Module[{buildOneComplex},
 
+Catch[
 
-(*A subroutine to construct a composition given the total numbe of fvertices*)
-pickRandomComposition[]:=
-Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
+If[numSamples<0,
+	Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
+	Throw[$Failed, "ECGravReturn$65"]];
 
-	Do[
-		curVCount=nV-Total[newkTable];
-		
-		Which[q>2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
-					,{k,0,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
-			q==2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
-					,{k,1,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
-			];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-	
-	];
+If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
+	Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
+	Throw[$Failed, "ECGravReturn$65"]];
 
 buildOneComplex[]:=
-Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},weight},
+(*Rejection from the vertex-labeled generator. A given unlabeled complex has nV!/|Aut| distinct
+vertex labelings, so a uniform vertex-labeled draw over-represents it by exactly that factor;
+accepting with probability |Aut|/nV! cancels it and leaves the unlabeled classes uniform.
 
-	allVertices=Range[nV];
+The proposal is RandomPureComplexFacets, the same one RandomVertexLabeledPureSimplicialComplex
+draws from, rather than a private copy of it. That is what makes the parallel branch below work:
+the copy lived on a Module-local symbol whose definition reached NumPureComplexes, and the
+subkernels never received it.*)
+Module[{facets={},weight},
+
 	While[facets=={},
-		
-		(* Pick a random composition *)
-		composition=pickRandomComposition[];
 
-		(* Enforce the condition that the composition be an allowed composition *)
-		While[AnyTrue[Range[2,facetOrder],Binomial[Sum[composition[[i]],{i,1,#}],purity]<#&],
-			composition=pickRandomComposition[]
-		];
+		facets=RandomPureComplexFacets[purity,facetOrder,nV];
 
-		(*Construct facets*)
-
-		coveredVertices={};
-		uncoveredVertices=Complement[allVertices,coveredVertices];
-
-		Do[
-
-			newVertices=RandomSample[uncoveredVertices,composition[[k]]];
-			newfacet=Sort[Join[RandomSample[coveredVertices,purity-composition[[k]]],newVertices]];
-
-			If[newVertices=={},
-
-				While[MemberQ[facets,newfacet],
-
-					newfacet=Sort[RandomSample[coveredVertices,purity]];
-				];
-			];
-
-			uncoveredVertices=Complement[uncoveredVertices,newVertices];
-			coveredVertices=Union[coveredVertices,newVertices];
-
-			facets=Join[facets,{newfacet}];
-
-		,{k,1,facetOrder}];
-		
 		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/nV!;
-		
+
 		If[RandomReal[]>weight,facets={}];
 
 	];
-	
+
 	facets
 ];
 
-If[numSamples>20,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],
-		Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20&&$KernelCount>0,
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+	Table[buildOneComplex[],{numSamples}]]
+
+, "ECGravReturn$65"]
 ];
 
 
@@ -3519,8 +3478,17 @@ RandomUniformUnlabeledPureSimplicialComplex[{2,4},10] generates 10, 2-pure rando
 unlabeled simplicial complex with 4 edges.     *)
 *)
 *)
-Module[{nmin,svTable,pickRandomComposition,buildOneComplex},
+Module[{nmin,svTable,buildOneComplex},
 
+Catch[
+
+If[numSamples<0,
+	Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder},numSamples];
+	Throw[$Failed, "ECGravReturn$66"]];
+
+If[purity<1||facetOrder<1,
+	Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
+	Throw[$Failed, "ECGravReturn$66"]];
 
 (*Set nmin*)
 nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
@@ -3532,99 +3500,52 @@ svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrde
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
 
-(*A subroutine to construct a composition given the total numbe of fvertices*)
-pickRandomComposition[locTotNumVertices_Integer]:=
-Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
-
-	Do[
-		curVCount=locTotNumVertices-Total[newkTable];
-		
-		Which[q>2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
-					,{k,0,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
-			q==2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
-					,{k,1,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
-			];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-	
-	];
-
 buildOneComplex[]:=
-Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},weight},
+(*As in the three-argument pattern, but the vertex count is redrawn on every attempt, so the
+rejection acts on the joint draw of n and the complex.*)
+Module[{numTotVertices,facets={},weight},
 
 	While[facets=={},
 
 		(*Pick number of vertices*)
 		numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
 
-		allVertices=Range[numTotVertices];
-		
-		(* Pick a random composition *)
-		composition=pickRandomComposition[numTotVertices];
+		facets=RandomPureComplexFacets[purity,facetOrder,numTotVertices];
 
-		(* Enforce the condition that the composition be an allowed composition *)
-		While[AnyTrue[Range[2,facetOrder],Binomial[Sum[composition[[i]],{i,1,#}],purity]<#&],
-			composition=pickRandomComposition[numTotVertices]
-		];
-
-		(*Construct facets*)
-
-		coveredVertices={};
-		uncoveredVertices=Complement[allVertices,coveredVertices];
-
-		Do[
-
-			newVertices=RandomSample[uncoveredVertices,composition[[k]]];
-			newfacet=Sort[Join[RandomSample[coveredVertices,purity-composition[[k]]],newVertices]];
-
-			If[newVertices=={},
-
-				While[MemberQ[facets,newfacet],
-
-					newfacet=Sort[RandomSample[coveredVertices,purity]];
-				];
-			];
-
-			uncoveredVertices=Complement[uncoveredVertices,newVertices];
-			coveredVertices=Union[coveredVertices,newVertices];
-
-			facets=Join[facets,{newfacet}];
-
-		,{k,1,facetOrder}];
-		
 		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/(numTotVertices!);
-		
+
 		If[RandomReal[]>weight,facets={}];
 
 	];
-	
+
 	facets
 ];
 
-If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20&&$KernelCount>0,
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+	Table[buildOneComplex[],{numSamples}]]
+
+, "ECGravReturn$66"]
 
 ];
 
 
 (* Overload Pattern *)
 
-RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
+(*First only if there is something to take: the sampling forms return $Failed on an empty
+sample space, and First[$Failed] would bury that under a Part error.*)
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=
+With[{sample=RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]},
+	If[ListQ[sample],First[sample],sample]];
 
 
 (* Overload Pattern *)
 
-RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
+(*First only if there is something to take: the sampling forms return $Failed on an empty
+sample space, and First[$Failed] would bury that under a Part error.*)
+RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
+With[{sample=RandomUniformUnlabeledPureSimplicialComplex[{purity,facetOrder}, 1]},
+	If[ListQ[sample],First[sample],sample]];
 
 
 (* Catch-all Pattern *)
@@ -3658,96 +3579,45 @@ RandomUniformFacetLabeledPureSimplicialComplex[{2,4,6},10] generates 10, 2-pure 
 random simplicial complex with 4 edges and 6 vertices with a uniform distribution.     *)
 *)
 *)
-Module[{pickRandomComposition,buildOneComplex},
+Module[{buildOneComplex},
 
+Catch[
 
-(*A subroutine to construct a composition given the total number of fvertices*)
-pickRandomComposition[]:=
-Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
+If[numSamples<0,
+	Message[RandomUniformFacetLabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
+	Throw[$Failed, "ECGravReturn$67"]];
 
-	Do[
-		curVCount=nV-Total[newkTable];
-		
-		Which[q>2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
-					,{k,0,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
-			q==2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
-					,{k,1,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
-			];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-	
-	];
+If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
+	Message[RandomUniformFacetLabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
+	Throw[$Failed, "ECGravReturn$67"]];
 
 buildOneComplex[]:=
-Module[{facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},acceptanceProb},
+(*Rejection from the vertex-labeled generator, with the acceptance weight left exactly as it
+was. The proposal is now RandomPureComplexFacets, the same one
+RandomVertexLabeledPureSimplicialComplex draws from, rather than a private copy of it. That is
+what makes the parallel branch below work: the copy lived on a Module-local symbol whose
+definition reached NumPureComplexes, and the subkernels never received it.*)
+Module[{facets={},acceptanceProb},
 
-	Catch[allVertices=Range[nV];
 	While[facets=={},
-		
-		(* Pick a random composition *)
-		composition=pickRandomComposition[];
 
-		(* Enforce the condition that the composition be an allowed composition *)
-		While[AnyTrue[Range[2,facetOrder],Binomial[Sum[composition[[i]],{i,1,#}],purity]<#&],
-			composition=pickRandomComposition[]
-		];
+		facets=RandomPureComplexFacets[purity,facetOrder,nV];
 
-		(*Construct facets*)
-
-		coveredVertices={};
-		uncoveredVertices=Complement[allVertices,coveredVertices];
-
-		Do[
-
-			newVertices=RandomSample[uncoveredVertices,composition[[k]]];
-			newfacet=Sort[Join[RandomSample[coveredVertices,purity-composition[[k]]],newVertices]];
-
-			If[newVertices=={},
-
-				While[MemberQ[facets,newfacet],
-
-					newfacet=Sort[RandomSample[coveredVertices,purity]];
-				];
-			];
-
-			uncoveredVertices=Complement[uncoveredVertices,newVertices];
-			coveredVertices=Union[coveredVertices,newVertices];
-
-			facets=Join[facets,{newfacet}];
-
-		,{k,1,facetOrder}];
-		
-		(*weight=1.0*(facetOrder!/nV!)*
-				(ECGrav`PureComplexAutomorphismGroupOrder[facets]/
-					ECGrav`PureComplexFacetAutomorphismGroupOrder[facets]);*)
-		(*weight=1.0*(facetOrder!/nV!)*
-				(ECGrav`PureComplexFacetStabilizerGroupOrder[facets]);*)
-				
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nV]!)/(nV!))*
 					(PureComplexFacetStabilizerGroupOrder[facets])];
-								
-		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$52"],facets={}];
-		
+
+		If[RandomReal[]>acceptanceProb,facets={}];
 
 	];
-	
-	facets, "ECGravReturn$52"]
+
+	facets
 ];
 
-If[numSamples>20,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],
-		Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20&&$KernelCount>0,
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+	Table[buildOneComplex[],{numSamples}]]
+
+, "ECGravReturn$67"]
 ];
 
 
@@ -3768,8 +3638,17 @@ RandomUniformFacetLabeledPureSimplicialComplex[{2,4},10] generates 10, 2-pure ra
 facet-labeled simplicial complex with 4 edges.     *)
 *)
 *)
-Module[{nmin,svTable,pickRandomComposition,buildOneComplex},
+Module[{nmin,svTable,buildOneComplex},
 
+Catch[
+
+If[numSamples<0,
+	Message[RandomUniformFacetLabeledPureSimplicialComplex::argerr,{purity,facetOrder},numSamples];
+	Throw[$Failed, "ECGravReturn$68"]];
+
+If[purity<1||facetOrder<1,
+	Message[RandomUniformFacetLabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
+	Throw[$Failed, "ECGravReturn$68"]];
 
 (*Set nmin*)
 nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
@@ -3781,110 +3660,54 @@ svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrde
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
 
-(*A subroutine to construct a composition given the total numbe of fvertices*)
-pickRandomComposition[locTotNumVertices_Integer]:=
-Module[{curVCount=0,newkTable=Table[0,{facetOrder}],newkWeights},
-
-	Do[
-		curVCount=locTotNumVertices-Total[newkTable];
-		
-		Which[q>2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k]-KroneckerDelta[k,0]*(q-1))
-					,{k,0,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[0,purity]],
-			q==2,
-				newkWeights=
-					Table[NumPureComplexes[purity,q-1,curVCount-k]
-						*(Binomial[curVCount,curVCount-k]*Binomial[curVCount-k,purity-k])
-					,{k,1,purity}];
-				newkTable[[q]]=RandomChoice[newkWeights->Range[1,purity]]
-			];
-	,{q,facetOrder,2,-1}];
-
-	newkTable[[1]]=purity;
-
-	newkTable
-	
-	];
-
 buildOneComplex[]:=
-Module[{numTotVertices,facets={},composition,allVertices,coveredVertices={},uncoveredVertices,newVertices,newfacet={},acceptanceProb},
+(*As in the three-argument pattern, but the vertex count is redrawn on every attempt, so the
+rejection acts on the joint draw of n and the complex. The acceptance weight is left exactly as
+it was, nmin included.*)
+Module[{numTotVertices,facets={},acceptanceProb},
 
-	Catch[While[facets=={},
+	While[facets=={},
 
 		(*Pick number of vertices*)
 		numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
 
-		allVertices=Range[numTotVertices];
-		
-		(* Pick a random composition *)
-		composition=pickRandomComposition[numTotVertices];
+		facets=RandomPureComplexFacets[purity,facetOrder,numTotVertices];
 
-		(* Enforce the condition that the composition be an allowed composition *)
-		While[AnyTrue[Range[2,facetOrder],Binomial[Sum[composition[[i]],{i,1,#}],purity]<#&],
-			composition=pickRandomComposition[numTotVertices]
-		];
-
-		(*Construct facets*)
-
-		coveredVertices={};
-		uncoveredVertices=Complement[allVertices,coveredVertices];
-
-		Do[
-
-			newVertices=RandomSample[uncoveredVertices,composition[[k]]];
-			newfacet=Sort[Join[RandomSample[coveredVertices,purity-composition[[k]]],newVertices]];
-
-			If[newVertices=={},
-
-				While[MemberQ[facets,newfacet],
-
-					newfacet=Sort[RandomSample[coveredVertices,purity]];
-				];
-			];
-
-			uncoveredVertices=Complement[uncoveredVertices,newVertices];
-			coveredVertices=Union[coveredVertices,newVertices];
-
-			facets=Join[facets,{newfacet}];
-
-		,{k,1,facetOrder}];
-		
-		(*weight=1.0*(facetOrder!/(numTotVertices!))*
-				(ECGrav`PureComplexAutomorphismGroupOrder[facets]/
-					ECGrav`PureComplexFacetAutomorphismGroupOrder[facets]);*)
-					
-		(*weight=1.0*(facetOrder!/(numTotVertices!))*
-					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets]);*)
-		
-		(*acceptanceProb=Min[1.0,1.0*(facetOrder/(numTotVertices!))*
-					(ECGrav`PureComplexFacetStabilizerGroupOrder[facets])];*)
-		
 		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nmin]!)/(numTotVertices!))*
 					(PureComplexFacetStabilizerGroupOrder[facets])];
-								
-		If[RandomReal[]<=acceptanceProb,Throw[facets, "ECGravReturn$53"],facets={}];
+
+		If[RandomReal[]>acceptanceProb,facets={}];
 
 	];
-	
-	facets, "ECGravReturn$53"]
+
+	facets
 ];
 
-If[numSamples>20,ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`Private`"}],Table[buildOneComplex[],{numSamples}]]
+If[numSamples>20&&$KernelCount>0,
+	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+	Table[buildOneComplex[],{numSamples}]]
+
+, "ECGravReturn$68"]
 
 ];
 
 
 (* Overload Pattern *)
 
-RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=First[RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]];
+(*First only if there is something to take: the sampling forms return $Failed on an empty
+sample space, and First[$Failed] would bury that under a Part error.*)
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer,nV_Integer}]:=
+With[{sample=RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder,nV}, 1]},
+	If[ListQ[sample],First[sample],sample]];
 
 
 (* Overload Pattern *)
 
-RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=First[RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder}, 1]];
+(*First only if there is something to take: the sampling forms return $Failed on an empty
+sample space, and First[$Failed] would bury that under a Part error.*)
+RandomUniformFacetLabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}]:=
+With[{sample=RandomUniformFacetLabeledPureSimplicialComplex[{purity,facetOrder}, 1]},
+	If[ListQ[sample],First[sample],sample]];
 
 
 (* Catch-all Pattern *)

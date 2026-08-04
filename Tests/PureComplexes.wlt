@@ -281,12 +281,12 @@ VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];
 (* Each generator must return a well-formed pure simplicial complex of the requested shape,
    whatever the random draw. Seeded only so a failure reproduces; the assertions themselves
    are seed-independent structural invariants.
-   NB: RandomUniformUnlabeledPureSimplicialComplex and RandomUniformFacetLabeledPureSimplicialComplex
-   are verified interactively but deliberately kept OUT of the suite: their first call in a
-   fresh kernel pays a large one-time parallel-distribution cost (~30 s), not worth a
-   structural smoke test here. RandomVertexLabeledPureSimplicialComplex IS covered below --
-   its serial path pays no such cost (7 ms in a fresh kernel), and its parallel branch costs
-   about 0.1 s once TestPrelude has launched the kernels. *)
+   NB: the three uniform samplers used to be kept out of the suite on the grounds that a first
+   call in a fresh kernel cost about 30 s of parallel distribution. That cost was the bug: their
+   ParallelTable branches distributed only ECGrav`Private`, so the subkernels could not evaluate
+   NumPureComplexes and the whole draw came back unevaluated. With that fixed, a first parallel
+   call is 0.12 s once TestPrelude has launched the kernels and the serial path costs nothing
+   special, so all three are covered here. *)
 
 (* ---- RandomVertexLabeledPureSimplicialComplex ---- *)
 
@@ -356,6 +356,81 @@ VerificationTest[
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ---- the two rejection samplers built on top of it ---- *)
+
+(* Both draw from RandomPureComplexFacets and accept with a weight that re-targets the
+   distribution, so their output must still be well-formed complexes of the requested shape. *)
+VerificationTest[
+    Module[{gens, specs}, SeedRandom[320];
+        gens = {ECGrav`RandomUniformUnlabeledPureSimplicialComplex,
+                ECGrav`RandomUniformFacetLabeledPureSimplicialComplex};
+        specs = {{2, 3, 4}, {2, 4, 5}, {3, 3, 5}};
+        AllTrue[Tuples[{gens, specs}], Function[gs,
+            Module[{g = gs[[1]], sp = gs[[2]], p, q, n, s},
+                {p, q, n} = sp;
+                s = g[sp, 20];
+                Length[s] === 20 && AllTrue[s, Function[c,
+                    Length[c] === q && Length[DeleteDuplicates[c]] === q &&
+                    AllTrue[c, Function[f, Length[f] === p && f === Sort[f]]] &&
+                    Union @@ c === Range[n]]]]]]],
+    True,
+    TestID -> "RandomUniformSamplers-structure"
+];
+
+(* Above numSamples = 20 both switch to ParallelTable. Both used to distribute only
+   ECGrav`Private`, leaving the subkernels without NumPureComplexes, so 100% of samples came
+   back as facet lists holding unevaluated RandomSample[...] -- and unlike the vertex-labeled
+   generator, whose threshold was 10^4, these fired at 21 samples. $KernelCount is asserted so a
+   kernel-less environment fails loudly rather than passing on the serial path. *)
+VerificationTest[
+    Module[{u, f}, SeedRandom[321];
+        u = ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, 25];
+        f = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{2, 3, 4}, 25];
+        {$KernelCount > 0,
+         AllTrue[Join[u, f], Function[c,
+            Length[c] === 3 && Length[DeleteDuplicates[c]] === 3 &&
+            AllTrue[c, Function[e, Length[e] === 2 && AllTrue[e, IntegerQ]]] &&
+            Union @@ c === Range[4]]]}],
+    {True, True},
+    TestID -> "RandomUniformSamplers-parallel-branch"
+];
+
+(* The point of the unlabeled sampler is uniformity over ISOMORPHISM classes, not over labeled
+   complexes. At p=2,q=3,n=4 there are 16 labeled complexes but only two classes -- the path,
+   with 12 labellings, and the star, with 4 -- so a uniform labeled draw would split them 75/25
+   and only the rejection weight |Aut|/n! brings them to 50/50. Drawn 20 at a time to stay on
+   the serial branch, which keeps the seed reproducible. 400 samples is deliberately modest: the
+   failure this guards against is the rejection weight being dropped or inverted, which lands at
+   75/25 and gives chi-square about 100 on one degree of freedom, so it is caught with room to
+   spare while keeping the draw near two seconds. *)
+VerificationTest[
+    BlockRandom[SeedRandom[322];
+        Module[{canon, sample, counts, chi2},
+            canon = Function[c, First[Sort[Table[Sort[Sort /@ (c /. Thread[Range[4] -> perm])],
+                {perm, Permutations[Range[4]]}]]]];
+            sample = Join @@ Table[
+                ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, 20], {20}];
+            counts = Lookup[Counts[canon /@ sample],
+                {{{1, 2}, {1, 3}, {1, 4}}, {{1, 2}, {1, 3}, {2, 4}}}, 0];
+            chi2 = Total[(counts - 200)^2]/200.;
+            {Total[counts], SurvivalFunction[ChiSquareDistribution[1], chi2] > 0.001}]],
+    {400, True},
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-uniform-over-classes"
+];
+
+(* Same empty-sample-space guards as the vertex-labeled generator. *)
+VerificationTest[
+    Quiet[Join[
+        ECGrav`RandomUniformUnlabeledPureSimplicialComplex[#, 2] & /@
+            {{3, 4, 100}, {2, 3, 7}, {3, 4, 3}, {0, 3, 4}, {0, 3}},
+        ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[#, 2] & /@
+            {{3, 4, 100}, {2, 3, 7}, {3, 4, 3}, {0, 3, 4}, {3, 0}},
+        {ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, -1],
+         ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{2, 3, 4}, -1]}]],
+    ConstantArray[$Failed, 12],
+    TestID -> "RandomUniformSamplers-empty-space"
+];
 
 (* An empty sample space must fail loudly. Every composition weight carries a
    NumPureComplexes factor, so on an empty space they are all zero and the draw cannot proceed;

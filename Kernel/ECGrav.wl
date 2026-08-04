@@ -2375,8 +2375,13 @@ RandomUniformUnlabeledPureSimplicialComplex::usage="
 (* :Error Messages: *)	
 
 RandomUniformUnlabeledPureSimplicialComplex::argerr="Input should be of the form
-	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or 
+	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or
 	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}].";
+
+RandomUniformUnlabeledPureSimplicialComplex::empty="There is no pure simplicial complex of purity
+	`1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and facet
+	order must be at least 1, and the vertex count must satisfy p <= n <= p q with at least q
+	distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2398,8 +2403,13 @@ RandomUniformFacetLabeledPureSimplicialComplex::usage="
 (* :Error Messages: *)	
 
 RandomUniformFacetLabeledPureSimplicialComplex::argerr="Input should be of the form
-	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or 
+	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or
 	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}].";
+
+RandomUniformFacetLabeledPureSimplicialComplex::empty="There is no pure simplicial complex of
+	purity `1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and
+	facet order must be at least 1, and the vertex count must satisfy p <= n <= p q with at
+	least q distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
