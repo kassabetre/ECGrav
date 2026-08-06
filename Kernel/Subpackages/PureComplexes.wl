@@ -17,8 +17,6 @@
 (*Begin PureComplexes Package*)
 
 
-
-
 (* ::Title:: *)
 (*PureComplexes Public Functions*)
 
@@ -29,8 +27,6 @@
 
 (* ::Title:: *)
 (*PureComplexes Private*)
-
-
 
 
 (* Private helper messages ------------------------------------------------------
@@ -1618,7 +1614,7 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
-(*NumPureComplexes*)
+(*NumVertexLabeledPureComplexes*)
 
 
 (* Private helper *)
@@ -1694,7 +1690,7 @@ Module[{cap=$NumPCMaxCachedQ,target=Min[q,$NumPCMaxCachedQ],top=NumPCTop[p],row,
 
 (* Private helper *)
 NumPCClearCache[]:=
-(*Drops everything memoised behind NumPureComplexes, and behind the composition weights that
+(*Drops everything memoised behind NumVertexLabeledPureComplexes, and behind the composition weights that
 RandomVertexLabeledPureSimplicialComplex draws from, keeping only the definitions themselves --
 the memoised entries are the DownValues whose left-hand side carries no Pattern. Returns the
 number of bytes reclaimed. Nothing else in the package holds on to either, so calling this is
@@ -1724,43 +1720,189 @@ NumPCRec[pp,qq,nn]
 ];
 
 (* Primary Pattern *)
-NumPureComplexes[pp_Integer,qq_Integer,nn_Integer]:=
-(*Gives the number of vertex labeled pure simplicial complexes of purity p, facet order q,
-and number of vertices n. Computes bottom-up over q and memoizes a whole row of n at a time;
-see NumPCRow above. N(p,q,n) vanishes unless p<=n<=p q -- fewer than p vertices cannot carry
-a facet, and q facets of p vertices cannot cover more than p q of them -- so those n are
+NumVertexLabeledPureComplexes[pp_Integer,MM_Integer,nn_Integer]:=
+(*Gives the number of vertex labeled pure simplicial complexes of purity p, facet order M,
+and number of vertices n. Computes bottom-up over M and memoizes a whole row of n at a time;
+see NumPCRow above. N(p,M,n) vanishes unless p<=n<=p M -- fewer than p vertices cannot carry
+a facet, and M facets of p vertices cannot cover more than p M of them -- so those n are
 answered without building any row.
 
-q==0 is the empty complex: it covers no vertices, so N(p,0,n) is 1 at n==0 and 0 otherwise, for
-every p. Feeding that into the recursion reproduces N(p,1,n)=KroneckerDelta[n,p], so the q==0
-row is the consistent seed one step below the q==1 row the table actually starts from. (Earlier
-versions had no q==0 branch at all and divided by q, returning Indeterminate.)*)
+M==0 is the empty complex: it covers no vertices, so N(p,0,n) is 1 at n==0 and 0 otherwise, for
+every p. Feeding that into the recursion reproduces N(p,1,n)=KroneckerDelta[n,p], so the M==0
+row is the consistent seed one step below the M==1 row the table actually starts from. (Earlier
+versions had no M==0 branch at all and divided by M, returning Indeterminate.)*)
 Which[
-	qq<0,0,
-	qq==0,If[nn==0,1,0],
-	pp<1,NumPCRec[pp,qq,nn],
-	nn<pp||nn>pp*qq,0,
-	True,NumPCRow[pp,qq][[nn-pp+1]]
+	MM<0,0,
+	MM==0,If[nn==0,1,0],
+	pp<1,NumPCRec[pp,MM,nn],
+	nn<pp||nn>pp*MM,0,
+	True,NumPCRow[pp,MM][[nn-pp+1]]
 ];
 
 (* Overload Pattern *)
-NumPureComplexes[p_Integer,q_Integer]:=
-(*The number of pure simplicial complexes of purity p and facet order q, summed over the vertex
-count n. n0 is the first n carrying enough distinct p-subsets to supply q facets; below it every
-term is zero. When no n in p..p q qualifies -- which happens only for degenerate p or q -- there
+NumVertexLabeledPureComplexes[p_Integer,M_Integer]:=
+(*The number of pure simplicial complexes of purity p and facet order M, summed over the vertex
+count n. n0 is the first n carrying enough distinct p-subsets to supply M facets; below it every
+term is zero. When no n in p..p M qualifies -- which happens only for degenerate p or M -- there
 is nothing to sum and the answer is 0; earlier versions used the resulting n0=Null as a Table
 iterator bound and returned the expression unevaluated.*)
 Which[
-	q<0,0,
-	q==0,1,
+	M<0,0,
+	M==0,1,
 	True,
-	With[{n0=Catch[Do[If[Binomial[nn,p]>=q,Throw[nn]],{nn,p,p*q}]]},
-		If[IntegerQ[n0],Total[Table[NumPureComplexes[p,q,n],{n,n0,p*q}]],0]
+	With[{n0=Catch[Do[If[Binomial[nn,p]>=M,Throw[nn]],{nn,p,p*M}]]},
+		If[IntegerQ[n0],Total[Table[NumVertexLabeledPureComplexes[p,M,n],{n,n0,p*M}]],0]
 	]
 ];
 
 (* Catch-all Pattern *)
-NumPureComplexes[args___]:=(Message[NumPureComplexes::argerr, args];
+NumVertexLabeledPureComplexes[args___]:=(Message[NumVertexLabeledPureComplexes::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*NumPureComplexes*)
+
+
+(* Alias Pattern *)
+NumPureComplexes[args___]:=
+(*Former name of NumVertexLabeledPureComplexes. The rename did not touch the argument order --
+it is still (purity, facet order, vertex count), the facet order simply written M rather than q
+-- so forwarding is a straight hand-off and old calls return exactly what they always did. Kept
+deliberately rather than removed, so existing notebooks keep working.*)
+NumVertexLabeledPureComplexes[args];
+
+
+(* ::Item::Closed:: *)
+(*NumFacetLabeledPureComplexes*)
+
+
+(* Counting facet-labeled complexes. -------------------------------------------------------
+   A facet-labeled pure complex is M labelled, pairwise distinct p-subsets of an n-element
+   vertex set covering it, with the vertices NOT labelled. Transposing the incidence matrix
+   turns that into an incidence tableau: a multiset of n nonempty subsets of [M] -- one row per
+   vertex, listing the facets it lies in -- in which every label occurs in exactly p rows. The
+   rows are a multiset because the vertices are unlabelled; distinct facets means the M columns
+   are pairwise distinct, which is the "separating" condition.
+
+   Counting them directly over n rows is hopeless, so the count goes through Burnside on the n
+   row slots. Allowing empty rows first, let A(n) be the number of multisets of exactly n
+   subsets of [M] with every label in exactly p of them; padding with empty rows gives
+   A(n) = Sum_{k<=n} F(k), hence F(n) = A(n) - A(n-1). A tuple fixed by a permutation sigma is
+   constant on each cycle, so choosing one amounts to choosing a subset per cycle, and the
+   condition "label i lies in exactly p rows" becomes "the cycles containing i have lengths
+   summing to p" -- separately for each label. The labels therefore decouple and
+
+	|Fix(sigma)| = N(lambda,p)^M,   N(lambda,p) = [x^p] Product_k (1+x^k)^m_k,
+
+   with lambda the cycle type of sigma and m_k its number of parts of length k. Cycles longer
+   than p can never be used, so N depends only on m_1..m_p, leaving a sum over those few
+   exponents times the number of ways to arrange the remaining long cycles.
+
+   The separating condition is one substitution away: N^M counts arbitrary labellings, while
+   labellings with pairwise DISTINCT columns are counted by the falling factorial N^(M). Since
+   N^M = Sum_k StirlingS2[M,k] N^(k), swapping the weight IS the Stirling inversion of
+   B(p,n,M) = Sum_k StirlingS2[M,k] F(p,n,k), applied cycle type by cycle type -- and unlike
+   that inversion it has no cancellation, since every summand stays non-negative.
+
+   Ported from the author's Facet-labeled-count.nb (sFDirect), whose values were verified there
+   against a brute-force recursion. Cost is essentially independent of M, which enters only as
+   an exponent, and grows like n^p. *)
+
+(* Private helper *)
+NumFLPCLongCycleTable[p_Integer,smax_Integer]:=
+(*Entry s+1 is the number of permutations of [s] whose every cycle is longer than p. Read off
+the cycle containing the point 1: it has some length k>p and can be laid down in (s-1)!/(s-k)!
+ways, leaving the same problem on the other s-k points.*)
+Module[{gg=ConstantArray[0,smax+1],tot,fall},
+	gg[[1]]=1;
+	Do[
+		tot=0;
+		fall=1;(*fall = (s-1)!/(s-k)!*)
+		Do[
+			If[k>p,tot+=fall*gg[[s-k+1]]];
+			fall*=(s-k)
+		,{k,1,s}];
+		gg[[s+1]]=tot
+	,{s,1,smax}];
+	gg
+];
+
+(* Private helper *)
+NumFLPCNCoeff[mvec_List,jvecs_List]:=
+(*N(lambda,p) = [x^p] Product_k (1+x^k)^m_k, the number of sub-multisets of the cycle lengths
+summing to p. Expanded over the partitions of p, jvecs holding each partition's part counts.*)
+Sum[Times@@Binomial[mvec,jv],{jv,jvecs}];
+
+(* Private helper *)
+NumFLPCTSum[p_Integer,n_Integer,wf_,gg_List,fac_List,jvecs_List]:=
+(*n! A(n), summed over the cycle types of the n row slots. The recursion walks the multiplicities
+m_1..m_p of the short cycles; s is what is left for cycles longer than p, arranged gg[[s+1]]
+ways, and the multinomial fac[[n+1]]/(fac[[s+1]] denom) counts the ways to lay the short cycles
+down. wf turns the per-cycle-type count N into its weight: #^M would count all tableaux, while
+FactorialPower[#,M] counts only those with distinct columns, which is what separating means.*)
+If[n<0,
+	0,
+	Module[{total=0,rec},
+		rec[k_,used_,denom_,mvec_]:=
+			If[k>p,
+				Module[{s=n-used,nv=NumFLPCNCoeff[mvec,jvecs],w},
+					If[nv=!=0,
+						w=wf[nv];
+						If[w=!=0,
+							total+=w*(fac[[n+1]]/(fac[[s+1]]*denom))*gg[[s+1]]]]],
+				Do[
+					rec[k+1,used+k*mk,denom*k^mk*mk!,Append[mvec,mk]]
+				,{mk,0,Quotient[n-used,k]}]];
+		rec[1,0,1,{}];
+		total
+	]
+];
+
+(* Private helper *)
+NumFLPCCount[p_Integer,MM_Integer,n_Integer]:=
+(*F(p,M,n) = (T(n) - n T(n-1))/n!, the empty-row padding differenced away.*)
+Module[{gg,fac,jvecs,wf,tn,tn1},
+	gg=NumFLPCLongCycleTable[p,n];
+	fac=Table[k!,{k,0,n}];
+	jvecs=Table[Count[nu,k],{nu,IntegerPartitions[p]},{k,1,p}];
+	wf=FactorialPower[#,MM]&;
+	tn=NumFLPCTSum[p,n,wf,gg,fac,jvecs];
+	tn1=If[n>=1,NumFLPCTSum[p,n-1,wf,gg,fac,jvecs],0];
+	(tn-n*tn1)/fac[[n+1]]
+];
+
+(* Primary Pattern *)
+NumFacetLabeledPureComplexes[p_Integer,MM_Integer,n_Integer]:=
+(*Gives the number of facet labeled pure simplicial complexes of purity p, facet order M and
+number of vertices n. The argument order matches NumVertexLabeledPureComplexes: purity, facet
+order, vertex count. Zero outside p<=n<=p M -- fewer than p vertices cannot carry a facet, and M
+facets of p vertices cannot cover more than p M of them -- and zero when Binomial[n,p]<M, since
+the M facets must be distinct p-subsets. M==0 is the empty complex, counted at n==0 as for
+NumVertexLabeledPureComplexes.*)
+Which[
+	p<0||MM<0,0,
+	MM==0,If[n==0,1,0],
+	n<0||n<p||n>p*MM,0,
+	Binomial[n,p]<MM,0,
+	True,NumFLPCCount[p,MM,n]
+];
+
+(* Overload Pattern *)
+NumFacetLabeledPureComplexes[p_Integer,MM_Integer]:=
+(*The number of facet labeled pure complexes of purity p and facet order M, summed over the
+vertex count n, mirroring the two-argument NumVertexLabeledPureComplexes.*)
+Which[
+	MM<0,0,
+	MM==0,1,
+	True,
+	With[{n0=Catch[Do[If[Binomial[nn,p]>=MM,Throw[nn]],{nn,p,p*MM}]]},
+		If[IntegerQ[n0],Total[Table[NumFacetLabeledPureComplexes[p,MM,n],{n,n0,p*MM}]],0]
+	]
+];
+
+(* Catch-all Pattern *)
+NumFacetLabeledPureComplexes[args___]:=(Message[NumFacetLabeledPureComplexes::argerr, args];
 $Failed);
 
 
@@ -3150,15 +3292,15 @@ $Failed);
 RandomPureComplexCDFRow[purity_Integer,q_Integer,v_Integer]:=
 (*Cumulative composition weights for the qth facet, given that the first q facets cover v
 vertices. The weight of "the qth facet brings k new vertices" is
-	NumPureComplexes[p,q-1,v-k] (Binomial[v,v-k] Binomial[v-k,p-k] - [k==0](q-1)),
+	NumVertexLabeledPureComplexes[p,q-1,v-k] (Binomial[v,v-k] Binomial[v-k,p-k] - [k==0](q-1)),
 i.e. the sub-complex on the other q-1 facets, times the choice of which v-k vertices they
 cover, times the choice of the qth facet itself; the [k==0] term drops the facets that would
 repeat one already present. Accumulated so a composition can be drawn with one RandomInteger
 and a scan, and kept in exact integers because the weights are counts running to hundreds of
 digits.*)
 	Accumulate@If[q>2,
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]-If[k==0,q-1,0]),{k,0,purity}],
-		Table[NumPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]),{k,1,purity}]];
+		Table[NumVertexLabeledPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]-If[k==0,q-1,0]),{k,0,purity}],
+		Table[NumVertexLabeledPureComplexes[purity,q-1,v-k]*(Binomial[v,v-k]*Binomial[v-k,purity-k]),{k,1,purity}]];
 
 (* Private helper: facet order above which composition weights are recomputed instead of kept.
    A row depends on (purity,q,v) alone -- never on the sample, and never on the vertex count of
@@ -3202,7 +3344,7 @@ RandomPureComplexFacets[purity_Integer,facetOrder_Integer,nV_Integer]:=
 (*One complex. The composition needs no feasibility re-draw: the old generator looped while any
 prefix of j facets covering v_j vertices had Binomial[v_j,purity]<j -- too few distinct
 p-subsets to fill j facets -- but a k is only ever drawn with positive weight, and a positive
-weight carries the factor NumPureComplexes[purity,q-1,v-k], which vanishes unless a complex
+weight carries the factor NumVertexLabeledPureComplexes[purity,q-1,v-k], which vanishes unless a complex
 with q-1 facets on those v-k vertices exists. That is the very condition being retested, so
 with the caller's guard pinning the top of the chain the loop could never fire, and it cost an
 O(facetOrder^2) rescan per sample.
@@ -3290,10 +3432,10 @@ If[numSamples<0,
 	Throw[$Failed, "ECGravReturn$63"]];
 
 (*Refuse parameters with nothing to sample. Every composition weight carries a factor
-NumPureComplexes[purity,q-1,...], so on an empty sample space they are all zero; the draw then
+NumVertexLabeledPureComplexes[purity,q-1,...], so on an empty sample space they are all zero; the draw then
 fails and its unevaluated result feeds the next stage, which used to return "complexes" with
 RandomSample[...] expressions sitting inside them rather than failing.*)
-If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
+If[purity<1||facetOrder<1||NumVertexLabeledPureComplexes[purity,facetOrder,nV]==0,
 	Message[RandomVertexLabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
 	Throw[$Failed, "ECGravReturn$63"]];
 
@@ -3347,7 +3489,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumVertexLabeledPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -3425,7 +3567,7 @@ If[numSamples<0,
 	Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
 	Throw[$Failed, "ECGravReturn$65"]];
 
-If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
+If[purity<1||facetOrder<1||NumVertexLabeledPureComplexes[purity,facetOrder,nV]==0,
 	Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
 	Throw[$Failed, "ECGravReturn$65"]];
 
@@ -3436,7 +3578,7 @@ accepting with probability |Aut|/nV! cancels it and leaves the unlabeled classes
 
 The proposal is RandomPureComplexFacets, the same one RandomVertexLabeledPureSimplicialComplex
 draws from, rather than a private copy of it. That is what makes the parallel branch below work:
-the copy lived on a Module-local symbol whose definition reached NumPureComplexes, and the
+the copy lived on a Module-local symbol whose definition reached NumVertexLabeledPureComplexes, and the
 subkernels never received it.*)
 Module[{facets={},weight},
 
@@ -3495,7 +3637,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumVertexLabeledPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -3587,7 +3729,7 @@ If[numSamples<0,
 	Message[RandomUniformFacetLabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
 	Throw[$Failed, "ECGravReturn$67"]];
 
-If[purity<1||facetOrder<1||NumPureComplexes[purity,facetOrder,nV]==0,
+If[purity<1||facetOrder<1||NumVertexLabeledPureComplexes[purity,facetOrder,nV]==0,
 	Message[RandomUniformFacetLabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
 	Throw[$Failed, "ECGravReturn$67"]];
 
@@ -3596,7 +3738,7 @@ buildOneComplex[]:=
 was. The proposal is now RandomPureComplexFacets, the same one
 RandomVertexLabeledPureSimplicialComplex draws from, rather than a private copy of it. That is
 what makes the parallel branch below work: the copy lived on a Module-local symbol whose
-definition reached NumPureComplexes, and the subkernels never received it.*)
+definition reached NumVertexLabeledPureComplexes, and the subkernels never received it.*)
 Module[{facets={},acceptanceProb},
 
 	While[facets=={},
@@ -3655,7 +3797,7 @@ nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facet
 
 
 (*table of sv(p,q,n)*)
-svTable=Table[NumPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
+svTable=Table[NumVertexLabeledPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
 
 (*Normalize svTable by the geometric mean for easier computation*)
 svTable=svTable/GeometricMean[svTable];
@@ -5135,5 +5277,3 @@ $Failed);
 (* End private context *)
 
 (* Protect exported symbols *)
-
-

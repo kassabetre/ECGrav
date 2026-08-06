@@ -1939,22 +1939,60 @@ UnrankComb::argerr="Input should be of teh form
 
 
 (* ::Item::Closed:: *)
+(*NumVertexLabeledPureComplexes*)
+
+
+(* :Usage Messages: *)
+
+NumVertexLabeledPureComplexes::usage = "NumVertexLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+gives the number of vertex labeled pure simplicial complexes of purity p, facet
+order M, and number of vertices n -- that is, the number of M-element sets of p-subsets
+of [n] whose union is all of [n]. It is zero unless p <= n <= p M. Computes one whole
+row of n at a time, working up from M = 1, and memoizes the rows for the session.
+NumVertexLabeledPureComplexes[p_Integer, M_Integer] gives the number of pure simplicial complexes
+of purity p and facet order M, summed over the vertex count.
+M = 0 is the empty complex: NumVertexLabeledPureComplexes[p, 0, n] is 1 at n = 0 and 0 otherwise,
+and NumVertexLabeledPureComplexes[p, 0] is 1. Negative M gives 0.
+See NumFacetLabeledPureComplexes for the count with the facets labelled and the vertices not.";
+
+NumVertexLabeledPureComplexes::argerr="Input should be of the form NumVertexLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+	or NumVertexLabeledPureComplexes[p_Integer, M_Integer].";
+
+
+(* ::Item::Closed:: *)
 (*NumPureComplexes*)
 
 
 (* :Usage Messages: *)
 
-NumPureComplexes::usage = "NumPureComplexes[p_Integer, q_Integer, n_Integer]
-gives the number of vertex labeled pure simplicial complexes of purity p, facet
-order q, and number of vertices n. It is zero unless p <= n <= p q. Computes one whole
-row of n at a time, working up from q = 1, and memoizes the rows for the session.
-NumPureComplexes[p_Integer, q_Integer] gives the number of pure simplicial complexes
-of purity p, facet order q, summed over the vertex count.
-q = 0 is the empty complex: NumPureComplexes[p, 0, n] is 1 at n = 0 and 0 otherwise,
-and NumPureComplexes[p, 0] is 1. Negative q gives 0.";
+(* Former name of NumVertexLabeledPureComplexes, kept as an alias. The argument order is
+   unchanged -- (purity, facet order, vertex count), with the facet order now written M rather
+   than q -- so old calls keep returning what they always did. *)
 
-NumPureComplexes::argerr="Input should be of the form NumPureComplexes[p_Integer, q_Integer, n_Integer]
-	or NumPureComplexes[p_Integer, q_Integer].";
+NumPureComplexes::usage = "NumPureComplexes is the former name of NumVertexLabeledPureComplexes
+and is kept as an alias for it, with the same arguments in the same order. Prefer
+NumVertexLabeledPureComplexes, which says which of the two labellings it counts.";
+
+
+(* ::Item::Closed:: *)
+(*NumFacetLabeledPureComplexes*)
+
+
+(* :Usage Messages: *)
+
+NumFacetLabeledPureComplexes::usage = "NumFacetLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+gives the number of facet labeled pure simplicial complexes of purity p, facet order M, and
+number of vertices n: M labelled, pairwise distinct p-subsets of an n-element vertex set whose
+union is the whole set, counted up to permutation of the vertices, which are not labelled.
+Equivalently the number of separating (p, n, M) incidence tableaux -- multisets of n nonempty
+subsets of [M] in which every label occurs in exactly p of them and no two labels occupy the
+same set of rows.
+NumFacetLabeledPureComplexes[p_Integer, M_Integer] sums that over the vertex count.
+It is zero unless p <= n <= p M and Binomial[n, p] >= M.
+See NumVertexLabeledPureComplexes for the count with the vertices labelled instead.";
+
+NumFacetLabeledPureComplexes::argerr="Input should be of the form NumFacetLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+	or NumFacetLabeledPureComplexes[p_Integer, M_Integer].";
 
 
 (* ::Section::Closed:: *)

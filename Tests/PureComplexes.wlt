@@ -52,56 +52,56 @@ VerificationTest[ECGrav`EulerChi[Table[0, {5}, {5}]], 5, TestID -> "EulerChi-5-i
 
 (* ---------- Counting / combinatorics ---------- *)
 
-(* NumPureComplexes[p,q,n] counts q-element sets of p-subsets of [n] whose union is all of
+(* NumVertexLabeledPureComplexes[p,q,n] counts q-element sets of p-subsets of [n] whose union is all of
    [n]. The values below were checked by direct enumeration of exactly that
    (Select[Subsets[Subsets[Range[n],{p}],{q}], Union@@#===Range[n]&]), so they are oracles
-   independent of the recursion. NumPureComplexes[4,3,12]=5775 is independently 12!/(4!^3 3!),
+   independent of the recursion. NumVertexLabeledPureComplexes[4,3,12]=5775 is independently 12!/(4!^3 3!),
    the number of ways to partition 12 labelled vertices into 3 blocks of 4. *)
 
-VerificationTest[ECGrav`NumPureComplexes[3, 3], 2649, TestID -> "NumPureComplexes-3-3"];
-VerificationTest[ECGrav`NumPureComplexes[3, 3, 7], 945, TestID -> "NumPureComplexes-3-3-7"];
-VerificationTest[ECGrav`NumPureComplexes[3, 3, 9], 280, TestID -> "NumPureComplexes-3-3-9"];
-VerificationTest[ECGrav`NumPureComplexes[2, 4, 6], 330, TestID -> "NumPureComplexes-2-4-6"];
-VerificationTest[ECGrav`NumPureComplexes[3, 4, 8], 72380, TestID -> "NumPureComplexes-3-4-8"];
-VerificationTest[ECGrav`NumPureComplexes[2, 4], 900, TestID -> "NumPureComplexes-2-4"];
-VerificationTest[ECGrav`NumPureComplexes[3, 4], 441061, TestID -> "NumPureComplexes-3-4"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 3], 2649, TestID -> "NumVertexLabeledPureComplexes-3-3"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 3, 7], 945, TestID -> "NumVertexLabeledPureComplexes-3-3-7"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 3, 9], 280, TestID -> "NumVertexLabeledPureComplexes-3-3-9"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[2, 4, 6], 330, TestID -> "NumVertexLabeledPureComplexes-2-4-6"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 4, 8], 72380, TestID -> "NumVertexLabeledPureComplexes-3-4-8"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[2, 4], 900, TestID -> "NumVertexLabeledPureComplexes-2-4"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 4], 441061, TestID -> "NumVertexLabeledPureComplexes-3-4"];
 
 (* n outside p <= n <= p q is answered without building a row; both ends must give 0. *)
-VerificationTest[ECGrav`NumPureComplexes[3, 2, 2], 0, TestID -> "NumPureComplexes-n-below-p"];
-VerificationTest[ECGrav`NumPureComplexes[3, 2, 7], 0, TestID -> "NumPureComplexes-n-above-pq"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 2, 2], 0, TestID -> "NumVertexLabeledPureComplexes-n-below-p"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 2, 7], 0, TestID -> "NumVertexLabeledPureComplexes-n-above-pq"];
 
 (* q<=0: the empty complex covers no vertices, so N(p,0,n) is 1 at n==0 and 0 otherwise, and
    summing it over n gives 1. Negative q counts nothing. These returned Indeterminate (3-arg)
    and an unevaluated Total[Table[..]] (2-arg) before. *)
-VerificationTest[ECGrav`NumPureComplexes[3, 0, 0], 1, TestID -> "NumPureComplexes-q0-n0"];
-VerificationTest[ECGrav`NumPureComplexes[3, 0, 5], 0, TestID -> "NumPureComplexes-q0-n-nonzero"];
-VerificationTest[ECGrav`NumPureComplexes[3, -1, 5], 0, TestID -> "NumPureComplexes-q-negative"];
-VerificationTest[ECGrav`NumPureComplexes[3, 0], 1, TestID -> "NumPureComplexes-2arg-q0"];
-VerificationTest[ECGrav`NumPureComplexes[2, -1], 0, TestID -> "NumPureComplexes-2arg-q-negative"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 0, 0], 1, TestID -> "NumVertexLabeledPureComplexes-q0-n0"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 0, 5], 0, TestID -> "NumVertexLabeledPureComplexes-q0-n-nonzero"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, -1, 5], 0, TestID -> "NumVertexLabeledPureComplexes-q-negative"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[3, 0], 1, TestID -> "NumVertexLabeledPureComplexes-2arg-q0"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[2, -1], 0, TestID -> "NumVertexLabeledPureComplexes-2arg-q-negative"];
 
 (* Degenerate purity: no n in p..p q carries enough distinct p-subsets, so the sum is empty. *)
-VerificationTest[ECGrav`NumPureComplexes[0, 3], 0, TestID -> "NumPureComplexes-2arg-p0"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[0, 3], 0, TestID -> "NumVertexLabeledPureComplexes-2arg-p0"];
 
 (* The 2-arg overload must agree with summing the 3-arg form over every vertex count. *)
 VerificationTest[
-    ECGrav`NumPureComplexes[3, 5],
-    Total[Table[ECGrav`NumPureComplexes[3, 5, n], {n, 0, 15}]],
-    TestID -> "NumPureComplexes-2arg-equals-row-total"
+    ECGrav`NumVertexLabeledPureComplexes[3, 5],
+    Total[Table[ECGrav`NumVertexLabeledPureComplexes[3, 5, n], {n, 0, 15}]],
+    TestID -> "NumVertexLabeledPureComplexes-2arg-equals-row-total"
 ];
 
 (* Rows are cached per (p,q) behind a high-water mark, so a descending sweep of q must return
    the same values as an ascending one. *)
 VerificationTest[
-    Table[ECGrav`NumPureComplexes[4, q, 12], {q, 9, 1, -1}],
+    Table[ECGrav`NumVertexLabeledPureComplexes[4, q, 12], {q, 9, 1, -1}],
     Reverse[{0, 0, 5775, 57345750, 29179710945, 5551975972620, 627962951769615,
         51166525553400015, 3312982055194610645}],
-    TestID -> "NumPureComplexes-descending-q"
+    TestID -> "NumVertexLabeledPureComplexes-descending-q"
 ];
 
 (* Rows are filled by an explicit bottom-up loop, so recursion depth no longer grows with q;
    the earlier recursive form died on TerminatedEvaluation[RecursionLimit] before q=700.
    p=1 keeps the entries tiny: q singleton facets cover exactly q vertices. *)
-VerificationTest[ECGrav`NumPureComplexes[1, 800, 800], 1, TestID -> "NumPureComplexes-deep-q"];
+VerificationTest[ECGrav`NumVertexLabeledPureComplexes[1, 800, 800], 1, TestID -> "NumVertexLabeledPureComplexes-deep-q"];
 
 (* The cache cap and its reset are private by design -- they tune an implementation detail, not
    the mathematics -- so the tests below have to name them in ECGrav`Private`. That is
@@ -120,51 +120,153 @@ With[{expected = {0, 0, 0, 0, 8408400, 12234151930, 3513295545760, 4650213349181
         4080228574475590322786}},
     VerificationTest[
         Block[{ECGrav`Private`$NumPCMaxCachedQ = 4},
-            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 1, 12}]],
+            Table[ECGrav`NumVertexLabeledPureComplexes[3, q, 14], {q, 1, 12}]],
         expected,
-        TestID -> "NumPureComplexes-cap-below-range"
+        TestID -> "NumVertexLabeledPureComplexes-cap-below-range"
     ];
     VerificationTest[
         Block[{ECGrav`Private`$NumPCMaxCachedQ = 7},
-            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 12, 1, -1}]],
+            Table[ECGrav`NumVertexLabeledPureComplexes[3, q, 14], {q, 12, 1, -1}]],
         Reverse[expected],
-        TestID -> "NumPureComplexes-cap-straddling-descending"
+        TestID -> "NumVertexLabeledPureComplexes-cap-straddling-descending"
     ];
     VerificationTest[
         Block[{ECGrav`Private`$NumPCMaxCachedQ = 10000},
-            Table[ECGrav`NumPureComplexes[3, q, 14], {q, 1, 12}]],
+            Table[ECGrav`NumVertexLabeledPureComplexes[3, q, 14], {q, 1, 12}]],
         expected,
-        TestID -> "NumPureComplexes-cap-above-range"
+        TestID -> "NumVertexLabeledPureComplexes-cap-above-range"
     ];
 ];
 
 (* A cap of 0 switches caching off altogether and must still give the same answer. *)
 VerificationTest[
-    Block[{ECGrav`Private`$NumPCMaxCachedQ = 0}, ECGrav`NumPureComplexes[3, 8, 14]],
+    Block[{ECGrav`Private`$NumPCMaxCachedQ = 0}, ECGrav`NumVertexLabeledPureComplexes[3, 8, 14]],
     465021334918140,
-    TestID -> "NumPureComplexes-caching-disabled"
+    TestID -> "NumVertexLabeledPureComplexes-caching-disabled"
 ];
 
 (* NumPCClearCache[] reclaims the rows and returns the bytes freed; nothing else holds a row,
    so the next call must rebuild to the same values. *)
 VerificationTest[
-    (ECGrav`NumPureComplexes[4, 60, 120]; ECGrav`Private`NumPCClearCache[] > 0),
+    (ECGrav`NumVertexLabeledPureComplexes[4, 60, 120]; ECGrav`Private`NumPCClearCache[] > 0),
     True,
-    TestID -> "NumPureComplexes-clear-cache-reclaims"
+    TestID -> "NumVertexLabeledPureComplexes-clear-cache-reclaims"
 ];
 VerificationTest[
     (ECGrav`Private`NumPCClearCache[]; ECGrav`Private`NumPCClearCache[]),
     0,
-    TestID -> "NumPureComplexes-clear-cache-idempotent"
+    TestID -> "NumVertexLabeledPureComplexes-clear-cache-idempotent"
 ];
 VerificationTest[
     (ECGrav`Private`NumPCClearCache[];
-     {ECGrav`NumPureComplexes[3, 4, 8], ECGrav`NumPureComplexes[3, 3]}),
+     {ECGrav`NumVertexLabeledPureComplexes[3, 4, 8], ECGrav`NumVertexLabeledPureComplexes[3, 3]}),
     {72380, 2649},
-    TestID -> "NumPureComplexes-correct-after-clear"
+    TestID -> "NumVertexLabeledPureComplexes-correct-after-clear"
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ---- NumPureComplexes: former name, kept as an alias ---- *)
+
+(* The rename to NumVertexLabeledPureComplexes did not touch the argument order, so the alias
+   must agree with the new name everywhere, not merely on well-formed input. *)
+VerificationTest[
+    Module[{grid3, grid2},
+        grid3 = Flatten[Table[{p, M, n}, {p, -1, 4}, {M, -1, 6}, {n, -1, 14}], 2];
+        grid2 = Flatten[Table[{p, M}, {p, -1, 4}, {M, -1, 6}], 1];
+        {Length[grid3], Length[grid2],
+         AllTrue[grid3, Quiet[ECGrav`NumPureComplexes @@ #] === Quiet[ECGrav`NumVertexLabeledPureComplexes @@ #] &],
+         AllTrue[grid2, Quiet[ECGrav`NumPureComplexes @@ #] === Quiet[ECGrav`NumVertexLabeledPureComplexes @@ #] &],
+         ECGrav`NumPureComplexes[3, 3, 7]}],
+    {768, 48, True, True, 945},
+    TestID -> "NumPureComplexes-alias-agrees"
+];
+
+(* ---- NumFacetLabeledPureComplexes ---- *)
+
+(* M labelled, pairwise distinct p-subsets of an n-set covering it, counted up to permutation of
+   the unlabelled vertices. Values below are the separating-tableaux counts from the author's
+   Facet-labeled-count.nb, independently reproduced here by direct enumeration of exactly that
+   description (all M-tuples of distinct p-subsets covering [n], canonicalised over the n!
+   relabellings). Note the argument order: (purity, facet order, vertex count), matching
+   NumVertexLabeledPureComplexes, so these are the notebook's sF[p,n,M] with the last two swapped. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes @@@
+        {{2, 3, 4}, {2, 3, 5}, {3, 3, 5}, {3, 3, 6}, {2, 4, 4}, {2, 4, 5},
+         {3, 4, 6}, {3, 4, 7}, {2, 5, 5}, {3, 5, 5}, {3, 5, 6}},
+    {4, 3, 7, 10, 15, 29, 154, 207, 222, 252, 2472},
+    TestID -> "NumFacetLabeledPureComplexes-known-values"
+];
+
+(* In-suite independent oracle: enumerate and canonicalise, rather than trusting the recursion. *)
+VerificationTest[
+    Module[{brute},
+        brute = Function[{p, M, n},
+            Module[{subs = Subsets[Range[n], {p}], tuples, canon},
+                tuples = Select[Catenate[Permutations[#, {M}] & /@ Subsets[subs, {M}]],
+                    Union @@ # === Range[n] &];
+                canon = Function[t, First[Sort[Table[Sort /@ (t /. Thread[Range[n] -> perm]),
+                    {perm, Permutations[Range[n]]}]]]];
+                Length[Union[canon /@ tuples]]]];
+        (brute @@@ #) === (ECGrav`NumFacetLabeledPureComplexes @@@ #) &@
+            {{2, 3, 4}, {3, 3, 5}, {2, 4, 4}, {3, 2, 6}, {1, 3, 3}}],
+    True,
+    TestID -> "NumFacetLabeledPureComplexes-brute-force"
+];
+
+(* Merging equal columns of an incidence tableau gives B(p,n,M) = Sum_k StirlingS2[M,k] F(p,n,k),
+   tying the separating count to the count of ALL (p,n,M) tableaux. Checking that identity against
+   independently brute-forced B values exercises the whole derivation, not just the endpoints. *)
+VerificationTest[
+    Module[{allTab},
+        allTab = Function[{p, n, M},
+            Module[{rows = Rest[Subsets[Range[M]]]},
+                Length[Select[Subsets[Range[Length[rows] + n - 1], {n}],
+                    With[{ms = # - Range[0, n - 1]},
+                        AllTrue[Range[M], Function[lab,
+                            Count[rows[[ms]], r_ /; MemberQ[r, lab]] === p]]] &]]]];
+        AllTrue[{{2, 4, 3}, {3, 5, 3}, {2, 4, 4}, {3, 6, 3}}, Function[s,
+            With[{p = s[[1]], n = s[[2]], M = s[[3]]},
+                allTab[p, n, M] ===
+                    Sum[StirlingS2[M, k]*ECGrav`NumFacetLabeledPureComplexes[p, k, n], {k, 1, M}]]]]],
+    True,
+    TestID -> "NumFacetLabeledPureComplexes-stirling-identity"
+];
+
+(* Cost is essentially independent of M, which enters only as an exponent; this 92-digit value
+   is the notebook's sF[3,10,50] and returns in milliseconds. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes[3, 50, 10],
+    153895449539108833097171275367657047043654150073334211607720849958357461588026327040000000000,
+    TestID -> "NumFacetLabeledPureComplexes-large-M"
+];
+
+(* Zero outside p <= n <= p M, zero when there are too few distinct p-subsets to supply M facets,
+   and M = 0 is the empty complex, as for NumVertexLabeledPureComplexes. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes @@@
+        {{3, 0, 0}, {3, 0, 5}, {3, -1, 5}, {3, 4, 2}, {3, 4, 100}, {3, 4, 3}, {-1, 3, 4}},
+    {1, 0, 0, 0, 0, 0, 0},
+    TestID -> "NumFacetLabeledPureComplexes-degenerate"
+];
+
+(* The two-argument form sums the three-argument one over the vertex count. *)
+VerificationTest[
+    Table[{ECGrav`NumFacetLabeledPureComplexes[p, M],
+           Total[Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {n, 0, p*M}]]},
+        {p, 2, 3}, {M, 2, 5}],
+    Table[{#, #} &@Total[Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {n, 0, p*M}]],
+        {p, 2, 3}, {M, 2, 5}],
+    TestID -> "NumFacetLabeledPureComplexes-2arg-equals-sum"
+];
+
+VerificationTest[
+    Quiet[{ECGrav`NumFacetLabeledPureComplexes[1.5, 2],
+           ECGrav`NumFacetLabeledPureComplexes[1, 2, 3, 4]}],
+    {$Failed, $Failed},
+    TestID -> "NumFacetLabeledPureComplexes-argerr"
+];
+
 VerificationTest[ECGrav`RankComb[{0, 1, 2}, 5], 0, TestID -> "RankComb-first"];
 VerificationTest[
     ECGrav`UnrankComb[ECGrav`RankComb[{0, 1, 2}, 5], 5, 3],
@@ -284,7 +386,7 @@ VerificationTest[ECGrav`DGraphQ[tetraG], True, TestID -> "DGraphQ-tetrahedron"];
    NB: the three uniform samplers used to be kept out of the suite on the grounds that a first
    call in a fresh kernel cost about 30 s of parallel distribution. That cost was the bug: their
    ParallelTable branches distributed only ECGrav`Private`, so the subkernels could not evaluate
-   NumPureComplexes and the whole draw came back unevaluated. With that fixed, a first parallel
+   NumVertexLabeledPureComplexes and the whole draw came back unevaluated. With that fixed, a first parallel
    call is 0.12 s once TestPrelude has launched the kernels and the serial path costs nothing
    special, so all three are covered here. *)
 
@@ -314,7 +416,7 @@ VerificationTest[
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 
 (* Above ECGrav`Private`$RandomComplexParallelThreshold the draw goes to ParallelTable. That
-   branch used to distribute only ECGrav`Private`, so the subkernels had no NumPureComplexes,
+   branch used to distribute only ECGrav`Private`, so the subkernels had no NumVertexLabeledPureComplexes,
    the composition weights never evaluated, and every sample came back as facet lists with
    unevaluated RandomSample[...] expressions inside -- silently, and only above the threshold.
    The threshold is forced low here so this keeps exercising the parallel path whatever the
@@ -333,7 +435,7 @@ VerificationTest[
 ];
 
 (* The generator is meant to be UNIFORM over vertex-labeled pure complexes -- that is what the
-   NumPureComplexes-weighted composition draw buys. Enumerate the 16 complexes at p=2,q=3,n=4
+   NumVertexLabeledPureComplexes-weighted composition draw buys. Enumerate the 16 complexes at p=2,q=3,n=4
    and chi-square the sample against uniform. BlockRandom keeps the seeding from disturbing the
    rest of the suite; the threshold is loose, so this fails only on a genuinely wrong
    distribution, and Total[counts] guards against a keying slip making it vacuous. Pinned to the
@@ -379,7 +481,7 @@ VerificationTest[
 ];
 
 (* Above numSamples = 20 both switch to ParallelTable. Both used to distribute only
-   ECGrav`Private`, leaving the subkernels without NumPureComplexes, so 100% of samples came
+   ECGrav`Private`, leaving the subkernels without NumVertexLabeledPureComplexes, so 100% of samples came
    back as facet lists holding unevaluated RandomSample[...] -- and unlike the vertex-labeled
    generator, whose threshold was 10^4, these fired at 21 samples. $KernelCount is asserted so a
    kernel-less environment fails loudly rather than passing on the serial path. *)
@@ -433,7 +535,7 @@ VerificationTest[
 ];
 
 (* An empty sample space must fail loudly. Every composition weight carries a
-   NumPureComplexes factor, so on an empty space they are all zero and the draw cannot proceed;
+   NumVertexLabeledPureComplexes factor, so on an empty space they are all zero and the draw cannot proceed;
    the old code let that unevaluated result flow on and returned malformed "complexes". *)
 VerificationTest[
     Quiet[ECGrav`RandomVertexLabeledPureSimplicialComplex[#, 2] & /@
