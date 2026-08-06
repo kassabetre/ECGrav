@@ -485,18 +485,22 @@ VerificationTest[
    back as facet lists holding unevaluated RandomSample[...] -- and unlike the vertex-labeled
    generator, whose threshold was 10^4, these fired at 21 samples. $KernelCount is asserted so a
    kernel-less environment fails loudly rather than passing on the serial path. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 VerificationTest[
-    Module[{u, f}, SeedRandom[321];
-        u = ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, 25];
-        f = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{2, 3, 4}, 25];
-        {$KernelCount > 0,
-         AllTrue[Join[u, f], Function[c,
-            Length[c] === 3 && Length[DeleteDuplicates[c]] === 3 &&
-            AllTrue[c, Function[e, Length[e] === 2 && AllTrue[e, IntegerQ]]] &&
-            Union @@ c === Range[4]]]}],
+    Block[{ECGrav`Private`$RandomFacetLabeledParallelThreshold = 10},
+        Module[{u, f}, SeedRandom[321];
+            u = ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, 25];
+            f = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{2, 3, 4}, 25];
+            {$KernelCount > 0,
+             AllTrue[Join[u, f], Function[c,
+                Length[c] === 3 && Length[DeleteDuplicates[c]] === 3 &&
+                AllTrue[c, Function[e, Length[e] === 2 && AllTrue[e, IntegerQ]]] &&
+                Union @@ c === Range[4]]]}]],
     {True, True},
     TestID -> "RandomUniformSamplers-parallel-branch"
 ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* The point of the unlabeled sampler is uniformity over ISOMORPHISM classes, not over labeled
    complexes. At p=2,q=3,n=4 there are 16 labeled complexes but only two classes -- the path,
@@ -520,6 +524,64 @@ VerificationTest[
     {400, True},
     TestID -> "RandomUniformUnlabeledPureSimplicialComplex-uniform-over-classes"
 ];
+
+(* RandomUniformFacetLabeledPureSimplicialComplex no longer rejects. It samples a fixed pair
+   (sigma, x) of the S_n action instead: every orbit contributes exactly n! such pairs whatever
+   its size, so dropping sigma leaves the orbit uniform. The whole scheme rests on the Burnside
+   weights summing to n! NumFacetLabeledPureComplexes[p,M,n] -- if the cycle-type weights were
+   wrong the draw would still look plausible, so check the identity itself, exactly, rather than
+   only its consequences. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+VerificationTest[
+    AllTrue[{{2, 3, 4}, {2, 3, 5}, {3, 3, 5}, {2, 4, 4}, {2, 4, 5}, {3, 3, 6},
+             {2, 4, 6}, {3, 4, 7}, {3, 4, 9}, {2, 5, 8}}, Function[s,
+        With[{p = s[[1]], M = s[[2]], n = s[[3]]},
+            Total[ECGrav`Private`RandFLPCTypeWeights[p, M, n][[3]]] ===
+                n!*ECGrav`NumFacetLabeledPureComplexes[p, M, n]]]],
+    True,
+    TestID -> "RandomUniformFacetLabeled-burnside-weights"
+];
+
+(* Uniformity over the facet-labeled classes, the property the sampler exists to have. Enumerate
+   the classes by canonicalising over the n! relabellings and chi-square the draw. Pinned to the
+   serial branch so the seed fixes the outcome; the parallel branch splits the stream by kernel
+   count, which would vary by machine. *)
+VerificationTest[
+    BlockRandom[SeedRandom[330];
+      Block[{ECGrav`Private`$RandomFacetLabeledParallelThreshold = Infinity},
+        Module[{p = 3, M = 3, n = 5, numClasses, canon, smp, counts, chi2},
+            numClasses = ECGrav`NumFacetLabeledPureComplexes[p, M, n];
+            canon = Function[c, First[Sort[Table[Sort /@ (c /. Thread[Range[n] -> perm]),
+                {perm, Permutations[Range[n]]}]]]];
+            smp = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{p, M, n}, 1400];
+            counts = Lookup[Counts[canon /@ smp], Union[canon /@ smp], 0];
+            chi2 = Total[(counts - 1400/numClasses)^2]/(1400/numClasses);
+            {numClasses, Length[counts], Total[counts],
+             SurvivalFunction[ChiSquareDistribution[numClasses - 1], N[chi2]] > 0.001}]]],
+    {7, 7, 1400, True},
+    TestID -> "RandomUniformFacetLabeled-uniform-over-classes"
+];
+
+(* With the vertex count free, it is now drawn from NumFacetLabeledPureComplexes directly rather
+   than from the vertex-labeled counts with rejection repairing the difference, so the marginal
+   must follow those counts. *)
+VerificationTest[
+    BlockRandom[SeedRandom[331];
+      Block[{ECGrav`Private`$RandomFacetLabeledParallelThreshold = Infinity},
+        Module[{p = 2, M = 4, smp, ns, support, expected, obs, chi2},
+            support = Select[Range[p, p*M], ECGrav`NumFacetLabeledPureComplexes[p, M, #] > 0 &];
+            smp = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{p, M}, 4000];
+            ns = Max[Max /@ #] & /@ smp;
+            obs = Lookup[Counts[ns], support, 0];
+            expected = N[4000*#/Total[#]] &@ (ECGrav`NumFacetLabeledPureComplexes[p, M, #] & /@ support);
+            chi2 = Total[(obs - expected)^2/expected];
+            {Total[obs],
+             SurvivalFunction[ChiSquareDistribution[Length[support] - 1], N[chi2]] > 0.001}]]],
+    {4000, True},
+    TestID -> "RandomUniformFacetLabeled-vertex-count-marginal"
+];
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* Same empty-sample-space guards as the vertex-labeled generator. *)
 VerificationTest[

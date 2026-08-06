@@ -1696,7 +1696,8 @@ the memoised entries are the DownValues whose left-hand side carries no Pattern.
 number of bytes reclaimed. Nothing else in the package holds on to either, so calling this is
 always safe; it only costs the rebuilding.*)
 Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
-		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF}},
+		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF,
+			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
 	Scan[(DownValues[#]=Select[DownValues[#],patterned])&,cached];
 	after=Total[ByteCount/@Map[DownValues,cached]];
@@ -3696,7 +3697,134 @@ $Failed);
 
 
 (* ::Subsection::Closed:: *)
-(*Random uniform Facet-labeled Pure Simplicial Complex from rejection on vertex labeled*)
+(*Random uniform Facet-labeled Pure Simplicial Complex by Burnside pair sampling*)
+
+
+(* Exact uniform sampling of facet-labeled complexes. -----------------------------------------
+   RandomVertexLabeledPureSimplicialComplex reads its weights straight off the counting
+   recursion, because with labeled vertices "how many complexes have this many new vertices in
+   the next facet" is a plain product of binomials. Nothing like that exists here: with the
+   vertices unlabeled the count is a Burnside average over cycle types, not a sequential
+   decomposition, so there is no recursion to walk facet by facet.
+
+   What replaces it is pair sampling. Let X be the ordered M-tuples of distinct p-subsets of [n]
+   covering [n], on which S_n acts by relabeling vertices; facet-labeled complexes are its
+   orbits. Sample uniformly from the FIXED PAIRS {(sigma,x) : sigma.x = x}. Every orbit O
+   contributes Sum over x in O of |Stab(x)| = |O| (n!/|O|) = n! pairs -- the same number for
+   every orbit, regardless of its size -- so discarding sigma leaves the orbit exactly uniform.
+   No rejection, and no automorphism-order weighting to go wrong.
+
+   sigma fixes a tuple exactly when every facet is sigma-invariant, i.e. a union of cycles whose
+   lengths sum to p. Calling the cycles "blocks", one sample is:
+
+	1  draw a cycle type with weight (number of permutations of that type) x (number of
+	   tuples it fixes). Only partitions of n into parts <= p occur: a cycle longer than p
+	   fits in no facet, so it could never be covered.
+	2  cut a uniform random permutation of [n] into blocks of those sizes
+	3  draw the M distinct weight-p block-subsets one at a time, each weighted by how many
+	   ways the rest can still be finished
+	4  facet i is the union of the blocks in subset i
+
+   Step 3 is exact for a reason worth stating: the number of completions depends on the draws so
+   far only through (how many subsets are used, which blocks are still uncovered), never on WHICH
+   subsets were used. Every used subset lies inside the already-covered blocks, so it is excluded
+   from any inclusion-exclusion term automatically and only its count enters. That is the same
+   observation that lets the vertex-labeled generator subtract (j-1) for a repeated facet.
+
+   The state is indexed by the multiplicity vector of uncovered block sizes rather than by the
+   set of uncovered blocks. Blocks of equal size are interchangeable at this point, so that turns
+   a 2^(number of blocks) inclusion-exclusion into O(n^p) -- the same polynomial scaling, and the
+   same independence of M, that NumFacetLabeledPureComplexes has. *)
+
+(* Private helper *)
+RandFLPCWeightCounts[nu_List]:=RandFLPCWeightCounts[nu]=
+(*Coefficients of Product[(1+x^k)^nu[[k]],{k,1,p}] out to x^p. Entry w+1 counts the sub-multisets
+of a block collection holding nu[[k]] blocks of size k whose sizes sum to w; the last entry is
+therefore the number of admissible facets. Built by truncated convolution, so the degree-n
+polynomial is never formed.*)
+Module[{p=Length[nu],acc},
+	acc=PadRight[{1},p+1];
+	Do[
+		acc=Table[
+			Sum[If[Divisible[d-i,k],acc[[i+1]]*Binomial[nu[[k]],(d-i)/k],0],{i,0,d}]
+		,{d,0,p}]
+	,{k,1,p}];
+	acc
+];
+
+(* Private helper *)
+RandFLPCCompletions[lambda_List,MM_Integer,j_Integer,nu_List]:=
+	RandFLPCCompletions[lambda,MM,j,nu]=
+(*Ways to finish a partly drawn sample: choose MM-j further weight-p subsets, pairwise distinct
+and none of the j already spent, covering every block still uncovered. Inclusion-exclusion over
+which uncovered blocks are left uncovered -- for a given omega the admissible facets are the
+weight-p subsets avoiding omega, and j of those are already spent, since every used subset sits
+inside the covered blocks and so avoids omega for free.*)
+Module[{p=Length[lambda]},
+	Total[Table[
+		(-1)^Total[om]*(Times@@Binomial[nu,om])*
+			FactorialPower[Last[RandFLPCWeightCounts[lambda-om]]-j,MM-j]
+	,{om,Tuples[Range[0,#]&/@nu]}]]
+];
+
+(* Private helper *)
+RandFLPCTypeWeights[p_Integer,MM_Integer,n_Integer]:=RandFLPCTypeWeights[p,MM,n]=
+(*The contributing cycle types, as both partitions and multiplicity vectors, with their Burnside
+weights. The weights sum to n! NumFacetLabeledPureComplexes[p,MM,n], which the test suite checks.*)
+Module[{types,lambdas},
+	types=IntegerPartitions[n,All,Range[p]];
+	lambdas=Table[Count[t,#]&/@Range[p],{t,types}];
+	{types,lambdas,
+		Table[
+			(n!/Times@@Table[k^lam[[k]]*lam[[k]]!,{k,1,p}])*RandFLPCCompletions[lam,MM,0,lam]
+		,{lam,lambdas}]}
+];
+
+(* Private helper: sample count above which the facet-labeled draw goes to ParallelTable. -----
+   Kept separate from $RandomComplexParallelThreshold because the per-sample costs differ by
+   more than an order of magnitude: a vertex-labeled sample is tens of microseconds, a
+   facet-labeled one a few hundred, so parallel pays off far sooner here. Measured crossover on
+   11 subkernels with kernels already up: 50 samples for {3,4,8}, 100 for {2,3,4} and {2,5,8},
+   200 for {3,3,5}. At 100 the ratios run 0.93 to 1.77 and by 200 they are all above 1, so 100
+   sits at the crossover. Gated on $KernelCount as everywhere else, so a small call never
+   quietly launches kernels. *)
+
+$RandomFacetLabeledParallelThreshold=100;
+
+(* Private helper *)
+RandFLPCGoParallel[numSamples_Integer]:=
+	numSamples>$RandomFacetLabeledParallelThreshold&&$KernelCount>0;
+
+(* Private helper *)
+RandFLPCOne[p_Integer,MM_Integer,n_Integer]:=
+(*One uniform facet-labeled complex, by the four steps above.*)
+Module[{types,lambdas,ws,pick,sizes,lambda,blocks,cands,used={},uncov,nuOf,avail,weights,choice,facets},
+
+	{types,lambdas,ws}=RandFLPCTypeWeights[p,MM,n];
+	pick=RandomChoice[ws->Range[Length[types]]];
+	sizes=types[[pick]];
+	lambda=lambdas[[pick]];
+
+	(*a uniform partition of [n] into blocks of these sizes*)
+	blocks=TakeList[RandomSample[Range[n]],sizes];
+
+	(*every admissible facet, as a set of block indices; blocks have size >= 1, so at most p*)
+	cands=Select[Subsets[Range[Length[sizes]],{1,p}],Total[sizes[[#]]]==p&];
+
+	nuOf[idxs_]:=Count[sizes[[idxs]],#]&/@Range[p];
+	uncov=Range[Length[sizes]];
+
+	facets=Table[
+		avail=Complement[cands,used];
+		weights=Table[RandFLPCCompletions[lambda,MM,j+1,nuOf[Complement[uncov,S]]],{S,avail}];
+		choice=RandomChoice[weights->avail];
+		AppendTo[used,choice];
+		uncov=Complement[uncov,choice];
+		Sort[Catenate[blocks[[choice]]]]
+	,{j,0,MM-1}];
+
+	facets
+];
 
 
 (* ::Item::Closed:: *)
@@ -3721,46 +3849,30 @@ RandomUniformFacetLabeledPureSimplicialComplex[{2,4,6},10] generates 10, 2-pure 
 random simplicial complex with 4 edges and 6 vertices with a uniform distribution.     *)
 *)
 *)
-Module[{buildOneComplex},
-
 Catch[
 
 If[numSamples<0,
 	Message[RandomUniformFacetLabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
 	Throw[$Failed, "ECGravReturn$67"]];
 
-If[purity<1||facetOrder<1||NumVertexLabeledPureComplexes[purity,facetOrder,nV]==0,
+(*The sample space is the facet-labeled complexes, so it is NumFacetLabeledPureComplexes that
+has to be non-empty, not the vertex-labeled count. The two vanish together here -- both need
+p <= n <= p M -- but the facet-labeled one also needs Binomial[n,p] >= M distinct facets, so it
+is the right test.*)
+If[purity<1||facetOrder<1||NumFacetLabeledPureComplexes[purity,facetOrder,nV]==0,
 	Message[RandomUniformFacetLabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
 	Throw[$Failed, "ECGravReturn$67"]];
 
-buildOneComplex[]:=
-(*Rejection from the vertex-labeled generator, with the acceptance weight left exactly as it
-was. The proposal is now RandomPureComplexFacets, the same one
-RandomVertexLabeledPureSimplicialComplex draws from, rather than a private copy of it. That is
-what makes the parallel branch below work: the copy lived on a Module-local symbol whose
-definition reached NumVertexLabeledPureComplexes, and the subkernels never received it.*)
-Module[{facets={},acceptanceProb},
+(*Exact Burnside pair sampling; see RandFLPCOne above. The old body proposed from the
+vertex-labeled generator and accepted with probability Min[1,(Min[M,n]!/n!) x facet stabiliser
+order], which is correct but collapses as n grows -- 15 s per hundred samples at {3,4,6}. There
+is no rejection here at all.*)
+If[RandFLPCGoParallel[numSamples],
+	ParallelTable[RandFLPCOne[purity,facetOrder,nV],{numSamples},
+		DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+	Table[RandFLPCOne[purity,facetOrder,nV],{numSamples}]]
 
-	While[facets=={},
-
-		facets=RandomPureComplexFacets[purity,facetOrder,nV];
-
-		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nV]!)/(nV!))*
-					(PureComplexFacetStabilizerGroupOrder[facets])];
-
-		If[RandomReal[]>acceptanceProb,facets={}];
-
-	];
-
-	facets
-];
-
-If[numSamples>20&&$KernelCount>0,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-	Table[buildOneComplex[],{numSamples}]]
-
-, "ECGravReturn$67"]
-];
+, "ECGravReturn$67"];
 
 
 (* Overload Pattern *)
@@ -3780,8 +3892,6 @@ RandomUniformFacetLabeledPureSimplicialComplex[{2,4},10] generates 10, 2-pure ra
 facet-labeled simplicial complex with 4 edges.     *)
 *)
 *)
-Module[{nmin,svTable,buildOneComplex},
-
 Catch[
 
 If[numSamples<0,
@@ -3792,46 +3902,18 @@ If[purity<1||facetOrder<1,
 	Message[RandomUniformFacetLabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
 	Throw[$Failed, "ECGravReturn$68"]];
 
-(*Set nmin*)
-nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
+(*With the vertex count free, draw it from the facet-labeled counts themselves and then sample
+at that n. The old body drew n from the VERTEX-labeled counts and let the rejection step repair
+the difference; weighting by NumFacetLabeledPureComplexes is the distribution that was wanted
+all along, and needs no repair.*)
+With[{verts=Range[purity,purity*facetOrder],
+		weights=Table[NumFacetLabeledPureComplexes[purity,facetOrder,n],{n,purity,purity*facetOrder}]},
+	If[RandFLPCGoParallel[numSamples],
+		ParallelTable[RandFLPCOne[purity,facetOrder,RandomChoice[weights->verts]],{numSamples},
+			DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+		Table[RandFLPCOne[purity,facetOrder,RandomChoice[weights->verts]],{numSamples}]]]
 
-
-(*table of sv(p,q,n)*)
-svTable=Table[NumVertexLabeledPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
-
-(*Normalize svTable by the geometric mean for easier computation*)
-svTable=svTable/GeometricMean[svTable];
-
-buildOneComplex[]:=
-(*As in the three-argument pattern, but the vertex count is redrawn on every attempt, so the
-rejection acts on the joint draw of n and the complex. The acceptance weight is left exactly as
-it was, nmin included.*)
-Module[{numTotVertices,facets={},acceptanceProb},
-
-	While[facets=={},
-
-		(*Pick number of vertices*)
-		numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
-
-		facets=RandomPureComplexFacets[purity,facetOrder,numTotVertices];
-
-		acceptanceProb=Min[1.0,1.0*((Min[facetOrder,nmin]!)/(numTotVertices!))*
-					(PureComplexFacetStabilizerGroupOrder[facets])];
-
-		If[RandomReal[]>acceptanceProb,facets={}];
-
-	];
-
-	facets
-];
-
-If[numSamples>20&&$KernelCount>0,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-	Table[buildOneComplex[],{numSamples}]]
-
-, "ECGravReturn$68"]
-
-];
+, "ECGravReturn$68"];
 
 
 (* Overload Pattern *)

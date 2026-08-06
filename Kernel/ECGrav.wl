@@ -2423,7 +2423,7 @@ RandomUniformUnlabeledPureSimplicialComplex::empty="There is no pure simplicial 
 
 
 (* ::Subsection::Closed:: *)
-(*Random Uniform Facet-labeled Pure Simplicial Complex by rejection from vertex-labeled*)
+(*Random Uniform Facet-labeled Pure Simplicial Complex by Burnside pair sampling*)
 
 
 (* ::Item::Closed:: *)
@@ -2433,10 +2433,13 @@ RandomUniformUnlabeledPureSimplicialComplex::empty="There is no pure simplicial 
 (* :Usage Messages: *)
  
 RandomUniformFacetLabeledPureSimplicialComplex::usage="
-	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer], overload;  
-	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer] generates numSamples random unlabeled pure simplicial complexes with purity p, 
-	facet-order q, and vertex count n if specified. If numSamples is not specified it returns
-	a single random complex. ";
+	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer], overload;
+	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer] generates numSamples random FACET-LABELED pure simplicial complexes with purity p,
+	facet-order q, and vertex count n if specified -- q labeled, pairwise distinct p-subsets of an
+	n-element vertex set covering it, with the vertices unlabeled. If numSamples is not specified
+	it returns a single random complex.
+	The distribution is exactly uniform over those complexes, the number of which is
+	NumFacetLabeledPureComplexes[p, q, n], and is produced without rejection.";
 
 (* :Error Messages: *)	
 
