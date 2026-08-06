@@ -54,7 +54,7 @@ being stripped).
 implementation: known surface topology (`EulerChi[tetrahedron] == 2`,
 `EulerChi[torus] == 0`, octahedron Betti numbers `{1, 0, 1}`, f-vector
 `{6, 12, 8}`, orientability of the seven surfaces) and values stated in the
-notebook (`NumPureComplexes[3, 3] == 2649`, automorphism order 24). The
+notebook (`NumVertexLabeledPureComplexes[3, 3] == 2649`, automorphism order 24). The
 remainder are characterization tests that lock in current behaviour.
 
 ## Fixed bugs (found while building the suite, now regression-tested)

@@ -115,7 +115,7 @@ build on this and emit diagnostic plots as they run.
 
 ## What's in the package
 
-ECGrav exports 113 public functions across two subpackages. A selection:
+ECGrav exports 115 public functions across two subpackages. A selection:
 
 ### Simplicial complexes & graphs
 
@@ -125,7 +125,7 @@ ECGrav exports 113 public functions across two subpackages. A selection:
 | Local structure | `Sph`, `Bll`, `Lnk`, `Str`, `Deg`, `HyperDeg`, `FacetDeg` |
 | Dimension & topology | `AvgKDim`, `SpectralDim`, `HausdorffDim`, `EulerChi`, `CountHoles`, `FVector`, `GVolume` |
 | Manifold predicates | `CombinatorialManifoldQ`, `ClosedCombinatorialManifoldQ`, `CombinatorialSphereQ`, `DSphereQ`, `ClosedDGraphQ`, `DGraphQ`, `OrientableCombinatorialManifoldQ` |
-| Symmetry & enumeration | `SimplicialComplexAutomorphismGroupOrder`, `IsomorphicSimplicialComplexQ`, `ChooseNonIsomorphicSimplicialComplexes`, `NumPureComplexes`, `RankComb`, `UnrankComb` |
+| Symmetry & enumeration | `SimplicialComplexAutomorphismGroupOrder`, `IsomorphicSimplicialComplexQ`, `ChooseNonIsomorphicSimplicialComplexes`, `NumVertexLabeledPureComplexes`, `NumFacetLabeledPureComplexes`, `RankComb`, `UnrankComb` |
 | Random complexes | `RandomVertexLabeledPureSimplicialComplex`, `RandomFacetLabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold` |
 
 ### Monte Carlo & statistical mechanics
