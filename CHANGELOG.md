@@ -6,6 +6,86 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-06
+
+Pure-complex counting and random generation. Three of the random generators were silently
+returning malformed output above a sample-count threshold; that is fixed, and the
+facet-labeled generator no longer uses rejection at all. The counting functions are renamed
+to say which labelling they count, and a facet-labeled count is added. No public function was
+removed, and `NumPureComplexes` still works, with the same arguments in the same order.
+
+### Added
+- `NumFacetLabeledPureComplexes[p, M, n]` and `NumFacetLabeledPureComplexes[p, M]` — the
+  number of facet-labeled pure complexes: `M` labeled, pairwise distinct `p`-subsets of an
+  `n`-element vertex set covering it, counted up to permutation of the unlabeled vertices.
+  Equivalently the separating `(p, n, M)` incidence tableaux. Verified three independent ways
+  — against the author's `Facet-labeled-count.nb` (11 values plus its 92-digit
+  `sF[3,10,50]`), against direct enumeration of the defining description on 12 parameter
+  sets, and against the Stirling identity `B = Sum_k StirlingS2[M,k] F` on brute-forced
+  counts of *all* tableaux.
+- `NumVertexLabeledPureComplexes` — the new name of `NumPureComplexes` (see Changed).
+
+### Changed
+- **`NumPureComplexes` → `NumVertexLabeledPureComplexes`.** The old name said nothing about
+  which of the two labellings it counted, which matters now that both exist. Arguments are
+  unchanged — `(purity, facet order, vertex count)`, the facet order now written `M` rather
+  than `q` — and `NumPureComplexes` remains as a forwarding alias, so existing code keeps
+  returning exactly what it did.
+- **`RandomUniformFacetLabeledPureSimplicialComplex` is now exact and rejection-free.** It
+  drew from the vertex-labeled generator and accepted with a stabiliser-ratio weight, whose
+  acceptance rate collapses with `n`. It now samples a fixed pair `(sigma, x)` of the `S_n`
+  action: every orbit contributes exactly `n!` such pairs whatever its size, so dropping
+  `sigma` leaves the orbit uniform. Same distribution, verified by chi-square over the
+  enumerated isomorphism classes. Per sample: 2.09 → 0.48 ms at `{3,4,6}`, 50.9 → 0.86 ms at
+  `{3,4,8}`, **516 → 0.99 ms at `{3,4,10}`** — nearly flat in `n` where the old cost grew
+  factorially. With the vertex count free, it now draws `n` from
+  `NumFacetLabeledPureComplexes` directly rather than from the vertex-labeled counts.
+- `NumVertexLabeledPureComplexes` computes one whole row of `n` at a time, bottom-up over
+  `M`, and memoises the rows for the session: **68–250×** on a cold two-argument call, 4–6×
+  on a single three-argument one. It also no longer hits `$RecursionLimit` — the old form
+  died past `M = 700`, the new one handles `M = 2000`. The row cache is capped
+  (`$NumPCMaxCachedQ`, default 150) and clearable.
+- `RandomVertexLabeledPureSimplicialComplex` is **4.9–8.1×** faster: the composition weights
+  depend only on the facet index and the covered-vertex count, so they are built once per
+  pair instead of once per sample (82–89% of the old runtime), a provably dead feasibility
+  re-draw is gone, and one random permutation replaces the covered/uncovered bookkeeping.
+- Random generators now parallelise only when kernels are already running. `ParallelTable`
+  otherwise launches them itself, which cost ~3.7 s — far more than the whole serial draw at
+  any relevant sample count.
+
+### Fixed
+- **`RandomVertexLabeledPureSimplicialComplex`, `RandomUniformUnlabeledPureSimplicialComplex`
+  and `RandomUniformFacetLabeledPureSimplicialComplex` returned malformed output above their
+  parallel thresholds** — facet lists containing unevaluated `RandomSample[...]` expressions,
+  for 100% of samples, silently. Their `ParallelTable` distributed only `ECGrav\`Private\``,
+  so the subkernels had no `NumPureComplexes` and the composition weights never evaluated.
+  The two uniform generators tripped at 21 samples; the vertex-labeled one above 10^4.
+- Empty sample spaces now give a message and `$Failed` instead of malformed complexes, and
+  the one-complex overloads propagate that rather than `First[]`-ing into it.
+- `NumVertexLabeledPureComplexes[p, 0, n]` returned `Indeterminate` for every `p` and `n`
+  (there was no `M == 0` branch, so it divided by `M`). `M = 0` is the empty complex: the
+  count is 1 at `n = 0` and 0 otherwise — also the seed that reproduces the `M = 1` row
+  through the recurrence.
+- The two-argument `NumVertexLabeledPureComplexes[p, M]` returned an unevaluated
+  `Total[Table[...]]` when no vertex count carried enough distinct `p`-subsets; that sum is
+  empty, so it returns 0.
+- `RandomUniformFacetLabeledPureSimplicialComplex`'s usage message described its output as
+  "unlabeled" complexes. It produces facet-labeled ones.
+
+### Documentation
+- Reference pages for `NumVertexLabeledPureComplexes` and `NumFacetLabeledPureComplexes`;
+  the `NumPureComplexes` page now documents the alias. The old page's usage text was stale
+  independently of the rename — it still described a recursive implementation replaced in
+  this release.
+- 115 public symbols, 115 reference pages, verified one-to-one.
+
+### Tests
+- 87 → **132**. New coverage for both counting functions (including independent
+  brute-force oracles and the Stirling identity), the alias, the parallel branches of all
+  three fixed generators, uniformity of the vertex-labeled, unlabeled and facet-labeled
+  samplers, the Burnside weight identity behind the facet-labeled sampler, and the
+  empty-sample-space guards.
+
 ## [1.4.0] - 2026-08-02
 
 Performance release. The Monte Carlo hot path no longer constructs `Graph` objects: the

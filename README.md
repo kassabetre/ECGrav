@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-14.2%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.4.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.5.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -51,7 +51,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.4.0.paclet"];
+PacletInstall["/path/to/ECGrav-1.5.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -65,7 +65,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.4.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.5.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -165,9 +165,13 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.4.0). Earlier releases are preserved as git tags:
+current release (1.5.0). Earlier releases are preserved as git tags:
 
-- `v1.4.0` — current: the Monte Carlo hot path computed from adjacency matrices
+- `v1.5.0` — current: pure-complex counting and random generation — the counting
+  functions renamed and joined by a facet-labeled count, three random generators
+  fixed where they silently returned malformed output, and the facet-labeled
+  sampler made exact instead of rejection-based
+- `v1.4.0` — the Monte Carlo hot path computed from adjacency matrices
   instead of `Graph` objects — `HyperDeg`, `delH2dCombManifold` and `EulerChi` are
   8–22× faster with unchanged results, and `GraphEquilibriate` now reports progress
 - `v1.3.1` — documentation & tooling — model specification (`Theory.md`),
