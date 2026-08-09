@@ -6,6 +6,21 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-10
+
+Fully unlabeled pure complexes. The counting trio is completed by
+`NumUnlabeledPureComplexes`, which counts the isomorphism classes -- neither vertices nor
+facets labelled -- and the unlabeled random generator, which had been rejecting with an
+acceptance rate that collapsed factorially, is now exact and rejection-free: 11.4 s to 0.82 ms
+per sample at `{3,4,10}`. Two top-level specifications, `UnlabeledCount.md` and
+`UnlabeledSampler.md`, record the derivations alongside `Theory.md`. No public function was
+removed and no argument order changed.
+
+Note for anyone relying on reproducibility: `RandomUniformUnlabeledPureSimplicialComplex`
+returns a *different* complex for a given `SeedRandom` than it did at 1.5.0. The distribution
+is the same -- uniform over isomorphism classes -- but the algorithm is not, so seeded
+sequences do not carry across the version.
+
 ### Changed
 - **`RandomUniformUnlabeledPureSimplicialComplex` is now exact and rejection-free.** It drew
   from the vertex-labeled generator and accepted with probability `|Aut|/n!`, which collapses

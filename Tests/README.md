@@ -8,7 +8,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures and float-comparison helpers. |
-| `PureComplexes.wlt` | 54 tests: complex constructions, observables, dimensions, geometric predicates, and structural checks on the random-complex generators. |
+| `PureComplexes.wlt` | 115 tests: complex constructions, observables, dimensions, geometric predicates, and structural checks on the random-complex generators. |
 | `MCSims.wlt` | 33 tests: exact assertions for Hamiltonians / data & free-energy helpers, smoke tests for the stochastic MC drivers and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **87 tests, 87 passing** (~22 s, dominated by the MC smoke tests).
+Expected: **148 tests, 148 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
