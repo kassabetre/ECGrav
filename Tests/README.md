@@ -91,7 +91,7 @@ been fixed at the source (see above) and are regression-tested.
 
 ## Coverage
 
-Roughly 58 of the package's public symbols. Recently added:
+70 of the package's 116 public symbols are exercised by the suite. Recently added:
 
 - **Free-energy / reweighting helpers** — `EmpCorrelationTime`, `DSpecificHeat`,
   `NegativeBetaTimesFreeEnergy`, `CvOverT`, `ExtrapolatedExpectationValue`,
@@ -105,16 +105,19 @@ Roughly 58 of the package's public symbols. Recently added:
   `RandomFacetLabeledPureSimplicialComplex`, `RandomUnlabeledPseudoManifold`, and
   `RandomPureSimplicialComplexMCMCSweep` (the output is a well-formed pure complex of the
   requested shape, whatever the draw).
+- **Uniform samplers** — all three are covered, both branches. An earlier note excluded them
+  for a "~30 s one-time parallel-distribution cost"; that cost was a **bug**, not an inherent
+  price — the subkernels never received the counting functions, so every parallel sample came
+  back malformed. Fixed in 1.5.0, and the parallel branch is now asserted directly by forcing
+  the thresholds down. `RandomUniformUnlabeledPureSimplicialComplex` additionally has exact
+  identity checks on its Burnside weights and profile marginals, which is what pins its
+  uniformity; a wrong weight would still emit plausible complexes.
 
 Deliberately **still untested**, each for a concrete reason:
 
 - **Temperature schedulers** (`GraphCTLSchedule`, `GraphCEITempSchedule`) — the CTL/CEI
   algorithms run MC + reweighting at every schedule point and take minutes even on a tiny
   input, too slow for the suite.
-- **Parallel uniform samplers** (`RandomUniformUnlabeledPureSimplicialComplex`,
-  `RandomUniformFacetLabeledPureSimplicialComplex`, `RandomVertexLabeledPureSimplicialComplex`)
-  — verified interactively, but the first call in a fresh kernel pays a ~30 s one-time
-  parallel-distribution cost, not worth a structural smoke test.
 - **Non-reproducible parallel functions** (`ErrorBootstrap`, the parallel
   `RandomPureSimplicialComplexMCMC` pipeline) — no `SeedRandom` reproducibility, so no
   stable assertion.

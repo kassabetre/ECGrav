@@ -642,8 +642,14 @@ VerificationTest[
    kernel-less environment fails loudly rather than passing on the serial path. *)
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+(* Both thresholds must be lowered, not just one: since 1.6.0 the unlabeled generator reads its
+   own $RandomUnlabeledParallelThreshold (500, measured -- its memo tables are rebuilt per
+   subkernel, so parallel pays much later than for the facet-labeled one). Forcing only the
+   facet-labeled threshold would leave the unlabeled sampler on the serial path at 25 samples and
+   this test would quietly stop exercising the branch it names. *)
 VerificationTest[
-    Block[{ECGrav`Private`$RandomFacetLabeledParallelThreshold = 10},
+    Block[{ECGrav`Private`$RandomFacetLabeledParallelThreshold = 10,
+           ECGrav`Private`$RandomUnlabeledParallelThreshold = 10},
         Module[{u, f}, SeedRandom[321];
             u = ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{2, 3, 4}, 25];
             f = ECGrav`RandomUniformFacetLabeledPureSimplicialComplex[{2, 3, 4}, 25];
