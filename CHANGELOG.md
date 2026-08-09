@@ -6,6 +6,45 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Changed
+- **`RandomUniformUnlabeledPureSimplicialComplex` is now exact and rejection-free.** It drew
+  from the vertex-labeled generator and accepted with probability `|Aut|/n!`, which collapses
+  factorially. Measured against the previous implementation: **146 → 0.32 ms** per sample at
+  `{3,4,6}` (458×), **3.31 s → 0.68 ms** at `{3,4,8}` (4,800×), and **11.4 s → 0.82 ms** at
+  `{3,4,10}` (**14,000×**). Same distribution — uniform over isomorphism classes.
+
+  It samples a fixed pair `(sigma, S)` of the `S_n` action, where `S` is a `sigma`-invariant
+  covering `M`-set of facets: every orbit contributes exactly `n!` such pairs whatever its size,
+  so dropping `sigma` leaves the isomorphism class uniform, with no automorphism weighting. The
+  draw picks a cycle type, then a *size profile* — how many `<sigma>`-orbits of each size the
+  facet set uses — then the orbits themselves, each weighted by its number of completions.
+
+  Sampling the profile up front is what makes the last step tractable. Read the count as orbits
+  of separating incidence tableaux under `S_M` rather than as `S_n` orbits of facet sets, and the
+  acting permutation's cycle type *is* the size profile. Without that it would be hidden state:
+  the completion count depends on how many orbits **of each size** are already used, not merely
+  how many — which is where this differs from the facet-labeled sampler, whose objects each cost
+  one unit of the budget.
+
+  Covering is imposed during the draw rather than by rejecting afterwards. Rejecting is exact and
+  much simpler, but its expected trial count is exactly `A(p,M,n)/U(p,M,n)` — fine mid-range,
+  hopeless at the top of the vertex range where the facets must nearly partition `[n]`: 66 trials
+  at `{3,4,12}`, 4,279 at `{3,6,18}`, over 10⁷ at `{4,7,28}`.
+
+  Verified by three exact identities rather than by sampling alone: the cycle-type weights sum to
+  `n!·NumUnlabeledPureComplexes[p,M,n]`; the profile marginals sum back to the per-cycle-type
+  covering count; and at the identity cycle type that covering count reproduces
+  `NumVertexLabeledPureComplexes`. Together these force the class probability to `1/U` exactly,
+  which was also computed directly — not sampled — and came out exactly `1/U` for every class on
+  seven parameter sets. Plus chi-square uniformity and validity across the range including
+  `n = pM`.
+
+  With the vertex count free, `{p,M}` now draws `n` from `NumUnlabeledPureComplexes` directly.
+  The old body drew it from the **vertex-labeled** counts and let rejection repair the
+  difference. `$RandomUnlabeledParallelThreshold` is 500, measured: nearly all the work is in
+  memo tables keyed on the cycle type and each subkernel rebuilds its own, so parallel pays much
+  later here than for the other generators.
+
 ### Added
 - `NumUnlabeledPureComplexes[p, M, n]` and `NumUnlabeledPureComplexes[p, M]` — the number of
   fully unlabeled pure complexes: `M` pairwise distinct `p`-subsets of an `n`-element vertex

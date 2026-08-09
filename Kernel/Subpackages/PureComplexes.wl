@@ -1698,7 +1698,9 @@ number of bytes reclaimed. Nothing else in the package holds on to either, so ca
 always safe; it only costs the rebuilding.*)
 Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
 		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF,
-			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,NumULPCA}},
+			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,NumULPCA,
+			RandULPCOrbits,RandULPCNd,RandULPCSubMulti,RandULPCFixCov,RandULPCTypeWeights,
+			RandULPCProfiles,RandULPCCCov,RandULPCComps}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
 	Scan[(DownValues[#]=Select[DownValues[#],patterned])&,cached];
 	after=Total[ByteCount/@Map[DownValues,cached]];
@@ -3704,7 +3706,238 @@ $Failed);
 
 
 (* ::Subsection::Closed:: *)
-(*Random Uniform Unlabeled Pure Simplicial Complex from rejection on vertex labeled*)
+(*Random Uniform Unlabeled Pure Simplicial Complex by Burnside pair sampling*)
+
+
+(* Exact uniform sampling of fully unlabeled complexes. ---------------------------------------
+   Neither the vertices nor the facets are labelled, so the objects are the isomorphism classes:
+   the S_n orbits on the covering M-element sets of distinct p-subsets, which is what
+   NumUnlabeledPureComplexes counts.
+
+   Pair sampling, as for the facet-labeled generator. Draw uniformly from the fixed pairs
+   {(sigma,S) : sigma in S_n, S a sigma-invariant covering M-set} and discard sigma. Every orbit O
+   contributes Sum_{S in O} |Stab(S)| = |O| (n!/|O|) = n! pairs -- the same number whatever the
+   orbit's size -- so the class comes out exactly uniform, with no automorphism weighting and no
+   rejection. A sigma-invariant set is a union of <sigma>-orbits of p-subsets, giving five steps:
+
+	1. a cycle type lambda, weighted by (permutations of that type) x (covering sets they fix);
+	2. the canonical sigma_lambda, whose cycles are consecutive blocks;
+	3. a size PROFILE a, where a_d is how many orbits of size d the set uses;
+	4. the orbits themselves, one at a time, each weighted by its number of completions;
+	5. a uniform relabelling of [n].
+
+   Steps 2 and 5 stand in for "realise a uniform sigma of cycle type lambda": conjugating the
+   canonical sigma_lambda by a uniform permutation is the same thing, and it makes every orbit
+   computation a function of lambda alone, so it is memoised across samples rather than redone per
+   sample.
+
+   Step 3 is what makes step 4 tractable. Reading the count the other way round -- as orbits of
+   separating incidence tableaux under S_M rather than S_n orbits of facet sets -- the acting
+   permutation tau of the facet labels has a cycle type that IS the size profile, since a tau-cycle
+   of length d pins one sigma-orbit of size d. So the profile is not hidden state to be inferred
+   during the draw; it is sampled up front from its own marginal. Without it the completion count
+   depends on the profile of what has been used so far, and step 4's state would have to carry it.
+
+   Covering is imposed during the draw rather than by rejecting afterwards. Rejecting is simpler
+   and exact, but its expected trial count is exactly A(p,M,n)/U(p,M,n) with A the non-covering
+   count -- tolerable mid-range and hopeless at the top, where the facets must nearly partition
+   [n]: 66 trials at {3,4,12}, 4279 at {3,6,18}, over 10^7 at {4,7,28}.
+
+   Every count here is one inclusion-exclusion over DELETED cycles, because the sets avoiding a
+   cycle set T are exactly the sets of the permutation with those cycles removed -- which the
+   counter's own NumULPCFixSets already handles at the reduced cycle type. The same argument gives
+   the completion counts: an orbit already chosen has its support inside the covered cycles, so it
+   avoids every deleted set and survives into every term, and only the number used OF EACH SIZE
+   enters. The total alone is not enough, which is where this differs from the facet-labeled
+   sampler's lemma: there every chosen object cost one unit of the budget, so the profile was the
+   total; here orbit sizes exceed one and two histories can spend the same budget in different
+   denominations. *)
+
+(* Private helper: sample count past which the parallel branch pays. ------------------------
+   Measured, not guessed, as for the other generators -- and it lands far higher than theirs.
+   Almost all the work here is in memo tables keyed on the cycle type, and every subkernel has
+   to build its own, so the parallel branch pays a fixed cost the serial one pays once. On 11
+   subkernels with kernels already up, serial/parallel runs 0.24-0.53 at 100 samples, 0.31-0.81
+   at 200, 0.78-1.48 at 400, and 1.47-2.71 at 800; by 3200 it is 2.7-4.2. So the crossover sits
+   between 400 and 800 and 500 is the conservative side of it -- against 100 for the
+   facet-labeled generator, whose per-sample state is far cheaper to rebuild. Gated on
+   $KernelCount as everywhere else, so a small call never quietly launches kernels. *)
+$RandomUnlabeledParallelThreshold=500;
+
+(* Private helper *)
+RandULPCGoParallel[numSamples_Integer]:=
+	numSamples>$RandomUnlabeledParallelThreshold&&$KernelCount>0;
+
+(* Private helper *)
+RandULPCOrbits[lambda_List,p_Integer]:=RandULPCOrbits[lambda,p]=
+(*The <sigma>-orbits on the p-subsets of [n] for the canonical sigma of cycle type lambda, each as
+{size, support, members}, the support being the set of cycle indices the subset meets. This is the
+only place the C(n,p) subsets are touched, and being keyed on lambda alone it is shared by every
+sample that draws this cycle type.*)
+Module[{pi={},cyc=<||>,off=0,seen=<||>,out={},orb,cur},
+	Do[pi=Join[pi,RotateLeft[Range[off+1,off+k]]];off+=k,{k,lambda}];
+	off=0;
+	Do[Scan[(cyc[#]=j)&,Range[off+1,off+lambda[[j]]]];off+=lambda[[j]],{j,Length[lambda]}];
+	Do[
+		If[!KeyExistsQ[seen,s],
+			orb={};cur=s;
+			While[!MemberQ[orb,cur],AppendTo[orb,cur];cur=Sort[pi[[cur]]]];
+			Scan[(seen[#]=True)&,orb];
+			AppendTo[out,{Length[orb],Union[cyc/@s],orb}]]
+	,{s,Subsets[Range[Total[lambda]],{p}]}];
+	out
+];
+
+(* Private helper *)
+RandULPCNd[lambda_List,p_Integer]:=RandULPCNd[lambda,p]=
+(*d -> the number of <sigma>-orbits of size d on the p-subsets, for cycle type lambda. Taken from
+the counter's f by Moebius inversion rather than by enumerating orbits, so the reduced cycle types
+the inclusion-exclusion asks for cost nothing extra. Callers pass lambda sorted, so that the
+reduced types they build and the ones here agree as memo keys.*)
+If[lambda==={},
+	<||>,
+	Module[{parts=Tally[lambda],divs,f},
+		divs=Divisors[LCM@@lambda];
+		f=Association[Table[e->NumULPCFixedSubsets[parts,e,p],{e,divs}]];
+		Select[
+			Association[Table[d->Total[Table[MoebiusMu[d/e]*f[e],{e,Divisors[d]}]]/d,{d,divs}]],
+			#>0&]
+	]
+];
+
+(* Private helper *)
+RandULPCSubMulti[lambda_List]:=RandULPCSubMulti[lambda]=
+(*Every sub-multiset of lambda with its inclusion-exclusion sign and the number of ways to choose
+which cycles of each length survive. Deleting cycles is how covering is imposed throughout.*)
+Module[{t=Tally[lambda],mult},
+	mult=t[[All,2]];
+	Table[
+		With[{sub=DeleteCases[Transpose[{t[[All,1]],j}],{_,0}]},
+			{Sort[Flatten[Table[ConstantArray[q[[1]],q[[2]]],{q,sub}]]],
+			 (-1)^(Total[mult]-Total[j])*(Times@@MapThread[Binomial,{mult,j}])}]
+	,{j,Tuples[Range[0,#]&/@mult]}]
+];
+
+(* Private helper *)
+RandULPCFixCov[lambda_List,p_Integer,MM_Integer]:=RandULPCFixCov[lambda,p,MM]=
+(*The number of sigma-invariant COVERING M-sets for sigma of cycle type lambda. The counter never
+forms this -- it reaches covering by differencing over the vertex count, which says nothing per
+cycle type -- so this is the piece the sampler adds.*)
+Total[Function[sm,sm[[2]]*NumULPCFixSets[Tally[sm[[1]]],p,MM]]/@RandULPCSubMulti[lambda]];
+
+(* Private helper *)
+RandULPCTypeWeights[p_Integer,MM_Integer,n_Integer]:=RandULPCTypeWeights[p,MM,n]=
+(*Step-1 weights: {cycle types, (permutations of that type) x (covering sets they fix)}. These sum
+to n! NumUnlabeledPureComplexes[p,MM,n] exactly, which the suite checks: a wrong cycle-type weight
+still emits plausible-looking complexes, so the identity is what to verify, not the output.*)
+Module[{parts=IntegerPartitions[n]},
+	{parts,
+	 Table[(n!/(Times@@(#[[1]]^#[[2]]*#[[2]]!&/@Tally[lambda])))*RandULPCFixCov[lambda,p,MM],
+		{lambda,parts}]}
+];
+
+(* Private helper *)
+RandULPCProfiles[lambda_List,p_Integer,MM_Integer]:=RandULPCProfiles[lambda,p,MM]=
+(*The admissible size profiles: how many orbits of each size, the sizes weighted by d summing to
+MM, and no more of a size taken than exist.*)
+Module[{nd=Counts[#[[1]]&/@RandULPCOrbits[lambda,p]],sizes,ranges},
+	sizes=Sort[Keys[nd]];
+	If[sizes==={},
+		{},
+		ranges=Table[Range[0,Min[nd[d],Quotient[MM,d]]],{d,sizes}];
+		Select[Association[Thread[sizes->#]]&/@Tuples[ranges],
+			Total[Times@@@Transpose[{sizes,Values[#]}]]===MM&]
+	]
+];
+
+(* Private helper *)
+RandULPCCCov[lambda_List,p_Integer,MM_Integer,a_Association]:=RandULPCCCov[lambda,p,MM,a]=
+(*Step-3 weights: covering sets with exactly this size profile, by the same deleted-cycle
+inclusion-exclusion. Summed over the profiles these give RandULPCFixCov back, which the suite
+checks.*)
+Total[Function[sm,
+	sm[[2]]*(Times@@KeyValueMap[
+		Function[{d,m},Binomial[Lookup[RandULPCNd[sm[[1]],p],d,0],m]],a])
+	]/@RandULPCSubMulti[lambda]];
+
+(* Private helper *)
+RandULPCComps[p_Integer,sizes_List,aVec_List,alphaVec_List,lens_List,mv_List,uv_List]:=
+	RandULPCComps[p,sizes,aVec,alphaVec,lens,mv,uv]=
+(*The number of ways to finish a partial draw, given how many orbits of each size are already used
+(alphaVec) and which cycle lengths are still uncovered (uv). Already-chosen orbits sit inside the
+covered cycles, so they avoid every deleted set and survive into every term -- only their count per
+size enters, which is what keeps the state this small. Indexed by the uncovered LENGTH MULTISET
+rather than the uncovered cycle set, since the orbit counts of a reduced cycle type depend only on
+its shape: states of equal shape share an entry, and the sum runs over sub-multisets instead of all
+2^(uncovered cycles) subsets.*)
+Module[{tot=0,surv,ndm},
+	Do[
+		surv=mv-tv;
+		ndm=RandULPCNd[Sort[Flatten[MapThread[ConstantArray[#2,#1]&,{surv,lens}]]],p];
+		tot+=(-1)^Total[tv]*(Times@@MapThread[Binomial,{uv,tv}])*
+			(Times@@MapThread[Function[{d,al,aa},Binomial[Lookup[ndm,d,0]-al,aa-al]],
+				{sizes,alphaVec,aVec}])
+	,{tv,Tuples[Range[0,#]&/@uv]}];
+	tot
+];
+
+(* Private helper *)
+RandULPCDraw[lambda_List,p_Integer,MM_Integer,a_Association]:=
+(*Step 4. The orbits are drawn one at a time, each weighted by the number of ways the draw can
+still be completed, which is exact by the chain rule. Candidates are bucketed by (size, support
+meeting the uncovered cycles): orbits sharing that pair lead to the same state, so one completion
+count serves a whole bucket. The draw produces an ORDERED sequence and forgets the order -- every
+valid set has the same number of orderings, so the set is uniform and the ordering factor cancels
+out of the weights.*)
+Module[{orbs=RandULPCOrbits[lambda,p],nOrb,lens,mv,uv,uncov,sizes,aVec,alphaVec,sIdx,
+		used,chosen={},tot,buckets,keys,w,kpick,opick},
+	nOrb=Length[orbs];
+	lens=Sort[DeleteDuplicates[lambda]];
+	mv=Table[Count[lambda,k],{k,lens}];
+	uv=mv;
+	uncov=Range[Length[lambda]];
+	sizes=Sort[Keys[a]];
+	aVec=a[#]&/@sizes;
+	sIdx=Association[Thread[sizes->Range[Length[sizes]]]];
+	alphaVec=ConstantArray[0,Length[sizes]];
+	used=ConstantArray[False,nOrb];
+	tot=Total[aVec];
+	Do[
+		buckets=<||>;
+		Do[
+			If[!used[[i]]&&alphaVec[[sIdx[orbs[[i,1]]]]]<a[orbs[[i,1]]],
+				With[{key={orbs[[i,1]],Intersection[orbs[[i,2]],uncov]}},
+					buckets[key]=Append[Lookup[buckets,Key[key],{}],i]]]
+		,{i,nOrb}];
+		keys=Keys[buckets];
+		w=Table[
+			Length[buckets[key]]*RandULPCComps[p,sizes,aVec,
+				MapAt[#+1&,alphaVec,sIdx[key[[1]]]],lens,mv,
+				uv-Table[Count[lambda[[key[[2]]]],L],{L,lens}]]
+		,{key,keys}];
+		kpick=RandomChoice[w->keys];
+		opick=RandomChoice[buckets[kpick]];
+		used[[opick]]=True;
+		AppendTo[chosen,opick];
+		alphaVec=MapAt[#+1&,alphaVec,sIdx[kpick[[1]]]];
+		uv=uv-Table[Count[lambda[[kpick[[2]]]],L],{L,lens}];
+		uncov=Complement[uncov,kpick[[2]]]
+	,{tot}];
+	Catenate[orbs[[#,3]]&/@chosen]
+];
+
+(* Private helper *)
+RandULPCOne[p_Integer,MM_Integer,n_Integer]:=
+(*One uniform isomorphism class, by the five steps above, as a facet list.*)
+Module[{tw,lambda,profs,a,facets,relabel},
+	tw=RandULPCTypeWeights[p,MM,n];
+	lambda=RandomChoice[tw[[2]]->tw[[1]]];
+	profs=RandULPCProfiles[lambda,p,MM];
+	a=RandomChoice[(RandULPCCCov[lambda,p,MM,#]&/@profs)->profs];
+	facets=RandULPCDraw[lambda,p,MM,a];
+	relabel=RandomSample[Range[n]];
+	Sort[Sort/@Map[relabel[[#]]&,facets]]
+];
 
 
 (* ::Item::Closed:: *)
@@ -3714,131 +3947,58 @@ $Failed);
 (* Primary Pattern *)
 
 RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer, nV_Integer}, numSamples_Integer]:=
-(*
-(****************************************)
-(*   (* Last updated 04/29/2026. *) *)
-(*   (* Note:  *) 
-(****************************************)
-(*A code to generate a random sample of (possibly disconnected) unlabeled pure 
-simplicial complexes of a given purity, facet order, and number of vertices by 
-rejection based on number of ways to label from vertex-labeled complexes. Outputs a 
-list numSamples of them. Input is a list of three numbers, p,q,n, 
-numSamples, where p is the purity number, q is the facet order, n is the number of vertices
-and numSamples is the number of samples required. E.g. 
-RandomUniformUnlabeledPureSimplicialComplex[{2,4,6},10] generates 10, 2-pure random simplicial 
-complex with 4 edges and 6 vertices.     *)
-*)
-*)
-Module[{buildOneComplex},
-
+(*Gives numSamples fully unlabeled pure simplicial complexes of purity p, facet order M and vertex
+count nV, each a facet list. Uniform over the isomorphism classes counted by
+NumUnlabeledPureComplexes, and produced without rejection.*)
 Catch[
 
-If[numSamples<0,
-	Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
-	Throw[$Failed, "ECGravReturn$65"]];
+	If[numSamples<0,
+		Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder,nV},numSamples];
+		Throw[$Failed, "ECGravReturn$65"]];
 
-If[purity<1||facetOrder<1||NumVertexLabeledPureComplexes[purity,facetOrder,nV]==0,
-	Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
-	Throw[$Failed, "ECGravReturn$65"]];
+	If[purity<1||facetOrder<1||NumUnlabeledPureComplexes[purity,facetOrder,nV]==0,
+		Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,nV];
+		Throw[$Failed, "ECGravReturn$65"]];
 
-buildOneComplex[]:=
-(*Rejection from the vertex-labeled generator. A given unlabeled complex has nV!/|Aut| distinct
-vertex labelings, so a uniform vertex-labeled draw over-represents it by exactly that factor;
-accepting with probability |Aut|/nV! cancels it and leaves the unlabeled classes uniform.
+	If[RandULPCGoParallel[numSamples],
+		ParallelTable[RandULPCOne[purity,facetOrder,nV],{numSamples},
+			DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+		Table[RandULPCOne[purity,facetOrder,nV],{numSamples}]]
 
-The proposal is RandomPureComplexFacets, the same one RandomVertexLabeledPureSimplicialComplex
-draws from, rather than a private copy of it. That is what makes the parallel branch below work:
-the copy lived on a Module-local symbol whose definition reached NumVertexLabeledPureComplexes, and the
-subkernels never received it.*)
-Module[{facets={},weight},
-
-	While[facets=={},
-
-		facets=RandomPureComplexFacets[purity,facetOrder,nV];
-
-		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/nV!;
-
-		If[RandomReal[]>weight,facets={}];
-
-	];
-
-	facets
-];
-
-If[numSamples>20&&$KernelCount>0,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-	Table[buildOneComplex[],{numSamples}]]
-
-, "ECGravReturn$65"]
-];
+, "ECGravReturn$65"];
 
 
 (* Overload Pattern *)
 
 RandomUniformUnlabeledPureSimplicialComplex[{purity_Integer,facetOrder_Integer}, numSamples_Integer]:=
-(*
-(****************************************)
-(*   (* Last updated 05/01/2026. *) *)
-(*   (* Note: . *) 
-(****************************************)
-(*A code to generate a random sample of (possibly disconnected)vertex labeled pure 
-simplicial complexes of a given purity and clique order through iterative addition of 
-facets. Outputs a list numSamples of them. Input is a list of three numbers, p,q, 
-numSamples, where p is the purity number, q is the facet order, and numSamples is 
-the number of samples required. numSamples is set to 1 by default. E.g. 
-RandomUniformUnlabeledPureSimplicialComplex[{2,4},10] generates 10, 2-pure random 
-unlabeled simplicial complex with 4 edges.     *)
-*)
-*)
-Module[{nmin,svTable,buildOneComplex},
-
+(*The same with the vertex count free. The sample space is the unlabeled complexes, so it is
+NumUnlabeledPureComplexes that supplies the vertex-count distribution; the old body drew n from the
+VERTEX-labeled counts and let rejection repair the difference, which is not the distribution that
+was wanted.*)
+Module[{counts,ns},
 Catch[
 
-If[numSamples<0,
-	Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder},numSamples];
-	Throw[$Failed, "ECGravReturn$66"]];
+	If[numSamples<0,
+		Message[RandomUniformUnlabeledPureSimplicialComplex::argerr,{purity,facetOrder},numSamples];
+		Throw[$Failed, "ECGravReturn$66"]];
 
-If[purity<1||facetOrder<1,
-	Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
-	Throw[$Failed, "ECGravReturn$66"]];
+	If[purity<1||facetOrder<1,
+		Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
+		Throw[$Failed, "ECGravReturn$66"]];
 
-(*Set nmin*)
-nmin=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]];
+	ns=Range[purity,purity*facetOrder];
+	counts=NumUnlabeledPureComplexes[purity,facetOrder,#]&/@ns;
 
+	If[Total[counts]==0,
+		Message[RandomUniformUnlabeledPureSimplicialComplex::empty,purity,facetOrder,"any"];
+		Throw[$Failed, "ECGravReturn$66"]];
 
-(*table of sv(p,q,n)*)
-svTable=Table[NumVertexLabeledPureComplexes[purity,facetOrder,n]*1.0,{n,nmin,purity*facetOrder}];
-
-(*Normalize svTable by the geometric mean for easier computation*)
-svTable=svTable/GeometricMean[svTable];
-
-buildOneComplex[]:=
-(*As in the three-argument pattern, but the vertex count is redrawn on every attempt, so the
-rejection acts on the joint draw of n and the complex.*)
-Module[{numTotVertices,facets={},weight},
-
-	While[facets=={},
-
-		(*Pick number of vertices*)
-		numTotVertices=RandomChoice[svTable->Range[nmin,purity*facetOrder]];
-
-		facets=RandomPureComplexFacets[purity,facetOrder,numTotVertices];
-
-		weight=1.0*PureComplexAutomorphismGroupOrder[facets]/(numTotVertices!);
-
-		If[RandomReal[]>weight,facets={}];
-
-	];
-
-	facets
-];
-
-If[numSamples>20&&$KernelCount>0,
-	ParallelTable[buildOneComplex[],{numSamples},DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
-	Table[buildOneComplex[],{numSamples}]]
+	If[RandULPCGoParallel[numSamples],
+		ParallelTable[RandULPCOne[purity,facetOrder,RandomChoice[counts->ns]],{numSamples},
+			DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
+		Table[RandULPCOne[purity,facetOrder,RandomChoice[counts->ns]],{numSamples}]]
 
 , "ECGravReturn$66"]
-
 ];
 
 

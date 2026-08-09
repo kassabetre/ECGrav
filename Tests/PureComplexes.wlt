@@ -659,12 +659,11 @@ VerificationTest[
 
 (* The point of the unlabeled sampler is uniformity over ISOMORPHISM classes, not over labeled
    complexes. At p=2,q=3,n=4 there are 16 labeled complexes but only two classes -- the path,
-   with 12 labellings, and the star, with 4 -- so a uniform labeled draw would split them 75/25
-   and only the rejection weight |Aut|/n! brings them to 50/50. Drawn 20 at a time to stay on
+   with 12 labellings, and the star, with 4 -- so a uniform labeled draw would split them 75/25,
+   and it takes the automorphism structure to bring them to 50/50. Drawn 20 at a time to stay on
    the serial branch, which keeps the seed reproducible. 400 samples is deliberately modest: the
-   failure this guards against is the rejection weight being dropped or inverted, which lands at
-   75/25 and gives chi-square about 100 on one degree of freedom, so it is caught with room to
-   spare while keeping the draw near two seconds. *)
+   failure this guards against lands at 75/25 and gives chi-square about 100 on one degree of
+   freedom, so it is caught with room to spare while keeping the draw fast. *)
 VerificationTest[
     BlockRandom[SeedRandom[322];
         Module[{canon, sample, counts, chi2},
@@ -678,6 +677,101 @@ VerificationTest[
             {Total[counts], SurvivalFunction[ChiSquareDistribution[1], chi2] > 0.001}]],
     {400, True},
     TestID -> "RandomUniformUnlabeledPureSimplicialComplex-uniform-over-classes"
+];
+
+(* ---- RandomUniformUnlabeledPureSimplicialComplex: Burnside pair sampling ---- *)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* The identity the whole scheme rests on: the step-1 cycle-type weights must sum to
+   n! NumUnlabeledPureComplexes[p,M,n] EXACTLY. A wrong cycle-type weight still emits
+   perfectly plausible complexes -- the distribution is simply not uniform -- so the failure
+   would be silent in any test that only inspects output. Check the identity itself. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, M, n}, {p, 1, 3}, {M, 1, 5}, {n, 1, 8}], 2], Function[s,
+        Total[ECGrav`Private`RandULPCTypeWeights[s[[1]], s[[2]], s[[3]]][[2]]] ===
+            s[[3]]!*ECGrav`NumUnlabeledPureComplexes @@ s]],
+    True,
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-weight-identity"
+];
+
+(* Step 3 draws the size profile -- how many orbits of each size the set uses -- from its own
+   marginal. Those marginals must sum back to the per-cycle-type covering count, or the profile
+   is drawn from the wrong distribution while every sample still looks valid. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, M, n}, {p, 1, 3}, {M, 1, 4}, {n, 1, 6}], 2], Function[s,
+        AllTrue[IntegerPartitions[s[[3]]], Function[lam,
+            Total[ECGrav`Private`RandULPCCCov[lam, s[[1]], s[[2]], #] & /@
+                  ECGrav`Private`RandULPCProfiles[lam, s[[1]], s[[2]]]] ===
+            ECGrav`Private`RandULPCFixCov[lam, s[[1]], s[[2]]]]]]],
+    True,
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-profile-marginals"
+];
+
+(* At the identity cycle type the covering sets a permutation fixes ARE the vertex-labeled
+   complexes, which pins the covering count against a function computed a completely different
+   way. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, M, n}, {p, 1, 3}, {M, 1, 5}, {n, 1, 7}], 2], Function[s,
+        ECGrav`Private`RandULPCFixCov[ConstantArray[1, s[[3]]], s[[1]], s[[2]]] ===
+            ECGrav`NumVertexLabeledPureComplexes @@ s]],
+    True,
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-fixcov-at-identity"
+];
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* Every sample must be M pairwise distinct p-subsets covering [n] -- including at n = p M,
+   where the facets must nearly partition the vertex set. That regime is the reason covering is
+   imposed during the draw rather than by rejecting afterwards: rejection's expected trial count
+   is A(p,M,n)/U(p,M,n), which is 11 at {2,4,8} and 66 at {3,4,12} and keeps climbing. *)
+VerificationTest[
+    BlockRandom[SeedRandom[9091];
+        Module[{ok, sets},
+            ok = Function[{p, M, n, s},
+                Length[s] === M && Length[Union[s]] === M && Union @@ s === Range[n] &&
+                AllTrue[s, Length[#] === p &]];
+            sets = {{2, 3, 4}, {3, 4, 6}, {2, 6, 6}, {4, 3, 6}, {2, 5, 8}, {3, 4, 10},
+                    {2, 4, 8}, {3, 4, 12}, {2, 6, 10}};
+            {Length[sets],
+             AllTrue[sets, Function[s,
+                AllTrue[ECGrav`RandomUniformUnlabeledPureSimplicialComplex[s, 30],
+                    ok[s[[1]], s[[2]], s[[3]], #] &]]]}]],
+    {9, True},
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-valid-samples"
+];
+
+(* Uniformity over the enumerated isomorphism classes, at a size where a non-uniform draw would
+   show. Drawn in one call on the serial branch so the seed is reproducible. *)
+VerificationTest[
+    BlockRandom[SeedRandom[5150];
+        Module[{p = 3, M = 4, n = 6, canon, cls, counts, chi2, k = 900},
+            canon = Function[c, First[Sort[Table[Sort[Sort /@ (c /. Thread[Range[n] -> perm])],
+                {perm, Permutations[Range[n]]}]]]];
+            cls = Union[canon /@ Select[Subsets[Subsets[Range[n], {p}], {M}],
+                Union @@ # === Range[n] &]];
+            counts = Lookup[Counts[canon /@
+                ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{p, M, n}, k]], cls, 0];
+            chi2 = Total[(counts - k/Length[cls])^2]/(k/Length[cls]);
+            {Length[cls], Total[counts], FreeQ[counts, 0],
+             SurvivalFunction[ChiSquareDistribution[Length[cls] - 1], chi2] > 0.001}]],
+    {15, 900, True, True},
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-uniform-15-classes"
+];
+
+(* With the vertex count free it must be drawn from NumUnlabeledPureComplexes, not from the
+   vertex-labeled counts -- that was the old body's bug, papered over by rejection. *)
+VerificationTest[
+    BlockRandom[SeedRandom[6161];
+        Module[{p = 2, M = 4, k = 1500, ns, want, got},
+            ns = Length[Union @@ #] & /@
+                ECGrav`RandomUniformUnlabeledPureSimplicialComplex[{p, M}, k];
+            want = N[#/Total[#]] &@
+                Table[ECGrav`NumUnlabeledPureComplexes[p, M, n], {n, p, p*M}];
+            got = N[Table[Count[ns, n], {n, p, p*M}]/k];
+            Max[Abs[want - got]] < 0.05]],
+    True,
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-vertex-count-marginal"
 ];
 
 (* RandomUniformFacetLabeledPureSimplicialComplex no longer rejects. It samples a fixed pair

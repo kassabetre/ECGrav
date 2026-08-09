@@ -2428,11 +2428,14 @@ RandomVertexLabeledPureSimplicialComplex::empty="There is no pure simplicial com
 (* :Usage Messages: *)
  
 RandomUniformUnlabeledPureSimplicialComplex::usage="
-	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer], overload;  
-	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer] generates 
-	numSamples random unlabeled pure simplicial complexes with purity p, 
+	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer], overload;
+	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer}, numSamples_Integer] generates
+	numSamples random unlabeled pure simplicial complexes with purity p,
 	facet-order q, and if specified vertex count n. If numSamples is not specified it returns
-	a single random complex. ";
+	a single random complex.
+Neither the vertices nor the facets are labelled, so these are the isomorphism classes: the
+distribution is uniform over the classes counted by NumUnlabeledPureComplexes, and is produced
+without rejection. With the vertex count free it is drawn from NumUnlabeledPureComplexes too.";
 
 (* :Error Messages: *)	
 
