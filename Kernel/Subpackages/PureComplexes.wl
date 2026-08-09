@@ -1690,14 +1690,15 @@ Module[{cap=$NumPCMaxCachedQ,target=Min[q,$NumPCMaxCachedQ],top=NumPCTop[p],row,
 
 (* Private helper *)
 NumPCClearCache[]:=
-(*Drops everything memoised behind NumVertexLabeledPureComplexes, and behind the composition weights that
+(*Drops everything memoised behind NumVertexLabeledPureComplexes and NumUnlabeledPureComplexes, and
+behind the composition weights that
 RandomVertexLabeledPureSimplicialComplex draws from, keeping only the definitions themselves --
 the memoised entries are the DownValues whose left-hand side carries no Pattern. Returns the
 number of bytes reclaimed. Nothing else in the package holds on to either, so calling this is
 always safe; it only costs the rebuilding.*)
 Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
 		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF,
-			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights}},
+			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,NumULPCA}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
 	Scan[(DownValues[#]=Select[DownValues[#],patterned])&,cached];
 	after=Total[ByteCount/@Map[DownValues,cached]];
@@ -1904,6 +1905,152 @@ Which[
 
 (* Catch-all Pattern *)
 NumFacetLabeledPureComplexes[args___]:=(Message[NumFacetLabeledPureComplexes::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*NumUnlabeledPureComplexes*)
+
+
+(* Counting fully unlabeled complexes. ------------------------------------------------------
+   Neither the vertices nor the facets carry labels, so the objects are the isomorphism classes
+   of pure complexes: M pairwise distinct p-subsets of an n-element vertex set covering it, up to
+   relabelling the vertices AND permuting the facets.
+
+   Acting on the ordered M-tuples that the facet-labeled count uses, the group is the product
+   S_n x S_M, and (sigma,tau) fixes (F_1,...,F_M) iff sigma(F_i) = F_tau(i). The S_M factor
+   collapses, though, and it is worth saying why rather than carrying it through a double
+   Burnside: forgetting the order maps the tuples onto the SETS of M facets, the map commutes
+   with S_n, and because the facets in a tuple are pairwise distinct S_M acts simply transitively
+   on each fibre. So the S_n x S_M orbits on tuples ARE the S_n orbits on sets, and one Burnside
+   over S_n alone suffices, with
+
+	|Fix(sigma)| = #{sigma-invariant M-element sets of distinct p-subsets covering [n]}.
+
+   That is why the tau-cycle bookkeeping this looks like it needs -- a tau-cycle of length l
+   pinning one facet F with sigma^l(F) = F, cycle types of sigma^l, gcd(k,l) -- never appears.
+
+   A sigma-invariant set is a union of <sigma>-orbits of p-subsets, so it is chosen by choosing
+   which orbits to include. If sigma has n_d orbits of size exactly d on the p-subsets, then
+   dropping the covering condition,
+
+	#{sigma-invariant M-element sets} = [z^M] Product_d (1 + z^d)^n_d.
+
+   Covering comes back by the padding trick the facet-labeled count also uses. Let A(n) count
+   those sets up to relabelling with covering NOT required; an unlabeled object whose facets span
+   j vertices is an unlabeled covering object on j vertices plus n-j indistinguishable isolated
+   vertices, so A(n) = Sum_{j<=n} U(j) and U(n) = A(n) - A(n-1).
+
+   The orbit counts n_d come from Moebius inversion over the divisor lattice: f(e), the number of
+   p-subsets fixed by sigma^e, counts those of period dividing e, so n_d = (1/d) Sum_{e|d}
+   mu(d/e) f(e). And sigma^e splits each k-cycle of sigma into gcd(k,e) cycles of length
+   k/gcd(k,e), a fixed subset being a union of those:
+
+	f(e) = [x^p] Product_k (1 + x^(k/gcd(k,e)))^(gcd(k,e) m_k).
+
+   Unlike the facet-labeled count there is no restriction to partitions with parts <= p -- with
+   the facets permutable a long cycle CAN be covered, by a facet whose sigma-orbit walks around
+   it, as the four edges of a square are covered by a 4-cycle of vertices. Every cycle type of
+   S_n therefore contributes and the cost grows like PartitionsP[n], which is the limiting factor
+   here rather than n or M individually. Only divisors d <= M matter, since a factor
+   (1 + z^d)^n_d with d > M contributes its constant term and nothing else below z^(M+1). *)
+
+(* Private helper *)
+NumULPCPolyMul[a_List,b_List,deg_Integer]:=
+(*Product of two coefficient lists, truncated at degree deg.*)
+Take[PadRight[ListConvolve[a,b,{1,-1},0],deg+1],deg+1];
+
+(* Private helper *)
+NumULPCPowPoly[r_Integer,c_Integer,deg_Integer]:=
+(*(1+z^r)^c as a coefficient list truncated at degree deg. Only the multiples of r are stocked,
+so this is the sparse form of the binomial expansion rather than a repeated multiplication.*)
+Module[{res=ConstantArray[0,deg+1]},
+	Do[res[[r*j+1]]=Binomial[c,j],{j,0,Quotient[deg,r]}];
+	res
+];
+
+(* Private helper *)
+NumULPCFixedSubsets[parts_List,e_Integer,p_Integer]:=
+(*f(e): the number of p-subsets of [n] fixed by sigma^e, with parts the {length,multiplicity}
+pairs of sigma's cycle type. A k-cycle becomes gcd(k,e) cycles of length k/gcd(k,e) under
+sigma^e, and a fixed subset is a union of them. Cycles of sigma^e longer than p can never be
+used, so those factors are 1 up to degree p and are skipped outright.*)
+Module[{poly=PadRight[{1},p+1],g,r},
+	Do[
+		g=GCD[part[[1]],e];
+		r=part[[1]]/g;
+		If[r<=p,poly=NumULPCPolyMul[poly,NumULPCPowPoly[r,g*part[[2]],p],p]]
+	,{part,parts}];
+	poly[[p+1]]
+];
+
+(* Private helper *)
+NumULPCFixSets[parts_List,p_Integer,MM_Integer]:=
+(*|Fix(sigma)| on the M-element sets of distinct p-subsets, covering NOT imposed. d is tested by
+divisibility over Range[MM] rather than by Divisors[LCM], because only d <= MM can move the
+degree-MM coefficient and LCM of the cycle lengths can have far more divisors than that.*)
+Module[{lcmParts,ds,f,nd,poly},
+	lcmParts=If[parts==={},1,LCM@@parts[[All,1]]];
+	ds=Select[Range[MM],Divisible[lcmParts,#]&];
+	f=Association[Table[e->NumULPCFixedSubsets[parts,e,p],{e,ds}]];
+	poly=PadRight[{1},MM+1];
+	Do[
+		nd=Total[Table[MoebiusMu[d/e]*f[e],{e,Divisors[d]}]]/d;
+		If[nd=!=0,poly=NumULPCPolyMul[poly,NumULPCPowPoly[d,nd,MM],MM]]
+	,{d,ds}];
+	poly[[MM+1]]
+];
+
+(* Private helper *)
+NumULPCA[p_Integer,MM_Integer,n_Integer]:=NumULPCA[p,MM,n]=
+(*A(p,M,n): unlabeled M-element sets of distinct p-subsets of [n] with covering NOT required, by
+Burnside over S_n. n!/z_lambda is the number of permutations of cycle type lambda. Memoised for
+the session and released by the shared NumPCClearCache[], so a scan over n pays for each row
+once rather than twice through the differencing.*)
+If[n<0,
+	0,
+	Total[Table[
+		With[{parts=Tally[lambda]},
+			(n!/(Times@@(#[[1]]^#[[2]]*#[[2]]!&/@parts)))*NumULPCFixSets[parts,p,MM]]
+	,{lambda,IntegerPartitions[n]}]]/n!
+];
+
+(* Private helper *)
+NumULPCCount[p_Integer,MM_Integer,n_Integer]:=
+(*U(p,M,n) = A(n) - A(n-1), the isolated-vertex padding differenced away.*)
+NumULPCA[p,MM,n]-NumULPCA[p,MM,n-1];
+
+(* Primary Pattern *)
+NumUnlabeledPureComplexes[p_Integer,MM_Integer,n_Integer]:=
+(*Gives the number of fully unlabeled pure simplicial complexes of purity p, facet order M and
+number of vertices n -- the isomorphism classes, with neither the vertices nor the facets
+labelled. The argument order matches NumVertexLabeledPureComplexes and
+NumFacetLabeledPureComplexes: purity, facet order, vertex count. The guards are theirs as well,
+and are not merely an optimisation here: the count sums over the cycle types of S_n, so falling
+through to it on an out-of-range n would call IntegerPartitions on it.*)
+Which[
+	p<0||MM<0,0,
+	MM==0,If[n==0,1,0],
+	n<0||n<p||n>p*MM,0,
+	Binomial[n,p]<MM,0,
+	True,NumULPCCount[p,MM,n]
+];
+
+(* Overload Pattern *)
+NumUnlabeledPureComplexes[p_Integer,MM_Integer]:=
+(*The number of unlabeled pure complexes of purity p and facet order M, summed over the vertex
+count n, mirroring the two-argument NumVertexLabeledPureComplexes. The sum telescopes: U(n) is
+zero past n = p M, since M facets of p vertices cover no more than that, so summing A(n)-A(n-1)
+over all n leaves A(p,M,p M) alone. Note that this is the whole cost of the three-argument form
+at its largest n, so it is only practical while PartitionsP[p M] is.*)
+Which[
+	p<0||MM<0,0,
+	MM==0,1,
+	True,NumULPCA[p,MM,p*MM]
+];
+
+(* Catch-all Pattern *)
+NumUnlabeledPureComplexes[args___]:=(Message[NumUnlabeledPureComplexes::argerr, args];
 $Failed);
 
 

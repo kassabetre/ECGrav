@@ -1953,7 +1953,8 @@ NumVertexLabeledPureComplexes[p_Integer, M_Integer] gives the number of pure sim
 of purity p and facet order M, summed over the vertex count.
 M = 0 is the empty complex: NumVertexLabeledPureComplexes[p, 0, n] is 1 at n = 0 and 0 otherwise,
 and NumVertexLabeledPureComplexes[p, 0] is 1. Negative M gives 0.
-See NumFacetLabeledPureComplexes for the count with the facets labelled and the vertices not.";
+See NumFacetLabeledPureComplexes for the count with the facets labelled and the vertices not,
+and NumUnlabeledPureComplexes for the count with neither labelled.";
 
 NumVertexLabeledPureComplexes::argerr="Input should be of the form NumVertexLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
 	or NumVertexLabeledPureComplexes[p_Integer, M_Integer].";
@@ -1989,10 +1990,33 @@ subsets of [M] in which every label occurs in exactly p of them and no two label
 same set of rows.
 NumFacetLabeledPureComplexes[p_Integer, M_Integer] sums that over the vertex count.
 It is zero unless p <= n <= p M and Binomial[n, p] >= M.
-See NumVertexLabeledPureComplexes for the count with the vertices labelled instead.";
+See NumVertexLabeledPureComplexes for the count with the vertices labelled instead, and
+NumUnlabeledPureComplexes for the count with neither labelled.";
 
 NumFacetLabeledPureComplexes::argerr="Input should be of the form NumFacetLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
 	or NumFacetLabeledPureComplexes[p_Integer, M_Integer].";
+
+
+(* ::Item::Closed:: *)
+(*NumUnlabeledPureComplexes*)
+
+
+(* :Usage Messages: *)
+
+NumUnlabeledPureComplexes::usage = "NumUnlabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+gives the number of fully unlabeled pure simplicial complexes of purity p, facet order M, and
+number of vertices n: M pairwise distinct p-subsets of an n-element vertex set whose union is the
+whole set, counted up to relabelling the vertices and permuting the facets. These are the
+isomorphism classes, so this is the count the two labelled ones both refine.
+NumUnlabeledPureComplexes[p_Integer, M_Integer] sums that over the vertex count.
+It is zero unless p <= n <= p M and Binomial[n, p] >= M.
+It is computed by Burnside over the vertex permutations and so sums over the cycle types of
+S_n: cost grows like PartitionsP[n], making n, rather than p or M, the limiting argument.
+See NumVertexLabeledPureComplexes and NumFacetLabeledPureComplexes for the two counts that keep
+one of the two labellings.";
+
+NumUnlabeledPureComplexes::argerr="Input should be of the form NumUnlabeledPureComplexes[p_Integer, M_Integer, n_Integer]
+	or NumUnlabeledPureComplexes[p_Integer, M_Integer].";
 
 
 (* ::Section::Closed:: *)

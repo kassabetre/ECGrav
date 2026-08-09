@@ -267,6 +267,130 @@ VerificationTest[
     TestID -> "NumFacetLabeledPureComplexes-argerr"
 ];
 
+(* ---- NumUnlabeledPureComplexes ---- *)
+
+(* M pairwise distinct p-subsets of an n-set covering it, up to relabelling the vertices AND
+   permuting the facets -- the isomorphism classes. Values below are the UNLABELED column of the
+   brute-force oracle table, produced by explicitly enumerating the covering M-sets and grouping
+   them into S_n orbits; the same enumeration reproduced the vertex- and facet-labeled counts in
+   the two tests above, which is what ties the three together. *)
+VerificationTest[
+    ECGrav`NumUnlabeledPureComplexes @@@
+        {{2, 2, 3}, {2, 3, 4}, {2, 3, 5}, {2, 4, 4}, {2, 4, 5}, {2, 4, 6}, {2, 5, 4},
+         {2, 5, 5}, {2, 5, 6}, {2, 6, 4}, {2, 6, 5}, {2, 6, 6},
+         {3, 2, 6}, {3, 3, 5}, {3, 3, 6}, {3, 4, 5}, {3, 4, 6}, {3, 4, 7},
+         {4, 2, 6}, {4, 3, 6}, {1, 3, 3}, {1, 4, 4}},
+    {1, 2, 1, 2, 4, 3, 1, 5, 9, 1, 5, 15, 1, 3, 3, 5, 15, 17, 1, 4, 1, 1},
+    TestID -> "NumUnlabeledPureComplexes-known-values"
+];
+
+(* In-suite independent oracle: enumerate the covering M-sets and canonicalise each over the n!
+   relabellings, rather than trusting the cycle-index derivation. *)
+VerificationTest[
+    Module[{brute},
+        brute = Function[{p, M, n},
+            Module[{subs = Subsets[Range[n], {p}], sets, perms},
+                sets = Select[Subsets[subs, {M}], Union @@ # === Range[n] &];
+                perms = Permutations[Range[n]];
+                Length[Union[Table[
+                    First[Sort[Table[Sort[Map[Sort[pi[[#]]] &, s]], {pi, perms}]]],
+                    {s, sets}]]]]];
+        (brute @@@ #) === (ECGrav`NumUnlabeledPureComplexes @@@ #) &@
+            {{2, 3, 4}, {2, 4, 5}, {3, 3, 5}, {3, 4, 5}, {2, 5, 5}, {3, 2, 6}, {1, 3, 3}}],
+    True,
+    TestID -> "NumUnlabeledPureComplexes-brute-force"
+];
+
+(* The derivation, not just its endpoints. Burnside over S_n says the class count is the average
+   over sigma of the number of sigma-invariant covering M-sets; here those fixed sets are counted
+   by explicit enumeration instead of through the orbit polynomial Product (1+z^d)^n_d and the
+   isolated-vertex differencing, so a wrong orbit-size count would show up even where the totals
+   happen to agree. *)
+VerificationTest[
+    Module[{burnside},
+        burnside = Function[{p, M, n},
+            Module[{subs = Subsets[Range[n], {p}], sets, perms, act},
+                sets = Select[Subsets[subs, {M}], Union @@ # === Range[n] &];
+                perms = Permutations[Range[n]];
+                act = Function[{s, pi}, Sort[Map[Sort[pi[[#]]] &, s]]];
+                Total[Table[Count[sets, s_ /; act[s, pi] === s], {pi, perms}]]/n!]];
+        (burnside @@@ #) === (ECGrav`NumUnlabeledPureComplexes @@@ #) &@
+            {{2, 3, 4}, {2, 4, 5}, {3, 3, 5}, {3, 4, 5}, {2, 5, 5}}],
+    True,
+    TestID -> "NumUnlabeledPureComplexes-burnside-identity"
+];
+
+(* External cross-check at p = 2, where these are the unlabelled graphs on n nodes with no
+   isolated vertex. Unlabelled graphs on n nodes number 1, 1, 2, 4, 11, 34, 156, 1044, and every
+   such graph is one with no isolated vertex on j <= n nodes, so differencing that sequence gives
+   the no-isolated-vertex counts -- which must be the sum over M of the count here. This is an
+   oracle from outside the package entirely. *)
+VerificationTest[
+    Module[{gAll = {1, 1, 2, 4, 11, 34, 156, 1044}},
+        Table[Total[Table[ECGrav`NumUnlabeledPureComplexes[2, M, n], {M, 0, Binomial[n, 2]}]],
+            {n, 0, 7}] ===
+        Table[gAll[[n + 1]] - If[n >= 1, gAll[[n]], 0], {n, 0, 7}]],
+    True,
+    TestID -> "NumUnlabeledPureComplexes-unlabeled-graphs"
+];
+
+(* Each isomorphism class carries at least one vertex-labeled and at least one facet-labeled
+   complex, and distinct classes carry disjoint sets of them, so the unlabeled count can never
+   exceed either. Cheap, and it catches a count that is right on the table but wrong off it. *)
+VerificationTest[
+    Module[{grid = Flatten[Table[{p, M, n}, {p, 1, 4}, {M, 0, 6}, {n, 0, 10}], 2]},
+        {Count[grid, s_ /; (ECGrav`NumUnlabeledPureComplexes @@ s) > 0],
+         AllTrue[grid, ECGrav`NumUnlabeledPureComplexes @@ # <=
+             Min[ECGrav`NumVertexLabeledPureComplexes @@ #,
+                 ECGrav`NumFacetLabeledPureComplexes @@ #] &]}],
+    {93, True},
+    TestID -> "NumUnlabeledPureComplexes-dominated-by-labelled"
+];
+
+(* Same degenerate conventions as the two labelled counts, which is checked here by comparing
+   against them rather than by restating the values. n = 100 is in the list on purpose: the
+   guards have to reject it before the cycle-type sum is entered, since reaching
+   IntegerPartitions[100] would not return. *)
+VerificationTest[
+    Module[{deg = {{3, 0, 0}, {3, 0, 5}, {3, -1, 5}, {3, 4, 2}, {3, 4, 100}, {3, 4, 3},
+                   {-1, 3, 4}, {0, 1, 0}, {0, 1, 1}, {0, 2, 0}, {0, 0, 0}, {2, 1, 2},
+                   {2, 3, -1}, {2, 1, 3}}},
+        {ECGrav`NumUnlabeledPureComplexes @@@ deg,
+         AllTrue[deg, ECGrav`NumUnlabeledPureComplexes @@ # ===
+             ECGrav`NumFacetLabeledPureComplexes @@ # ===
+             ECGrav`NumVertexLabeledPureComplexes @@ # &]}],
+    {{1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0}, True},
+    TestID -> "NumUnlabeledPureComplexes-degenerate"
+];
+
+(* The two-argument form telescopes the differencing instead of summing, so this checks the
+   telescoping as well as the convention. *)
+VerificationTest[
+    Table[{ECGrav`NumUnlabeledPureComplexes[p, M],
+           Total[Table[ECGrav`NumUnlabeledPureComplexes[p, M, n], {n, 0, p*M}]]},
+        {p, 1, 3}, {M, 0, 5}],
+    Table[{#, #} &@Total[Table[ECGrav`NumUnlabeledPureComplexes[p, M, n], {n, 0, p*M}]],
+        {p, 1, 3}, {M, 0, 5}],
+    TestID -> "NumUnlabeledPureComplexes-2arg-equals-sum"
+];
+
+(* The memoised cycle-type sums go behind the shared cache, so clearing must reclaim them and
+   leave the values unchanged. *)
+VerificationTest[
+    Module[{before = ECGrav`NumUnlabeledPureComplexes[3, 6, 12], reclaimed},
+        reclaimed = ECGrav`Private`NumPCClearCache[];
+        {before, reclaimed > 0, ECGrav`NumUnlabeledPureComplexes[3, 6, 12] === before}],
+    {241, True, True},
+    TestID -> "NumUnlabeledPureComplexes-clear-cache"
+];
+
+VerificationTest[
+    Quiet[{ECGrav`NumUnlabeledPureComplexes[1.5, 2],
+           ECGrav`NumUnlabeledPureComplexes[1, 2, 3, 4]}],
+    {$Failed, $Failed},
+    TestID -> "NumUnlabeledPureComplexes-argerr"
+];
+
 VerificationTest[ECGrav`RankComb[{0, 1, 2}, 5], 0, TestID -> "RankComb-first"];
 VerificationTest[
     ECGrav`UnrankComb[ECGrav`RankComb[{0, 1, 2}, 5], 5, 3],

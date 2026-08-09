@@ -6,6 +6,34 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Added
+- `NumUnlabeledPureComplexes[p, M, n]` and `NumUnlabeledPureComplexes[p, M]` — the number of
+  fully unlabeled pure complexes: `M` pairwise distinct `p`-subsets of an `n`-element vertex
+  set covering it, up to relabelling the vertices *and* permuting the facets. These are the
+  isomorphism classes, the count both labelled ones refine. Completes the trio alongside
+  `NumVertexLabeledPureComplexes` and `NumFacetLabeledPureComplexes`, same argument order.
+
+  The `S_n × S_M` action collapses to `S_n` alone — forgetting the facet order maps tuples
+  onto sets, and `S_M` acts simply transitively on each fibre because the facets are
+  distinct — so this is one Burnside over the vertex permutations, with `|Fix(sigma)|` the
+  number of `sigma`-invariant covering `M`-sets. Those are unions of `<sigma>`-orbits of
+  `p`-subsets, giving `[z^M] Product_d (1 + z^d)^n_d` with the orbit counts `n_d` from
+  Möbius inversion, and covering restored by the same isolated-vertex differencing
+  `U(n) = A(n) - A(n-1)` the facet-labeled count uses.
+
+  Verified against a brute-force oracle that enumerates the covering `M`-sets and groups
+  them into `S_n` orbits explicitly (29 parameter sets, which reproduce the vertex- and
+  facet-labeled counts from the same enumeration); against the Burnside average computed
+  from explicitly enumerated fixed sets rather than from the orbit polynomial; and
+  externally at `p = 2`, where these are the unlabelled graphs with no isolated vertex —
+  `1, 0, 1, 2, 7, 23, 122, 888` for `n = 0..7`.
+
+  Unlike the facet-labeled count there is no restriction to cycle types with parts `<= p`:
+  with the facets permutable a long cycle can be covered by a facet whose orbit walks around
+  it. Every cycle type contributes, so cost grows like `PartitionsP[n]` — `n`, not `p` or
+  `M`, is the limiting argument (about 1 s at `n = 25`, 3 s at `n = 30`). Results are
+  memoised for the session behind the shared `NumPCClearCache[]`.
+
 ## [1.5.0] - 2026-08-06
 
 Pure-complex counting and random generation. Three of the random generators were silently
