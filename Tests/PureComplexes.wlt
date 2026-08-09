@@ -320,6 +320,37 @@ VerificationTest[
     TestID -> "NumUnlabeledPureComplexes-burnside-identity"
 ];
 
+(* The Newton recurrence that produces |Fix(sigma)|, pinned at its own level rather than only
+   through the totals. For every cycle type of S_n it must agree with a direct count of the
+   M-element sets of p-subsets that a permutation of that type leaves invariant. This is the
+   level the totals are averaged from, and a wrong l(k) there still yields plausible-looking
+   totals, so it is checked separately. The first returned value is the number of (case, cycle
+   type) pairs actually compared, so the test cannot pass by comparing nothing. *)
+VerificationTest[
+    Module[{permOfType, bruteFix, cases, pairs = 0},
+        permOfType = Function[lambda,
+            Module[{off = 0, res = {}},
+                Do[res = Join[res, RotateLeft[Range[off + 1, off + k]]]; off += k, {k, lambda}];
+                res]];
+        bruteFix = Function[{lambda, p, M},
+            Module[{n = Total[lambda], pi, subs},
+                pi = permOfType[lambda];
+                subs = Subsets[Range[n], {p}];
+                Count[Subsets[subs, {M}], s_ /; Sort[Map[Sort[pi[[#]]] &, s]] === s]]];
+        cases = Select[Flatten[Table[{p, M, n}, {p, 1, 3}, {M, 0, 4}, {n, 1, 6}], 2],
+            Binomial[Binomial[#[[3]], #[[1]]], #[[2]]] <= 6000 &];
+        {Length[cases],
+         AllTrue[cases, Function[c,
+            With[{p = c[[1]], M = c[[2]], n = c[[3]]},
+                AllTrue[IntegerPartitions[n], Function[lambda,
+                    pairs++;
+                    ECGrav`Private`NumULPCFixSets[Tally[lambda], p, M] ===
+                        bruteFix[lambda, p, M]]]]]],
+         pairs}],
+    {90, True, 435},
+    TestID -> "NumUnlabeledPureComplexes-fix-recurrence"
+];
+
 (* External cross-check at p = 2, where these are the unlabelled graphs on n nodes with no
    isolated vertex. Unlabelled graphs on n nodes number 1, 1, 2, 4, 11, 34, 156, 1044, and every
    such graph is one with no isolated vertex on j <= n nodes, so differencing that sequence gives

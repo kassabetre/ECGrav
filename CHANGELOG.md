@@ -17,9 +17,19 @@ semantic-ish; breaking changes are called out explicitly.
   onto sets, and `S_M` acts simply transitively on each fibre because the facets are
   distinct — so this is one Burnside over the vertex permutations, with `|Fix(sigma)|` the
   number of `sigma`-invariant covering `M`-sets. Those are unions of `<sigma>`-orbits of
-  `p`-subsets, giving `[z^M] Product_d (1 + z^d)^n_d` with the orbit counts `n_d` from
-  Möbius inversion, and covering restored by the same isolated-vertex differencing
-  `U(n) = A(n) - A(n-1)` the facet-labeled count uses.
+  `p`-subsets, giving `[z^M] Product_d (1 + z^d)^n_d`, and covering is restored by the same
+  isolated-vertex differencing `U(n) = A(n) - A(n-1)` the facet-labeled count uses.
+
+  The orbit counts `n_d` are never formed. Taking the logarithmic derivative of that product
+  turns it into a recurrence whose coefficients are the fixed-subset counts directly —
+  `m c(m) = Sum_k l(k) c(m-k)` with `l(k) = f(k)` for odd `k` and `f(k) - 2 f(k/2)` for even
+  — which is Newton's identity, using `Sum_{d|m} d n_d = f(m)`. That removes the Möbius
+  inversion and, with it, binomial expansions over enormous `n_d`. Same values everywhere
+  (61,172 helper-level comparisons against the Möbius route, zero mismatches), and faster
+  where `n` dominates, which is the regime that limits this function: 0.28 → 0.21 s at
+  `{2,10,20}`, 1.94 → 1.57 s at `{4,8,28}`. It costs a few ms more when `M` greatly exceeds
+  `n` (0.05 → 0.08 s at `{3,100,12}`), where the O(M²) convolution outweighs the handful of
+  polynomial multiplies it replaces.
 
   Verified against a brute-force oracle that enumerates the covering `M`-sets and groups
   them into `S_n` orbits explicitly (29 parameter sets, which reproduce the vertex- and

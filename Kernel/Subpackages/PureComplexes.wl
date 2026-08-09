@@ -1941,10 +1941,23 @@ $Failed);
    j vertices is an unlabeled covering object on j vertices plus n-j indistinguishable isolated
    vertices, so A(n) = Sum_{j<=n} U(j) and U(n) = A(n) - A(n-1).
 
-   The orbit counts n_d come from Moebius inversion over the divisor lattice: f(e), the number of
-   p-subsets fixed by sigma^e, counts those of period dividing e, so n_d = (1/d) Sum_{e|d}
-   mu(d/e) f(e). And sigma^e splits each k-cycle of sigma into gcd(k,e) cycles of length
-   k/gcd(k,e), a fixed subset being a union of those:
+   The n_d themselves are never formed. They would come from Moebius inversion over the divisor
+   lattice -- f(e), the number of p-subsets fixed by sigma^e, counts those of period dividing e,
+   so n_d = (1/d) Sum_{e|d} mu(d/e) f(e) -- but taking the logarithmic derivative of the product
+   above turns the whole thing into a recurrence whose coefficients are the f directly:
+
+	m c(m) = Sum_{k=1..m} l(k) c(m-k),   c(0) = 1,   c(m) = [z^m] Product_d (1 + z^d)^n_d,
+	l(k) = f(k) for k odd,   f(k) - 2 f(k/2) for k even.
+
+   That is Newton's identity: log Product_d (1+z^d)^n_d = Sum_m (z^m/m) Sum_{d|m} d n_d
+   (-1)^(m/d-1), and Sum_{d|m} d n_d is f(m), since the orbits of size dividing m are exactly the
+   points fixed by sigma^m; splitting the sign by the parity of m/d leaves l. So the Moebius
+   inversion, and with it the binomial expansion of (1+z^d)^n_d over enormous n_d, both drop out.
+   f(k) is needed for every k <= M rather than only the divisors, but f(k) = f(gcd(k,LCM)) since
+   sigma^k and sigma^gcd(k,LCM) fix the same subsets, so the evaluations are the same handful.
+
+   sigma^e splits each k-cycle of sigma into gcd(k,e) cycles of length k/gcd(k,e), a fixed subset
+   being a union of those:
 
 	f(e) = [x^p] Product_k (1 + x^(k/gcd(k,e)))^(gcd(k,e) m_k).
 
@@ -1952,7 +1965,7 @@ $Failed);
    the facets permutable a long cycle CAN be covered, by a facet whose sigma-orbit walks around
    it, as the four edges of a square are covered by a 4-cycle of vertices. Every cycle type of
    S_n therefore contributes and the cost grows like PartitionsP[n], which is the limiting factor
-   here rather than n or M individually. Only divisors d <= M matter, since a factor
+   here rather than n or M individually. Only divisors d <= M of LCM matter to f, since a factor
    (1 + z^d)^n_d with d > M contributes its constant term and nothing else below z^(M+1). *)
 
 (* Private helper *)
@@ -1986,19 +1999,28 @@ Module[{poly=PadRight[{1},p+1],g,r},
 
 (* Private helper *)
 NumULPCFixSets[parts_List,p_Integer,MM_Integer]:=
-(*|Fix(sigma)| on the M-element sets of distinct p-subsets, covering NOT imposed. d is tested by
-divisibility over Range[MM] rather than by Divisors[LCM], because only d <= MM can move the
-degree-MM coefficient and LCM of the cycle lengths can have far more divisors than that.*)
-Module[{lcmParts,ds,f,nd,poly},
+(*|Fix(sigma)| on the M-element sets of distinct p-subsets, covering NOT imposed, by the Newton
+recurrence of the header. f is evaluated only at the divisors of the cycle-length LCM that are at
+most MM -- tested by divisibility over Range[MM] rather than by Divisors[LCM], since the LCM can
+have far more divisors than that -- and every f(k) the recurrence asks for is one of them, because
+sigma^k fixes the same subsets as sigma^gcd(k,LCM).
+
+The recurrence carries the whole row c(0..MM) whether or not the caller wants it. That is not
+waste: it is the same O(M^2) either way, and it is what a caller wanting all facet orders at one
+vertex count would need.*)
+Module[{lcmParts,f,ell,c},
 	lcmParts=If[parts==={},1,LCM@@parts[[All,1]]];
-	ds=Select[Range[MM],Divisible[lcmParts,#]&];
-	f=Association[Table[e->NumULPCFixedSubsets[parts,e,p],{e,ds}]];
-	poly=PadRight[{1},MM+1];
-	Do[
-		nd=Total[Table[MoebiusMu[d/e]*f[e],{e,Divisors[d]}]]/d;
-		If[nd=!=0,poly=NumULPCPolyMul[poly,NumULPCPowPoly[d,nd,MM],MM]]
-	,{d,ds}];
-	poly[[MM+1]]
+	f=Association[Table[e->NumULPCFixedSubsets[parts,e,p],
+		{e,Select[Range[MM],Divisible[lcmParts,#]&]}]];
+	ell=Table[
+		If[OddQ[k],
+			f[GCD[k,lcmParts]],
+			f[GCD[k,lcmParts]]-2*f[GCD[k/2,lcmParts]]]
+	,{k,1,MM}];
+	c=ConstantArray[0,MM+1];
+	c[[1]]=1;
+	Do[c[[m+1]]=(Take[ell,m] . Reverse[Take[c,m]])/m,{m,1,MM}];
+	c[[MM+1]]
 ];
 
 (* Private helper *)
