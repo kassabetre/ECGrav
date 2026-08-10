@@ -2046,6 +2046,27 @@ $Failed);
 (*GraphEquilibriate*)
 
 
+(* :Code Section *)
+
+(* Private helper *)
+(* The equilibriation routines read $ECGravMaxEquilibriationSweeps from whichever kernel they
+	run on. Subkernels load their own copy of the package, so they hold the default rather than
+	whatever the master session set, and a user's budget would be silently ignored on every
+	parallel run. Push the current value out before launching parallel work that can reach an
+	equilibriator. Only one integer crosses, and the state check makes repeat calls free, so
+	this is safe to call inside the drivers' iteration loops. *)
+
+$distributedEquilibriationBudget=None;
+
+SyncEquilibriationBudget[]:=
+	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps}},
+		If[$KernelCount>0&&$distributedEquilibriationBudget=!=state,
+			DistributeDefinitions[$ECGravMaxEquilibriationSweeps];
+			$distributedEquilibriationBudget=state
+		]
+	];
+
+
 (* ::Item:: *)
 (*GraphEquilibriate *)
 
@@ -2946,6 +2967,7 @@ stopnum++;
 *)
 
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[
 		i->GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
@@ -3198,6 +3220,7 @@ stopnum++;
 *)
 
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[
 		i->GraphEquilibriate[seedGraph,i,hamiltonian[hparams],
@@ -3436,6 +3459,7 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 (********************)
 *)
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context,"ECGrav`Private`"}]
 ];
 
@@ -3724,6 +3748,7 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 (********************)
 *)
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams],
 		UnlabeledVerticesYes],{i,Length[btTable]},
@@ -4048,6 +4073,7 @@ PrintTemporary[" Starting multihistogram with replica swap and delH and at beta 
 *)
 
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[
 		i->GraphEquilibriate[seedGraph,bt
@@ -4370,6 +4396,7 @@ PrintTemporary[" Starting multihistogram with replical swap with delH and with b
 *)
 
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[
 		i->GraphEquilibriate[seedGraph,bt
@@ -6047,6 +6074,7 @@ numRep=Length[btTable];
 (*(******************************)
 (**      Equilibriate          **)
 (******************************)*)
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],
 		hamiltonian[hparams],delH[delHparams],UnlabeledVerticesYes],{i,Length[btTable]}
@@ -6280,6 +6308,7 @@ numRep=Length[btTable];
 (*(******************************)
 (**      Equilibriate          **)
 (******************************)*)
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[i->GraphEquilibriate[seedGraph,btTable[[i]],hamiltonian[hparams]
 		,UnlabeledVerticesYes],{i,Length[btTable]},DistributedContexts->{$Context, "ECGrav`Private`"}]
@@ -6861,6 +6890,7 @@ PrintTemporary["Running PT for graph with numRep ",numRep," at beta ",bt,
 (**      Equilibriate          **)
 (******************************)*)
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[i->GraphEquilibriate[seedGraph,bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],
@@ -7131,6 +7161,7 @@ PrintTemporary["Running PT for graph with numRep ",numRep," at beta ",bt,
 (**      Equilibriate          **)
 (******************************)*)
 
+SyncEquilibriationBudget[];
 Tempoutput=Association[
 	ParallelTable[i->GraphEquilibriate[seedGraph,bt,
 		Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]],

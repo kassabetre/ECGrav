@@ -21,7 +21,13 @@ BeginPackage["ECGrav`"];
 
 
 Unprotect @@ Names["ECGrav`*"];
-ClearAll @@ Names["ECGrav`*"];
+
+(* Everything except the user-settable package settings below. Re-loading the package in a
+	live session -- which is also what happens when a parallel subkernel loads its own copy --
+	must not silently discard a setting the session has already made. *)
+(* Names["ECGrav`*"] yields SHORT names, so the exclusion must be written without the context
+	prefix or it silently matches nothing and ClearAll wipes the setting anyway. *)
+ClearAll @@ DeleteCases[Names["ECGrav`*"], "$ECGravMaxEquilibriationSweeps"];
 
 
 (* ::Title:: *)
@@ -36,11 +42,16 @@ $ECGravMaxEquilibriationSweeps::usage="$ECGravMaxEquilibriationSweeps is the swe
 	sweeps without meeting their convergence criterion. Exhausting the budget is reported
 	through the corresponding ::noconv message, and the routine then returns
 	\"converged\" -> False together with an eqlT that is a lower bound rather than an
-	estimate. Raise it for systems that mix slowly. Note that the parallel drivers evaluate
-	equilibriation on subkernels, which do not necessarily inherit an assignment made on the
-	master kernel; distribute it yourself if you need it there.";
+	estimate. Raise it for systems that mix slowly. Setting it by plain assignment is enough:
+	the parallel drivers push the current value out to the subkernels before launching work
+	that can reach an equilibriator, so a subkernel's own copy of the package does not
+	override the setting made in the master session.";
 
-$ECGravMaxEquilibriationSweeps=25000;
+(* Guarded rather than assigned outright: a subkernel that already received the master's value,
+	or a session that set it before re-loading, keeps its setting instead of being reset to the
+	default. Paired with the DeleteCases above, which keeps ClearAll off this symbol. *)
+If[!ValueQ[$ECGravMaxEquilibriationSweeps],
+	$ECGravMaxEquilibriationSweeps=25000];
 
 
 (* ::Title::Closed:: *)
