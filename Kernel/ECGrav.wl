@@ -24,6 +24,25 @@ Unprotect @@ Names["ECGrav`*"];
 ClearAll @@ Names["ECGrav`*"];
 
 
+(* ::Title:: *)
+(*ECGrav Package Settings*)
+
+
+(* :Usage Messages: *)
+
+$ECGravMaxEquilibriationSweeps::usage="$ECGravMaxEquilibriationSweeps is the sweep budget every
+	equilibriation routine works within: GraphEquilibriate and
+	RandomPureSimplicialComplexMCMCEquilibriate each give up once they have run this many
+	sweeps without meeting their convergence criterion. Exhausting the budget is reported
+	through the corresponding ::noconv message, and the routine then returns
+	\"converged\" -> False together with an eqlT that is a lower bound rather than an
+	estimate. Raise it for systems that mix slowly. Note that the parallel drivers evaluate
+	equilibriation on subkernels, which do not necessarily inherit an assignment made on the
+	master kernel; distribute it yourself if you need it there.";
+
+$ECGravMaxEquilibriationSweeps=25000;
+
+
 (* ::Title::Closed:: *)
 (*ECGrav Public Functions Involving MCSims*)
 
@@ -798,6 +817,17 @@ overload
 GraphEquilibriate::argerr="A graph adjacency matrix is expected at position 1, 
 a real number at position 2, a hamiltonian at position 3, an optional formula for 
 the change in energy when one edge is toggled at position 4, integer at position 5.";
+
+(* Built by concatenation rather than as one literal spanning several source lines: embedded
+	newlines and tabs make a message render as misaligned columns once the `n` slots are
+	filled in. *)
+GraphEquilibriate::noconv=
+	"Equilibriation did not converge within the budget of `1` sweeps. At exit the mean "<>
+	"squared pairwise energy difference across the tracks was `2`, against a mean late-time "<>
+	"energy variance of `3`; convergence requires the former to be below the latter. "<>
+	"Returning eqlT -> `4`, which is a lower bound rather than an estimate, and a state that "<>
+	"may not be equilibriated. Raise $ECGravMaxEquilibriationSweeps, or start from a better "<>
+	"seed graph.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2546,6 +2576,15 @@ RandomPureSimplicialComplexMCMCEquilibriate::usage="
 RandomPureSimplicialComplexMCMCEquilibriate::argerr="Input has to be of the form 
 	RandomPureSimplicialComplexMCMCEquilibriate[seedComplex_List,labelingChoise_Integer].";
 
+(* Concatenated for the same reason as GraphEquilibriate::noconv above. *)
+RandomPureSimplicialComplexMCMCEquilibriate::noconv=
+	"Equilibriation did not converge within the budget of `1` sweeps. At exit the mean "<>
+	"squared pairwise energy difference across the tracks was `2`, against a mean late-time "<>
+	"energy variance of `3`; convergence requires the former to be below the latter. "<>
+	"Returning eqlT -> `4`, which is a lower bound rather than an estimate, and a state that "<>
+	"may not be equilibriated. Raise $ECGravMaxEquilibriationSweeps, or start from a better "<>
+	"seed complex.";
+
 
 (* ::Item::Closed:: *)
 (*RandomPureSimplicialComplexMCMCCorrelationTime*)
@@ -2596,6 +2635,14 @@ RandomPureSimplicialComplexMCMC::usage="
 RandomPureSimplicialComplexMCMC::argerr="Input has to be of the form 
 	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_,
 	labelingChoise_Integer, numSamples_Integer].";
+
+(* Concatenated for the same reason as the ::noconv messages. *)
+RandomPureSimplicialComplexMCMC::noneql=
+	"Equilibriation did not converge, so the chain has not been shown to have reached its "<>
+	"stationary distribution and samples drawn from it now would not be the uniform draws "<>
+	"this function promises. Aborting instead of sampling, and returning $Failed. See the "<>
+	"RandomPureSimplicialComplexMCMCEquilibriate::noconv message just issued, then raise "<>
+	"$ECGravMaxEquilibriationSweeps (currently `1`) or start from a better seed complex.";
 
 
 (* ::Section::Closed:: *)
@@ -2672,5 +2719,10 @@ End[] (* End private context *)
     MCSimsFunction,
     PureComplexesFunction
 ];*)
-Protect @@ Names["ECGrav`*"]; 
+Protect @@ Names["ECGrav`*"];
+
+(* The equilibriation budget is a user setting, so it has to stay assignable after the
+	blanket Protect above. *)
+Unprotect[$ECGravMaxEquilibriationSweeps];
+
 EndPackage[]

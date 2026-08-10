@@ -4603,7 +4603,8 @@ complex	) all start to have close enough probabilities such that the fluctions o
 
 Module[{result,purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],data,
 	sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,
-	sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime=20000,maxNumSweeps=25000},
+	sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,
+	converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 data=<|"state"-><|"complex"->Sort[Sort/@seedComplex],
 				"vertexCount"->Length[DeleteDuplicates[Flatten[seedComplex]]],
@@ -4640,7 +4641,7 @@ data[["random","energy"]]=-Log[1.0*data[["random","weight"]]];
 numsweeps=0;
 outWinLength =400 ;
 	(* length of a table to store running energy values to test equilibriation*)
-inWinLength=10;
+inWinLength=30;
 	(* A segment to be averaged over at the beginning and the end of the table*)
 
 Entable=Table[0.0,{m,4},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
@@ -4671,8 +4672,10 @@ Reap[
 
 		If[numsweeps>outWinLength,
 
-			sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength);;outWinLength]]])^2,{i,4},{j,4}];
-				(*sqMeanEMat is a four by cour matrix of the squared means of difference in energy within and across the 
+			sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,4},{j,4}];
+				(*both windows are inWinLength long: the early slice takes the newest inWinLength
+					entries and the late slice the oldest inWinLength entries*)
+				(*sqMeanEMat is a four by cour matrix of the squared means of difference in energy within and across the
 					tracks at the beginning and end of outWinLength. At equilibrium these 12 mumbers should be 
 					randomly distributed with mean of 0. Their fluctuation from 0 should be within the variance of the 
 					newer(late time) variance in energy for the equilibriation to exit. 
@@ -4684,9 +4687,11 @@ Reap[
 
 			If[Abs[sqMeanPairwiseDiff]<meanLateVar,
 				eqlTime=numsweeps-outWinLength+inWinLength;
+				converged=True;
 				Break[]
 			];(*Exit the while loop and go to the Do loop*)
 			If[Abs[Tr[sqMeanEMat]]<0.00001,	(*Print["exiting because stuck in a metastable state, sqMeanEMat is ",MatrixForm[sqMeanEMat]];*)eqlTime=numsweeps-outWinLength+inWinLength;
+				converged=True;
 				Break[]
 			](*Exit the while loop and go to the Do loop*)
 		];
@@ -4694,6 +4699,18 @@ Reap[
 		Entable=RotateRight[#,1]&/@Entable;(*Shifts every entry to the right by one cyclically. The new data will be written on the first slot so newer data is at the beginning.*)
 	];
 ][[2,1]];
+
+(*The while loop above only assigns eqlTime when a convergence criterion fires. Falling out of
+	it means the sweep budget ran out with the chain still moving, so report that rather than
+	handing back a number indistinguishable from a converged one, and return the budget itself
+	as an honest lower bound on the equilibriation time.*)
+If[!converged,
+	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
+		(*stays positive even if the budget is set below the comparison window*)
+	Message[RandomPureSimplicialComplexMCMCEquilibriate::noconv,
+		maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+];
+
 (********************
 *  For diagnostics *
 ********************)
@@ -4705,7 +4722,7 @@ Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
 ];
 
 
-result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
+result=<| "eqlT"->eqlTime,"converged"->converged,"state"->data[[Key["state"]]]|>;
 
 result
 
@@ -4738,11 +4755,12 @@ Module[{result,
 		data,sweepOutput,
 		Entable,outWinLength,inWinLength,AllEnMat,
 		sqMeanEMat,
-		sqMeanPairwiseDiff,
-		meanLateVar,
+		sqMeanPairwiseDiff=Indeterminate,
+		meanLateVar=Indeterminate,
 		numsweeps,
-		eqlTime=20000,
-		maxNumSweeps=25000},
+		eqlTime,
+		converged=False,
+		maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 Catch[If[HoldNumberOfVerticesFixed==False,
 	Throw[RandomPureSimplicialComplexMCMCEquilibriate[seedComplex, labelingChoise], "ECGravReturn$55"]
@@ -4810,7 +4828,7 @@ data[["random2","energy"]]=-Log[1.0*data[["random2","weight"]]];
 
 numsweeps=0;
 outWinLength =400 ;
-(* length of a table to store running energy values to test equilibriation*)inWinLength=20;(* A segment to be averaged over at the beginning and the end of the table*)
+(* length of a table to store running energy values to test equilibriation*)inWinLength=30;(* A segment to be averaged over at the beginning and the end of the table*)
 
 Entable=Table[0.0,{m,4},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
 
@@ -4839,7 +4857,10 @@ Reap[
 
 		If[numsweeps>outWinLength,
 
-			sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength);;outWinLength]]])^2,{i,4},{j,4}];
+			sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,4},{j,4}];
+
+			(*both windows are inWinLength long: the early slice takes the newest inWinLength
+				entries and the late slice the oldest inWinLength entries*)
 
 			(*sqMeanEMat is a four by four matrix of the squared means of difference in energy within and across the tracks at the beginning and end of outWinLength. At equilibrium these 9 mumbers should be randomly distributed with mean of 0. Their fluctuation from 0 should be within the variance of the newer(late time) variance in energy for the equilibriation to exit. sqMeanPairwiseDiff is the mean of these 9 numbers*)
 
@@ -4848,11 +4869,13 @@ Reap[
 			meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,4}]];(*Mean variance of the newer energies*)
 
 			If[Abs[sqMeanPairwiseDiff]<meanLateVar,
-				
+
 				eqlTime=numsweeps-outWinLength+inWinLength;
+				converged=True;
 				Break[]
 			];(*Exit the while loop and go to the Do loop*)
 			If[Abs[Tr[sqMeanEMat]]<0.000001,	eqlTime=numsweeps-outWinLength+inWinLength;
+				converged=True;
 				Break[]
 			](*Exit the while loop and go to the Do loop*)
 		];
@@ -4860,6 +4883,17 @@ Reap[
 		Entable=RotateRight[#,1]&/@Entable;(*Shifts every entry to the right by one cyclically. The new data will be written on the first slot so newer data is at the beginning.*)
 	];
 ][[2,1]];
+
+(*The while loop above only assigns eqlTime when a convergence criterion fires. Falling out of
+	it means the sweep budget ran out with the chain still moving, so report that rather than
+	handing back a number indistinguishable from a converged one, and return the budget itself
+	as an honest lower bound on the equilibriation time.*)
+If[!converged,
+	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
+		(*stays positive even if the budget is set below the comparison window*)
+	Message[RandomPureSimplicialComplexMCMCEquilibriate::noconv,
+		maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+];
 
 (********************
 *  For diagnostics *
@@ -4871,7 +4905,7 @@ PlotLabel->"t from 1 to 2 times eqlT ",PlotLegends->{"seedComplex","leastEvenlyC
 
 (*Print["data",data];*)
 
-result=<| "eqlT"->eqlTime,"state"->data[[Key["state"]]]|>;
+result=<| "eqlT"->eqlTime,"converged"->converged,"state"->data[[Key["state"]]]|>;
 
 result, "ECGravReturn$55"]
 
@@ -5118,6 +5152,7 @@ RandomPureSimplicialComplexMCMC[seedComplex_List, operators_/;MatchQ[operators,{
 
 Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 
+Catch[
 PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 (*
 (********************)
@@ -5126,6 +5161,14 @@ PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 *)
 
 data=RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,labelingChoise];
+
+(*Drawing samples from a chain that has not been shown to have reached its stationary
+	distribution would silently break the uniformity this function documents, so stop here
+	rather than return draws that look fine and are not.*)
+If[data[["converged"]]===False,
+	Message[RandomPureSimplicialComplexMCMC::noneql,$ECGravMaxEquilibriationSweeps];
+	Throw[$Failed, "ECGravReturn$69"]
+];
 
 (*
 (***************************************)
@@ -5170,7 +5213,7 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-{measurements,data}
+{measurements,data}, "ECGravReturn$69"]
 
 ]
 
@@ -5206,6 +5249,13 @@ PrintTemporary[" Starting RandomPureSimplicialComplexMCMC "];
 
 data=RandomPureSimplicialComplexMCMCEquilibriate[seedComplex,HoldNumberOfVerticesFixed,labelingChoise];
 
+(*Drawing samples from a chain that has not been shown to have reached its stationary
+	distribution would silently break the uniformity this function documents, so stop here
+	rather than return draws that look fine and are not.*)
+If[data[["converged"]]===False,
+	Message[RandomPureSimplicialComplexMCMC::noneql,$ECGravMaxEquilibriationSweeps];
+	Throw[$Failed, "ECGravReturn$57"]
+];
 
 (*
 (***************************************)

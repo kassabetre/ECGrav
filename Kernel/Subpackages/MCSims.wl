@@ -2065,7 +2065,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime=20000,maxNumSweeps=25000},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2081,7 +2081,7 @@ PrintTemporary["Equilibriating at beta ",beta, " hparams ",{hparams}];
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
-inWinLength=20;(* A segment to be averaged over at the beginning and the end of the table*)
+inWinLength=30;(* A segment to be averaged over at the beginning and the end of the table*)
 
 Entable=Table[0.0,{m,3},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
 
@@ -2122,7 +2122,7 @@ Entable[[All,1]]={data[[Key["state"]]][[Key["energy"]]],data[[Key["empty"]]][[Ke
 
 If[numsweeps>outWinLength,
 
-sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength);;outWinLength]]])^2,{i,3},{j,3}];
+sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
 
 (*sqMeanEMat is a three by three matrix of the squared means of difference in energy 
 within and across the tracks at the beginning and end of outWinLength.
@@ -2138,6 +2138,7 @@ meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,3}]];(*Mean v
 
 If[Abs[sqMeanPairwiseDiff]<meanLateVar,
 	eqlTime=numsweeps-outWinLength+inWinLength;
+	converged=True;
 	Break[]
 ];(*Exit the while loop and go to the Do loop*)
 
@@ -2145,6 +2146,7 @@ If[Abs[Tr[sqMeanEMat]]<0.00001,
 	(*Print["exiting because stuck in a metastable state, 
 		sqMeanEMat is ",MatrixForm[sqMeanEMat]];*)
 	eqlTime=numsweeps-outWinLength+inWinLength;
+	converged=True;
 	Break[]
 ](*Exit the while loop and go to the Do loop*)
 
@@ -2156,6 +2158,17 @@ The new data will be written on the first slot, so newer data is at the beginnin
 
 ];
 ][[2,1]];
+
+
+(*The while loop above only assigns eqlTime when a convergence criterion fires. Falling out of
+	it means the sweep budget ran out with the chain still moving, so report that rather than
+	handing back a number indistinguishable from a converged one, and return the budget itself
+	as an honest lower bound on the equilibriation time.*)
+If[!converged,
+	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
+		(*stays positive even if the budget is set below the comparison window*)
+	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+];
 
 
 (********************
@@ -2173,7 +2186,7 @@ Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
 (*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
-		<|"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlTime,
+		<|"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlTime, "converged"->converged,
 		"state"->data[[Key["state"]]]|>};
 
 result
@@ -2202,7 +2215,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff,meanLateVar,numsweeps,eqlTime=20000,maxNumSweeps=25000},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2218,7 +2231,7 @@ PrintTemporary["Equilibriating at beta ",beta, " hparams ",{hparams}];
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
-inWinLength=20;(* A segment to be averaged over at the beginning and the end of the table*)
+inWinLength=30;(* A segment to be averaged over at the beginning and the end of the table*)
 
 Entable=Table[0.0,{m,3},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
 
@@ -2260,7 +2273,7 @@ Entable[[All,1]]={data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["ene
 
 
 If[numsweeps>outWinLength,
-	sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength);;outWinLength]]])^2,{i,3},{j,3}];
+	sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
 
 	(*sqMeanEMat is a three by three matrix of the squared means of difference in 
 	energy within and across the tracks at the beginning and end of outWinLength.
@@ -2276,11 +2289,13 @@ If[numsweeps>outWinLength,
 
 	If[Abs[sqMeanPairwiseDiff]<meanLateVar,
 	eqlTime=numsweeps-outWinLength+inWinLength;
+	converged=True;
 	Break[]
 	];(*Exit the while loop and go to the Do loop*)
 
 	If[Abs[Tr[sqMeanEMat]]<0.00001,
 	eqlTime=numsweeps-outWinLength+inWinLength;
+	converged=True;
 	Break[]
 	](*Exit the while loop and go to the Do loop*)
 
@@ -2291,6 +2306,17 @@ Entable=RotateRight[#,1]&/@Entable;
 
 ];
 ][[2,1]];
+
+
+(*The while loop above only assigns eqlTime when a convergence criterion fires. Falling out of
+	it means the sweep budget ran out with the chain still moving, so report that rather than
+	handing back a number indistinguishable from a converged one, and return the budget itself
+	as an honest lower bound on the equilibriation time.*)
+If[!converged,
+	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
+		(*stays positive even if the budget is set below the comparison window*)
+	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+];
 
 
 (********************
@@ -2308,7 +2334,7 @@ Print[ListLinePlot[Transpose[AllEnMat[[1;;Min[Length[AllEnMat],2*eqlTime]]]],
 (*Print["data",data];*)
 
 result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,
-		<|"beta"->beta,"externalField"->{hparams},"eqlT"->eqlTime,
+		<|"beta"->beta,"externalField"->{hparams},"eqlT"->eqlTime,"converged"->converged,
 			"state"->data[[Key["state"]]]|>};
 
 result
