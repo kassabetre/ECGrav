@@ -229,7 +229,7 @@ VerificationTest[
    adjacency matrix and never increases the energy -- the defining invariant of descent. *)
 VerificationTest[
     Block[{Print = Null &}, Module[{r},
-        r = ECGrav`GradDescent[C6, ECGrav`delHIsing[#1, -1.0, 0.0, #2, #3] &, 10];
+        r = ECGrav`GradDescent[C6, dH[-1.0, 0.0], 10];
         {Dimensions[r], r === Transpose[r], SubsetQ[{0, 1}, Union@Flatten[r]],
          ECGrav`HIsing[r, -1.0, 0.0] <= ECGrav`HIsing[C6, -1.0, 0.0]}]],
     {{6, 6}, True, True, True},
@@ -240,15 +240,14 @@ VerificationTest[
    smoke-test both the with-delH and no-delH overloads. *)
 VerificationTest[
     Block[{Print = Null &}, Module[{r}, SeedRandom[201];
-        r = ECGrav`SGradDescent[C6, ECGrav`HIsing[#, -1.0, 0.0] &,
-            ECGrav`delHIsing[#1, -1.0, 0.0, #2, #3] &, 0.5, 5];
+        r = ECGrav`SGradDescent[C6, h[-1.0, 0.0], dH[-1.0, 0.0], 0.5, 5];
         {Head[r], KeyExistsQ[r, "minE"], NumberQ[r["minE"]]}]],
     {Association, True, True},
     TestID -> "SGradDescent-with-delH-smoke"
 ];
 VerificationTest[
     Block[{Print = Null &}, Module[{r}, SeedRandom[202];
-        r = ECGrav`SGradDescent[C6, ECGrav`HIsing[#, -1.0, 0.0] &, 0.5, 5];
+        r = ECGrav`SGradDescent[C6, h[-1.0, 0.0], 0.5, 5];
         {Head[r], KeyExistsQ[r, "minE"]}]],
     {Association, True},
     TestID -> "SGradDescent-no-delH-smoke"

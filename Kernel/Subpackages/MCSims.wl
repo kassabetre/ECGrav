@@ -1023,16 +1023,22 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-GradDescent[seedAmat_List,delH_,cutoff_Integer]:=
+GradDescent[seedAmat_List,delH_[delHparams___],cutoff_Integer]:=
 (*This program runs the gradient descent algorithm.,
-Inputs are:, 
-1. seedAmat - a seed graph as an adjacency matrix, 
-2. delH - a formula for delta E (when one edge is flipped),  
+Inputs are:,
+1. seedAmat - a seed graph as an adjacency matrix,
+2. delH - an inert head[params] for delta E when one edge is toggled, called here as
+	delH[adjacencyMatrix,delHparams,i,j]; e.g. dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=
+	delHIsing[am,j,l,a,b] passed as dH[-1.,0.],
 3. cutoff -  number of sweeps,
 
 Outputs an adjacency matrix. *)
 
 Block[{ nn=Length[seedAmat],Amcur,edgeList,deltaEtable,updateAmsq,step,stepagain,numsteps,printCase},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!DelHUsableQ[seedAmat,delH,delHparams],Return[$Failed]];
+
 
 Amcur=seedAmat;
 edgeList=Subsets[Range[nn],{2}];
@@ -1042,7 +1048,7 @@ step[]:=Block[{negatives,flipSpin},
 
 Catch[Do[
 
-deltaEtable[[Key[i]]]=delH[Amcur,i[[1]],i[[2]]];
+deltaEtable[[Key[i]]]=delH[Amcur,delHparams,i[[1]],i[[2]]];
 ,{i,edgeList}];
 
 
@@ -1098,13 +1104,16 @@ $Failed);
 (* :Code Section: *)
 
 (* Primary Pattern *)
-SGradDescent[seedAmat_List, hamiltonian_,delH_,beta_Real,NN_Integer]:=
+SGradDescent[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],beta_Real,NN_Integer]:=
 
 (*This program runs stochastic gradient descent with softmax at parameter beta.,
 Inputs are:, 
 1. seedAmat - a seed graph as an adjacency matrix, 
-2. hamiltonian - a hamiltonian, 
-3. delH - a formula for delta E (when one edge is flipped to expedite computation),  
+2. hamiltonian - an inert head[params] for the energy, called here as
+	hamiltonian[adjacencyMatrix,hparams]; e.g. h[am_List,j_Real,l_Real]:=HIsing[am,j,l]
+	passed as h[-1.,0.],
+3. delH - an inert head[params] for delta E when one edge is toggled, called here as
+	delH[adjacencyMatrix,delHparams,i,j],
 4. beta - inverse temperature,
 5. NN -  number of sweeps,
 
@@ -1117,6 +1126,10 @@ they will all be included.,
 
 Block[{ nn=Length[seedAmat],Amcur,edgeList,deltaEtable,weightsTable,curE,minE, minStates,computeWeights,step,numsteps,printCase},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedAmat,hamiltonian,hparams]&&DelHUsableQ[seedAmat,delH,delHparams]),Return[$Failed]];
+
+
 
 Amcur=seedAmat;
 edgeList=Subsets[Range[nn],{2}];
@@ -1124,7 +1137,7 @@ deltaEtable=<|Table[i->0,{i,edgeList}]|>;
 weightsTable=deltaEtable;
 
 
-curE = hamiltonian[Amcur];
+curE = hamiltonian[Amcur,hparams];
 minE = curE;
 minStates={Amcur};
 
@@ -1140,7 +1153,7 @@ step[]:=Block[{negatives,flipSpin},
 
 Do[
 
-deltaEtable[[Key[i]]]=delH[Amcur,i[[1]],i[[2]]];
+deltaEtable[[Key[i]]]=delH[Amcur,delHparams,i[[1]],i[[2]]];
 ,{i,edgeList}];
 
 computeWeights[beta];
@@ -1179,14 +1192,16 @@ numsteps++;
 ];
 
 (* Overload Pattern *)
-SGradDescent[seedAmat_List, hamiltonian_,beta_Real,NN_Integer]:=
+SGradDescent[seedAmat_List, hamiltonian_[hparams___],beta_Real,NN_Integer]:=
 
 (*This program runs stochastic gradient descent with softmax at parameter beta. It is 
 an overload that doesn't require the formula for delH (E(newgraph) - E(curgraph) when 
 an edge is toggled),
 Inputs are:, 
 1. seedAmat - a seed graph as an adjacency matrix, 
-2. hamiltonian - a hamiltonian,  
+2. hamiltonian - an inert head[params] for the energy, called here as
+	hamiltonian[adjacencyMatrix,hparams]; e.g. h[am_List,j_Real,l_Real]:=HIsing[am,j,l]
+	passed as h[-1.,0.],
 3. beta - inverse temperature,
 4. NN -  number of sweeps,
 
@@ -1200,6 +1215,10 @@ they will all be included.,
 Block[{ nn=Length[seedAmat],Amcur,Amnew, edgeList,deltaEtable,weightsTable,
 curE,minE, minStates,computeWeights,step,numsteps,printCase},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedAmat,hamiltonian,hparams],Return[$Failed]];
+
+
 
 Amcur=seedAmat;
 edgeList=Subsets[Range[nn],{2}];
@@ -1207,7 +1226,7 @@ deltaEtable=<|Table[i->0,{i,edgeList}]|>;
 weightsTable=deltaEtable;
 
 
-curE = hamiltonian[Amcur];
+curE = hamiltonian[Amcur,hparams];
 minE = curE;
 minStates={Amcur};
 computeWeights[bta_Real]:=Module[{},
@@ -1224,7 +1243,7 @@ Do[
 Amnew=Amcur;
 Amnew[[i[[1]],i[[2]]]]=Amnew[[i[[2]],i[[1]]]]=Mod[Amnew[[i[[1]],i[[2]]]]+1,2];
 
-deltaEtable[[Key[i]]]= hamiltonian[Amnew]-curE;
+deltaEtable[[Key[i]]]= hamiltonian[Amnew,hparams]-curE;
 ,{i,edgeList}];
 
 computeWeights[beta];
@@ -1293,8 +1312,11 @@ SimulatedAnnealing[seedAmat_List, hamiltonian_[hparams___],delH_[delHparams___],
 (*This program runs the simulated annealing ground state search from initial to final inverse temperatures given by betai and betaf.,
 Inputs are:, 
 1. seedAmat - a seed graph as an adjacency matrix, 
-2. hamiltonian - a hamiltonian, 
-3. delH - a formula for delta E (when one edge is flipped to expedite computation),  
+2. hamiltonian - an inert head[params] for the energy, called here as
+	hamiltonian[adjacencyMatrix,hparams]; e.g. h[am_List,j_Real,l_Real]:=HIsing[am,j,l]
+	passed as h[-1.,0.],
+3. delH - an inert head[params] for delta E when one edge is toggled, called here as
+	delH[adjacencyMatrix,delHparams,i,j],
 4. betai - starting low inverse temperature,
 5. betaf - the final high inverse temperature,
 6. roundLength - how many rounds to do MC steps at each temperature
@@ -1311,6 +1333,10 @@ Outputs an association with five elements,
 *)
 
 Module[{ nn=Length[seedAmat],result,maxNumOfSavedStates=400,(*precision=100,*)precision=MachinePrecision,Amcur,edgeList,minE,excitedEnergy,curE,minStates,excitedStates,beta,rate,step,numsteps,printCase},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedAmat,hamiltonian,hparams]&&DelHUsableQ[seedAmat,delH,delHparams]),Return[$Failed]];
+
 
 
 Amcur=seedAmat;
@@ -1443,6 +1469,10 @@ Outputs an association with five elements,  list with two elements associations,
 Module[{ nn=Length[seedAmat],result,maxNumOfSavedStates=400,
 	(*precision=100,*)precision=MachinePrecision,Amcur,Amnext,edgeList,minE,
 		excitedEnergy,curE,minStates,excitedStates,beta,rate,step,numsteps,printCase},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedAmat,hamiltonian,hparams],Return[$Failed]];
+
 
 
 Amcur=seedAmat;
@@ -2055,6 +2085,25 @@ $Failed);
 	parallel run. Push the current value out before launching parallel work that can reach an
 	equilibriator. Only one integer crosses, and the state check makes repeat calls free, so
 	this is safe to call inside the drivers' iteration loops. *)
+
+(* Private helper *)
+(* Check the energy callbacks against the only contract that matters: called the way this
+	package calls them, they must return a number. Tightening hamiltonian_[hparams___] cannot
+	do this -- a valid h[-1.,0.], a misspelt IsingHamiltonian[-1.,0.] and a curried Function
+	are all structurally "an expression with a head" and match every pattern identically, so
+	the distinction only exists after evaluation. One probe per user-facing call is nothing
+	next to a Monte Carlo run, so these are called at the drivers rather than inside a sweep. *)
+
+HamiltonianUsableQ[amat_,ham_,hpar___]:=
+	With[{value=Quiet[ham[amat,hpar]]},
+		NumericQ[value]||(Message[ECGrav::badham,HoldForm[ham[hpar]],value];False)];
+
+DelHUsableQ[amat_,dh_,dhpar___]:=
+	If[Length[amat]<2,
+		True,(*no edge to toggle; nothing to probe with*)
+		With[{value=Quiet[dh[amat,dhpar,1,2]]},
+			NumericQ[value]||(Message[ECGrav::baddelh,HoldForm[dh[dhpar]],value];False)]];
+
 
 $distributedEquilibriationBudget=None;
 
@@ -2938,6 +2987,10 @@ Outputs a list with three entries:,
 
 Module[{result,vCount=Length[seedGraph],edgeCount,groundStates,maxGStateCount,replicas,Tempoutput,btTable,defaultRatio,EnergyOrMag=1 (*comuting correlation time using energy (0) or magnetization (1)*),measurements,numsweeps,stopnum, candminE,repNumSweeps,chart,curRootSpecificHeat,curRatios,newBetas,computeBFs,energyAsn,mBetaF},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 edgeCount=vCount (vCount-1)/2;
 
 replicas=<||>;
@@ -3191,6 +3244,10 @@ Module[{result,vCount=Length[seedGraph],edgeCount,groundStates,maxGStateCount,re
 	measurements,numsweeps,stopnum, candminE,repNumSweeps,chart,curRootSpecificHeat,
 	curRatios,newBetas,computeBFs,mBetaF},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
+
 edgeCount=vCount (vCount-1)/2;
 
 replicas=<||>;
@@ -3441,6 +3498,10 @@ Outputs a list with three entries:,
 4. an association of the histories of each replica *)
 
 Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,numRep,histories,bt,Tempoutput,swap,EnergyOrMag=1 (*comuting correlation time using energy (0) or magnetization (1)*),measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,computeBFs,energyAsn,mBetaF},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
 
 
 groundStates=<||>;
@@ -3730,6 +3791,10 @@ Outputs a list with three entries:,
 
 Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedByBeta,numRep,
 	histories,bt,Tempoutput,swap,EnergyOrMag=1 (*comuting correlation time using energy (0) or magnetization (1)*),measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,computeBFs,energyAsn,mBetaF},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 
 groundStates=<||>;
@@ -4051,6 +4116,10 @@ Outputs a list with three entries:,
 Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,
 	histories,swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,
 	chart,mBetaF},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
 
 
 groundStates=<||>;
@@ -4374,6 +4443,10 @@ Outputs a list with three entries:,
 
 Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,
 	swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 
 groundStates=<||>;
@@ -4705,6 +4778,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
        betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,
        entropyVals,tempSchedule},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 
 hist=GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
@@ -4802,6 +4879,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,
        betas,incrementVal,CvOverTtab,entropyRange,delS,entropyTable,
        entropyVals,tempSchedule},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
+
 
 hist=GraphMultiHistogram[seedGraph,betaLow,betaHigh,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
 
@@ -4867,6 +4948,10 @@ GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],
 Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,incrementVal,
         CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 
 hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 		delH[delHparams],obs,NN,UnlabeledVerticesYes];
@@ -4931,6 +5016,10 @@ result
 GraphCEITempSchedule[seedGraph_List,btTable_List,hamiltonian_[hparams___],obs_,NN_Integer,UnlabeledVerticesYes_Integer]:=
 Module[{result,vCount=Length[seedGraph],hist,minusbetaFTable,chart,betas,incrementVal,
         CvOverTtab,entropyRange,delS,entropyTable,entropyVals,tempSchedule},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 
 hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,UnlabeledVerticesYes];
@@ -5034,6 +5123,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	interpolatedThermodynamicSpeed,totalThermodynamicLength,thermodynamicDistanceTable,
 	interpolatedThermodynamicLength,targetSteps,betaSchedule,b},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 
 hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],
 	delH[delHparams],obs,NN,UnlabeledVerticesYes];
@@ -5113,6 +5206,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,betaMin,betaMax,
 	interpolatedThermodynamicSpeed,totalThermodynamicLength,
 	thermodynamicDistanceTable,interpolatedThermodynamicLength,targetSteps,
 	betaSchedule,b},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 
 hist=GraphMultiHistogram[seedGraph,btTable,hamiltonian[hparams],obs,NN,
@@ -5271,6 +5368,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
 	neighbors,edges,replicaLabels},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 PrintTemporary[" Starting GraphCTLSchedule for external field at a fixed beta ",bt
 	," with input external field schedule, ",externalFieldTable," numReplicas "
 	,numReplicas];
@@ -5370,6 +5471,10 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	interpolatedThermodynamicSpeed,totalThermodynamicLength,thermodynamicDistanceTable,
 	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
 	neighbors,edges,replicaLabels},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 
 hist=GraphMultiHistogram[seedGraph,bt,hamiltonian[hparams],
@@ -5556,6 +5661,10 @@ Module[
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
 	fields",externalFieldTable," at beta ",bt," numReplicas ",numReplicas];
 
@@ -5722,6 +5831,10 @@ Module[
 	sigmaInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
 	fields",externalFieldTable," at beta ",bt," numReplicas ",numReplicas];
@@ -6066,6 +6179,10 @@ Module[{result,vCount=Length[seedGraph],groundStates,histories,maxGStateCount=50
 	replicas,replicaKeysOrderedByBeta,numRep,bt,minStates,candminE,measurements,
 	numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
+
 groundStates=<||>;
 histories=<||>;
 numRep=Length[btTable];
@@ -6299,6 +6416,10 @@ Outputs a list with four objects:, 1. the lowest energy and corresponding states
 Module[{result,vCount=Length[seedGraph],groundStates,histories,maxGStateCount=500,
 	replicas,replicaKeysOrderedByBeta,numRep,bt,minStates,candminE,measurements,
 	numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 groundStates=<||>;
 histories=<||>;
@@ -6541,6 +6662,10 @@ Module[{result,numRep=Length[inputReplicas],vCount=Length[inputReplicas[[1,"stat
 	,maxGStateCount=500,replicaKeysOrderedByBeta,bt,minStates,candminE,measurements
 	,numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams]&&DelHUsableQ[inputReplicas[[1,"state","graph"]],delH,delHparams]),Return[$Failed]];
+
+
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
 
@@ -6703,6 +6828,10 @@ Module[{result,numRep=Length[inputReplicas],vCount=Length[inputReplicas[[1,"stat
 	,groundStates=<|"minEnergy"->minEtoBeat,"minEstates"->{}|>,histories=<||>
 	,maxGStateCount=500,replicaKeysOrderedByBeta,bt,minStates,candminE,measurements
 	,numsweeps,Tempoutput,swap,printCase,repNumSweeps,chart},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams],Return[$Failed]];
+
 
 
 replicaKeysOrderedByBeta=Keys[Sort[replicas[[All,"beta"]]]];
@@ -6878,6 +7007,10 @@ Outputs a list with four objects:,
 Module[{result,groundStates,histories,maxGStateCount=500,replicas,numRep,
 	minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+
 
 groundStates=<||>;
 histories=<||>;
@@ -7149,6 +7282,10 @@ Outputs a list with four objects:,
 Module[{result,groundStates,histories,maxGStateCount=500,replicas,numRep,
 	minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+
 
 groundStates=<||>;
 histories=<||>;
@@ -7424,6 +7561,10 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!(HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams]&&DelHUsableQ[inputReplicas[[1,"state","graph"]],delH,delHparams]),Return[$Failed]];
+
+
 
 groundStates=
 	<|Table[
@@ -7644,6 +7785,10 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	replicas=inputReplicas,groundStates,histories=<||>,
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
+
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
+If[!HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams],Return[$Failed]];
+
 
 
 groundStates=

@@ -36,6 +36,38 @@ ClearAll @@ DeleteCases[Names["ECGrav`*"], "$ECGravMaxEquilibriationSweeps"];
 
 (* :Usage Messages: *)
 
+(* :Usage Messages: *)
+
+ECGrav::usage="ECGrav carries the package-wide diagnostics that are shared rather than
+	duplicated on each function: see ECGrav::badham and ECGrav::baddelh, issued by the Monte
+	Carlo drivers when an energy callback cannot be called the way this package calls it.";
+
+(* :Error Messages: *)
+
+(* The Monte Carlo functions take their energy callbacks as inert head[params] expressions,
+	bound by hamiltonian_[hparams___] and delH_[delHparams___]. Those patterns match ANY
+	expression that has a head, so a misspelt symbol, a curried pure Function, or a wrapper of
+	the wrong shape all pass argument checking unrejected and only surface much later as a Part
+	or Function error naming nothing involved. No pattern can separate them -- a misspelt symbol
+	is structurally identical to a correct one -- so the callbacks are checked by evaluating
+	them once and requiring a number back. *)
+
+ECGrav::badham=
+	"The hamiltonian argument `1` is not usable: hamiltonian[graph, params] evaluated to `2` "<>
+	"rather than a number. Pass an inert head[params] whose head is defined over "<>
+	"(adjacencyMatrix, params...), for example h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed "<>
+	"as h[-1.,0.]. A head with no definition, or a curried pure Function such as "<>
+	"HIsing[#,-1.,0.]&, matches the argument pattern but cannot be called this way.";
+
+ECGrav::baddelh=
+	"The delH argument `1` is not usable: delH[graph, params, i, j] evaluated to `2` rather "<>
+	"than a number. Pass an inert head[params] whose head is defined over "<>
+	"(adjacencyMatrix, params..., i, j), for example "<>
+	"dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.]. "<>
+	"A curried pure Function such as delHIsing[#1,-1.,0.,#2,#3]& matches the argument pattern "<>
+	"but binds delH to Function itself, and the four-argument call then fails.";
+
+
 $ECGravMaxEquilibriationSweeps::usage="$ECGravMaxEquilibriationSweeps is the sweep budget every
 	equilibriation routine works within: GraphEquilibriate and
 	RandomPureSimplicialComplexMCMCEquilibriate each give up once they have run this many
@@ -602,14 +634,22 @@ LowEnergyStates::argerr="Input should be of the form
 
 (* :Usage Mesages: *)
 
-GradDescent::usage="GradDescent[seedAmat,delH_,cutoff] runs the 
+GradDescent::usage="GradDescent[seedAmat,delH[delHparams],cutoff] runs the 
 gradient algorithm on the input adjacency matrix seedAmat
 Inputs are:
 1. seedAmat = List, adjacency matrix of a graph
-2. delH - a formula for delta E (when one edge is flipped),  
+2. delH = an inert head[params] for delta E when one edge is toggled,
 3. cutoff -  number of sweeps,
 
-Outputs an adjacency matrix.";
+Outputs an adjacency matrix.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 (* :Error Mesages: *)
 
 GradDescent::argerr="An adjacency matrix is expected at position 1, a hamiltonian 
@@ -626,7 +666,7 @@ at position 2, a formula for delta Hamiltonian in position 3, and integer at pos
 
 (* :Usage Mesages: *)
 
-SGradDescent::usage="SGradDescent[seedAmat, hamiltonian_,delH_,cutoff] runs 
+SGradDescent::usage="SGradDescent[seedAmat, hamiltonian[hparams],delH[delHparams],cutoff] runs 
 the stochastic gradient descent algorithm with softmax at parameter beta on the input 
 adjacency matrix seedAmat.
 Inputs are:
@@ -638,7 +678,15 @@ Outputs an association with three elements,
 1. the minimum energy visited throughout the search,
 2. states with that minimum energy. If multiple states have degenerate minimum energy, 
 they will all be included.,
-3. The last state visited.";
+3. The last state visited.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -676,7 +724,15 @@ Outputs an association with five elements,
    degenerate minimum energy, they will all be included.,
 4. the 'first excited states', i.e., the states correspondign to the second minimum 
     energy,
-5. The last state visited.";
+5. The last state visited.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -787,7 +843,15 @@ Inputs are:
    unlabeled, UnlabeledVerticesYes = 1 means graphs are unlabeled.   \[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the sweep states with that energy. 
     If multiple states have degenerate minimum energy, they will all be included. 
     It saves only non-isomorphic graphs. ,\[IndentingNewLine]2. The second association is the temperature, final graph, energy, and magnetization 
-    at the end of the sweeps.";
+    at the end of the sweeps.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -821,7 +885,15 @@ overload
    equilibriated state, which itself is an association which includes the adjacency matrix, 
    magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
-                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.";
+                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -877,7 +949,15 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
     includes the adjacency matrix, 
    magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
-                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.";
+                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -953,7 +1033,15 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
    and graph states as values where a state is itself an association which includes the 
    adjacency matrix, magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
-                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.";
+                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -1011,7 +1099,15 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
    and graph states as values where a state is itself an association which includes the 
    adjacency matrix, magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
-                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.";
+                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -1072,7 +1168,15 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
    and graph states as values where a state is itself an association which includes the 
    adjacency matrix, magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
-                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.";
+                      'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
@@ -1158,7 +1262,15 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
    adjacency matrix, magnetization, and energy, 
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
                       'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
-4. an association of each replica and its history.";
+4. an association of each replica and its history.
+
+Both energy callbacks are passed as inert head[params] expressions and are called as
+hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
+head over all of those arguments and pass it partially applied, e.g.
+h[am_List,j_Real,l_Real]:=HIsing[am,j,l] passed as h[-1.,0.], and
+dH[am_List,j_Real,l_Real,a_Integer,b_Integer]:=delHIsing[am,j,l,a,b] passed as dH[-1.,0.].
+A curried pure Function such as HIsing[#,-1.,0.]& matches the argument pattern but cannot
+be called this way and is rejected with ECGrav::badham or ECGrav::baddelh.";
 
 (* :Error Mesages: *)
 
