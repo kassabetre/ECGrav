@@ -17,7 +17,19 @@ With[{local = If[StringQ[$InputFileName] && $InputFileName =!= "",
         "/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests/TestPrelude.wl"]]];
 
 (* Inert Hamiltonian / delta wrappers, matching how the notebook drives the MC
-   functions (which expect an inert head[params] argument). *)
+   functions (which expect an inert head[params] argument).
+
+   These MUST be plain multi-argument definitions, not curried ones. The drivers bind
+   hamiltonian_[hparams___] and delH_[delHparams___], which requires h[-1.,0.] and dH[-1.,0.]
+   to stay SYMBOLIC so that hamiltonian=h and hparams=(-1.,0.); the driver then calls
+   delH[graph, delHparams, row, col] (MCSims.wl:1839). Written curried --
+   dH[jj_,ll_] := delHIsing[#1,jj,ll,#2,#3]& -- the partial application evaluates to a
+   Function, delH binds to Function itself, and that four-argument call hits a three-slot
+   pure function: Function::argb every sweep, with the energy delta coming back as an
+   unevaluated expression rather than a number.
+
+   Note the patterns accept either shape, so nothing is rejected at the boundary; the damage
+   only surfaces later. Same trap as passing a Hamiltonian symbol that does not exist. *)
 h[am_List, jj_Real, ll_Real] := ECGrav`HIsing[am, jj, ll];
 dH[am_List, jj_Real, ll_Real, i_Integer, j_Integer] := ECGrav`delHIsing[am, jj, ll, i, j];
 
@@ -147,15 +159,28 @@ VerificationTest[
     TestID -> "GraphComputeCorrelationTime-emits-plot"
 ];
 
-(* GraphMultiHistogram must run AND emit its Cv/T and entropy plots. *)
+(* GraphMultiHistogram must emit its plots and return internally consistent output.
+   The driver is not seed-reproducible -- two runs under the same SeedRandom give different
+   numbers -- so there is no value to pin. Instead assert what must hold for ANY correct run:
+   every replica's recorded energy equals the hamiltonian recomputed from its recorded graph,
+   the recorded ground-state energy is the energy of the recorded ground states, and the
+   reweighting produced finite free energies. Both halves come from one run because the call
+   costs upwards of ten seconds. *)
 VerificationTest[
-    Module[{n, obs}, SeedRandom[105];
-        obs = {ECGrav`HIsing[#, -1.0, 0.0] &, Total[#, 2]/(10 (10 - 1)/2) &};
-        n = emittedGraphicsCount[
+    Module[{n, res, obs, HH}, SeedRandom[105];
+        HH = ECGrav`HIsing[#, -1.0, 0.0] &;
+        obs = {HH, Total[#, 2]/(10 (10 - 1)/2) &};
+        {n, res} = emittedGraphicsAndResult[
             ECGrav`GraphMultiHistogram[C6, 0.1, 1.2, h[-1.0, 0.0], obs, 40, 0]];
-        n >= 1],
-    True,
-    TestID -> "GraphMultiHistogram-emits-plot"
+        {n >= 1,
+         Length[res] === 3,
+         groundStatesConsistentQ[res[[1]], HH, 6],
+         mcReplicasConsistentQ[res[[3]], HH, 6],
+         AllTrue[Values[res[[3]]], IntegerQ[#["eqlT"]] && #["eqlT"] > 0 && #["corrT"] >= 2 &],
+         Sort[Keys[res[[3]]]] === Sort[Keys[res[[2]]]],
+         AllTrue[Values[res[[2]]], MatchQ[#["minusBetaF"], _Real] &]}],
+    {True, True, True, True, True, True, True},
+    TestID -> "GraphMultiHistogram-invariants"
 ];
 
 (* GraphParallelTempering must run cleanly on a tiny job (regression for the beta-history
@@ -173,6 +198,29 @@ VerificationTest[
         {Head[r], Length[r]}]],
     {List, 4},
     TestID -> "GraphParallelTempering-smoke-no-Part-take"
+];
+
+(* GraphParallelTempering must return internally consistent output. Same reasoning as the
+   GraphMultiHistogram invariants above: nothing can be pinned to a value, so assert the
+   consistency any correct run has.
+   minEToBeat is 0.0 rather than the -100.0 used by the smoke test above, because nothing
+   ever beats -100.0 for this system: minEstates comes back EMPTY and the ground-state check
+   passes vacuously. At 0.0 the threshold is reachable, so the check has something to test.
+   Also asserts the swap bookkeeping, which is pure counting and cannot depend on the RNG. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{r, HH}, SeedRandom[1];
+        HH = ECGrav`HIsing[#, -1.0, 0.0] &;
+        r = ECGrav`GraphParallelTempering[C6, {0.1, 0.2}, h[-1.0, 0.0], dH[-1.0, 0.0],
+            {Total[#, 2]/2. &}, 0, 1, 0, 0.0];
+        {Length[r] === 4,
+         r[[1]]["minEstates"] =!= {},
+         groundStatesConsistentQ[r[[1]], HH, 6],
+         mcReplicasConsistentQ[r[[3]], HH, 6],
+         Sort[#["beta"] & /@ Values[r[[3]]]] === {0.1, 0.2},
+         AllTrue[Values[r[[4]]], 0 <= #["swapAccept"] <= #["swapTry"] &],
+         AllTrue[Values[r[[4]]], Length[#["history"]] > 0 &]}]],
+    {True, True, True, True, True, True, True},
+    TestID -> "GraphParallelTempering-invariants"
 ];
 
 (* ---------- Ground-state search ---------- *)

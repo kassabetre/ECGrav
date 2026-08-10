@@ -9,7 +9,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures and float-comparison helpers. |
 | `PureComplexes.wlt` | 115 tests: complex constructions, observables, dimensions, geometric predicates, and structural checks on the random-complex generators. |
-| `MCSims.wlt` | 33 tests: exact assertions for Hamiltonians / data & free-energy helpers, smoke tests for the stochastic MC drivers and ground-state search. |
+| `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
 
@@ -43,12 +43,29 @@ the prelude mirrors that.
 **Float comparisons** use `SameTest -> floatEq` (1e-6) or `looseEq` (1e-3)
 rather than exact equality.
 
-**Two classes of test.** Hamiltonians and data-analysis helpers are pure
+**Three classes of test.** Hamiltonians and data-analysis helpers are pure
 functions of their inputs, so exact values are asserted. The Monte Carlo
 drivers are stochastic, so they are smoke-tested: the result is well-formed,
 and the diagnostic-plot functions still emit their plots (this guards the
 plot-restoration fix — these are the tests that would have caught the plots
 being stripped).
+
+Where a driver is stochastic but its output is *self-referential*, a third
+option beats a smoke test: assert **internal consistency**. `GraphMultiHistogram`
+and `GraphParallelTempering` are not seed-reproducible — two runs under the same
+`SeedRandom` give different numbers — so no value can be pinned. But every
+replica records both a graph and that graph's energy, so recomputing the
+Hamiltonian from the recorded graph must reproduce the recorded energy, and the
+recorded ground-state energy must be the energy of the recorded ground states.
+Those hold for any correct run and fail on malformed output, which a shape check
+does not. See `mcReplicasConsistentQ` and `groundStatesConsistentQ` in the
+prelude, used by `GraphMultiHistogram-invariants` and
+`GraphParallelTempering-invariants`.
+
+One trap worth knowing: `minEstates` is legitimately empty when nothing beats the
+`minEToBeat` threshold, and the ground-state check then passes vacuously. The
+invariant test passes a reachable threshold (`0.0`, not the `-100.0` used by the
+`Part::take` smoke test) precisely so the check has something to compare.
 
 **Oracles.** Where possible, expected values are independent of the
 implementation: known surface topology (`EulerChi[tetrahedron] == 2`,
@@ -120,4 +137,5 @@ Deliberately **still untested**, each for a concrete reason:
   input, too slow for the suite.
 - **Non-reproducible parallel functions** (`ErrorBootstrap`, the parallel
   `RandomPureSimplicialComplexMCMC` pipeline) — no `SeedRandom` reproducibility, so no
-  stable assertion.
+  stable assertion on values. Note this is not the same as untestable: where the output
+  cross-checks itself, assert that instead (see the internal-consistency tests above).

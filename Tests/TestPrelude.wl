@@ -86,3 +86,37 @@ emittedGraphicsCount[expr_] := Module[{captured},
     captured = Reap[Block[{Print = Sow[{##}, "grph"] &}, expr], "grph"][[2]];
     Count[Flatten[captured, Infinity], _Graphics | _Legended | _GraphicsBox, Infinity]
 ];
+
+(* As above, but hands back the driver's return value too, so a test can assert the plots
+   AND the result from a single (expensive) run. *)
+SetAttributes[emittedGraphicsAndResult, HoldAll];
+emittedGraphicsAndResult[expr_] := Module[{captured, res},
+    captured = Reap[Block[{Print = Sow[{##}, "grph"] &}, res = expr], "grph"][[2]];
+    {Count[Flatten[captured, Infinity], _Graphics | _Legended | _GraphicsBox, Infinity], res}
+];
+
+(* ----- Invariants for the stochastic MC drivers -----
+   GraphMultiHistogram and GraphParallelTempering are not seed-reproducible: two runs under
+   the same SeedRandom give different numbers, so nothing can be pinned to an expected value.
+   What CAN be asserted is internal consistency of whatever a run produced -- properties that
+   hold for any correct run and fail on malformed output. *)
+
+(* A valid n-vertex simple-graph adjacency matrix. *)
+adjacencyMatrixQ[m_, n_Integer] := MatrixQ[m, IntegerQ] && Dimensions[m] === {n, n} &&
+    m === Transpose[m] && SubsetQ[{0, 1}, Union @ Flatten[m]] &&
+    Diagonal[m] === ConstantArray[0, n];
+
+(* Every replica must carry a valid graph whose energy, recomputed from scratch, matches the
+   energy the driver recorded. This ties the reported numbers to the reported states, so a
+   replica that was never actually evolved -- or that came back malformed -- fails here. *)
+mcReplicasConsistentQ[replicas_, ham_, n_Integer] :=
+    AllTrue[Values[replicas],
+        adjacencyMatrixQ[#["state"]["graph"], n] &&
+        floatEq[#["state"]["energy"], ham[#["state"]["graph"]]] &];
+
+(* The recorded ground-state energy must be the energy of the recorded ground states. Note
+   minEstates is legitimately empty when nothing beat the minEToBeat threshold, in which case
+   minEnergy is that threshold and there is nothing to cross-check. *)
+groundStatesConsistentQ[gs_, ham_, n_Integer] :=
+    AllTrue[gs["minEstates"], adjacencyMatrixQ[#, n] &] &&
+    (gs["minEstates"] === {} || floatEq[gs["minEnergy"], Min[ham /@ gs["minEstates"]]]);
