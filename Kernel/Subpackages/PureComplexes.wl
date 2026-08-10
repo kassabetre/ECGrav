@@ -4908,7 +4908,7 @@ RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,eqlT_Integer, op
 
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],
 		data,sweepOutput,observablesTable,
-		fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps},
+		fluctuatingObservableIndices,corrTValues,numsweeps},
 
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 		"state"-><|"complex"->Sort[Sort/@seedComplex],"vertexCount"->Length[DeleteDuplicates[Flatten[seedComplex]]],
@@ -4952,22 +4952,34 @@ Table[
 If[fluctuatingObservableIndices=={},
 		Message[RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
-	corrTable=Table[
-		norm=CorrelationTime[0,observablesTable[[i]]];
-		If[norm==0.0,norm=1.0];
-			(*the time 0 correlation can be 0 sometimes*)
-		Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,PrintTemporary["      computing corrT at t = ",t]];
-			CorrelationTime[t,observablesTable[[i]]],
-			{t,0,numsweeps-10}]/norm
+	(* The integration stops at the first non-positive autocorrelation, so lags past that point
+		never enter the answer. Walk the lags and stop there rather than tabulating all
+		numsweeps-10 of them and discarding the tail; the running sum below is the same one,
+		term for term, that the tabulated form produced. *)
+	corrTValues=Table[
+		Module[{observable=observablesTable[[i]],norm,corrSum=0.0,corr,t=0,lastLag=numsweeps-10,
+				reachedTurnover=False},
+			norm=CorrelationTime[0,observable];
+			If[norm==0.0,norm=1.0];
+				(*the time 0 correlation can be 0 sometimes*)
+			While[!reachedTurnover&&t<=lastLag,
+				If[Mod[t,Ceiling[numsweeps/5.0]]==0,PrintTemporary["      computing corrT at t = ",t]];
+				corr=CorrelationTime[t,observable]/norm;
+				Which[
+					corr<=0,
+						(*the first non-positive value is the last term of the integral*)
+						corrSum+=corr;reachedTurnover=True,
+					t+1<=lastLag,
+						(*if the autocorrelation never turns over the integral stops one lag
+							short, which is what the tabulated form did*)
+						corrSum+=corr
+				];
+				t++
+			];
+			Max[Ceiling[corrSum],2]
+		]
 		,{i,fluctuatingObservableIndices}];
-	
-	tmaxVals=Table[(FirstPosition[cT,_?(#<=0&),numsweeps-10])[[1]],{cT,corrTable}]; 
-		(* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
-	
-	
-	corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],
-		{i,1,Length[corrTable]}];
-		
+
 	data[[Key["corrT"]]]=Max[corrTValues];
 
 	Do[data[[Key["corrTValues"],j]]=
@@ -4998,7 +5010,7 @@ RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumberOfVert
 *)
 
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],nV=Length[DeleteDuplicates[Flatten[seedComplex]]],data,sweepOutput,observablesTable,
-	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps},
+	fluctuatingObservableIndices,corrTValues,numsweeps},
 
 Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise], "ECGravReturn$56"]];
 
@@ -5039,21 +5051,33 @@ Table[
 If[fluctuatingObservableIndices=={},
 		Message[RandomPureSimplicialComplexMCMCCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
-	corrTable=
-		Table[
-			norm=CorrelationTime[0,observablesTable[[i]]];If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
-			Table[
+	(* The integration stops at the first non-positive autocorrelation, so lags past that point
+		never enter the answer. Walk the lags and stop there rather than tabulating all
+		numsweeps-10 of them and discarding the tail; the running sum below is the same one,
+		term for term, that the tabulated form produced. *)
+	corrTValues=Table[
+		Module[{observable=observablesTable[[i]],norm,corrSum=0.0,corr,t=0,lastLag=numsweeps-10,
+				reachedTurnover=False},
+			norm=CorrelationTime[0,observable];
+			If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
+			While[!reachedTurnover&&t<=lastLag,
 				If[Mod[t,Ceiling[numsweeps/5.0]]==0,PrintTemporary["      computing corrT at t = ",t]];
-				CorrelationTime[t,observablesTable[[i]]],
-			{t,0,numsweeps-10}]/norm
+				corr=CorrelationTime[t,observable]/norm;
+				Which[
+					corr<=0,
+						(*the first non-positive value is the last term of the integral*)
+						corrSum+=corr;reachedTurnover=True,
+					t+1<=lastLag,
+						(*if the autocorrelation never turns over the integral stops one lag
+							short, which is what the tabulated form did*)
+						corrSum+=corr
+				];
+				t++
+			];
+			Max[Ceiling[corrSum],2]
+		]
 		,{i,fluctuatingObservableIndices}];
-	
-	tmaxVals=Table[(FirstPosition[cT,_?(#<=0&),numsweeps-10])[[1]],{cT,corrTable}]; 
-	(* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
-	
-	
-	corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
-		
+
 	data[[Key["corrT"]]]=Max[corrTValues];
 
 	Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];

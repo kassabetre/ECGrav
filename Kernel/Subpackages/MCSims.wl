@@ -58,12 +58,14 @@ $Failed);
 (* Primary Pattern*)
 CorrelationTime[t_Integer,tbl_List]:=
 (*Given a list of values (e.g. magnetization), it computes the correlation at time t.*)
-With[{s1=(1/(Length[tbl]-t))*Sum[tbl[[i]]*tbl[[i+t]],{i,1,Length[tbl]-t}],s2=(1/(Length[tbl]-t)^2)*(Sum[tbl[[i]],{i,1,Length[tbl]-t}])*(Sum[tbl[[i+t]],{i,1,Length[tbl]-t}])},
-(*
-Print["s1 ",s1," s2 ",s2];
-Print["s1-s2 ",s1-s2];*)
-s1-s2
-];
+(*Same quantity as the earlier Sum-with-Part form, but taken over array slices so that one
+	lag costs a few packed-array passes instead of a symbolic Sum. Callers evaluate this
+	once per lag inside a loop, so this constant factor sets the cost of every
+	correlation-time computation in the paclet.*)
+With[{numTerms=Length[tbl]-t},
+With[{head=Take[tbl,numTerms],tail=Take[tbl,-numTerms]},
+(head.tail)/numTerms-(Total[head]/numTerms)*(Total[tail]/numTerms)
+]];
 
 (* Catch-all Pattern *)
 CorrelationTime[args___]:=(Message[CorrelationTime::argerr, args];
