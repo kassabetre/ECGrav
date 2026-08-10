@@ -4504,7 +4504,7 @@ data[[Key["weight"]]]=
 		labelingChoise==1,
 			PureComplexFacetStabilizerGroupOrder[seedComplex]*(1.0*(facetOrder!)/(nV!)),
 		labelingChoise==2,
-			1.0*PureComplexAutomorphismGroupOrder[seedComplex]]/(nV!);
+			1.0*PureComplexAutomorphismGroupOrder[seedComplex]/(nV!)];
 
 data[[Key["energy"]]]=-Log[data[[Key["weight"]]]];
 
@@ -4945,7 +4945,7 @@ Table[
 				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 
 			i>2,
-				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+				Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i,1]]]];
 	Nothing],
 {i,1,Length[observablesTable]}];
 
@@ -5032,7 +5032,7 @@ Table[
 			i==2,
 			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 			i>2,
-			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+			Message[RandomPureSimplicialComplexMCMCCorrelationTime::stuck, operators[[i-2]], observablesTable[[i,1]]]];
 		Nothing],
 {i,1,Length[observablesTable]}];
 
