@@ -2033,7 +2033,12 @@ result
 
 
 (* Catch-all Pattern *)
-GraphSweepReplica[args___[argparams___]]:=(Message[GraphSweepReplica::argerr, args];
+(* args___[argparams___] only ever matched a ONE-argument call whose single argument was itself
+	a compound expression, so wrong-arity and wrong-type calls fell through this catch-all and
+	came back unevaluated instead of messaging. Callers then took Part of the unevaluated
+	GraphSweepReplica[...] expression, which indexes its arguments, and the first sign of
+	trouble was a Part error naming none of the symbols actually involved. *)
+GraphSweepReplica[args___]:=(Message[GraphSweepReplica::argerr, args];
 $Failed);
 
 
