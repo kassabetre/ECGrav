@@ -30,19 +30,16 @@
 
 
 (* Private helper messages ------------------------------------------------------
-   Error messages for the internal connected-complex automorphism/stabilizer
-   helpers (PureComplexFacetAutomorphismGroupOrderConn, CliqueFacetStabilizerGroupOrderConn,
-   CliqueFacetAutomorphismGroupOrderConn) and for ComplexAutomorphismIncidenceGraph, which
-   builds the incidence graph PureComplexAutomorphismGroupOrder reads its answer from. Being
-   undeclared (no usage message), these
-   resolve into the package-private ECGrav`Private` context and are NOT public: the
-   public non-Conn functions call them on each already-connected component. The messages
-   are defensive diagnostics only. *)
+   Defensive diagnostics for ComplexAutomorphismIncidenceGraph, the internal builder whose
+   automorphism group IS the automorphism group of the complex, and which the public
+   automorphism-order functions read their answers from. Being undeclared (no usage message) it
+   resolves into the package-private ECGrav`Private` context and is NOT public.
+   The five connected-complex ...Conn helpers that used to live here are gone: the incidence
+   graph handles disconnected input directly, so no component decomposition is needed, and the
+   facet automorphism and stabilizer orders now follow from |Aut| = |stabilizer| * |image|
+   without enumerating any group. *)
 
 ComplexAutomorphismIncidenceGraph::argerr="Internal helper: input should be a list of facets of the form ComplexAutomorphismIncidenceGraph[facetsLst_List].";
-PureComplexFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List].";
-CliqueFacetStabilizerGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetStabilizerGroupOrderConn[facetsLst_List].";
-CliqueFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetAutomorphismGroupOrderConn[facetsLst_List].";
 
 
 (* ::Chapter:: *)
@@ -2639,66 +2636,6 @@ PureComplexFacetStabilizerGroupOrder[args___]:=(Message[PureComplexFacetStabiliz
 $Failed);
 
 
-(* ::Item::Closed:: *)
-(*PureComplexFacetAutomorphismGroupOrderConn*)
-
-
-(* :Code Section *)
-
-(* Primary Pattern *)
-PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List]:=
-(*
-(****************************************)
-(*   (* Last updated 02/13/2024. *) *)
-(*   (* Version: 2.0 *) *) 
-(*   (* Note:  *) *)
-(****************************************)(*computes the facet-automorphism group order of a simpli clique complex whose maximal cliques are given by facetsLst. It does not check whether the complex is a clique complex or not, it assumes it is. It returns Null if it is not connected.*)
-*)
-Module[{purity,g,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, missingCanonicalReducedFacets,doesntMixupMissingAndNonMissing,reducedFacetStabilizerGroup},
-
-Catch[If[Length[DeleteDuplicates[Length/@facetsLst]]!=1,Throw[Null, "ECGravReturn$47"]];
-
-If[Length[facetsLst]==1,Throw[1, "ECGravReturn$47"]];
-
-g=GraphFromCliques[facetsLst];
-
-
-If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$47"]
-];
-
-purity=Length[facetsLst[[1]]];
-
-reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
-If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
-
-
-reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
-
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
-
-
-reducedAutG=GraphAutomorphismGroup[reducedGraph];
-
-
-missingCanonicalReducedFacets=Complement[Join@@(Subsets[#,{purity}]&/@FindClique[reducedGraph,\[Infinity],All]),canonicalReducedFacets];
-
-
-doesntMixupMissingAndNonMissing[x_]:=NoneTrue[missingCanonicalReducedFacets,MemberQ[canonicalReducedFacets,Sort[PermutationReplace[#,x]]]&];
-
-
-If[missingCanonicalReducedFacets!={},reducedAutG=PermutationGroup[Select[GroupElements[reducedAutG],doesntMixupMissingAndNonMissing[#]&]];
-];
-
-
-reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
-
-
-GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$47"]
-
-];
-
-(* Catch-all Pattern *)
-PureComplexFacetAutomorphismGroupOrderConn[args___]:=(Message[PureComplexFacetAutomorphismGroupOrderConn::argerr, args];$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2715,12 +2652,13 @@ PureComplexFacetAutomorphismGroupOrder[facetsLst_List]:=
 (****************************************)
 (*Given a pure simplicial complex (not necessarily a clique complex) as a list of facets, it computes the order of the facet automorphism group. It does not check whether the complex is pure or not, it assumes it is. *)
 *)
-With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicSimplicialComplexQ[#1,#2]&]},
-
-
-Product[(PureComplexFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
-
-];
+(*|Aut| = |facet stabilizer| * |facet automorphism group|: the map from Aut into the symmetric
+	group on the facets has the stabilizer as its kernel and the facet automorphism group as its
+	image, so the order follows by division. Both factors are cheap -- the automorphism order is
+	read off the incidence graph, and the stabilizer is a Counts over facet signatures with no
+	group theory in it at all -- which is what removed the GroupElements enumeration that used to
+	sit here.*)
+PureComplexAutomorphismGroupOrder[facetsLst]/PureComplexFacetStabilizerGroupOrder[facetsLst];
 
 (* Catch-all Pattern *)
 PureComplexFacetAutomorphismGroupOrder[args___]:=(Message[PureComplexFacetAutomorphismGroupOrder::argerr, args];
@@ -2792,62 +2730,11 @@ $Failed);
 (*Clique Complex Automorphism and Facet Automorphism*)
 
 
-(* ::Item::Closed:: *)
-(*CliqueFacetStabilixerGroupOrderConn*)
 
 
 (* :Code Section *)
 
 (* Primary Pattern *)
-CliqueFacetStabilizerGroupOrderConn[facetsLst_List]:=
-(*
-(****************************************)
-(*   (* Last updated 02/09/2024. *) *)
-(*   (* Version: 2.0 *) *) 
-(*   (* Note:  *) *)
-(****************************************)
-(*computes the facet stabilizer group order of a connected clique complex whose 
-maximal cliques are given by facetsLst. It does not check whether the complex is a 
-clique complex or not, it assumes it is. It returns Null if it is not connected.*)
-*)
-Module[{purity,g,leafsLst,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, reducedFacetStabilizerGroup},
-
-
-Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$49"]];
-
-g=GraphFromCliques[facetsLst];
-
-
-If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$49"]
-];
-
-purity=Length[facetsLst[[1]]];
-
-leafsLst=Table[Select[i,VertexDegree[g,#]==purity-1&],
-{i,facetsLst}];
- 
-
-reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
-If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
-
-
-reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
-
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
-
-
-reducedAutG=GraphAutomorphismGroup[reducedGraph];
-
-reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
-
-
-GroupOrder[reducedFacetStabilizerGroup]*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$49"]
-
-];
-
-(* Catch-all Pattern *)
-CliqueFacetStabilizerGroupOrderConn[args___]:=(Message[CliqueFacetStabilizerGroupOrderConn::argerr, args];
-$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2863,67 +2750,18 @@ CliqueFacetStabilizerGroupOrder[facetsLst_List]:=
 (*   (* Notes:  *) *)
 (****************************************)
 (*Given a clique complex as a list of facets, it computes the order of the facet stabilizer group. It does not check whether the complex is a clique complex or not, it assumes it is. *)
-*)With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[GraphFromCliques[#1],GraphFromCliques[#2]]&]},
-
-
-Product[(CliqueFacetStabilizerGroupOrderConn[i[[1]]]^(i[[2]])),{i,components}]
-
-];
+*)(*A permutation fixes every facet setwise exactly when it preserves each vertex's facet
+	signature, the set of facets containing that vertex, so the stabilizer order is the product of
+	the factorials of the signature-class sizes. That is exactly what
+	PureComplexFacetStabilizerGroupOrder computes; it assumes nothing about purity, so the clique
+	case is the same computation, and it needs no group theory at all.*)
+PureComplexFacetStabilizerGroupOrder[facetsLst];
 
 (* Catch-all Pattern *)
 CliqueFacetStabilizerGroupOrder[args___]:=(Message[CliqueFacetStabilizerGroupOrder::argerr, args];
 $Failed);
 
 
-(* ::Item::Closed:: *)
-(*CliqueFacetAutomorphismGroupOrderConn*)
-
-
-(* :Code Section *)
-
-(* Primary Pattern *)
-CliqueFacetAutomorphismGroupOrderConn[facetsLst_List]:=
-(*
-(****************************************)
-(*   (* Last updated 02/09/2024. *) *)
-(*   (* Version: 2.0 *) *) 
-(*   (* Note:  *) *)
-(****************************************)(*computes the facet-automorphism group order of a connected clique complex whose maximal cliques are given by facetsLst. It does not check whether the complex is a clique complex or not, it assumes it is. It returns Null if it is not connected.*)
-*)
-Module[{purity,g,reducedFacets,reducedGraph, reducedAutG,canonicalReducedFacets, reducedFacetStabilizerGroup},
-
-
-Catch[If[Length[facetsLst]==1,Throw[1, "ECGravReturn$50"]];
-
-g=GraphFromCliques[facetsLst];
-
-
-If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$50"]
-];
-
-purity=Length[facetsLst[[1]]];
-
-reducedFacets=Table[With[{leafs=Select[i,VertexDegree[g,#]==purity-1&]},
-If[Length[leafs]>=1,Join[{leafs[[1]]},Complement[i,leafs]],i]],{i,facetsLst}];
-
-
-reducedGraph=CanonicalGraph[GraphFromCliques[reducedFacets]];
-
-canonicalReducedFacets=Sort/@(reducedFacets/.Normal[FindGraphIsomorphism[GraphFromCliques[reducedFacets],reducedGraph][[1]]]);
-
-
-reducedAutG=GraphAutomorphismGroup[reducedGraph];
-
-reducedFacetStabilizerGroup=PermutationGroup[Intersection@@(GroupElements[GroupSetwiseStabilizer[reducedAutG,#]]&/@canonicalReducedFacets)];
-
-
-GroupOrder[reducedAutG]/GroupOrder[reducedFacetStabilizerGroup], "ECGravReturn$50"]
-
-];
-
-(* Catch-all Pattern *)
-CliqueFacetAutomorphismGroupOrderConn[args___]:=(Message[CliqueFacetAutomorphismGroupOrderConn::argerr, args];
-$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2940,12 +2778,13 @@ CliqueFacetAutomorphismGroupOrder[facetsLst_List]:=
 (*   (* Notes:  *) *)
 (****************************************)
 (*Given a clique complex as a list of facets, it computes the order of the facet automorphism group. It does not check whether the complex is a clique complex or not, it assumes it is. *)
-*)With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicGraphQ[GraphFromCliques[#1],GraphFromCliques[#2]]&]},
-
-
-Product[(CliqueFacetAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
-
-];
+*)(*|Aut| = |facet stabilizer| * |facet automorphism group|: the map from Aut into the symmetric
+	group on the facets has the stabilizer as its kernel and the facet automorphism group as its
+	image, so the order follows by division. Both factors are cheap -- the automorphism order is
+	read off the incidence graph, and the stabilizer is a Counts over facet signatures with no
+	group theory in it at all -- which is what removed the GroupElements enumeration that used to
+	sit here.*)
+PureComplexAutomorphismGroupOrder[facetsLst]/PureComplexFacetStabilizerGroupOrder[facetsLst];
 
 (* Catch-all Pattern *)
 CliqueFacetAutomorphismGroupOrder[args___]:=(Message[CliqueFacetAutomorphismGroupOrder::argerr, args];
