@@ -7,8 +7,8 @@ checks in `BuildingAndInstallingPaclets.nb`.
 
 | File | Contents |
 | --- | --- |
-| `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures and float-comparison helpers. |
-| `PureComplexes.wlt` | 115 tests: complex constructions, observables, dimensions, geometric predicates, and structural checks on the random-complex generators. |
+| `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
+| `PureComplexes.wlt` | 128 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the two stages of the complex-space MCMC driver. |
 | `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **148 tests, 148 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **162 tests, 162 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -67,6 +67,21 @@ One trap worth knowing: `minEstates` is legitimately empty when nothing beats th
 invariant test passes a reachable threshold (`0.0`, not the `-100.0` used by the
 `Part::take` smoke test) precisely so the check has something to compare.
 
+**Stochastic is not the same as unreproducible.** `RandomPureSimplicialComplexMCMCEquilibriate`
+and `RandomPureSimplicialComplexMCMCCorrelationTime` contain no `ParallelTable` in any of
+their six definitions, so two runs under the same `SeedRandom` agree exactly and their
+results *can* be pinned — `eqlT`, `converged`, `corrT` and `corrTValues` are all asserted as
+values. Check for parallelism before falling back to a smoke test.
+
+**Asserting messages.** `messageArguments["Sym::tag", expr]` (prelude) returns the filled-in
+arguments of every matching message, not just the fact that one fired. It is built on
+`Internal`HandlerBlock`, which sees messages *before* `Quiet` and before the `General::stop`
+repeat limit — so the call under test can be wrapped in `Quiet`, keeping the run's output
+clean, while the test still sees all of them, including the fourth and later copies of the
+same message. `Check` and `$MessageList` give you neither the arguments nor the copies past
+the limit. Every message assertion is paired with a negative control that the message does
+*not* fire on the healthy path.
+
 **Oracles.** Where possible, expected values are independent of the
 implementation: known surface topology (`EulerChi[tetrahedron] == 2`,
 `EulerChi[torus] == 0`, octahedron Betti numbers `{1, 0, 1}`, f-vector
@@ -106,9 +121,51 @@ remainder are characterization tests that lock in current behaviour.
 None outstanding — the three suspected-wrong-behaviour bugs previously flagged here have
 been fixed at the source (see above) and are regression-tested.
 
+## The MCMC driver stages
+
+`RandomPureSimplicialComplexMCMC` promises independent uniform draws, and that promise rests
+entirely on its two preparatory stages. Both are covered in `PureComplexes.wlt`, each in both
+its free-vertex and its fixed-vertex overload.
+
+**Equilibriation.** `outWinLength = 400` and `inWinLength = 30`, so a converged run reports
+`eqlT = numsweeps - 370`; small systems pass the criterion at the first check after the window
+fills, which pins `eqlT` to 31. Do not read a repeated 31 as a stuck value.
+
+Failure is forced deterministically by setting `$ECGravMaxEquilibriationSweeps` **below 400**:
+the convergence criterion is inside `If[numsweeps > outWinLength, …]`, so it never runs and
+non-convergence does not depend on the draw. `eqlT` is then the lower bound
+`Max[budget - 400 + 30, 1]`; budgets of 100 and 380 exercise the clamped and unclamped
+branches. A *realistic* non-convergence — one where the criterion runs, fails, and puts real
+numbers rather than `Indeterminate` into the `::noconv` diagnostics — needs a large system
+whose replicas start far apart: `Partition[Range[20], 2]` with `labelingChoise -> 2` and a
+budget of 402 fails on every seed tried, but costs ~19 s, so it is not in the suite. Nothing
+smaller was reliable; at `{3,4}` and `{3,6}` the same setup converges on most seeds.
+
+**Correlation time.** The reported values are checked against `mcmcCorrT` in the prelude, an
+independent implementation of the documented integration rule. The driver measures its
+observables internally, so the test recovers them: one of the supplied operators records the
+complex it is handed — the same post-sweep complex the driver measures in that iteration —
+and the energy and the vertex/edge count are deterministic functions of that complex, rebuilt
+with the sweep's own arithmetic so the reconstruction is bit-for-bit.
+
+Two things make that test non-vacuous. Real MCMC observables at small `(p, M)` decorrelate
+within a handful of lags, so every value sits on the floor of 2 and an oracle comparison
+proves almost nothing; a second operator that just counts sweeps supplies a monotone ramp
+whose autocorrelation never turns over, which drives the lag loop to its end and produces a
+value well off the floor. And the same oracle on shuffled series must give a *different*
+answer, so the agreement is not an artifact of everything defaulting to 2.
+
+Known blind spot: the integral includes its terminating non-positive term, and stops one lag
+short when the autocorrelation never turns over. Both conventions are deliberate — they
+reproduce the pre-`f454c39` tabulated form — and the oracle reproduces them, but neither is
+observable in the output. The terminating term is by definition the first one at or below
+zero, and one lag out of hundreds is worth little, so neither shifts `Ceiling`. Verified by
+mutation: shortening `lastLag` from `numsweeps-10` to `numsweeps-20` is *not* caught, while
+`Ceiling -> Floor` is.
+
 ## Coverage
 
-70 of the package's 116 public symbols are exercised by the suite. Recently added:
+74 of the package's 117 public symbols are exercised by the suite. Recently added:
 
 - **Free-energy / reweighting helpers** — `EmpCorrelationTime`, `DSpecificHeat`,
   `NegativeBetaTimesFreeEnergy`, `CvOverT`, `ExtrapolatedExpectationValue`,
@@ -129,13 +186,21 @@ been fixed at the source (see above) and are regression-tested.
   the thresholds down. `RandomUniformUnlabeledPureSimplicialComplex` additionally has exact
   identity checks on its Burnside weights and profile marginals, which is what pins its
   uniformity; a wrong weight would still emit plausible complexes.
+- **MCMC driver stages** — `RandomPureSimplicialComplexMCMCEquilibriate` and
+  `RandomPureSimplicialComplexMCMCCorrelationTime`, both overloads each, with pinned values,
+  the `::noconv` / `::stuck` / `::alldefault` paths and their negative controls, and the
+  correlation-time oracle. See the section above.
 
 Deliberately **still untested**, each for a concrete reason:
 
 - **Temperature schedulers** (`GraphCTLSchedule`, `GraphCEITempSchedule`) — the CTL/CEI
   algorithms run MC + reweighting at every schedule point and take minutes even on a tiny
   input, too slow for the suite.
-- **Non-reproducible parallel functions** (`ErrorBootstrap`, the parallel
-  `RandomPureSimplicialComplexMCMC` pipeline) — no `SeedRandom` reproducibility, so no
-  stable assertion on values. Note this is not the same as untestable: where the output
-  cross-checks itself, assert that instead (see the internal-consistency tests above).
+- **Non-reproducible parallel functions** (`ErrorBootstrap`, the graph MC drivers) — no
+  `SeedRandom` reproducibility, so no stable assertion on values. Note this is not the same
+  as untestable: where the output cross-checks itself, assert that instead (see the
+  internal-consistency tests above).
+- **`RandomPureSimplicialComplexMCMC`** — the only remaining gap in the complex-space MCMC
+  family, and *not* for the reason this list used to give: none of its four definitions uses
+  `ParallelTable`, and two runs under one `SeedRandom` agree exactly, so it can be pinned
+  like its two stages. It is the driver that composes them, so it should be tested next.

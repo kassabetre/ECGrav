@@ -65,6 +65,13 @@ torus = {{13, 15, 16}, {7, 13, 15}, {14, 15, 16}, {10, 14, 16}, {3, 10, 14},
          {3, 4, 14}, {3, 4, 6}, {2, 4, 11}, {2, 4, 8}, {1, 5, 10}, {1, 7, 13},
          {1, 3, 10}, {1, 3, 7}, {1, 2, 13}, {1, 2, 5}};
 
+(* Seed complexes for the MCMC driver tests. mcmcSeed24 uses the whole p*M label pool, so
+   the free-vertex chain starts at the maximum vertex count; mcmcSeed34 has p = 3, which the
+   fixed-vertex tests need because for p = 2 the facets are the edges and the edge-count
+   observable could never fluctuate. *)
+mcmcSeed24 = Partition[Range[8], 2];                          (* p = 2, M = 4, on [8] *)
+mcmcSeed34 = {{1, 2, 3}, {1, 4, 5}, {2, 4, 6}, {3, 5, 7}};    (* p = 3, M = 4, on [7] *)
+
 (* The seven surfaces in the order used by the notebook's orientability test *)
 surfaces = {mobiusStrip1, mobiusStrip2, kleinbottle, projectivePlane,
             torus, tetrahedron, octahedron};
@@ -94,6 +101,48 @@ emittedGraphicsAndResult[expr_] := Module[{captured, res},
     captured = Reap[Block[{Print = Sow[{##}, "grph"] &}, res = expr], "grph"][[2]];
     {Count[Flatten[captured, Infinity], _Graphics | _Legended | _GraphicsBox, Infinity], res}
 ];
+
+(* Collect the arguments of every `name` message an expression issues, as a list of
+   argument lists (empty if it never fires). Two reasons this is not done with Check or
+   $MessageList: it recovers the filled-in slots, not just the fact that something fired,
+   and the handler runs before Quiet and before the General::stop repeat limit, so the
+   caller can wrap the expression in Quiet -- keeping the test log clean -- and still see
+   every message, including the fourth and later copies of the same one. *)
+SetAttributes[messageArguments, HoldRest];
+messageArguments[name_String, expr_] := Module[{collected = {}},
+    Internal`HandlerBlock[{"Message", Function[m,
+        Replace[m, Hold[Message[MessageName[s_, tag_], args___], _] :>
+            If[SymbolName[s] <> "::" <> tag === name, AppendTo[collected, {args}]]]]},
+        expr];
+    collected
+];
+
+(* The correlation-time integral that RandomPureSimplicialComplexMCMCCorrelationTime runs
+   over each measured observable: sum the autocorrelation, normalized by its lag-0 value,
+   over lags 0, 1, 2, ... and stop at the first non-positive term, which is itself included
+   in the sum; if the autocorrelation never turns over, stop one lag short of lastLag. Both
+   are deliberate conventions carried over from the pre-lazy tabulated form, so an oracle
+   that reproduces the driver's answer has to reproduce them too.
+
+   Ceiling of the sum, floored at 2, is what the driver reports. Returns that alongside
+   which of the two exits was taken, so a test can show it exercised both.
+
+   Note that neither convention is observable in the answer: the terminating non-positive
+   term is by definition the first one at or below zero, so it is small, and one lag out of
+   hundreds is worth little, so on a smoothly decaying autocorrelation neither shifts
+   Ceiling. They are pinned here by construction, not by a discriminating value. *)
+mcmcCorrT[series_, lastLag_] :=
+    Module[{norm, corrSum = 0.0, corr, t = 0, turnedOver = False},
+        norm = ECGrav`CorrelationTime[0, series];
+        If[norm == 0.0, norm = 1.0];
+        While[!turnedOver && t <= lastLag,
+            corr = ECGrav`CorrelationTime[t, series]/norm;
+            Which[
+                corr <= 0, corrSum += corr; turnedOver = True,
+                t + 1 <= lastLag, corrSum += corr];
+            t++];
+        {Max[Ceiling[corrSum], 2], turnedOver}
+    ];
 
 (* ----- Invariants for the stochastic MC drivers -----
    GraphMultiHistogram and GraphParallelTempering are not seed-reproducible: two runs under

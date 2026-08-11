@@ -913,3 +913,260 @@ VerificationTest[
     {Association, True, True},
     TestID -> "RandomPureSimplicialComplexMCMCSweep-smoke"
 ];
+
+(* ---- the MCMC driver's two stages: equilibriation and correlation time ---- *)
+
+(* Unlike the graph MC drivers, these two are fully serial -- no ParallelTable anywhere in
+   their six definitions -- so two runs under the same SeedRandom agree exactly and values
+   can be pinned rather than only checked for internal consistency.
+
+   Both stages Print a diagnostic plot, so the calls are wrapped in Block[{Print = Null &}]
+   except where the plot itself is the thing under test. Note that this does NOT suppress
+   PrintTemporary, which both use for progress; those vanish on their own. *)
+
+(* Equilibriation reports where it stopped and whether it got there. outWinLength = 400 and
+   inWinLength = 30, so a converged run reports eqlT = numsweeps - 370; small systems pass the
+   criterion at the very first check, the sweep after the 400-long window fills, which pins
+   eqlT to 31. The chain must also have moved off the seed. *)
+VerificationTest[
+    Module[{r}, SeedRandom[401];
+        r = Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]];
+        {Keys[r], r["converged"], r["eqlT"],
+         ECGrav`PureComplexQ[r["state"]["complex"]],
+         Sort[Length /@ r["state"]["complex"]],
+         SubsetQ[Range[8], Union @@ r["state"]["complex"]],
+         r["state"]["vertexCount"] === Length[Union @@ r["state"]["complex"]],
+         r["state"]["complex"] =!= Sort[Sort /@ mcmcSeed24]}],
+    {{"eqlT", "converged", "state"}, True, 31, True, {2, 2, 2, 2}, True, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-converges"
+];
+
+(* ... and still emits its energy-vs-sweep diagnostic plot. *)
+VerificationTest[
+    Module[{n, res}, SeedRandom[406];
+        {n, res} = emittedGraphicsAndResult[
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 1]];
+        {n >= 1, res["converged"], res["eqlT"]}],
+    {True, True, 31},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-emits-plot"
+];
+
+(* Exhausting the sweep budget must be reported, not silently returned as a number that a
+   successful run could also have produced. A budget below the 400-sweep comparison window
+   never reaches the convergence criterion, so this failure is deterministic rather than a
+   race with the chain. The reported eqlT is the honest lower bound
+   maxNumSweeps - 400 + 30, clamped to stay positive; 100 sweeps exercises the clamp and
+   380 the unclamped branch. ::noconv must carry the budget it was given and the eqlT it is
+   about to return. *)
+VerificationTest[
+    Module[{r, msgs},
+        msgs = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::noconv",
+            Quiet@Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 100}, SeedRandom[407];
+                r = Block[{Print = Null &},
+                    ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]]]];
+        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 4}]]}],
+    {1, False, 1, {100, 1}},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-budget-exhausted-clamped"
+];
+
+VerificationTest[
+    Module[{r, msgs},
+        msgs = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::noconv",
+            Quiet@Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 380}, SeedRandom[408];
+                r = Block[{Print = Null &},
+                    ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]]]];
+        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 4}]]}],
+    {10, False, 1, {380, 10}},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-budget-exhausted-lower-bound"
+];
+
+(* Negative control for the two tests above: a converged run must NOT issue ::noconv. Both
+   of those run under Quiet, where MUnit's own unexpected-message check cannot see anything,
+   so without this they would pass just as well against a function that always reported
+   failure -- and against a messageArguments that never returned an empty list. *)
+VerificationTest[
+    (SeedRandom[401];
+     messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::noconv",
+        Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]]]),
+    {},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-converged-run-is-quiet"
+];
+
+(* The three-argument overload runs a different chain: it permutes vertices between two
+   facets, so the support never moves. The returned complex must therefore still cover
+   exactly the seed's vertex set, and the tracked observable is the edge count rather than
+   the vertex count. *)
+VerificationTest[
+    Module[{r}, SeedRandom[409];
+        r = Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed34, True, 1]];
+        {r["converged"], r["eqlT"], Keys[r["state"]],
+         Union @@ r["state"]["complex"],
+         ECGrav`PureComplexQ[r["state"]["complex"]],
+         Sort[Length /@ r["state"]["complex"]],
+         r["state"]["edgeCount"] ===
+            Length[Union @@ (Subsets[#, {2}] & /@ r["state"]["complex"])],
+         r["state"]["complex"] =!= Sort[Sort /@ mcmcSeed34]}],
+    {True, 31, {"complex", "edgeCount", "weight", "energy"}, Range[7], True, {3, 3, 3, 3},
+     True, True},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-fixed-vertex-support"
+];
+
+(* HoldNumberOfVerticesFixed -> False hands straight over to the two-argument overload, so
+   under the same seed the two calls agree exactly, down to the free-vertex chain's
+   "vertexCount" key. *)
+VerificationTest[
+    Module[{a, b}, SeedRandom[403];
+        a = Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, False, 1]];
+        SeedRandom[403];
+        b = Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 1]];
+        {a === b, Keys[a["state"]]}],
+    {True, {"complex", "vertexCount", "weight", "energy"}},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-free-vertex-delegates"
+];
+
+(* The correlation time echoes back the equilibriation time it was handed and reports one
+   value per measured observable: the energy, the vertex (or edge) count, and each supplied
+   operator. corrT is the maximum of those, and every one of them is floored at 2. *)
+VerificationTest[
+    Module[{r}, SeedRandom[506];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 12,
+                {Function[c, Total[Flatten[c]]], Function[c, Max[Flatten[c]]]}, 2]];
+        {Keys[r], r["eqlT"], Length[r["corrTValues"]],
+         AllTrue[r["corrTValues"], IntegerQ[#] && # >= 2 &],
+         r["corrT"] === Max[r["corrTValues"]],
+         ECGrav`PureComplexQ[r["state"]["complex"]], Length[r["state"]["complex"]]}],
+    {{"eqlT", "corrT", "corrTValues", "state"}, 12, 4, True, True, True, 4},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-shape"
+];
+
+(* Differential test of the reported correlation times against an independent
+   implementation of the documented integration rule (mcmcCorrT in the prelude).
+
+   The driver measures its own observables internally, so the test recovers them: one of the
+   supplied operators records the complex it is handed, which is exactly the post-sweep
+   complex the driver measures in the same iteration, and the energy and vertex count are
+   deterministic functions of that complex. The second operator is a sweep counter -- a
+   monotone ramp whose autocorrelation never turns over, which is what forces the lag loop
+   to run to its end instead of stopping after a handful of terms. Without it every value
+   sits on the floor of 2 and the comparison is nearly vacuous, which is the failure mode
+   this test was rebuilt to avoid: turnedOver below records that both branches of the
+   integral -- terminating on a non-positive term, and running out of lags -- were taken.
+
+   Vacuity guard: the same oracle on shuffled series, whose autocorrelation is destroyed,
+   must give a different answer, so the agreement is not an artifact of every observable
+   defaulting to 2. *)
+VerificationTest[
+    Module[{recorded = {}, sweepNo = 0, r, numsweeps, rows, oracle, shuffled},
+        SeedRandom[504];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 31,
+                {Function[c, AppendTo[recorded, c]; Total[Flatten[c]]],
+                 Function[c, ++sweepNo]}, 1]];
+        numsweeps = Length[recorded];
+        (* the driver's four observable series, rebuilt from the recorded complexes; the
+           energy is -Log of the facet-labeled weight, written exactly as the sweep writes
+           it so the reconstruction is bit-for-bit rather than merely close *)
+        rows = {-Log[(1.0/Binomial[8, Length[Union @@ #]])*
+                    ECGrav`PureComplexFacetStabilizerGroupOrder[#]*(4!/Length[Union @@ #]!)] & /@ recorded,
+                Length[Union @@ #] & /@ recorded,
+                Total[Flatten[#]] & /@ recorded,
+                Range[numsweeps]};
+        oracle = mcmcCorrT[#, numsweeps - 10] & /@ rows;
+        SeedRandom[9];
+        shuffled = mcmcCorrT[RandomSample[#], numsweeps - 10][[1]] & /@ rows;
+        {numsweeps, Last[recorded] === r["state"]["complex"],
+         r["corrTValues"] === oracle[[All, 1]],
+         r["corrT"] === Max[oracle[[All, 1]]],
+         oracle[[All, 2]],                       (* turnover reached on each series? *)
+         Max[r["corrTValues"]] > 2,              (* the lag loop went past the floor *)
+         shuffled =!= oracle[[All, 1]]}],
+    {310, True, True, True, {True, True, True, False}, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-integration-rule"
+];
+
+(* Same differential test on the fixed-vertex overload, whose second observable is the edge
+   count and whose chain must hold the support at the seed's vertex set for every one of the
+   sweeps it measures. p = 3 here because for p = 2 the facets are the edges, so the edge
+   count would be pinned at M and the observable would never fluctuate. *)
+VerificationTest[
+    Module[{recorded = {}, sweepNo = 0, r, numsweeps, rows, oracle, shuffled},
+        SeedRandom[505];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed34, True, 31,
+                {Function[c, AppendTo[recorded, c]; Total[Flatten[c]]],
+                 Function[c, ++sweepNo]}, 1]];
+        numsweeps = Length[recorded];
+        rows = {-Log[ECGrav`PureComplexFacetStabilizerGroupOrder[#]*(1.0*(4!)/(7!))] & /@ recorded,
+                Length[Union @@ (Subsets[#, {2}] & /@ #)] & /@ recorded,
+                Total[Flatten[#]] & /@ recorded,
+                Range[numsweeps]};
+        oracle = mcmcCorrT[#, numsweeps - 10] & /@ rows;
+        SeedRandom[9];
+        shuffled = mcmcCorrT[RandomSample[#], numsweeps - 10][[1]] & /@ rows;
+        {AllTrue[recorded, Union @@ # === Range[7] &],
+         r["state"]["edgeCount"] ===
+            Length[Union @@ (Subsets[#, {2}] & /@ r["state"]["complex"])],
+         Length[DeleteDuplicates[rows[[2]]]] > 1,   (* the edge count really did fluctuate *)
+         r["corrTValues"] === oracle[[All, 1]],
+         r["corrT"] === Max[oracle[[All, 1]]],
+         oracle[[All, 2]],
+         shuffled =!= oracle[[All, 1]]}],
+    {True, True, True, True, True, {True, True, True, False}, True},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-fixed-vertex-integration-rule"
+];
+
+(* As with the equilibriator, False delegates to the shorter overload. *)
+VerificationTest[
+    Module[{a, b}, SeedRandom[507];
+        a = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, False, 12,
+                {Function[c, Total[Flatten[c]]]}, 1]];
+        SeedRandom[507];
+        b = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 12,
+                {Function[c, Total[Flatten[c]]]}, 1]];
+        {a === b, Keys[a["state"]]}],
+    {True, {"complex", "vertexCount", "weight", "energy"}},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-free-vertex-delegates"
+];
+
+(* An observable that never moves has no autocorrelation time, and the driver says so per
+   observable rather than inventing a number. The triangle is the only 2-complex with three
+   facets on three vertices, so the fixed-vertex chain cannot leave it: the energy (weight 1
+   for labelingChoise 0), the edge count and a constant operator are all frozen, which is
+   the one situation that reaches ::alldefault.
+
+   The value each ::stuck message quotes is the check on a fixed bug: for an operator the
+   message used to name operators[[i-2]] but quote observablesTable[[i-2, 1]], i.e. the
+   energy's value, so the third message here would have read 0. rather than 7. *)
+VerificationTest[
+    Module[{r, stuck, allDefault},
+        stuck = messageArguments["RandomPureSimplicialComplexMCMCCorrelationTime::stuck",
+            allDefault = messageArguments[
+                "RandomPureSimplicialComplexMCMCCorrelationTime::alldefault",
+                Quiet@Block[{Print = Null &}, SeedRandom[503];
+                    r = ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[
+                        {{1, 2}, {1, 3}, {2, 3}}, True, 5, {Function[c, 7]}, 0]]]];
+        {r["corrT"], r["corrTValues"], r["state"]["complex"],
+         stuck[[All, 1]], stuck[[All, 2]], Length[allDefault], allDefault[[1, 2]]}],
+    {2, {2, 2, 2}, {{1, 2}, {1, 3}, {2, 3}},
+     {"the energy", "the magnetization", Function[c, 7]}, {0., 3, 7}, 1, {2, 2, 2}},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-frozen-observables"
+];
+
+(* Negative control for the test above: a chain that does move must report no stuck
+   observable at all. *)
+VerificationTest[
+    messageArguments["RandomPureSimplicialComplexMCMCCorrelationTime::stuck",
+        Quiet@Block[{Print = Null &}, SeedRandom[502];
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 5,
+                {Function[c, Length[Union @@ c]]}, 0]]],
+    {},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-moving-chain-is-not-stuck"
+];
