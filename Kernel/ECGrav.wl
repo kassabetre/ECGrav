@@ -2345,9 +2345,11 @@ SimplicialComplexAutomorphismGroupOrder::argerr="Input should be of the form
 (* :Usage Messages: *)
 
 PureComplexAutomorphismGroup::usage="PureComplexAutomorphismGroup[facetsLst_List] returns 
-	a list {a,b} where a is the automorphism group of the canonically relabeled version of the 
-	input complex (given as a list facetsLst of facets), and b is the vertex relabeling rule 
-	from facetsLst to the canonically labeled version.";
+	a list {a,b} where a is the automorphism group of the canonically relabeled version of the
+	input complex (given as a list facetsLst of facets), and b is the vertex relabeling rule
+	from facetsLst to the canonically labeled version. The canonical relabeling sends the vertices
+	to 1..n, so a acts on those labels; b maps them back. a is given by generators, not by its
+	elements.";
 	
 PureComplexAutomorphismGroup::argerr="Input should be of the form 
 	PureComplexAutomorphismGroup[facetsLst_List].";
@@ -2400,8 +2402,14 @@ PureComplexFacetAutomorphismGroupOrder::argerr="Input should be of the form
 (* :Usage Messages: *)
 
 PureComplexFacetAutomorphismGroup::usage="PureComplexFacetAutomorphismGroup[facetsLst_List]
-	returns facet automorphic group of the pure simplicial complex given as a list facetsLst of 
-	facets.";
+	returns the facet automorphism group of the pure simplicial complex given as a list facetsLst
+	of facets, that is the image of its automorphism group in the symmetric group on the facets.
+	The permutations returned act on the FACET INDICES 1..Length[facetsLst], where index j means
+	facetsLst[[j]] -- the position in the list as supplied, NOT the lexicographic rank of the
+	facet. For {{1,2,3},{1,2,4}} facet 1 is {1,2,3}; for {{1,2,4},{1,2,3}} facet 1 is {1,2,4}.
+	The group is given by generators rather than by its elements, which is often the only
+	possibility: a 20-facet complex with pairwise interchangeable facets has the full symmetric
+	group on 20 points here, of order 2432902008176640000.";
 	
 PureComplexFacetAutomorphismGroup::argerr="Input should be of the form 
 	PureComplexFacetAutomorphismGroup[facetsLst_List].";
@@ -2446,9 +2454,16 @@ CliqueFacetAutomorphismGroupOrder::argerr="Input should be of the form
 
 (* :Usage Messages: *)
 
-CliqueFacetAutomorphismGroup::usage="CliqueFacetAutomorphismGroup[facetsLst_List] returns the 
-	facet automorphic group of the clique complex given as a list facetsLst of maximal cliques. It 
-	does not check whether or not the complex is a clique complex.";
+CliqueFacetAutomorphismGroup::usage="CliqueFacetAutomorphismGroup[facetsLst_List] returns the
+	facet automorphism group of the clique complex given as a list facetsLst of maximal cliques,
+	that is the image of its automorphism group in the symmetric group on the facets. It does not
+	check whether or not the complex is a clique complex.
+	The permutations returned act on the FACET INDICES 1..Length[facetsLst], where index j means
+	facetsLst[[j]] -- the position in the list as supplied, NOT the lexicographic rank of the
+	facet. For {{1,2,3},{1,2,4}} facet 1 is {1,2,3}; for {{1,2,4},{1,2,3}} facet 1 is {1,2,4}.
+	The group is given by generators rather than by its elements, which is often the only
+	possibility: a 20-facet complex with pairwise interchangeable facets has the full symmetric
+	group on 20 points here, of order 2432902008176640000.";
 	
 CliqueFacetAutomorphismGroup::argerr="Input should be of the form 
 	CliqueFacetAutomorphismGroup[facetsLst_List].";
