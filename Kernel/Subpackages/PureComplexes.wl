@@ -31,8 +31,7 @@
 
 (* Private helper messages ------------------------------------------------------
    Error messages for the internal connected-complex automorphism/stabilizer
-   helpers (SimplicialComplexAutomorphismGroupOrderConn,
-   PureComplexFacetAutomorphismGroupOrderConn, CliqueFacetStabilizerGroupOrderConn,
+   helpers (PureComplexFacetAutomorphismGroupOrderConn, CliqueFacetStabilizerGroupOrderConn,
    CliqueFacetAutomorphismGroupOrderConn) and for ComplexAutomorphismIncidenceGraph, which
    builds the incidence graph PureComplexAutomorphismGroupOrder reads its answer from. Being
    undeclared (no usage message), these
@@ -40,7 +39,6 @@
    public non-Conn functions call them on each already-connected component. The messages
    are defensive diagnostics only. *)
 
-SimplicialComplexAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected complex of the form SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List].";
 ComplexAutomorphismIncidenceGraph::argerr="Internal helper: input should be a list of facets of the form ComplexAutomorphismIncidenceGraph[facetsLst_List].";
 PureComplexFacetAutomorphismGroupOrderConn::argerr="Internal helper: input should be a connected pure complex of the form PureComplexFacetAutomorphismGroupOrderConn[facetsLst_List].";
 CliqueFacetStabilizerGroupOrderConn::argerr="Internal helper: input should be a connected clique complex of the form CliqueFacetStabilizerGroupOrderConn[facetsLst_List].";
@@ -2432,80 +2430,6 @@ $Failed);
 (*Simplicial Complex Automorphism and Facet Automorphism*)
 
 
-(* ::Item::Closed:: *)
-(*SimplicialComplexAutomorphismGroupOrderConn*)
-
-
-(* :Code Section *)
-
-(* Primary Pattern *)
-SimplicialComplexAutomorphismGroupOrderConn[facetsLst_List]:=
-
-(*
-(****************************************)
-(*   (* Last updated 2/22/2024. *) *)
-(*   (* Version: 1.0 *) *) 
-(*   (* Note:  Much more improved efficiency by first reducing the leaves of the graph,  *) *)
-(****************************************)
-(* computes the automorphism group order of a connected simplicial complex (not necessarily a clique complex and not necessarily pure) whose facets are given by facetsLst. It assumes the complex is connected. It returns Null if it is not connected.*)
-(*Note: It only works by first relabeling the complex into canonically labeled complex*)
-*)
-
-Module[{purity,g,VertexFacetDegree,leafsLst,relabelingRule,reducedFacetsParentsAsn,relabeledreducedFacetsParentsAsn,reducedGraph, reducedAutG,canonicalReducedFacets, thereAreMissingCanonicalReducedFacets,isPermutationOfFacets,relabeledfacetsLst},
-
-Catch[If[Length[facetsLst]==1,Throw[Length[facetsLst[[1]]]!, "ECGravReturn$44"]];
-
-
-g=GraphFromCliques[facetsLst];
-
-
-If[!ConnectedGraphQ[g],Throw[Null, "ECGravReturn$44"]
-];
-
-VertexFacetDegree[v_Integer]:=Length[Select[facetsLst,MemberQ[#,v]&]];
-
-
-leafsLst=Table[Select[i,VertexFacetDegree[#]==1&],
-{i,facetsLst}];
- 
-
-reducedFacetsParentsAsn=<|Table[With[{leafs=leafsLst[[i]]},
-If[Length[leafs]>=1,Sort[Join[{leafs[[1]]},Complement[facetsLst[[i]],leafs]]],facetsLst[[i]]]->facetsLst[[i]]],{i,1,Length[facetsLst]}]|>;
-
-
-reducedGraph=CanonicalGraph[GraphFromCliques[Keys[reducedFacetsParentsAsn]]];
-
-
-relabelingRule=Normal[FindGraphIsomorphism[GraphFromCliques[Keys[reducedFacetsParentsAsn]],reducedGraph][[1]]];
-
-
-relabeledreducedFacetsParentsAsn=<|Table[Sort[(i/.relabelingRule)]->reducedFacetsParentsAsn[[Key[i]]],{i,Keys[reducedFacetsParentsAsn]}]|>;
-
-
-canonicalReducedFacets=Keys[relabeledreducedFacetsParentsAsn];
-
-
-reducedAutG=GraphAutomorphismGroup[reducedGraph];
-
-
-thereAreMissingCanonicalReducedFacets=Complement[FindClique[reducedGraph,\[Infinity],All],canonicalReducedFacets,SameTest->(Complement[#1,#2]=={}&)];
-
-
-isPermutationOfFacets[x_]:=AllTrue[canonicalReducedFacets,With[{permval=Sort[PermutationReplace[#,x]]},
-((MemberQ[canonicalReducedFacets,permval])&&(Length[Lookup[relabeledreducedFacetsParentsAsn,Key[#],{}]]==Length[Lookup[relabeledreducedFacetsParentsAsn,Key[permval],{}]]))]&];
-
-
-If[thereAreMissingCanonicalReducedFacets!={},reducedAutG=PermutationGroup[Select[GroupElements[reducedAutG],isPermutationOfFacets[#]&]]
-];
-
-
-GroupOrder[reducedAutG]*Product[Length[i]!,{i,leafsLst}], "ECGravReturn$44"]
-
-];
-
-(* Catch-all Pattern *)
-SimplicialComplexAutomorphismGroupOrderConn[args___]:=(Message[SimplicialComplexAutomorphismGroupOrderConn::argerr, args];
-$Failed);
 
 
 (* ::Item::Closed:: *)
@@ -2520,15 +2444,11 @@ SimplicialComplexAutomorphismGroupOrder[facetsLst_List]:=
 (*   (* Version: 1.0 *) *) 
 (*   (* Note:  *) *)
 (****************************************)
-(*Given a general simplicial complex (not necessarily clique complex and not necessarily pure) that may or may not be connected, it computes the order of the automorphism group. It uses SimplicialComplexAutomorphismGroupOrderConn to compute the automorphism group orders of each component and then combines them. *)
-(*Note: It only works by first relabeling the complex into canonically labeled complex*)
+(*Given a general simplicial complex (not necessarily clique complex and not necessarily pure) that may or may not be connected, it computes the order of the automorphism group. It reads the order off the automorphism group of the vertex-facet incidence graph built by ComplexAutomorphismIncidenceGraph, which is indifferent to facet size and so handles mixed-size facets correctly.*)
+(*The previous implementation reduced each facet to a single leaf and took the automorphism group of the reduced clique graph. That reduction discards facet SIZES, so a reduced facet whose parent had 3 vertices could map onto one whose parent had 2: {{1,2,3},{1,4}} reduces to the path 2-1-4, whose endpoint swap is not an automorphism of the complex. It guarded against this inside isPermutationOfFacets, but only when the reduced graph had maximal cliques that were not facets -- which is not the case here -- so mixed-size complexes came back with the group too large. Equal-size facets were never affected, which is why this only ever showed up on non-pure input.*)
 *)
-With[{components=Tally[ConnectedComplexComponents[facetsLst],IsomorphicSimplicialComplexQ[#1,#2]&]},
-
-
-Product[(SimplicialComplexAutomorphismGroupOrderConn[i[[1]]]^(i[[2]]))*(i[[2]]!),{i,components}]
-
-];
+If[facetsLst==={},1,
+	GroupOrder[GraphAutomorphismGroup[ComplexAutomorphismIncidenceGraph[facetsLst]]]];
 
 (* Catch-all Pattern *)
 SimplicialComplexAutomorphismGroupOrder[args___]:=(Message[SimplicialComplexAutomorphismGroupOrder::argerr, args];
