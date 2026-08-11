@@ -8,7 +8,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
-| `PureComplexes.wlt` | 128 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the two stages of the complex-space MCMC driver. |
+| `PureComplexes.wlt` | 129 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the two stages of the complex-space MCMC driver. |
 | `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **162 tests, 162 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **163 tests, 163 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -155,13 +155,20 @@ whose autocorrelation never turns over, which drives the lag loop to its end and
 value well off the floor. And the same oracle on shuffled series must give a *different*
 answer, so the agreement is not an artifact of everything defaulting to 2.
 
-Known blind spot: the integral includes its terminating non-positive term, and stops one lag
-short when the autocorrelation never turns over. Both conventions are deliberate — they
-reproduce the pre-`f454c39` tabulated form — and the oracle reproduces them, but neither is
-observable in the output. The terminating term is by definition the first one at or below
-zero, and one lag out of hundreds is worth little, so neither shifts `Ceiling`. Verified by
-mutation: shortening `lastLag` from `numsweeps-10` to `numsweeps-20` is *not* caught, while
-`Ceiling -> Floor` is.
+**The end of the lag range needs a short run to be visible at all.** The integral runs to
+`lastLag = numsweeps - 10`, includes its terminating non-positive term, and stops one lag
+short when the autocorrelation never turns over — conventions carried over from the
+pre-`f454c39` tabulated form. For a ramp the normalized autocorrelation at lag `t` is
+`((N-t)/N)^2`, so over 310 sweeps the last ten lags come to about 0.02 in total and *no*
+change to the lag budget can move `Ceiling`: the long-run test above is blind to it, and a
+`lastLag -> numsweeps-20` mutation slips through it untouched. Over 20 sweeps those same ten
+lags are half the integral, and both conventions become first-order.
+
+That is what `-short-run-lag-range` is for. At `eqlT -> 2` the linear sweep counter reports 7
+where `lastLag = numsweeps-20` reports 2, and a quadratic counter reports 6 where dropping
+the one-lag-short convention reports 7 — the only place either is observable in the output.
+Both mutations were run and both now fail the test. Note the probes have to be synthetic:
+a real observable turns over within a handful of lags and never reaches the end of the range.
 
 ## Coverage
 

@@ -127,10 +127,11 @@ messageArguments[name_String, expr_] := Module[{collected = {}},
    Ceiling of the sum, floored at 2, is what the driver reports. Returns that alongside
    which of the two exits was taken, so a test can show it exercised both.
 
-   Note that neither convention is observable in the answer: the terminating non-positive
-   term is by definition the first one at or below zero, so it is small, and one lag out of
-   hundreds is worth little, so on a smoothly decaying autocorrelation neither shifts
-   Ceiling. They are pinned here by construction, not by a discriminating value. *)
+   Which convention applies is only visible in the answer on a SHORT run. The terminating
+   non-positive term is by definition the first one at or below zero, so it is small, and
+   over a few hundred sweeps one lag at the end of the range is worth about 10^-3 -- far
+   below Ceiling. Over 20 sweeps the same lag is a tenth of the integral, which is why the
+   short-run correlation-time test exists. *)
 mcmcCorrT[series_, lastLag_] :=
     Module[{norm, corrSum = 0.0, corr, t = 0, turnedOver = False},
         norm = ECGrav`CorrelationTime[0, series];

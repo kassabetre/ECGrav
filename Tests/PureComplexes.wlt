@@ -1090,6 +1090,44 @@ VerificationTest[
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-integration-rule"
 ];
 
+(* The same differential test on a short run, which is where the end of the lag range stops
+   being a rounding error and starts setting the answer.
+
+   The integral runs to lastLag = numsweeps - 10, and for a ramp the normalized
+   autocorrelation at lag t is ((N-t)/N)^2, so over 310 sweeps the last ten lags are worth
+   about 0.02 in total and no plausible change to the lag budget can move Ceiling -- the test
+   above cannot see one. Over 20 sweeps those same ten lags are half the integral. At this
+   length the linear counter reports 7 where a budget of numsweeps - 20 would report 2, and
+   the quadratic counter reports 6 where dropping the one-lag-short convention would report 7
+   -- which is the only place either convention is visible in the output at all.
+
+   Both counters are synthetic on purpose: a real observable turns over within a handful of
+   lags and never reaches the end of the range, so it cannot probe it. *)
+VerificationTest[
+    Module[{recorded = {}, sweepNo = 0, sweepNoSq = 0, r, numsweeps, rows, oracle},
+        SeedRandom[508];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 2,
+                {Function[c, AppendTo[recorded, c]; Total[Flatten[c]]],
+                 Function[c, ++sweepNo], Function[c, (++sweepNoSq)^2]}, 1]];
+        numsweeps = Length[recorded];
+        rows = {-Log[(1.0/Binomial[8, Length[Union @@ #]])*
+                    ECGrav`PureComplexFacetStabilizerGroupOrder[#]*(4!/Length[Union @@ #]!)] & /@ recorded,
+                Length[Union @@ #] & /@ recorded,
+                Total[Flatten[#]] & /@ recorded,
+                Range[numsweeps],
+                Range[numsweeps]^2};
+        oracle = mcmcCorrT[#, numsweeps - 10] & /@ rows;
+        {numsweeps,
+         AllTrue[rows, Length[DeleteDuplicates[#]] > 1 &],  (* nothing excluded as stuck *)
+         r["corrTValues"],
+         r["corrTValues"] === oracle[[All, 1]],
+         r["corrT"] === Max[oracle[[All, 1]]],
+         oracle[[All, 2]]}],
+    {20, True, {2, 2, 2, 7, 6}, True, True, {True, True, True, False, False}},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-short-run-lag-range"
+];
+
 (* Same differential test on the fixed-vertex overload, whose second observable is the edge
    count and whose chain must hold the support at the seed's vertex set for every one of the
    sweeps it measures. p = 3 here because for p = 2 the facets are the edges, so the edge
