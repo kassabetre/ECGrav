@@ -1009,7 +1009,7 @@ VerificationTest[
          r["state"]["edgeCount"] ===
             Length[Union @@ (Subsets[#, {2}] & /@ r["state"]["complex"])],
          r["state"]["complex"] =!= Sort[Sort /@ mcmcSeed34]}],
-    {True, 31, {"complex", "edgeCount", "weight", "energy"}, Range[7], True, {3, 3, 3, 3},
+    {True, 55, {"complex", "edgeCount", "weight", "energy"}, Range[7], True, {3, 3, 3, 3},
      True, True},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-fixed-vertex-support"
 ];
@@ -1234,7 +1234,7 @@ VerificationTest[
          Last[meas][[-1]] === data[["state", "complex"]],
          Keys[data], data["converged"], data["eqlT"], data["corrT"], data["corrTValues"]}],
     {5, {6, 6, 6, 6, 6}, Range[5], True, False, True, True,
-     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 31, 2, {2, 2, 2, 2}},
+     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 38, 2, {2, 2, 2, 2}},
     TestID -> "RandomPureSimplicialComplexMCMC-measurements-are-self-consistent"
 ];
 
@@ -1269,7 +1269,7 @@ VerificationTest[
          meas[[All, 3]] === (Length[Union @@ (Subsets[#, {2}] & /@ #)] & /@ meas[[All, -1]]),
          Length[DeleteDuplicates[meas[[All, -1]]]] > 1,
          data["converged"], data["eqlT"], Length[data["corrTValues"]]}],
-    {{5, 5, 5, 5, 5}, True, True, True, True, True, 31, 3},
+    {{5, 5, 5, 5, 5}, True, True, True, True, True, 36, 3},
     TestID -> "RandomPureSimplicialComplexMCMC-fixed-vertex-support"
 ];
 

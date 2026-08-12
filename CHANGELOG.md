@@ -6,6 +6,35 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Changed
+- **Recalibrated the equilibriation convergence criterion** in all four equilibriators
+  (`GraphEquilibriate` ×2, `RandomPureSimplicialComplexMCMCEquilibriate` ×2). The criterion
+  compares `sqMeanPairwiseDiff`, a squared difference of 30-point window *means*, against a
+  threshold. That threshold was `meanLateVar`, the variance of the *individual* energies —
+  larger than the quantity being tested by the effective sample size, so the test reduced to
+  "is the autocorrelation time below about 7.5 sweeps". Measured on AR(1) tracks, the ratio it
+  computed was `2·tau_int/15`; at the correlation times these chains actually show it passed
+  with a 14× margin, and a systematic 1σ offset between half the replicas was declared
+  converged 99% of the time.
+
+  The threshold is now `expectedSqDiff`, twice the variance of a window mean, estimated from
+  the scatter of the non-overlapping window means inside each track. That is a within-track
+  quantity, so an offset between tracks cannot inflate it, and it carries the chain's own
+  autocorrelation without needing a correlation time — which is not available until after
+  equilibriation. The pass rate on equilibriated tracks is now flat in the autocorrelation, at
+  about 50% per check, instead of running from 100% to 4%.
+
+  Effect on the residual disagreement between replicas at the moment equilibriation exits, on
+  the one test system with a real transient (`Partition[Range[20],2]`, `labelingChoise 2`):
+  **1.24σ → 0.47σ**, for ten extra sweeps. Small systems are unaffected. `eqlT` grows on
+  systems that were exiting early — for that system it goes from 31–32 to 59–210 — so **seeded
+  runs do not carry across this change**, and any `eqlT` recorded from an earlier version is an
+  underestimate.
+
+  Not addressed here: the second criterion, `Tr[sqMeanEMat] < 1e-5`, still looks only at each
+  track's own drift, so four tracks each frozen at different energies are declared converged
+  however far apart they sit, silently. See `Tests/README.md`.
+
 ## [1.6.0] - 2026-08-10
 
 Fully unlabeled pure complexes. The counting trio is completed by

@@ -120,50 +120,57 @@ remainder are characterization tests that lock in current behaviour.
 
 The three suspected-wrong-behaviour bugs previously flagged here have been fixed at the source
 (see above) and are regression-tested. What follows came out of an audit of the equilibriation
-criterion and is **not** fixed — the code is unchanged, because changing when equilibriation
-declares success changes published numbers.
+criterion; the scale error it found has since been fixed, the rest has not.
 
 All four equilibriators (`GraphEquilibriate` ×2 on three tracks, the two complex-space ones on
 four) share one criterion: build `sqMeanEMat[[i,j]] = (mean of track i's newest 30 energies −
-mean of track j's oldest 30)²`, and stop when its mean is below `meanLateVar`, the mean over
-tracks of the variance of the newest 30. A second criterion stops when `Tr[sqMeanEMat]` is
-below `1e-5`.
+mean of track j's oldest 30)²`, and stop when its mean, `sqMeanPairwiseDiff`, falls below a
+threshold. A second criterion stops when `Tr[sqMeanEMat]` is below `1e-5`.
 
-- **The threshold is off by a factor of the window length.** The left side is a squared
-  difference of 30-point *means*; the right side is the variance of *individual* samples.
-  Those differ by the effective sample size, so the criterion reduces to a test of whether the
-  autocorrelation time is short: for equilibrated tracks the ratio is `2·tau_int/15`, measured
-  across AR(1) tracks at `rho` 0 to 0.95 and matching that prediction, with the 50% crossing at
-  `tau_int ≈ 7.5` for both three and four tracks. At the observed `corrT` of 2 it passes with a
-  14× margin, which is why small systems converge at the very first check.
-- **It is therefore blind to a real offset between replicas.** Two of four tracks displaced by
-  1σ are declared converged 99% of the time; 50% detection needs ≈1.35σ, and one displaced
-  track out of four needs ≈1.6σ. Measured on the real chain: `Partition[Range[20],2]` at
-  `labelingChoise 2` correctly fails its first check with a 1.59σ cross-track gap, then passes
-  at sweep 430 with 1.04σ still outstanding, against 0.45σ once genuinely mixed.
+**Fixed — the threshold was off by the effective sample size.** It used to be `meanLateVar`,
+the variance of the *individual* energies, against a left-hand side that is a squared
+difference of 30-point *means*. The criterion therefore reduced to a test of whether the
+autocorrelation time is short: for equilibrated tracks the ratio it computed is `2·tau_int/15`,
+measured across AR(1) tracks at `rho` 0 to 0.95 and matching that prediction, with the 50%
+crossing at `tau_int ≈ 7.5` for both three and four tracks. At the `corrT` of 2 these chains
+show, it passed with a 14× margin. The cost was power: two of four tracks displaced by 1σ were
+declared converged 99% of the time, 50% detection needing ≈1.35σ. On the real chain,
+`Partition[Range[20],2]` at `labelingChoise 2` correctly failed its first check at a 1.59σ
+cross-track gap, then passed at sweep 430 with 1.04σ still outstanding, against 0.45σ once
+genuinely mixed.
+
+The threshold is now `expectedSqDiff`, twice the variance of a window mean, estimated from the
+scatter of the non-overlapping window means inside each track. Its pass rate on equilibriated
+tracks is flat in the autocorrelation at ≈50% per check. The residual gap on that same system
+drops to **0.47σ** for ten extra sweeps. See the CHANGELOG for the reproducibility note.
+
+Still open:
+
 - **The second criterion can declare a stuck chain converged.** `Tr[sqMeanEMat]` is the
   diagonal only — each track's own drift — so four tracks that are each individually frozen at
   *different* energies give a trace of exactly 0 and pass, however far apart they are.
-  Demonstrated at energies 1, 4, 9, 16: the first criterion correctly refuses (`spd` 64.5 vs
-  `mlv` 0), the second fires anyway. Not a knife edge — jitter of 1e-4 leaves the trace at
-  1e-9. It never fired in 4000 real checks across five systems, so this is a latent path
-  rather than an observed failure, and unlike the budget-exhausted case it reports
-  `converged -> True` with no message.
-- **The thresholds disagree between overloads**: `1e-5` in three equilibriators, `1e-6` in the
+  Demonstrated at energies 1, 4, 9, 16: the first criterion correctly refuses, the second fires
+  anyway. Not a knife edge — jitter of 1e-4 leaves the trace at 1e-9. It never fired in 4000
+  real checks across five systems, so this is a latent path rather than an observed failure,
+  and unlike the budget-exhausted case it reports `converged -> True` with no message. Its
+  threshold also disagrees between overloads: `1e-5` in three equilibriators, `1e-6` in the
   fixed-vertex complex-space one.
-- `meanLateVar` is *not* the noisy part, contrary to the note this section used to carry. Its
-  level varies by only 9–19% across checks on real runs and consecutive checks share 29 of
-  their 30 points, so the median step is 2%. The scale error above dominates it completely.
-- Cosmetic, in `PureComplexes.wl` only: `sqMeanEMat` is 4×4, but the comments call it 12
-  numbers (free-vertex) and 9 (fixed-vertex, copied from the three-track `GraphEquilibriate`,
-  where 9 is right). `Abs` on `sqMeanPairwiseDiff` and on `Tr[sqMeanEMat]` is redundant — both
-  are sums of squares.
+- **The criterion is applied every sweep and exits on the first pass**, so it stops at the
+  first favourable fluctuation rather than at the first sweep where the chain is genuinely
+  mixed. Requiring it to hold for 30 consecutive checks was measured and takes the residual gap
+  on that system further, 0.47σ → 0.21σ, but costs a great deal on systems that were already
+  fine (`p2 M4 ch1`: sweep 401 → 875), so it was not adopted.
+- `Abs` on `sqMeanPairwiseDiff` and on `Tr[sqMeanEMat]` is redundant — both are sums of squares.
+
+`expectedSqDiff`'s predecessor was *not* the noisy part, contrary to the note this section used
+to carry: its level varied by only 9–19% across checks on real runs, and consecutive checks
+share 29 of their 30 points, so the median step was 2%. The scale error dominated it entirely.
 
 Verified sound, so as not to leave these in doubt: the ring buffer is written at index 1 and
 `RotateRight`ed each sweep, so at the first check (sweep 401) it holds the last 400 energies
 with no initial zeros left, index 1 newest; `Entable[[i]][[1;;30]]` really is the recent window
-and `[[371;;400]]` the old one, despite `meanLateVar` being named for the former. Both windows
-are 30 long. The criterion is scale-free in the energy unit.
+and `[[371;;400]]` the old one. Both windows are 30 long. The criterion is scale-free in the
+energy unit.
 
 ## The complex-space MCMC family
 
@@ -172,8 +179,9 @@ entirely on its two preparatory stages. The driver and both stages are covered i
 `PureComplexes.wlt`, each in both its free-vertex and its fixed-vertex overload.
 
 **Equilibriation.** `outWinLength = 400` and `inWinLength = 30`, so a converged run reports
-`eqlT = numsweeps - 370`; small systems pass the criterion at the first check after the window
-fills, which pins `eqlT` to 31. Do not read a repeated 31 as a stuck value.
+`eqlT = numsweeps - 370`. The smallest systems still pass at the first check after the window
+fills, which pins `eqlT` to 31 — do not read a repeated 31 as a stuck value. Anything larger now
+takes a few more checks, so the pinned values vary (31 to 55 across the suite).
 
 Failure is forced deterministically by setting `$ECGravMaxEquilibriationSweeps` **below 400**:
 the convergence criterion is inside `If[numsweeps > outWinLength, …]`, so it never runs and

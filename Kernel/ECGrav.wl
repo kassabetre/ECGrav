@@ -906,8 +906,9 @@ the change in energy when one edge is toggled at position 4, integer at position
 	filled in. *)
 GraphEquilibriate::noconv=
 	"Equilibriation did not converge within the budget of `1` sweeps. At exit the mean "<>
-	"squared pairwise energy difference across the tracks was `2`, against a mean late-time "<>
-	"energy variance of `3`; convergence requires the former to be below the latter. "<>
+	"squared pairwise energy difference across the tracks was `2`, against `3`, the value "<>
+	"that quantity is expected to take once the tracks are equilibriated; convergence "<>
+	"requires the former to be below the latter. "<>
 	"Returning eqlT -> `4`, which is a lower bound rather than an estimate, and a state that "<>
 	"may not be equilibriated. Raise $ECGravMaxEquilibriationSweeps, or start from a better "<>
 	"seed graph.";
@@ -2717,8 +2718,9 @@ RandomPureSimplicialComplexMCMCEquilibriate::argerr="Input has to be of the form
 (* Concatenated for the same reason as GraphEquilibriate::noconv above. *)
 RandomPureSimplicialComplexMCMCEquilibriate::noconv=
 	"Equilibriation did not converge within the budget of `1` sweeps. At exit the mean "<>
-	"squared pairwise energy difference across the tracks was `2`, against a mean late-time "<>
-	"energy variance of `3`; convergence requires the former to be below the latter. "<>
+	"squared pairwise energy difference across the tracks was `2`, against `3`, the value "<>
+	"that quantity is expected to take once the tracks are equilibriated; convergence "<>
+	"requires the former to be below the latter. "<>
 	"Returning eqlT -> `4`, which is a lower bound rather than an estimate, and a state that "<>
 	"may not be equilibriated. Raise $ECGravMaxEquilibriationSweeps, or start from a better "<>
 	"seed complex.";

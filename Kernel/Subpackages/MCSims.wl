@@ -2140,7 +2140,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2199,19 +2199,25 @@ If[numsweeps>outWinLength,
 
 sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
 
-(*sqMeanEMat is a three by three matrix of the squared means of difference in energy 
-within and across the tracks at the beginning and end of outWinLength.
-At equilibrium, these 9 mumbers should be randomly distributed with mean of 0. 
-Their fluctuation from 0 should be within the variance of the newer (late time) 
-variance in energy for the equilibriation to exit. sqMeanPairwiseDiff is the mean 
-of these 9 numbers*)
+(*sqMeanEMat is a three by three matrix of the squared difference in mean energy
+within and across the tracks between the beginning and the end of outWinLength.
+At equilibrium these 9 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
 
 sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
 
-meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,3}]];(*Mean variance of the newer energies*)
+(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
+	chain, which is twice the variance of an inWinLength-long window mean -- NOT the
+	variance of the individual energies, which is larger by the effective sample size and
+	made the test pass with a wide margin for any chain whose autocorrelation time was
+	short. Estimate that variance directly, from the scatter of the non-overlapping window
+	means inside each track: it is a within-track quantity, so an offset between tracks
+	cannot inflate it, and it carries the chain's autocorrelation without anyone having to
+	know the correlation time -- which is not available until after equilibriation anyway.*)
+
+expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,3}]];
 
 
-If[Abs[sqMeanPairwiseDiff]<meanLateVar,
+If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	converged=True;
 	Break[]
@@ -2242,7 +2248,7 @@ The new data will be written on the first slot, so newer data is at the beginnin
 If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
-	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 
@@ -2290,7 +2296,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2350,19 +2356,25 @@ Entable[[All,1]]={data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["ene
 If[numsweeps>outWinLength,
 	sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
 
-	(*sqMeanEMat is a three by three matrix of the squared means of difference in 
-	energy within and across the tracks at the beginning and end of outWinLength.
-	At equilibrium, these 9 mumbers should be randomly distributed with mean of 0. 
-	Their fluctuation from 0 should be within the variance of the newer (late time) 
-	variance in energy for the equilibriation to exit. sqMeanPairwiseDiff is the mean 
-	of these 9 numbers*)
+	(*sqMeanEMat is a three by three matrix of the squared difference in mean energy
+	within and across the tracks between the beginning and the end of outWinLength.
+	At equilibrium these 9 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
 
 	sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
 
-	meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,3}]];(*Mean variance of the newer energies*)
+	(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
+		chain, which is twice the variance of an inWinLength-long window mean -- NOT the
+		variance of the individual energies, which is larger by the effective sample size and
+		made the test pass with a wide margin for any chain whose autocorrelation time was
+		short. Estimate that variance directly, from the scatter of the non-overlapping window
+		means inside each track: it is a within-track quantity, so an offset between tracks
+		cannot inflate it, and it carries the chain's autocorrelation without anyone having to
+		know the correlation time -- which is not available until after equilibriation anyway.*)
+
+	expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,3}]];
 
 
-	If[Abs[sqMeanPairwiseDiff]<meanLateVar,
+	If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	converged=True;
 	Break[]
@@ -2390,7 +2402,7 @@ Entable=RotateRight[#,1]&/@Entable;
 If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
-	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 

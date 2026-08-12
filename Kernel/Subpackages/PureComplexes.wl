@@ -4356,7 +4356,7 @@ complex	) all start to have close enough probabilities such that the fluctions o
 
 Module[{result,purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],data,
 	sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,
-	sqMeanPairwiseDiff=Indeterminate,meanLateVar=Indeterminate,numsweeps,eqlTime,
+	sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,
 	converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 data=<|"state"-><|"complex"->Sort[Sort/@seedComplex],
@@ -4428,17 +4428,24 @@ Reap[
 			sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,4},{j,4}];
 				(*both windows are inWinLength long: the early slice takes the newest inWinLength
 					entries and the late slice the oldest inWinLength entries*)
-				(*sqMeanEMat is a four by cour matrix of the squared means of difference in energy within and across the
-					tracks at the beginning and end of outWinLength. At equilibrium these 12 mumbers should be 
-					randomly distributed with mean of 0. Their fluctuation from 0 should be within the variance of the 
-					newer(late time) variance in energy for the equilibriation to exit. 
-					sqMeanPairwiseDiff is the mean of these 12 numbers*)
+			(*sqMeanEMat is a four by four matrix of the squared difference in mean energy
+			within and across the tracks between the beginning and the end of outWinLength.
+			At equilibrium these 16 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
 
 			sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
 
-			meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,4}]];(*Mean variance of the newer energies*)
+			(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
+				chain, which is twice the variance of an inWinLength-long window mean -- NOT the
+				variance of the individual energies, which is larger by the effective sample size and
+				made the test pass with a wide margin for any chain whose autocorrelation time was
+				short. Estimate that variance directly, from the scatter of the non-overlapping window
+				means inside each track: it is a within-track quantity, so an offset between tracks
+				cannot inflate it, and it carries the chain's autocorrelation without anyone having to
+				know the correlation time -- which is not available until after equilibriation anyway.*)
 
-			If[Abs[sqMeanPairwiseDiff]<meanLateVar,
+			expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,4}]];
+
+			If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
 				eqlTime=numsweeps-outWinLength+inWinLength;
 				converged=True;
 				Break[]
@@ -4461,7 +4468,7 @@ If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
 	Message[RandomPureSimplicialComplexMCMCEquilibriate::noconv,
-		maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+		maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 (********************
@@ -4509,7 +4516,7 @@ Module[{result,
 		Entable,outWinLength,inWinLength,AllEnMat,
 		sqMeanEMat,
 		sqMeanPairwiseDiff=Indeterminate,
-		meanLateVar=Indeterminate,
+		expectedSqDiff=Indeterminate,
 		numsweeps,
 		eqlTime,
 		converged=False,
@@ -4615,13 +4622,24 @@ Reap[
 			(*both windows are inWinLength long: the early slice takes the newest inWinLength
 				entries and the late slice the oldest inWinLength entries*)
 
-			(*sqMeanEMat is a four by four matrix of the squared means of difference in energy within and across the tracks at the beginning and end of outWinLength. At equilibrium these 9 mumbers should be randomly distributed with mean of 0. Their fluctuation from 0 should be within the variance of the newer(late time) variance in energy for the equilibriation to exit. sqMeanPairwiseDiff is the mean of these 9 numbers*)
+			(*sqMeanEMat is a four by four matrix of the squared difference in mean energy
+			within and across the tracks between the beginning and the end of outWinLength.
+			At equilibrium these 16 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
 
 			sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
 
-			meanLateVar=Mean[Table[Variance[Entable[[i]][[1;;inWinLength]]],{i,4}]];(*Mean variance of the newer energies*)
+			(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
+				chain, which is twice the variance of an inWinLength-long window mean -- NOT the
+				variance of the individual energies, which is larger by the effective sample size and
+				made the test pass with a wide margin for any chain whose autocorrelation time was
+				short. Estimate that variance directly, from the scatter of the non-overlapping window
+				means inside each track: it is a within-track quantity, so an offset between tracks
+				cannot inflate it, and it carries the chain's autocorrelation without anyone having to
+				know the correlation time -- which is not available until after equilibriation anyway.*)
 
-			If[Abs[sqMeanPairwiseDiff]<meanLateVar,
+			expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,4}]];
+
+			If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
 
 				eqlTime=numsweeps-outWinLength+inWinLength;
 				converged=True;
@@ -4645,7 +4663,7 @@ If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
 	Message[RandomPureSimplicialComplexMCMCEquilibriate::noconv,
-		maxNumSweeps,sqMeanPairwiseDiff,meanLateVar,eqlTime]
+		maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 (********************
