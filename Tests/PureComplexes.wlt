@@ -1208,3 +1208,137 @@ VerificationTest[
     {},
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-moving-chain-is-not-stuck"
 ];
+
+(* ---- RandomPureSimplicialComplexMCMC: the driver that composes the two stages ---- *)
+
+(* Four definitions: from a seed complex, free-vertex and fixed-vertex, and two continuation
+   overloads that take a previous run's association and skip straight to sampling. All four
+   are serial and reproduce exactly under a seed. Each returns {measurements, data}, where a
+   measurement row is {sweep index, energy, vertex or edge count, operator values..., complex}
+   and data carries the two stages' output alongside the final state. *)
+
+(* The rows must describe the states they record: recomputing the energy, the vertex count and
+   the operators from each row's own complex has to give back that row's numbers. This is what
+   a shape check cannot see -- a driver that Sowed a stale state, or whose operator columns
+   slipped out of step, still returns a well-formed list of the right length. The corrupted
+   copy is the negative control on the predicate itself. *)
+VerificationTest[
+    Module[{ops, meas, data}, SeedRandom[601];
+        ops = {Function[c, Total[Flatten[c]]], Function[c, Max[Flatten[c]]]};
+        {meas, data} = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 1, 5]];
+        {Length[meas], Length /@ meas, meas[[All, 1]],
+         mcmcMeasurementsConsistentQ[meas, ops, 1],
+         mcmcMeasurementsConsistentQ[ReplacePart[meas, {1, 2} -> meas[[1, 2]] + 1.0], ops, 1],
+         Length[DeleteDuplicates[meas[[All, -1]]]] > 1,   (* the chain moved between samples *)
+         Last[meas][[-1]] === data[["state", "complex"]],
+         Keys[data], data["converged"], data["eqlT"], data["corrT"], data["corrTValues"]}],
+    {5, {6, 6, 6, 6, 6}, Range[5], True, False, True, True,
+     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 31, 2, {2, 2, 2, 2}},
+    TestID -> "RandomPureSimplicialComplexMCMC-measurements-are-self-consistent"
+];
+
+(* Samples drawn from a chain not shown to have reached its stationary distribution would not
+   be the uniform draws this function documents, so an equilibriation that exhausts its budget
+   aborts the whole call rather than sampling anyway. A budget below the 400-sweep comparison
+   window makes that deterministic. The operator is a call counter: it stays at zero, which is
+   what shows neither the correlation-time stage nor the sampling loop ran at all -- $Failed
+   alone would not, since it is also what a run that sampled and then gave up would return. *)
+VerificationTest[
+    Module[{calls = 0, out, noneql, noconv},
+        noneql = messageArguments["RandomPureSimplicialComplexMCMC::noneql",
+            noconv = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::noconv",
+                Quiet@Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 100}, SeedRandom[602];
+                    out = Block[{Print = Null &}, ECGrav`RandomPureSimplicialComplexMCMC[
+                        mcmcSeed24, {Function[c, ++calls]}, 1, 5]]]]];
+        {out, calls, noneql, Length[noconv]}],
+    {$Failed, 0, {{100}}, 1},
+    TestID -> "RandomPureSimplicialComplexMCMC-aborts-when-not-equilibriated"
+];
+
+(* The fixed-vertex overload holds the support at the seed's vertex set for every sample it
+   returns, and its third column is the edge count rather than the vertex count. *)
+VerificationTest[
+    Module[{ops, meas, data}, SeedRandom[605];
+        ops = {Function[c, Total[Flatten[c]]]};
+        {meas, data} = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed34, True, ops, 1, 5]];
+        {Length /@ meas,
+         AllTrue[meas[[All, -1]], Union @@ # === Range[7] &],
+         mcmcMeasurementsConsistentQ[meas, ops, True, 1],
+         meas[[All, 3]] === (Length[Union @@ (Subsets[#, {2}] & /@ #)] & /@ meas[[All, -1]]),
+         Length[DeleteDuplicates[meas[[All, -1]]]] > 1,
+         data["converged"], data["eqlT"], Length[data["corrTValues"]]}],
+    {{5, 5, 5, 5, 5}, True, True, True, True, True, 31, 3},
+    TestID -> "RandomPureSimplicialComplexMCMC-fixed-vertex-support"
+];
+
+(* Handed a previous run's association the driver skips both preparatory stages and samples
+   from where that run left off. The check that it really skipped them is the diagnostic plot:
+   equilibriation is the only stage that Prints one, so the full pipeline emits at least one
+   and the continuation must emit none. It carries the earlier run's eqlT and corrT forward
+   and advances the state rather than restarting from it. *)
+VerificationTest[
+    Module[{ops, pipelinePlots, contPlots, meas, data, meas2, data2},
+        ops = {Function[c, Total[Flatten[c]]]};
+        SeedRandom[603];
+        {pipelinePlots, {meas, data}} = emittedGraphicsAndResult[
+            Quiet@ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 1, 4]];
+        SeedRandom[604];
+        {contPlots, {meas2, data2}} = emittedGraphicsAndResult[
+            Quiet@ECGrav`RandomPureSimplicialComplexMCMC[data, ops, 1, 4]];
+        {pipelinePlots >= 1, contPlots, Length[meas2], meas2[[All, 1]],
+         mcmcMeasurementsConsistentQ[meas2, ops, 1],
+         {data2["eqlT"], data2["corrT"]} === {data["eqlT"], data["corrT"]},
+         data2[["state", "complex"]] =!= data[["state", "complex"]]}],
+    {True, 0, 4, Range[4], True, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMC-continues-from-a-prior-run"
+];
+
+(* corrT is not just reported, it is the spacing between recorded samples: the driver runs
+   that many sweeps between them, which is the whole point of measuring it. Nothing else here
+   pins that -- a driver that reported corrT and then swept a constant number of times would
+   still return self-consistent rows.
+
+   The continuation overload takes the association as given, so feeding it corrT -> 0 makes
+   the sweep run no steps at all and freezes the chain: every sample must then come back
+   identical, and identical to the state it started from. corrT -> 6 is the control that the
+   same call does move when it is allowed to. Zero is a probe, not a value the two stages can
+   produce -- the correlation time is floored at 2. *)
+VerificationTest[
+    Module[{ops = {Function[c, Total[Flatten[c]]]}, prior, frozen, moving},
+        SeedRandom[608];
+        prior = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 1, 2]][[2]];
+        frozen = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[Append[prior, "corrT" -> 0], ops, 1, 3]][[1]];
+        moving = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[Append[prior, "corrT" -> 6], ops, 1, 3]][[1]];
+        {DeleteDuplicates[frozen[[All, -1]]] === {prior[["state", "complex"]]},
+         Length[DeleteDuplicates[Rest /@ frozen]],   (* rows differ only in the sweep index *)
+         Length[DeleteDuplicates[moving[[All, -1]]]] > 1}],
+    {True, 1, True},
+    TestID -> "RandomPureSimplicialComplexMCMC-corrT-sets-the-sample-spacing"
+];
+
+(* HoldNumberOfVerticesFixed -> False delegates to the shorter overload, for both the
+   seed-complex and the prior-run forms. *)
+VerificationTest[
+    Module[{ops = {Function[c, Total[Flatten[c]]]}, a, b, prior, c1, c2},
+        SeedRandom[606];
+        a = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, False, ops, 1, 4]];
+        SeedRandom[606];
+        b = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 1, 4]];
+        prior = a[[2]];
+        SeedRandom[607];
+        c1 = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[prior, False, ops, 1, 4]];
+        SeedRandom[607];
+        c2 = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[prior, ops, 1, 4]];
+        {a === b, c1 === c2}],
+    {True, True},
+    TestID -> "RandomPureSimplicialComplexMCMC-free-vertex-delegates"
+];

@@ -145,6 +145,27 @@ mcmcCorrT[series_, lastLag_] :=
         {Max[Ceiling[corrSum], 2], turnedOver}
     ];
 
+(* Every measurement row a RandomPureSimplicialComplexMCMC run Sows carries both the complex
+   it measured and the numbers it measured on it:
+   {sweep index, energy, vertex or edge count, one value per operator, complex}. Recomputing
+   those numbers from the recorded complex must reproduce the recorded ones, which ties the
+   reported numbers to the reported states -- a row that kept a stale complex, or columns that
+   slipped out of step with the operator list, fails here where a shape check would not.
+
+   The recomputation goes back through the package's own sweep at NN = 0: no steps run, so
+   what comes back is the weight and count it derived from the complex it was handed. Extra
+   arguments are passed straight through, so callers write ...[meas, ops, 1] for the
+   free-vertex chain and ...[meas, ops, True, 1] for the fixed-vertex one. *)
+mcmcMeasurementsConsistentQ[measurements_, operators_, sweepArgs___] :=
+    AllTrue[measurements, Function[row,
+        Module[{complex = Last[row], probe},
+            probe = ECGrav`RandomPureSimplicialComplexMCMCSweep[complex, sweepArgs, 0];
+            ECGrav`PureComplexQ[complex] &&
+            floatEq[row[[2]], probe["energy"]] &&
+            row[[3]] === If[KeyExistsQ[probe, "vertexCount"], probe["vertexCount"],
+                                                              probe["edgeCount"]] &&
+            Take[row, {4, -2}] === Through[operators[complex]]]]];
+
 (* ----- Invariants for the stochastic MC drivers -----
    GraphMultiHistogram and GraphParallelTempering are not seed-reproducible: two runs under
    the same SeedRandom give different numbers, so nothing can be pinned to an expected value.

@@ -8,7 +8,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
-| `PureComplexes.wlt` | 129 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the two stages of the complex-space MCMC driver. |
+| `PureComplexes.wlt` | 135 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
 | `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **163 tests, 163 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **169 tests, 169 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -67,11 +67,11 @@ One trap worth knowing: `minEstates` is legitimately empty when nothing beats th
 invariant test passes a reachable threshold (`0.0`, not the `-100.0` used by the
 `Part::take` smoke test) precisely so the check has something to compare.
 
-**Stochastic is not the same as unreproducible.** `RandomPureSimplicialComplexMCMCEquilibriate`
-and `RandomPureSimplicialComplexMCMCCorrelationTime` contain no `ParallelTable` in any of
-their six definitions, so two runs under the same `SeedRandom` agree exactly and their
-results *can* be pinned — `eqlT`, `converged`, `corrT` and `corrTValues` are all asserted as
-values. Check for parallelism before falling back to a smoke test.
+**Stochastic is not the same as unreproducible.** The whole complex-space MCMC family —
+`RandomPureSimplicialComplexMCMC` and its two stages — contains no `ParallelTable` in any of
+its ten definitions, so two runs under the same `SeedRandom` agree exactly and results *can*
+be pinned: `eqlT`, `converged`, `corrT` and `corrTValues` are all asserted as values. Check
+for parallelism before falling back to a smoke test.
 
 **Asserting messages.** `messageArguments["Sym::tag", expr]` (prelude) returns the filled-in
 arguments of every matching message, not just the fact that one fired. It is built on
@@ -121,11 +121,11 @@ remainder are characterization tests that lock in current behaviour.
 None outstanding — the three suspected-wrong-behaviour bugs previously flagged here have
 been fixed at the source (see above) and are regression-tested.
 
-## The MCMC driver stages
+## The complex-space MCMC family
 
 `RandomPureSimplicialComplexMCMC` promises independent uniform draws, and that promise rests
-entirely on its two preparatory stages. Both are covered in `PureComplexes.wlt`, each in both
-its free-vertex and its fixed-vertex overload.
+entirely on its two preparatory stages. The driver and both stages are covered in
+`PureComplexes.wlt`, each in both its free-vertex and its fixed-vertex overload.
 
 **Equilibriation.** `outWinLength = 400` and `inWinLength = 30`, so a converged run reports
 `eqlT = numsweeps - 370`; small systems pass the criterion at the first check after the window
@@ -170,6 +170,30 @@ the one-lag-short convention reports 7 — the only place either is observable i
 Both mutations were run and both now fail the test. Note the probes have to be synthetic:
 a real observable turns over within a handful of lags and never reaches the end of the range.
 
+**The driver.** Four definitions: from a seed complex, free-vertex and fixed-vertex, and two
+continuation overloads that take a previous run's association and skip straight to sampling.
+Each returns `{measurements, data}`, a measurement row being
+`{sweep index, energy, vertex or edge count, operator values…, complex}`.
+
+The rows are checked for **internal consistency** rather than pinned: recomputing the energy,
+the count and the operators from each row's own complex must give back that row's numbers
+(`mcmcMeasurementsConsistentQ`, which recomputes through the package's own sweep at `NN = 0` —
+no steps run, so what comes back is derived from the complex it was handed). A stale state or
+an operator column out of step fails there where a shape check would not; a corrupted copy is
+the negative control on the predicate.
+
+Three behaviours needed a probe rather than an assertion on a healthy run:
+
+- **The abort on unequilibriated chains** passes a call-counting operator. It has to stay at
+  zero — `$Failed` on its own does not distinguish aborting from sampling and then giving up.
+- **The continuation really skips both stages**, shown by the diagnostic plot: equilibriation
+  is the only stage that `Print`s one, so the full pipeline emits at least one and the
+  continuation must emit none.
+- **`corrT` is the spacing between samples**, not just a reported number. Feeding the
+  continuation `corrT -> 0` makes the sweep run no steps and freezes the chain, so every
+  sample must come back identical to the state it started from; `corrT -> 6` is the control
+  that the same call moves when allowed to. Zero is a probe, not a value the stages produce.
+
 ## Coverage
 
 74 of the package's 117 public symbols are exercised by the suite. Recently added:
@@ -193,10 +217,12 @@ a real observable turns over within a handful of lags and never reaches the end 
   the thresholds down. `RandomUniformUnlabeledPureSimplicialComplex` additionally has exact
   identity checks on its Burnside weights and profile marginals, which is what pins its
   uniformity; a wrong weight would still emit plausible complexes.
-- **MCMC driver stages** — `RandomPureSimplicialComplexMCMCEquilibriate` and
-  `RandomPureSimplicialComplexMCMCCorrelationTime`, both overloads each, with pinned values,
-  the `::noconv` / `::stuck` / `::alldefault` paths and their negative controls, and the
-  correlation-time oracle. See the section above.
+- **The complex-space MCMC family** — `RandomPureSimplicialComplexMCMCEquilibriate` and
+  `RandomPureSimplicialComplexMCMCCorrelationTime` with pinned values, the `::noconv` /
+  `::stuck` / `::alldefault` paths and their negative controls, and the correlation-time
+  oracle; then `RandomPureSimplicialComplexMCMC` itself, all four definitions, by internal
+  consistency of its measurement rows plus probes for the abort, the continuation and the
+  sample spacing. See the section above.
 
 Deliberately **still untested**, each for a concrete reason:
 
@@ -207,7 +233,9 @@ Deliberately **still untested**, each for a concrete reason:
   `SeedRandom` reproducibility, so no stable assertion on values. Note this is not the same
   as untestable: where the output cross-checks itself, assert that instead (see the
   internal-consistency tests above).
-- **`RandomPureSimplicialComplexMCMC`** — the only remaining gap in the complex-space MCMC
-  family, and *not* for the reason this list used to give: none of its four definitions uses
-  `ParallelTable`, and two runs under one `SeedRandom` agree exactly, so it can be pinned
-  like its two stages. It is the driver that composes them, so it should be tested next.
+- **Uniformity of the MCMC draws** — that the family samples uniformly is settled by exact
+  enumeration (whole state space, orbit sizes against the per-class weights, detailed balance
+  on the transition matrix in exact arithmetic), not by the suite. A goodness-of-fit test on
+  the drawn samples would be both slow and weak here, since consecutive draws are correlated
+  by construction; the suite checks that the machinery runs and reports honestly, and the
+  distribution argument lives outside it.
