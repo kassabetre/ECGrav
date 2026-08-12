@@ -2140,7 +2140,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,tracksAgreeQ,agreement,informative,margins,agreementTolerance,observableNames,worstObservable="the monitored observables",converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2156,9 +2156,35 @@ PrintTemporary["Equilibriating at beta ",beta, " hparams ",{hparams}];
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
-inWinLength=30;(* A segment to be averaged over at the beginning and the end of the table*)
+inWinLength=100;(* A segment to be averaged over at the beginning and the end of the table*)
+(*inWinLength is the window whose means are compared, so it alone sets the resolution:
+	an offset between tracks is detectable down to about sigma*Sqrt[2g/inWinLength], g being
+	the chain's statistical inefficiency. It is also the batch length of the threshold
+	estimate, which is what makes the comparison exact at any autocorrelation -- both sides
+	average over the same number of sweeps, so any batching bias cancels. Measured over
+	AR(1) tracks, raising it from 30 to 100 moves the pass rate at a 0.5 sigma offset from
+	0.38 to 0.16 and at 1 sigma from 0.14 to 0.02, while the pass rate on equilibriated
+	tracks stays at about 0.5 for every rho tried. outWinLength only sets how many batches
+	the threshold is estimated from; lengthening it was measured to buy nothing here, and it
+	is what every run pays before the first check, so it stays where it was.*)
 
-Entable=Table[0.0,{m,3},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
+(*Two scalars are watched, not one: a single one can be flat for reasons that have nothing
+to do with mixing, and then the test has nothing to read. Both are already carried on
+every replica, so the second costs nothing.*)
+observableNames={"the energy","the edge density"};
+
+Entable=Table[0.0,{s,Length[observableNames]},{m,3},{n,outWinLength}];
+	(*running values of each watched scalar on each of the three tracks, newest first*)
+
+tracksAgreeQ[tbl_]:=Module[{sq},
+	sq=Table[(Mean[tbl[[i]][[1;;inWinLength]]]-Mean[tbl[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
+	{Mean[Flatten[sq]],2*Mean[Table[Variance[Mean/@Partition[tbl[[i]],inWinLength]],{i,3}]]}];
+
+(*Where to sit on the trade between wasted sweeps and missed disagreement: accepting exactly
+	the null expectation passes an equilibriated chain only about half the time, and each
+	extra check now costs a whole window. See the complex-space equilibriator for the
+	measured curve this 1.5 comes from.*)
+agreementTolerance=1.5;
 
 (*Main calculation*)
 
@@ -2192,48 +2218,47 @@ If[sweepOutput[[1,Key["minEnergy"]]]<data[[Key["minEnergy"]]],
 ,{replicaName,{"state","empty","random"}}];
 
 
-Entable[[All,1]]={data[[Key["state"]]][[Key["energy"]]],data[[Key["empty"]]][[Key["energy"]]],data[[Key["random"]]][[Key["energy"]]]};
+Entable[[All,All,1]]=Table[Lookup[data[[Key[#]]],key]&/@
+	{"state","empty","random"},{key,{"energy","mag"}}];
 
 
-If[numsweeps>outWinLength,
+If[numsweeps>outWinLength&&Mod[numsweeps-outWinLength-1,inWinLength]==0,
+(*Evaluated once per inWinLength sweeps rather than every sweep. Consecutive checks used
+	to share all but one of their points, so the test was effectively re-read hundreds of
+	times over the same data and stopped at the first favourable fluctuation rather than at
+	the first sweep the chain was actually mixed. One check per window refresh makes
+	successive looks nearly independent, and costs less.*)
 
-sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
+agreement=tracksAgreeQ/@Entable;
+informative=Table[Length[DeleteDuplicates[Flatten[Entable[[k]]]]]>1,{k,Length[observableNames]}];
 
-(*sqMeanEMat is a three by three matrix of the squared difference in mean energy
-within and across the tracks between the beginning and the end of outWinLength.
-At equilibrium these 9 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
-
-sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
-
-(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
-	chain, which is twice the variance of an inWinLength-long window mean -- NOT the
-	variance of the individual energies, which is larger by the effective sample size and
-	made the test pass with a wide margin for any chain whose autocorrelation time was
-	short. Estimate that variance directly, from the scatter of the non-overlapping window
-	means inside each track: it is a within-track quantity, so an offset between tracks
-	cannot inflate it, and it carries the chain's autocorrelation without anyone having to
-	know the correlation time -- which is not available until after equilibriation anyway.*)
-
-expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,3}]];
-
-
-If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
+(*A scalar that never varied says nothing about mixing, so it does not get a vote. If none of
+	them varied the run has no evidence either way, which is a different outcome from
+	convergence and is now said out loud rather than passed off as success by a metastability
+	escape that only read each track's own drift.*)
+If[!Or@@informative,
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	converged=True;
+	Message[GraphEquilibriate::nosignal,observableNames,eqlTime];
 	Break[]
-];(*Exit the while loop and go to the Do loop*)
+];
 
-If[Abs[Tr[sqMeanEMat]]<0.00001,
-	(*Print["exiting because stuck in a metastable state, 
-		sqMeanEMat is ",MatrixForm[sqMeanEMat]];*)
+(*carry the worst-agreeing scalar into ::noconv, so a failed run names what disagreed*)
+margins=Table[If[informative[[k]],agreement[[k,1]]-agreementTolerance*agreement[[k,2]],-Infinity],
+	{k,Length[observableNames]}];
+With[{worst=First@Ordering[margins,-1]},
+	sqMeanPairwiseDiff=agreement[[worst,1]];
+	expectedSqDiff=agreementTolerance*agreement[[worst,2]];
+	worstObservable=observableNames[[worst]]];
+
+If[Max[margins]<0,
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	converged=True;
 	Break[]
 ](*Exit the while loop and go to the Do loop*)
-
 ];
 
-Entable=RotateRight[#,1]&/@Entable;
+Entable=Map[RotateRight[#,1]&,Entable,{2}];
 (*Shifts every entry to the right by one cyclically. 
 The new data will be written on the first slot, so newer data is at the beginning.*)
 
@@ -2248,7 +2273,7 @@ The new data will be written on the first slot, so newer data is at the beginnin
 If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
-	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
+	Message[GraphEquilibriate::noconv,maxNumSweeps,worstObservable,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 
@@ -2296,7 +2321,7 @@ Depends on the function GraphSweepReplicas.,
 Outputs a list with two associations:, the first one is the lowest energy found  throughout the run together with all states with that lowest energy;, 
 The second is the final equilibriated state
 *)
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,Entable,outWinLength,inWinLength,AllEnMat,sqMeanEMat,sqMeanPairwiseDiff=Indeterminate,expectedSqDiff=Indeterminate,numsweeps,eqlTime,tracksAgreeQ,agreement,informative,margins,agreementTolerance,observableNames,worstObservable="the monitored observables",converged=False,maxNumSweeps=$ECGravMaxEquilibriationSweeps},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 data=<|"minEnergy" ->hamiltonian[seedGraph,hparams],"minEstates"->{seedGraph},
@@ -2312,9 +2337,35 @@ PrintTemporary["Equilibriating at beta ",beta, " hparams ",{hparams}];
 numsweeps=0;
 outWinLength =500 ;(* length of a table to store running energy values to test equilibriation*)
 
-inWinLength=30;(* A segment to be averaged over at the beginning and the end of the table*)
+inWinLength=100;(* A segment to be averaged over at the beginning and the end of the table*)
+(*inWinLength is the window whose means are compared, so it alone sets the resolution:
+	an offset between tracks is detectable down to about sigma*Sqrt[2g/inWinLength], g being
+	the chain's statistical inefficiency. It is also the batch length of the threshold
+	estimate, which is what makes the comparison exact at any autocorrelation -- both sides
+	average over the same number of sweeps, so any batching bias cancels. Measured over
+	AR(1) tracks, raising it from 30 to 100 moves the pass rate at a 0.5 sigma offset from
+	0.38 to 0.16 and at 1 sigma from 0.14 to 0.02, while the pass rate on equilibriated
+	tracks stays at about 0.5 for every rho tried. outWinLength only sets how many batches
+	the threshold is estimated from; lengthening it was measured to buy nothing here, and it
+	is what every run pays before the first check, so it stays where it was.*)
 
-Entable=Table[0.0,{m,3},{n,outWinLength}];(*A table to store energy values of the seed, random and empty tracks for tunning calculation of tests of equilibriation*)
+(*Two scalars are watched, not one: a single one can be flat for reasons that have nothing
+to do with mixing, and then the test has nothing to read. Both are already carried on
+every replica, so the second costs nothing.*)
+observableNames={"the energy","the edge density"};
+
+Entable=Table[0.0,{s,Length[observableNames]},{m,3},{n,outWinLength}];
+	(*running values of each watched scalar on each of the three tracks, newest first*)
+
+tracksAgreeQ[tbl_]:=Module[{sq},
+	sq=Table[(Mean[tbl[[i]][[1;;inWinLength]]]-Mean[tbl[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
+	{Mean[Flatten[sq]],2*Mean[Table[Variance[Mean/@Partition[tbl[[i]],inWinLength]],{i,3}]]}];
+
+(*Where to sit on the trade between wasted sweeps and missed disagreement: accepting exactly
+	the null expectation passes an equilibriated chain only about half the time, and each
+	extra check now costs a whole window. See the complex-space equilibriator for the
+	measured curve this 1.5 comes from.*)
+agreementTolerance=1.5;
 
 (*Main calculation*)
 
@@ -2349,46 +2400,46 @@ Reap[
 ,{replicaName,{"state","empty","random"}}];
 
 
-Entable[[All,1]]={data[[Key["state"],Key["energy"]]],data[[Key["empty"],Key["energy"]]],
-	data[[Key["random"],Key["energy"]]]};
+Entable[[All,All,1]]=Table[Lookup[data[[Key[#]]],key]&/@
+	{"state","empty","random"},{key,{"energy","mag"}}];
 
 
-If[numsweeps>outWinLength,
-	sqMeanEMat=Table[(Mean[Entable[[i]][[1;;inWinLength]]]-Mean[Entable[[j]][[(outWinLength-inWinLength+1);;outWinLength]]])^2,{i,3},{j,3}];
+If[numsweeps>outWinLength&&Mod[numsweeps-outWinLength-1,inWinLength]==0,
+	(*Evaluated once per inWinLength sweeps rather than every sweep. Consecutive checks used
+	to share all but one of their points, so the test was effectively re-read hundreds of
+	times over the same data and stopped at the first favourable fluctuation rather than at
+	the first sweep the chain was actually mixed. One check per window refresh makes
+	successive looks nearly independent, and costs less.*)
+agreement=tracksAgreeQ/@Entable;
+informative=Table[Length[DeleteDuplicates[Flatten[Entable[[k]]]]]>1,{k,Length[observableNames]}];
 
-	(*sqMeanEMat is a three by three matrix of the squared difference in mean energy
-	within and across the tracks between the beginning and the end of outWinLength.
-	At equilibrium these 9 numbers scatter about 0, and sqMeanPairwiseDiff is their mean.*)
-
-	sqMeanPairwiseDiff=Mean[Flatten[sqMeanEMat]];
-
-	(*What sqMeanPairwiseDiff must be compared against is its own value on an equilibriated
-		chain, which is twice the variance of an inWinLength-long window mean -- NOT the
-		variance of the individual energies, which is larger by the effective sample size and
-		made the test pass with a wide margin for any chain whose autocorrelation time was
-		short. Estimate that variance directly, from the scatter of the non-overlapping window
-		means inside each track: it is a within-track quantity, so an offset between tracks
-		cannot inflate it, and it carries the chain's autocorrelation without anyone having to
-		know the correlation time -- which is not available until after equilibriation anyway.*)
-
-	expectedSqDiff=2*Mean[Table[Variance[Mean/@Partition[Entable[[i]],inWinLength]],{i,3}]];
-
-
-	If[Abs[sqMeanPairwiseDiff]<expectedSqDiff,
+(*A scalar that never varied says nothing about mixing, so it does not get a vote. If none of
+	them varied the run has no evidence either way, which is a different outcome from
+	convergence and is now said out loud rather than passed off as success by a metastability
+	escape that only read each track's own drift.*)
+If[!Or@@informative,
 	eqlTime=numsweeps-outWinLength+inWinLength;
 	converged=True;
+	Message[GraphEquilibriate::nosignal,observableNames,eqlTime];
 	Break[]
-	];(*Exit the while loop and go to the Do loop*)
-
-	If[Abs[Tr[sqMeanEMat]]<0.00001,
-	eqlTime=numsweeps-outWinLength+inWinLength;
-	converged=True;
-	Break[]
-	](*Exit the while loop and go to the Do loop*)
-
 ];
 
-Entable=RotateRight[#,1]&/@Entable;
+(*carry the worst-agreeing scalar into ::noconv, so a failed run names what disagreed*)
+margins=Table[If[informative[[k]],agreement[[k,1]]-agreementTolerance*agreement[[k,2]],-Infinity],
+	{k,Length[observableNames]}];
+With[{worst=First@Ordering[margins,-1]},
+	sqMeanPairwiseDiff=agreement[[worst,1]];
+	expectedSqDiff=agreementTolerance*agreement[[worst,2]];
+	worstObservable=observableNames[[worst]]];
+
+If[Max[margins]<0,
+	eqlTime=numsweeps-outWinLength+inWinLength;
+	converged=True;
+	Break[]
+](*Exit the while loop and go to the Do loop*)
+];
+
+Entable=Map[RotateRight[#,1]&,Entable,{2}];
 (*Shifts every entry to the right by one cyclically. The new data will be written on the first slot, so newer data is at the beginning.*)
 
 ];
@@ -2402,7 +2453,7 @@ Entable=RotateRight[#,1]&/@Entable;
 If[!converged,
 	eqlTime=Max[maxNumSweeps-outWinLength+inWinLength,1];
 		(*stays positive even if the budget is set below the comparison window*)
-	Message[GraphEquilibriate::noconv,maxNumSweeps,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
+	Message[GraphEquilibriate::noconv,maxNumSweeps,worstObservable,sqMeanPairwiseDiff,expectedSqDiff,eqlTime]
 ];
 
 

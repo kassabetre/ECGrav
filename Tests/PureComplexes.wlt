@@ -938,7 +938,7 @@ VerificationTest[
          SubsetQ[Range[8], Union @@ r["state"]["complex"]],
          r["state"]["vertexCount"] === Length[Union @@ r["state"]["complex"]],
          r["state"]["complex"] =!= Sort[Sort /@ mcmcSeed24]}],
-    {{"eqlT", "converged", "state"}, True, 31, True, {2, 2, 2, 2}, True, True, True},
+    {{"eqlT", "converged", "state"}, True, 101, True, {2, 2, 2, 2}, True, True, True},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-converges"
 ];
 
@@ -948,7 +948,7 @@ VerificationTest[
         {n, res} = emittedGraphicsAndResult[
             ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 1]];
         {n >= 1, res["converged"], res["eqlT"]}],
-    {True, True, 31},
+    {True, True, 201},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-emits-plot"
 ];
 
@@ -956,17 +956,17 @@ VerificationTest[
    successful run could also have produced. A budget below the 400-sweep comparison window
    never reaches the convergence criterion, so this failure is deterministic rather than a
    race with the chain. The reported eqlT is the honest lower bound
-   maxNumSweeps - 400 + 30, clamped to stay positive; 100 sweeps exercises the clamp and
-   380 the unclamped branch. ::noconv must carry the budget it was given and the eqlT it is
-   about to return. *)
+   maxNumSweeps - outWinLength + inWinLength, clamped to stay positive; 100 sweeps exercises
+   the clamp and 380 the unclamped branch. ::noconv must carry the budget it was given, the
+   observable that agreed least well, and the eqlT it is about to return. *)
 VerificationTest[
     Module[{r, msgs},
         msgs = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::noconv",
             Quiet@Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 100}, SeedRandom[407];
                 r = Block[{Print = Null &},
                     ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]]]];
-        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 4}]]}],
-    {1, False, 1, {100, 1}},
+        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 2, 5}]]}],
+    {1, False, 1, {100, "the monitored observables", 1}},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-budget-exhausted-clamped"
 ];
 
@@ -976,8 +976,8 @@ VerificationTest[
             Quiet@Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 380}, SeedRandom[408];
                 r = Block[{Print = Null &},
                     ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 0]]]];
-        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 4}]]}],
-    {10, False, 1, {380, 10}},
+        {r["eqlT"], r["converged"], Length[msgs], msgs[[1, {1, 5}]]}],
+    {80, False, 1, {380, 80}},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-budget-exhausted-lower-bound"
 ];
 
@@ -1009,9 +1009,37 @@ VerificationTest[
          r["state"]["edgeCount"] ===
             Length[Union @@ (Subsets[#, {2}] & /@ r["state"]["complex"])],
          r["state"]["complex"] =!= Sort[Sort /@ mcmcSeed34]}],
-    {True, 55, {"complex", "edgeCount", "weight", "energy"}, Range[7], True, {3, 3, 3, 3},
+    {True, 101, {"complex", "edgeCount", "weight", "energy"}, Range[7], True, {3, 3, 3, 3},
      True, True},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-fixed-vertex-support"
+];
+
+(* Two scalars are watched, not one, and a scalar that never varied gets no vote. The
+   fixed-vertex chain at labelingChoise 0 gives every state weight 1, so the energy is
+   identically 0 on every track: before, that left the test reading nothing at all and
+   falling through to a metastability escape that reported convergence at the first check
+   for any input, however far from mixed. Here the edge count still moves, so there is a
+   real test, and nothing is reported as missing.
+
+   The 30-vertex seed is the case where there genuinely is no signal: that chain permutes
+   vertices between two facets, so ten disjoint triangles stay ten disjoint triangles for
+   ever and BOTH scalars are frozen by construction. It still returns converged -- a chain
+   whose observables never move is stationary in them -- but it now says so rather than
+   passing the silence off as evidence. *)
+VerificationTest[
+    Module[{frozen, informed, rFrozen, rInformed},
+        frozen = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::nosignal",
+            Quiet@Block[{Print = Null &}, SeedRandom[9];
+                rFrozen = ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[
+                    Partition[Range[30], 3], True, 0]]];
+        informed = messageArguments["RandomPureSimplicialComplexMCMCEquilibriate::nosignal",
+            Quiet@Block[{Print = Null &}, SeedRandom[11];
+                rInformed = ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[
+                    mcmcSeed34, True, 0]]];
+        {frozen, rFrozen["converged"], informed, rInformed["converged"],
+         ECGrav`PureComplexQ[rInformed["state"]["complex"]]}],
+    {{{{"the energy", "the edge count"}, 101}}, True, {}, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-reports-when-nothing-varied"
 ];
 
 (* HoldNumberOfVerticesFixed -> False hands straight over to the two-argument overload, so
@@ -1234,7 +1262,7 @@ VerificationTest[
          Last[meas][[-1]] === data[["state", "complex"]],
          Keys[data], data["converged"], data["eqlT"], data["corrT"], data["corrTValues"]}],
     {5, {6, 6, 6, 6, 6}, Range[5], True, False, True, True,
-     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 38, 2, {2, 2, 2, 2}},
+     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 101, 2, {2, 2, 2, 2}},
     TestID -> "RandomPureSimplicialComplexMCMC-measurements-are-self-consistent"
 ];
 
@@ -1269,7 +1297,7 @@ VerificationTest[
          meas[[All, 3]] === (Length[Union @@ (Subsets[#, {2}] & /@ #)] & /@ meas[[All, -1]]),
          Length[DeleteDuplicates[meas[[All, -1]]]] > 1,
          data["converged"], data["eqlT"], Length[data["corrTValues"]]}],
-    {{5, 5, 5, 5, 5}, True, True, True, True, True, 36, 3},
+    {{5, 5, 5, 5, 5}, True, True, True, True, True, 101, 3},
     TestID -> "RandomPureSimplicialComplexMCMC-fixed-vertex-support"
 ];
 

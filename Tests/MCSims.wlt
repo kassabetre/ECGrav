@@ -170,8 +170,14 @@ VerificationTest[
     Module[{n, res, obs, HH}, SeedRandom[105];
         HH = ECGrav`HIsing[#, -1.0, 0.0] &;
         obs = {HH, Total[#, 2]/(10 (10 - 1)/2) &};
+        (* The high-beta replicas of this run freeze onto the complete graph, which is the
+           ground state of h[-1.0, 0.0], so both watched scalars sit still for the whole
+           comparison window and GraphEquilibriate correctly reports that it had nothing to
+           test. That is the diagnostic working, not a failure, so it is quieted by name --
+           and only by name, so any other message still fails the test. *)
         {n, res} = emittedGraphicsAndResult[
-            ECGrav`GraphMultiHistogram[C6, 0.1, 1.2, h[-1.0, 0.0], obs, 40, 0]];
+            Quiet[ECGrav`GraphMultiHistogram[C6, 0.1, 1.2, h[-1.0, 0.0], obs, 40, 0],
+                  ECGrav`GraphEquilibriate::nosignal]];
         {n >= 1,
          Length[res] === 3,
          groundStatesConsistentQ[res[[1]], HH, 6],

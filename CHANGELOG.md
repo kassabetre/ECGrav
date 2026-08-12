@@ -31,9 +31,54 @@ semantic-ish; breaking changes are called out explicitly.
   runs do not carry across this change**, and any `eqlT` recorded from an earlier version is an
   underestimate.
 
-  Not addressed here: the second criterion, `Tr[sqMeanEMat] < 1e-5`, still looks only at each
-  track's own drift, so four tracks each frozen at different energies are declared converged
-  however far apart they sit, silently. See `Tests/README.md`.
+- **The equilibriation test now reads two observables, over a longer window, once per window.**
+  Four changes to the same test, all in the four equilibriators:
+
+  - **Two scalars are watched, not one** — the energy and the vertex count (free-vertex
+    complexes), the edge count (fixed-vertex), or the edge density (graphs). A single scalar
+    can be flat for reasons unrelated to mixing, and one whole case was blind: the fixed-vertex
+    chain at `labelingChoise -> 0` gives every state weight 1, so the energy is identically 0
+    on every track. `RandomPureSimplicialComplexMCMCEquilibriate[Partition[Range[30], 3],
+    True, 0]` used to return `converged -> True` at the first check for any input, however far
+    from mixed. Both scalars are already carried on every replica, so the second costs nothing.
+  - **A scalar that never varied gets no vote, and if none varied that is now said out loud**
+    via the new `GraphEquilibriate::nosignal` / `…MCMCEquilibriate::nosignal`. It still returns
+    `converged -> True` — a chain whose observables never move is stationary in them — but the
+    silence is no longer passed off as evidence. This replaces the `Tr[sqMeanEMat] < 1e-5`
+    metastability escape, which read only the diagonal of the matrix, i.e. each track's own
+    drift, and so declared four tracks frozen at four *different* energies converged however
+    far apart they sat. That also removes the `1e-5` / `1e-6` disagreement between overloads.
+  - **`inWinLength` 30 → 100.** That window alone sets the resolution: an offset between
+    replicas is detectable down to about `sigma*Sqrt[2g/inWinLength]`. Measured over AR(1)
+    tracks, the pass rate at a 1σ offset falls from 0.18 to 0.04. It is also the batch length
+    of the threshold estimate, which is what keeps the comparison exact at any autocorrelation
+    — both sides average over the same number of sweeps, so any batching bias cancels.
+    `outWinLength` was left alone: it only sets how many batches the threshold is estimated
+    from, lengthening it was measured to buy nothing, and it is what every run pays before the
+    first check.
+  - **Checked once per `inWinLength` sweeps instead of every sweep.** Consecutive checks shared
+    all but one of their points, so the test was re-read hundreds of times over the same data
+    and stopped at the first favourable fluctuation. The acceptance is `1.5 ×` the null
+    expectation rather than exactly it, chosen off the measured curve: at that tolerance 85% of
+    equilibriated checks pass, so a run exits in 1.1 checks rather than 2, while the pass rate
+    at a 1σ offset is still 0.04.
+
+  `::noconv` gained a slot and now names the observable that agreed least well.
+
+  **This is the change that costs runtime, and most of that cost is an accounting artifact.**
+  Equilibriation itself got 1.0–1.6× longer, which is the intended effect. But `eqlT` grew
+  3–6×, because `eqlT = numsweeps - outWinLength + inWinLength` carries a flat `+70` from the
+  window change on a base of ~31, and the correlation-time stage runs `10*eqlT` sweeps. Same
+  seeds, before → after: p2 M4 `labelingChoise 2` converged at sweep 401 → 501 while its
+  correlation-time run went 310 → 2010 sweeps; p2 M10 `labelingChoise 2` went 480 → 760 sweeps
+  while its run went 2100 → 4010. End to end on `RandomPureSimplicialComplexMCMC` at p=2, M=4,
+  `labelingChoise 2`: 0.9 s → 16 s.
+
+  The root cause is that `eqlT` does double duty — a burn-in report *and* the length scale for
+  measuring autocorrelation — and those want different numbers: measurement length should scale
+  with the correlation time, not with burn-in. `10*eqlT` only looked reasonable while the window
+  arithmetic pinned `eqlT` near 31. Decoupling them is the next change. Seeded runs do not carry
+  across this one.
 
 ## [1.6.0] - 2026-08-10
 

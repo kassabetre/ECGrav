@@ -8,7 +8,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
-| `PureComplexes.wlt` | 135 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
+| `PureComplexes.wlt` | 136 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
 | `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **169 tests, 169 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **170 tests, 170 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -120,12 +120,13 @@ remainder are characterization tests that lock in current behaviour.
 
 The three suspected-wrong-behaviour bugs previously flagged here have been fixed at the source
 (see above) and are regression-tested. What follows came out of an audit of the equilibriation
-criterion; the scale error it found has since been fixed, the rest has not.
+criterion. Most of what it found has since been fixed; this records what was wrong, so the
+reasoning behind the current shape is on the record, and what is still open.
 
 All four equilibriators (`GraphEquilibriate` ×2 on three tracks, the two complex-space ones on
-four) share one criterion: build `sqMeanEMat[[i,j]] = (mean of track i's newest 30 energies −
-mean of track j's oldest 30)²`, and stop when its mean, `sqMeanPairwiseDiff`, falls below a
-threshold. A second criterion stops when `Tr[sqMeanEMat]` is below `1e-5`.
+four) share one criterion: for each watched scalar build
+`sqMeanEMat[[i,j]] = (mean of track i's newest inWinLength values − mean of track j's oldest
+inWinLength)²`, and stop when its mean, `sqMeanPairwiseDiff`, falls below a threshold.
 
 **Fixed — the threshold was off by the effective sample size.** It used to be `meanLateVar`,
 the variance of the *individual* energies, against a left-hand side that is a squared
@@ -144,23 +145,24 @@ scatter of the non-overlapping window means inside each track. Its pass rate on 
 tracks is flat in the autocorrelation at ≈50% per check. The residual gap on that same system
 drops to **0.47σ** for ten extra sweeps. See the CHANGELOG for the reproducibility note.
 
+**Also fixed since.** The metastability escape `Tr[sqMeanEMat] < 1e-5` read only the diagonal
+— each track's own drift — so four tracks each frozen at a *different* energy gave a trace of
+exactly 0 and passed however far apart they sat (demonstrated at energies 1, 4, 9, 16; jitter
+of 1e-4 still leaves the trace at 1e-9). It has been removed, and with it the `1e-5` / `1e-6`
+disagreement between overloads. Its legitimate job — a chain whose observables genuinely never
+move — is now the explicit `::nosignal` outcome.
+
+The criterion is also no longer applied every sweep. Consecutive checks shared all but one of
+their points, so it was re-read hundreds of times over the same data and stopped at the first
+favourable fluctuation; it now runs once per `inWinLength` sweeps.
+
 Still open:
 
-- **The second criterion can declare a stuck chain converged.** `Tr[sqMeanEMat]` is the
-  diagonal only — each track's own drift — so four tracks that are each individually frozen at
-  *different* energies give a trace of exactly 0 and pass, however far apart they are.
-  Demonstrated at energies 1, 4, 9, 16: the first criterion correctly refuses, the second fires
-  anyway. Not a knife edge — jitter of 1e-4 leaves the trace at 1e-9. It never fired in 4000
-  real checks across five systems, so this is a latent path rather than an observed failure,
-  and unlike the budget-exhausted case it reports `converged -> True` with no message. Its
-  threshold also disagrees between overloads: `1e-5` in three equilibriators, `1e-6` in the
-  fixed-vertex complex-space one.
-- **The criterion is applied every sweep and exits on the first pass**, so it stops at the
-  first favourable fluctuation rather than at the first sweep where the chain is genuinely
-  mixed. Requiring it to hold for 30 consecutive checks was measured and takes the residual gap
-  on that system further, 0.47σ → 0.21σ, but costs a great deal on systems that were already
-  fine (`p2 M4 ch1`: sweep 401 → 875), so it was not adopted.
-- `Abs` on `sqMeanPairwiseDiff` and on `Tr[sqMeanEMat]` is redundant — both are sums of squares.
+- `Abs` on `sqMeanPairwiseDiff` is redundant — it is a mean of squares.
+- `eqlT` does double duty: it is reported as the burn-in estimate *and* multiplied by 10 to set
+  the correlation-time run length. Those want different things, and because `eqlT` carries
+  `+ inWinLength`, lengthening the comparison window rescaled the correlation-time stage along
+  with it. Decoupling them is a separate change.
 
 `expectedSqDiff`'s predecessor was *not* the noisy part, contrary to the note this section used
 to carry: its level varied by only 9–19% across checks on real runs, and consecutive checks
@@ -178,10 +180,15 @@ energy unit.
 entirely on its two preparatory stages. The driver and both stages are covered in
 `PureComplexes.wlt`, each in both its free-vertex and its fixed-vertex overload.
 
-**Equilibriation.** `outWinLength = 400` and `inWinLength = 30`, so a converged run reports
-`eqlT = numsweeps - 370`. The smallest systems still pass at the first check after the window
-fills, which pins `eqlT` to 31 — do not read a repeated 31 as a stuck value. Anything larger now
-takes a few more checks, so the pinned values vary (31 to 55 across the suite).
+**Equilibriation.** `outWinLength = 400` and `inWinLength = 100`, so a converged run reports
+`eqlT = numsweeps - 300`, and the test is evaluated once per `inWinLength` sweeps rather than
+every sweep. A system that passes at the first check therefore reports `eqlT = 101`, and each
+further check adds 100 — do not read a repeated 101 as a stuck value. Pinned values across the
+suite run 101 to 201.
+
+Two scalars are watched, the energy and the vertex (or edge) count, and a scalar that never
+varied gets no vote. If none of them varied there is no evidence either way, and `::nosignal`
+says so rather than reporting convergence silently.
 
 Failure is forced deterministically by setting `$ECGravMaxEquilibriationSweeps` **below 400**:
 the convergence criterion is inside `If[numsweeps > outWinLength, …]`, so it never runs and
