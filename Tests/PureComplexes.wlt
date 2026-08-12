@@ -1114,7 +1114,7 @@ VerificationTest[
          oracle[[All, 2]],                       (* turnover reached on each series? *)
          Max[r["corrTValues"]] > 2,              (* the lag loop went past the floor *)
          shuffled =!= oracle[[All, 1]]}],
-    {310, True, True, True, {True, True, True, False}, True, True},
+    {155, True, True, True, {True, True, True, False}, True, True},
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-integration-rule"
 ];
 
@@ -1129,13 +1129,17 @@ VerificationTest[
    the quadratic counter reports 6 where dropping the one-lag-short convention would report 7
    -- which is the only place either convention is visible in the output at all.
 
+   The run is 5*eqlT, so eqlT -> 4 is what asks for those 20 sweeps. Do not lower it further:
+   lastLag is numsweeps - 10, so eqlT 2 leaves no lag range at all and every value collapses
+   to the floor.
+
    Both counters are synthetic on purpose: a real observable turns over within a handful of
    lags and never reaches the end of the range, so it cannot probe it. *)
 VerificationTest[
     Module[{recorded = {}, sweepNo = 0, sweepNoSq = 0, r, numsweeps, rows, oracle},
         SeedRandom[508];
         r = Quiet@Block[{Print = Null &},
-            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 2,
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 4,
                 {Function[c, AppendTo[recorded, c]; Total[Flatten[c]]],
                  Function[c, ++sweepNo], Function[c, (++sweepNoSq)^2]}, 1]];
         numsweeps = Length[recorded];
@@ -1185,6 +1189,38 @@ VerificationTest[
          shuffled =!= oracle[[All, 1]]}],
     {True, True, True, True, True, {True, True, True, False}, True},
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-fixed-vertex-integration-rule"
+];
+
+(* The measurement run is no longer set by the equilibriation time alone. Those measure
+   different things -- how long the chain took to forget where it started, against how long it
+   takes to forget where it was a sweep ago -- and only the second governs how long you have to
+   watch. Deriving the run from eqlT made it scale with something it has no reason to scale
+   with: widening the equilibriation comparison window added a constant to eqlT and multiplied
+   this run by three to ten with it. It is now the smaller of 5*eqlT and
+   $ECGravMaxCorrelationSweeps, and the recording operator counts the sweeps directly.
+
+   The last leg is the honest half of a cap: a run that turns out to be short for what it found
+   -- fewer than the 20 correlation times it takes to resolve one -- says so. The sweep counter
+   never decorrelates, so at eqlT 4 it reports 7 over a 20-sweep run and the message fires. *)
+VerificationTest[
+    Module[{sweepsFor, shortRun, n = 0},
+        sweepsFor[eqlT_, cap_] := Module[{rec = {}},
+            Block[{ECGrav`$ECGravMaxCorrelationSweeps = cap},
+                Quiet@Block[{Print = Null &}, SeedRandom[801];
+                    ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, eqlT,
+                        {Function[c, AppendTo[rec, c]; Total[Flatten[c]]]}, 1]]];
+            Length[rec]];
+        shortRun = messageArguments[
+            "RandomPureSimplicialComplexMCMCCorrelationTime::shortrun",
+            Quiet@Block[{Print = Null &}, SeedRandom[508];
+                ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 4,
+                    {Function[c, Total[Flatten[c]]], Function[c, ++n]}, 1]]];
+        {sweepsFor[31, 1000],    (* below the cap: still 5*eqlT *)
+         sweepsFor[500, 1000],   (* above it: capped, not 2500 *)
+         sweepsFor[500, 200],    (* and the cap is what does it *)
+         shortRun}],
+    {155, 1000, 200, {{7, 20, 5, 1000}}},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-run-length-is-capped"
 ];
 
 (* As with the equilibriator, False delegates to the shorter overload. *)

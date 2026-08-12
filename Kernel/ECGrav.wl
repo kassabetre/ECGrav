@@ -27,7 +27,8 @@ Unprotect @@ Names["ECGrav`*"];
 	must not silently discard a setting the session has already made. *)
 (* Names["ECGrav`*"] yields SHORT names, so the exclusion must be written without the context
 	prefix or it silently matches nothing and ClearAll wipes the setting anyway. *)
-ClearAll @@ DeleteCases[Names["ECGrav`*"], "$ECGravMaxEquilibriationSweeps"];
+ClearAll @@ DeleteCases[Names["ECGrav`*"],
+	"$ECGravMaxEquilibriationSweeps"|"$ECGravMaxCorrelationSweeps"];
 
 
 (* ::Title:: *)
@@ -84,6 +85,22 @@ $ECGravMaxEquilibriationSweeps::usage="$ECGravMaxEquilibriationSweeps is the swe
 	default. Paired with the DeleteCases above, which keeps ClearAll off this symbol. *)
 If[!ValueQ[$ECGravMaxEquilibriationSweeps],
 	$ECGravMaxEquilibriationSweeps=25000];
+
+
+$ECGravMaxCorrelationSweeps::usage="$ECGravMaxCorrelationSweeps caps the length of the
+	measurement run the correlation-time routines make: GraphComputeCorrelationTime and
+	RandomPureSimplicialComplexMCMCCorrelationTime each sweep for a multiple of the
+	equilibriation time they were handed, or this many sweeps, whichever is smaller. The cap
+	exists because those two quantities measure different things -- how long the chain took to
+	forget its starting point, against how long it takes to forget where it was a sweep ago --
+	and only the second sets how long you have to watch to resolve an autocorrelation time. A
+	run that turns out to be short for what it found says so through the corresponding
+	::shortrun message; raise this if you see one. Distributed to subkernels alongside
+	$ECGravMaxEquilibriationSweeps.";
+
+(* Guarded for the same reason as the budget above. *)
+If[!ValueQ[$ECGravMaxCorrelationSweeps],
+	$ECGravMaxCorrelationSweeps=1000];
 
 
 (* ::Title::Closed:: *)
@@ -977,6 +994,14 @@ a real number at position 2, a hamiltonian at position 3, an optional formula fo
 the change in energy when one edge is toggled at position 4, and Integer at position 5,
 a Real numbers at positions 6, and integers at positions 7 and 8. The integer at position
 8 has to be 1 or 0 for unlabeled ot labeled graphs respectively";
+
+(* Concatenated for the same reason as ::noconv above. *)
+GraphComputeCorrelationTime::shortrun=
+	"The correlation time came out as `1`, measured over a run of only `2` sweeps -- fewer "<>
+	"than the 20 correlation times it takes to resolve one reliably, so `1` is likely to be "<>
+	"an underestimate and samples spaced by it may still be correlated. The run length is "<>
+	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
+	"(currently `4`); raise the latter.";
 
 GraphComputeCorrelationTime::stuck="All measured values of `1` are stuck at `2`.
 	Autocorrelation time can not be computed; a default value of 2 will be assigned.";
@@ -2767,6 +2792,14 @@ RandomPureSimplicialComplexMCMCCorrelationTime::argerr="Input has to be of the f
 	RandomPureSimplicialComplexMCMCEquilibriate[equilibriatedComplex_List,
 	eqlT_Integer, operators_,labelingChoise_Integer].";
 
+(* Concatenated for the same reason as ::noconv above. *)
+RandomPureSimplicialComplexMCMCCorrelationTime::shortrun=
+	"The correlation time came out as `1`, measured over a run of only `2` sweeps -- fewer "<>
+	"than the 20 correlation times it takes to resolve one reliably, so `1` is likely to be "<>
+	"an underestimate and samples spaced by it may still be correlated. The run length is "<>
+	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
+	"(currently `4`); raise the latter.";
+
 RandomPureSimplicialComplexMCMCCorrelationTime::stuck="All measured values of `1` are
 	stuck at `2`. Autocorrelation time can not be computed; a default value of 2 will
 	be assigned.";
@@ -2881,8 +2914,7 @@ End[] (* End private context *)
 ];*)
 Protect @@ Names["ECGrav`*"];
 
-(* The equilibriation budget is a user setting, so it has to stay assignable after the
-	blanket Protect above. *)
-Unprotect[$ECGravMaxEquilibriationSweeps];
+(* Both are user settings, so they have to stay assignable after the blanket Protect above. *)
+Unprotect[$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps];
 
 EndPackage[]

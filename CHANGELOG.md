@@ -77,8 +77,36 @@ semantic-ish; breaking changes are called out explicitly.
   The root cause is that `eqlT` does double duty — a burn-in report *and* the length scale for
   measuring autocorrelation — and those want different numbers: measurement length should scale
   with the correlation time, not with burn-in. `10*eqlT` only looked reasonable while the window
-  arithmetic pinned `eqlT` near 31. Decoupling them is the next change. Seeded runs do not carry
-  across this one.
+  arithmetic pinned `eqlT` near 31. See the next entry. Seeded runs do not carry across this one.
+
+- **Shortened and capped the correlation-time measurement run**, in all six routines that set
+  one: `GraphComputeCorrelationTime` (×4, which used `30*eqlT`) and
+  `RandomPureSimplicialComplexMCMCCorrelationTime` (×2, `10*eqlT`). Both now use
+  `Min[5*eqlT, $ECGravMaxCorrelationSweeps]`, the cap being a new global with a default of
+  1000, distributed to subkernels alongside `$ECGravMaxEquilibriationSweeps`.
+
+  The multiple came down because it was never measuring what it was scaled to: at the
+  correlation times these chains show, roughly 2 to 4, resolving one needs on the order of 20
+  correlation times of run, i.e. under a hundred sweeps, and `30*eqlT` was spending 930. The
+  cap then stops the growth the previous commit introduced — at the larger `eqlT` the new
+  equilibriation test reports, the complex side would have run 4010 sweeps and the graph side
+  3030. Together: the graph side goes 930 → 155 sweeps at its old `eqlT`, the complex side
+  310 → 155, and neither can now exceed 1000. End to end on
+  `RandomPureSimplicialComplexMCMC` at p=2, M=4, `labelingChoise 2`: **16 s → 6.7 s**, against
+  0.9 s before any of this work, the remainder being genuine extra equilibriation.
+
+  Note `lastLag = numsweeps - 10`, so at `5*eqlT` an `eqlT` below 3 leaves no lag range and
+  every reported correlation time falls to the floor of 2. Nothing clamps this.
+
+  A cap that silently truncates would be worse than the coupling, so the routines now check
+  what they found against how long they watched: if the reported correlation time exceeds a
+  twentieth of the run — the usual minimum for resolving one — they say so through the new
+  `::shortrun`, naming the run length and the cap. It does not fire on ordinary runs at any
+  `labelingChoise`, or on the graph driver.
+
+  Still heuristic: the run length should be set by the measurement need, `numsweeps >= 20*tau`
+  discovered adaptively, not by the burn-in at all. At the correlation times these chains show
+  that would usually run shorter than the cap.
 
 ## [1.6.0] - 2026-08-10
 

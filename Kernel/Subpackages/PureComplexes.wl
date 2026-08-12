@@ -4798,7 +4798,14 @@ data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 		"state"-><|"complex"->Sort[Sort/@seedComplex],"vertexCount"->Length[DeleteDuplicates[Flatten[seedComplex]]],
 		"weight"->1.0,"energy" ->0.0|>|>;
 
-numsweeps=10*eqlT;
+(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 PrintTemporary["computing correlation time with numsweeps ",numsweeps];
 
@@ -4866,6 +4873,11 @@ If[fluctuatingObservableIndices=={},
 
 	data[[Key["corrT"]]]=Max[corrTValues];
 
+	(*A run this short may not resolve what it found: 20 correlation times is the usual
+		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
+	If[data[[Key["corrT"]]]>numsweeps/20,
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+
 	Do[data[[Key["corrTValues"],j]]=
 		corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],
 	{j,fluctuatingObservableIndices}];
@@ -4901,7 +4913,14 @@ Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMCC
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 	"state"-><|"complex"->Sort[Sort/@seedComplex],"edgeCount"->Length[Union@@(Subsets[#,{2}]&/@(Sort/@seedComplex))],"weight"->1.0,"energy" ->0.0|>|>;
 
-numsweeps=10*eqlT;
+(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 PrintTemporary["computing correlation time with numsweeps ",numsweeps];
 
@@ -4963,6 +4982,11 @@ If[fluctuatingObservableIndices=={},
 		,{i,fluctuatingObservableIndices}];
 
 	data[[Key["corrT"]]]=Max[corrTValues];
+
+	(*A run this short may not resolve what it found: 20 correlation times is the usual
+		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
+	If[data[[Key["corrT"]]]>numsweeps/20,
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
 
 	Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 ];

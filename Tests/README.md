@@ -8,7 +8,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | File | Contents |
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
-| `PureComplexes.wlt` | 136 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
+| `PureComplexes.wlt` | 137 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
 | `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **170 tests, 170 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **171 tests, 171 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -159,10 +159,13 @@ favourable fluctuation; it now runs once per `inWinLength` sweeps.
 Still open:
 
 - `Abs` on `sqMeanPairwiseDiff` is redundant — it is a mean of squares.
-- `eqlT` does double duty: it is reported as the burn-in estimate *and* multiplied by 10 to set
-  the correlation-time run length. Those want different things, and because `eqlT` carries
-  `+ inWinLength`, lengthening the comparison window rescaled the correlation-time stage along
-  with it. Decoupling them is a separate change.
+- `eqlT` still does double duty — it is the burn-in estimate *and* the basis for the
+  correlation-time run length — but the run is now capped at `$ECGravMaxCorrelationSweeps`
+  (default 1000), so the coupling can no longer scale without bound, and a run that turns out
+  short for what it measured says so through `::shortrun`. What is still not done is setting
+  the run length from the measurement need directly: the standard rule is
+  `numsweeps >= 20*tau`, discovered adaptively. That would usually run *shorter* than 1000 at
+  the `corrT` of 2-4 these chains show.
 
 `expectedSqDiff`'s predecessor was *not* the noisy part, contrary to the note this section used
 to carry: its level varied by only 9–19% across checks on real runs, and consecutive checks
@@ -189,6 +192,17 @@ suite run 101 to 201.
 Two scalars are watched, the energy and the vertex (or edge) count, and a scalar that never
 varied gets no vote. If none of them varied there is no evidence either way, and `::nosignal`
 says so rather than reporting convergence silently.
+
+**Correlation time.** The measurement run is `Min[5*eqlT, $ECGravMaxCorrelationSweeps]`. Both
+halves matter, because equilibriation time and measurement time are different quantities — how
+long the chain took to forget where it started, against how long it takes to forget where it
+was a sweep ago — and only the second governs how long you have to watch. Deriving the run from
+`eqlT` alone meant widening the equilibriation window added a constant to `eqlT` and multiplied
+this run along with it, which is where a 0.9 s driver call became 16 s.
+
+One trap when writing tests against it: `lastLag = numsweeps - 10`, so at `5*eqlT` an `eqlT`
+below 3 leaves no lag range at all and every reported value collapses to the floor of 2. The
+short-run probe passes `eqlT -> 4` for exactly 20 sweeps; do not lower it.
 
 Failure is forced deterministically by setting `$ECGravMaxEquilibriationSweeps` **below 400**:
 the convergence criterion is inside `If[numsweeps > outWinLength, …]`, so it never runs and

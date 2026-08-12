@@ -2107,10 +2107,13 @@ DelHUsableQ[amat_,dh_,dhpar___]:=
 
 $distributedEquilibriationBudget=None;
 
+(*Both settings ride along: a subkernel runs its own copy of the package, so it would
+	otherwise read its own default rather than whatever the master session set. Keyed on the
+	values as well as the kernel count, so a change made mid-session is picked up.*)
 SyncEquilibriationBudget[]:=
-	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps}},
+	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps}},
 		If[$KernelCount>0&&$distributedEquilibriationBudget=!=state,
-			DistributeDefinitions[$ECGravMaxEquilibriationSweeps];
+			DistributeDefinitions[$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps];
 			$distributedEquilibriationBudget=state
 		]
 	];
@@ -2547,7 +2550,14 @@ data=<|"minEnergy" ->minEToBeat,
 		"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
 
-numsweeps=30*eqlT;
+(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}, 
 	" using Energy or Magnetization ",EorM, " numsweeps ",numsweeps];
@@ -2608,7 +2618,12 @@ Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=
-Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
+Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2];
+
+(*A run this short may not resolve what it found: 20 correlation times is the usual
+	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
+If[data[[Key["corrT"]]]>numsweeps/20,
+	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
 
 ];
 
@@ -2671,7 +2686,14 @@ data=<|"minEnergy" ->minEToBeat,
 		"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
 
-numsweeps=30*eqlT;
+(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}, 
 	" using Energy or Magnetization ",EorM, " numsweeps ",numsweeps];
@@ -2733,7 +2755,12 @@ Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=
-Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2]
+Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2];
+
+(*A run this short may not resolve what it found: 20 correlation times is the usual
+	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
+If[data[[Key["corrT"]]]>numsweeps/20,
+	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
 
 ];
 
@@ -2791,7 +2818,14 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 			"energy" ->hamiltonian[seedGraph,hparams],
 			"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
-	numsweeps=30*eqlT;
+	(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 	PrintTemporary["computing correlation time at beta ",beta," hparams ",{hparams}, " numsweeps ",numsweeps];
 
@@ -2877,6 +2911,11 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 
 		
 		data[[Key["corrT"]]]=Max[corrTValues];
+
+		(*A run this short may not resolve what it found: 20 correlation times is the usual
+			minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
+		If[data[[Key["corrT"]]]>numsweeps/20,
+			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
 		Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 		(*data[[Key["corrTValues"]]]=Table[If[MemberQ[i,]data[[Key["corrTValues"],i]],corrTValues,{i,1,Length[data[[Key["corrTValues"]]]]}]];*)
 
@@ -2933,7 +2972,14 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 			"energy" ->hamiltonian[seedGraph,hparams],
 			"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
-	numsweeps=30*eqlT;
+	(*The equilibriation time and the length of run needed to measure an autocorrelation time
+	are different quantities -- one is how long the chain took to forget where it started,
+	the other how long it takes to forget where it was a sweep ago -- and only the second
+	governs this. Deriving the run length from eqlT alone made the measurement scale with
+	something it has no reason to scale with: widening the equilibriation comparison window
+	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
+	checked afterwards against what it actually found.*)
+numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 
 	PrintTemporary["computing correlation time at beta ",beta," hparams ",{hparams}, " numsweeps ",numsweeps];
 
