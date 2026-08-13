@@ -2109,11 +2109,32 @@ $distributedEquilibriationBudget=None;
 
 (*Both settings ride along: a subkernel runs its own copy of the package, so it would
 	otherwise read its own default rather than whatever the master session set. Keyed on the
-	values as well as the kernel count, so a change made mid-session is picked up.*)
+	values as well as the kernel count, so a change made mid-session, or a later
+	LaunchKernels, is picked up.
+
+	Pushed by assignment rather than by DistributeDefinitions, which cannot do this job:
+	it silently skips every symbol whose context is a loaded package, and ECGrav` is one as
+	soon as the subkernels have the package -- which is the configuration this exists for.
+	Measured, it returned {} and shipped nothing, for these symbols and for a fresh symbol
+	made up in the same context, while distributing the identical symbol from a non-package
+	context fine. The helper then recorded success and every parallel driver went on reading
+	the subkernel's own defaults.
+
+	The values are inlined through With because ParallelEvaluate holds its argument. The
+	assignment survives a subkernel loading its own copy of the package afterwards, because
+	the defaults in ECGrav.wl are set behind a ValueQ guard.
+
+	Verify any change to this through OwnValues on the subkernel, never through
+	ParallelEvaluate[sym]: that inlines the master's value at send time and reports the
+	master's setting whether or not anything ever arrived, which is what kept the previous
+	implementation looking correct.*)
 SyncEquilibriationBudget[]:=
 	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps}},
 		If[$KernelCount>0&&$distributedEquilibriationBudget=!=state,
-			DistributeDefinitions[$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps];
+			With[{budget=$ECGravMaxEquilibriationSweeps,cap=$ECGravMaxCorrelationSweeps},
+				ParallelEvaluate[
+					ECGrav`$ECGravMaxEquilibriationSweeps=budget;
+					ECGrav`$ECGravMaxCorrelationSweeps=cap]];
 			$distributedEquilibriationBudget=state
 		]
 	];

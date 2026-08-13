@@ -283,3 +283,41 @@ VerificationTest[
     {-12, -6},
     TestID -> "LowEnergyStates-no-kernels-divide-guard"
 ];
+
+
+(* The two user settings have to reach subkernels, because a subkernel runs its own copy of
+   the package and would otherwise read its own defaults. SyncEquilibriationBudget used to do
+   that with DistributeDefinitions, which cannot: it silently skips every symbol whose context
+   is a loaded package, and ECGrav` is one as soon as the subkernels have the package. It
+   returned {} and shipped nothing while the helper recorded success, so every parallel driver
+   went on using the defaults and a user raising the budget saw no effect.
+
+   Asserted through OwnValues on the subkernel and never through ParallelEvaluate[sym]: that
+   inlines the master's value at send time and reports the master's setting whether or not
+   anything arrived, which is exactly what kept the broken version looking correct. The
+   DistributeDefinitions leg is the negative control -- it is what the assertion above would
+   look like if the old mechanism were still in place.
+
+   Subkernels are loaded from source first, because ParallelNeeds["ECGrav`"] on its own
+   resolves to the *installed* paclet and would test whatever was last built rather than this
+   tree; the ParallelNeeds after it is a no-op for loading but registers the context, and
+   registration is what makes DistributeDefinitions skip the symbols. Loading the package on
+   subkernels without registering it does not reproduce the failure -- which is why this is the
+   configuration to test, since it is the one the drivers are used in. The pool is closed and
+   relaunched afterwards so later files get the prelude's clean state. *)
+VerificationTest[
+    Module[{pushed, shipped, src = FileNameJoin[{$ECGravRoot, "Kernel", "ECGrav.wl"}]},
+        CloseKernels[]; Quiet[LaunchKernels[2]];
+        With[{path = src}, ParallelEvaluate[Get[path]]];
+        ParallelNeeds["ECGrav`"];
+        pushed = Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 777,
+                        ECGrav`$ECGravMaxCorrelationSweeps = 333},
+            ECGrav`Private`SyncEquilibriationBudget[];
+            ParallelEvaluate[{Last /@ OwnValues[ECGrav`$ECGravMaxEquilibriationSweeps],
+                              Last /@ OwnValues[ECGrav`$ECGravMaxCorrelationSweeps]}]];
+        shipped = DistributeDefinitions[ECGrav`$ECGravMaxCorrelationSweeps];
+        CloseKernels[]; Quiet[LaunchKernels[]];
+        {DeleteDuplicates[pushed], shipped}],
+    {{{{777}, {333}}}, {}},
+    TestID -> "SyncEquilibriationBudget-reaches-subkernels"
+];

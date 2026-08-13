@@ -9,7 +9,7 @@ checks in `BuildingAndInstallingPaclets.nb`.
 | --- | --- |
 | `TestPrelude.wl` | Loads the package **from source**, defines shared fixtures, float-comparison helpers, a message-argument collector and the correlation-time oracle. |
 | `PureComplexes.wlt` | 137 tests: complex constructions, observables, dimensions, geometric predicates, structural checks on the random-complex generators, and the complex-space MCMC driver with its two preparatory stages. |
-| `MCSims.wlt` | 34 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
+| `MCSims.wlt` | 35 tests: exact assertions for Hamiltonians / data & free-energy helpers, internal-consistency and smoke tests for the stochastic MC drivers, and ground-state search. |
 
 ## Running
 
@@ -20,7 +20,7 @@ Needs["MUnit`"];
 TestReport["/Users/012759760/Desktop/Research/ECGravMathematicaPackage/Paclet/ECGrav/Tests"]
 ```
 
-Expected: **171 tests, 171 passing** (~60 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
+Expected: **172 tests, 172 passing** (~100 s; the MC smoke tests and the unlabeled-sampler uniformity check dominate).
 
 ## Design notes
 
@@ -118,6 +118,24 @@ remainder are characterization tests that lock in current behaviour.
 
 ## Known gaps / suspected bugs
 
+**The parallel settings never reached subkernels** — fixed, and worth recording because of how
+it hid. `SyncEquilibriationBudget` pushed `$ECGravMaxEquilibriationSweeps` (and later
+`$ECGravMaxCorrelationSweeps`) with `DistributeDefinitions`, which silently skips every symbol
+whose context has been registered with `ParallelNeeds` — and the drivers' callers always
+register `ECGrav`. It returned `{}`, shipped nothing, and the helper then recorded success, so
+all ten `ParallelTable` sites that reach an equilibriator went on reading the subkernels' own
+defaults and a user raising the budget saw no effect. It now pushes by assignment through
+`ParallelEvaluate`, with the values inlined via `With` because `ParallelEvaluate` holds.
+
+Two things kept this invisible for a release. The original check measured `General::newsym`
+counts, which shows *package definitions arriving* — a different mechanism. And the obvious
+assertion, `ParallelEvaluate[sym]`, inlines the master's value at send time and passes whether
+or not anything arrived. `SyncEquilibriationBudget-reaches-subkernels` therefore asserts
+through `OwnValues` on the subkernel, and carries the `DistributeDefinitions` call as a
+negative control. Note it loads the subkernels from source first: `ParallelNeeds["ECGrav`"]`
+alone resolves to the *installed* paclet, so a test written the obvious way checks whatever was
+last built rather than the working tree.
+
 The three suspected-wrong-behaviour bugs previously flagged here have been fixed at the source
 (see above) and are regression-tested. What follows came out of an audit of the equilibriation
 criterion. Most of what it found has since been fixed; this records what was wrong, so the
@@ -159,6 +177,8 @@ favourable fluctuation; it now runs once per `inWinLength` sweeps.
 Still open:
 
 - `Abs` on `sqMeanPairwiseDiff` is redundant — it is a mean of squares.
+- `SyncEquilibriationBudget` and `$distributedEquilibriationBudget` are now misnamed: the
+  helper syncs two settings and no longer distributes anything.
 - `eqlT` still does double duty — it is the burn-in estimate *and* the basis for the
   correlation-time run length — but the run is now capped at `$ECGravMaxCorrelationSweeps`
   (default 1000), so the coupling can no longer scale without bound, and a run that turns out
