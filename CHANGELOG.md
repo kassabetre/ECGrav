@@ -6,6 +6,20 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-08-13
+
+The ground-state search reported minima that were not minima. A sweep weighed a state's energy
+against its running minimum only for states it *stepped into* by an accepted move, so the state
+it started from — the one the chain occupies through every rejected move, and the one a replica
+swap hands it — was never a candidate. Anything that searches for ground states is affected:
+`GraphCTLSchedule`, `GraphMultiHistogram`, `GraphParallelTempering`,
+`GraphComputeCorrelationTime`. The returned minimum could sit above energies the run had
+visited and recorded, with an empty `minEstates` to go with it.
+
+Bug fixes only. No public function was removed, no argument order changed, no new setting.
+Reported energies are now the hamiltonian's own values rather than incremental accumulations,
+so charted energies, specific heats and free energies can differ from 1.7.0 in their last bits.
+
 ### Fixed
 - **The ground-state search reported minima that were not minima.** `GraphSweepReplica` (both
   overloads) tested a state's energy against its running minimum only inside
@@ -582,7 +596,12 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.1
+[1.7.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.0
+[1.6.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.6.0
+[1.5.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.5.0
+[1.4.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.4.0
 [1.3.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.3.1
 [1.3.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.2.0
