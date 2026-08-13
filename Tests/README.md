@@ -119,7 +119,7 @@ remainder are characterization tests that lock in current behaviour.
 ## Known gaps / suspected bugs
 
 **The parallel settings never reached subkernels** — fixed, and worth recording because of how
-it hid. `SyncEquilibriationBudget` pushed `$ECGravMaxEquilibriationSweeps` (and later
+it hid. `SyncParallelSettings` pushed `$ECGravMaxEquilibriationSweeps` (and later
 `$ECGravMaxCorrelationSweeps`) with `DistributeDefinitions`, which silently skips every symbol
 whose context has been registered with `ParallelNeeds` — and the drivers' callers always
 register `ECGrav`. It returned `{}`, shipped nothing, and the helper then recorded success, so
@@ -130,7 +130,7 @@ defaults and a user raising the budget saw no effect. It now pushes by assignmen
 Two things kept this invisible for a release. The original check measured `General::newsym`
 counts, which shows *package definitions arriving* — a different mechanism. And the obvious
 assertion, `ParallelEvaluate[sym]`, inlines the master's value at send time and passes whether
-or not anything arrived. `SyncEquilibriationBudget-reaches-subkernels` therefore asserts
+or not anything arrived. `SyncParallelSettings-reaches-subkernels` therefore asserts
 through `OwnValues` on the subkernel, and carries the `DistributeDefinitions` call as a
 negative control. Note it loads the subkernels from source first: `ParallelNeeds["ECGrav`"]`
 alone resolves to the *installed* paclet, so a test written the obvious way checks whatever was
@@ -177,8 +177,6 @@ favourable fluctuation; it now runs once per `inWinLength` sweeps.
 Still open:
 
 - `Abs` on `sqMeanPairwiseDiff` is redundant — it is a mean of squares.
-- `SyncEquilibriationBudget` and `$distributedEquilibriationBudget` are now misnamed: the
-  helper syncs two settings and no longer distributes anything.
 - `eqlT` still does double duty — it is the burn-in estimate *and* the basis for the
   correlation-time run length — but the run is now capped at `$ECGravMaxCorrelationSweeps`
   (default 1000), so the coupling can no longer scale without bound, and a run that turns out

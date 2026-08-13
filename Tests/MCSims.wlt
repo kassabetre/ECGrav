@@ -286,7 +286,7 @@ VerificationTest[
 
 
 (* The two user settings have to reach subkernels, because a subkernel runs its own copy of
-   the package and would otherwise read its own defaults. SyncEquilibriationBudget used to do
+   the package and would otherwise read its own defaults. SyncParallelSettings used to do
    that with DistributeDefinitions, which cannot: it silently skips every symbol whose context
    is a loaded package, and ECGrav` is one as soon as the subkernels have the package. It
    returned {} and shipped nothing while the helper recorded success, so every parallel driver
@@ -312,12 +312,12 @@ VerificationTest[
         ParallelNeeds["ECGrav`"];
         pushed = Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 777,
                         ECGrav`$ECGravMaxCorrelationSweeps = 333},
-            ECGrav`Private`SyncEquilibriationBudget[];
+            ECGrav`Private`SyncParallelSettings[];
             ParallelEvaluate[{Last /@ OwnValues[ECGrav`$ECGravMaxEquilibriationSweeps],
                               Last /@ OwnValues[ECGrav`$ECGravMaxCorrelationSweeps]}]];
         shipped = DistributeDefinitions[ECGrav`$ECGravMaxCorrelationSweeps];
         CloseKernels[]; Quiet[LaunchKernels[]];
         {DeleteDuplicates[pushed], shipped}],
     {{{{777}, {333}}}, {}},
-    TestID -> "SyncEquilibriationBudget-reaches-subkernels"
+    TestID -> "SyncParallelSettings-reaches-subkernels"
 ];
