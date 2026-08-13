@@ -23,6 +23,9 @@ definitions of `RandomPureSimplicialComplexMCMC` and both stages beneath it, 172
 No public function was removed and no argument order changed. One public setting is new,
 `$ECGravMaxCorrelationSweeps`.
 
+**Minimum Wolfram Language version is now 15.0**, up from 14.2. The paclet will not install on
+14.x.
+
 Note for anyone relying on reproducibility: equilibriation stops at a different sweep than it
 did at 1.6.0, so `eqlT`, and everything downstream of it, differs for a given `SeedRandom`. Any
 `eqlT` recorded from an earlier version is an underestimate. `GraphEquilibriate::noconv` gained
