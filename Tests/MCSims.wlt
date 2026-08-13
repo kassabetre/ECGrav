@@ -356,6 +356,39 @@ VerificationTest[
     TestID -> "SimulatedAnnealing-smoke"
 ];
 
+(* Regression: the energy-callback probe used the wrong ARITY in every external-field driver.
+
+   In an external-field run the callbacks' parameters are a row of the field table, not hparams:
+   the driver does Apply[hamiltonian,externalFieldTable[[i]]] and hparams is empty, so the
+   callback is ultimately called as h[graph,field]. The probe nonetheless evaluated h[graph],
+   which for a hamiltonian written the way those drivers require -- h[am_List,f_Real], passed as
+   h[] -- comes back unevaluated. Every external-field GraphMultiHistogram, GraphCTLSchedule and
+   external-field GraphParallelTempering overload therefore returned $Failed with ECGrav::badham
+   before doing any work, rejecting a correct hamiltonian. Beta-tempering overloads were never
+   affected: there hparams really is the parameter list.
+
+   Pinned at the probe rather than through a driver because the drivers equilibrate before they
+   return anything -- minutes -- and the probe is where the contract lives. Assertions 3 and 4
+   are the bug itself and keep this from passing vacuously; 5 confirms the fix did not defang the
+   check. 6 records a known limit rather than an aspiration: a slot-based pure Function ignores
+   extra arguments, so it satisfies THIS probe and is caught one level in, by the inner driver's
+   own probe on the applied form. *)
+VerificationTest[
+    Module[{hF, dHF, am = Normal[AdjacencyMatrix[CompleteGraph[4]]]},
+        hF[a_List, f_Real] := ECGrav`HIsing[a, -1.0, 0.0] + f*Total[a, 2];
+        dHF[a_List, f_Real, i_Integer, j_Integer] := 1.0;
+        Quiet[{
+            ECGrav`Private`HamiltonianUsableQ[am, hF, -0.5],
+            ECGrav`Private`DelHUsableQ[am, dHF, -0.5],
+            ECGrav`Private`HamiltonianUsableQ[am, hF],
+            ECGrav`Private`DelHUsableQ[am, dHF],
+            ECGrav`Private`HamiltonianUsableQ[am, undefinedHamHead, -0.5],
+            ECGrav`Private`HamiltonianUsableQ[am, ECGrav`HIsing[#, -1.0, 0.0] &, -0.5]}]],
+    {True, True, False, False, False, True},
+    TestID -> "EnergyCallbackProbe-external-field-arity"
+];
+
+
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
    guard (Max[$KernelCount, 1]) is exercised. Without the fix this failed with

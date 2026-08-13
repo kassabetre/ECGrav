@@ -4342,8 +4342,12 @@ Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalFi
 	histories,swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,
 	chart,mBetaF},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]]&&DelHUsableQ[seedGraph,delH,Sequence@@externalFieldTable[[1]]]),Return[$Failed]];
 
 
 
@@ -4692,8 +4696,12 @@ Outputs a list with three entries:,
 Module[{result,groundStates,maxGStateCount,replicas,replicaKeysOrderedExternalField,numRep,histories,
 	swap,Tempoutput,measurements,numsweeps,stopnum, candminE,printCase,repNumSweeps,chart,mBetaF},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]],Return[$Failed]];
 
 
 
@@ -5639,8 +5647,12 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
 	neighbors,edges,replicaLabels},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]]&&DelHUsableQ[seedGraph,delH,Sequence@@externalFieldTable[[1]]]),Return[$Failed]];
 
 
 PrintTemporary[" Starting GraphCTLSchedule for external field at a fixed beta ",bt
@@ -5743,8 +5755,12 @@ Module[{result,vCount=Length[seedGraph],hist,minusbetaFAssn,hMin,hMax,
 	interpolatedThermodynamicLength,targetSteps,externalFieldSchedule,h,
 	neighbors,edges,replicaLabels},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]],Return[$Failed]];
 
 
 
@@ -5932,8 +5948,12 @@ Module[
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]]&&DelHUsableQ[seedGraph,delH,Sequence@@externalFieldTable[[1]]]),Return[$Failed]];
 
 
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
@@ -6103,8 +6123,12 @@ Module[
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In an
+	external-field run the callbacks' parameters are the FIELD ROW, not hparams: the driver
+	applies the head to a row of the table (Apply[hamiltonian,externalFieldTable[[i]]]) and
+	hparams is empty, so probing with hparams would demand an arity the callback is not
+	written for and reject a perfectly good h[am_List,field_Real].*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@externalFieldTable[[1]]],Return[$Failed]];
 
 
 PrintTemporary[" Running GraphCTLScheduler for multiple external fields with input external 
@@ -7878,8 +7902,10 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!(HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams]&&DelHUsableQ[inputReplicas[[1,"state","graph"]],delH,delHparams]),Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. The field is
+	constant across these replicas but still supplies the callbacks' parameters, not hparams,
+	so probe with the stored row.*)
+If[!(HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,Sequence@@inputReplicas[[1,"externalField"]]]&&DelHUsableQ[inputReplicas[[1,"state","graph"]],delH,Sequence@@inputReplicas[[1,"externalField"]]]),Return[$Failed]];
 
 
 
@@ -8125,8 +8151,10 @@ Module[{result,numRep=Length[inputReplicas],bt=inputReplicas[[1,"beta"]],
 	maxGStateCount=500,minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,hparams],Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. The field is
+	constant across these replicas but still supplies the callbacks' parameters, not hparams,
+	so probe with the stored row.*)
+If[!HamiltonianUsableQ[inputReplicas[[1,"state","graph"]],hamiltonian,Sequence@@inputReplicas[[1,"externalField"]]],Return[$Failed]];
 
 
 
