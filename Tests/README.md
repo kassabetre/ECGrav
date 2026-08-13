@@ -118,6 +118,20 @@ remainder are characterization tests that lock in current behaviour.
 
 ## Known gaps / suspected bugs
 
+**Message strings must be built with `<>`, never as one literal spanning source lines.** A
+literal that wraps carries the newlines and tabs into the message text, so when the `` `1` ``
+slots are filled the result renders as misaligned columns rather than a sentence. All seven
+that had slots and wrapped are fixed. Checked by parsing `Messages[…]` for every public symbol:
+251 message strings, 117 `::usage` (where wrapping is conventional and harmless) and 134 not, of
+which 18 carry slots and **0 now carry embedded whitespace**.
+
+Worth knowing if you re-run that check: `Messages[sym]` returns rules whose left side is a
+literal `HoldPattern[…]`, so a pattern like `HoldPattern[MessageName[_, t_]] :> v_` matches
+*nothing* — `HoldPattern` is transparent in pattern position and you need
+`Verbatim[HoldPattern][…]`. Two earlier versions of this scan reported a clean bill of health
+while inspecting nothing at all. Assert a non-zero count of messages parsed before trusting the
+result.
+
 **The parallel settings never reached subkernels** — fixed, and worth recording because of how
 it hid. `SyncParallelSettings` pushed `$ECGravMaxEquilibriationSweeps` (and later
 `$ECGravMaxCorrelationSweeps`) with `DistributeDefinitions`, which silently skips every symbol

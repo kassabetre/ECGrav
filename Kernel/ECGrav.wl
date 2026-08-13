@@ -1003,12 +1003,15 @@ GraphComputeCorrelationTime::shortrun=
 	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
 	"(currently `4`); raise the latter.";
 
-GraphComputeCorrelationTime::stuck="All measured values of `1` are stuck at `2`.
-	Autocorrelation time can not be computed; a default value of 2 will be assigned.";
+(* Concatenated for the same reason as ::noconv above. *)
+GraphComputeCorrelationTime::stuck=
+	"All measured values of `1` are stuck at `2`. Autocorrelation time can not be "<>
+	"computed; a default value of 2 will be assigned.";
 
-GraphComputeCorrelationTime::alldefault="Autocorrelation time could not be computed
-	since all measured values of the observables are stuck at the values `1`.
-	Exiting with default values corrT -> 2, corrTValues -> `2`.";
+GraphComputeCorrelationTime::alldefault=
+	"Autocorrelation time could not be computed since all measured values of the "<>
+	"observables are stuck at the values `1`. Exiting with default values corrT -> 2, "<>
+	"corrTValues -> `2`.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2615,10 +2618,10 @@ RandomVertexLabeledPureSimplicialComplex::argerr="Input should be of the form
 	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer}], or
 	RandomVertexLabeledPureSimplicialComplex[{p_Integer,q_Integer}].";
 
-RandomVertexLabeledPureSimplicialComplex::empty="There is no pure simplicial complex of purity
-	`1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and facet
-	order must be at least 1, and the vertex count must satisfy p <= n <= p q with at least q
-	distinct p-subsets available.";
+RandomVertexLabeledPureSimplicialComplex::empty=
+	"There is no pure simplicial complex of purity `1`, facet order `2` and vertex count "<>
+	"`3`, so there is nothing to sample. Purity and facet order must be at least 1, and the "<>
+	"vertex count must satisfy p <= n <= p q with at least q distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2647,10 +2650,10 @@ RandomUniformUnlabeledPureSimplicialComplex::argerr="Input should be of the form
 	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or
 	RandomUniformUnlabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}].";
 
-RandomUniformUnlabeledPureSimplicialComplex::empty="There is no pure simplicial complex of purity
-	`1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and facet
-	order must be at least 1, and the vertex count must satisfy p <= n <= p q with at least q
-	distinct p-subsets available.";
+RandomUniformUnlabeledPureSimplicialComplex::empty=
+	"There is no pure simplicial complex of purity `1`, facet order `2` and vertex count "<>
+	"`3`, so there is nothing to sample. Purity and facet order must be at least 1, and the "<>
+	"vertex count must satisfy p <= n <= p q with at least q distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2678,10 +2681,10 @@ RandomUniformFacetLabeledPureSimplicialComplex::argerr="Input should be of the f
 	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}, numSamples_Integer] or
 	RandomUniformFacetLabeledPureSimplicialComplex[{p_Integer,q_Integer,n_Integer}].";
 
-RandomUniformFacetLabeledPureSimplicialComplex::empty="There is no pure simplicial complex of
-	purity `1`, facet order `2` and vertex count `3`, so there is nothing to sample. Purity and
-	facet order must be at least 1, and the vertex count must satisfy p <= n <= p q with at
-	least q distinct p-subsets available.";
+RandomUniformFacetLabeledPureSimplicialComplex::empty=
+	"There is no pure simplicial complex of purity `1`, facet order `2` and vertex count "<>
+	"`3`, so there is nothing to sample. Purity and facet order must be at least 1, and the "<>
+	"vertex count must satisfy p <= n <= p q with at least q distinct p-subsets available.";
 
 
 (* ::Subsection::Closed:: *)
@@ -2800,13 +2803,15 @@ RandomPureSimplicialComplexMCMCCorrelationTime::shortrun=
 	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
 	"(currently `4`); raise the latter.";
 
-RandomPureSimplicialComplexMCMCCorrelationTime::stuck="All measured values of `1` are
-	stuck at `2`. Autocorrelation time can not be computed; a default value of 2 will
-	be assigned.";
+(* Concatenated for the same reason as ::noconv above. *)
+RandomPureSimplicialComplexMCMCCorrelationTime::stuck=
+	"All measured values of `1` are stuck at `2`. Autocorrelation time can not be "<>
+	"computed; a default value of 2 will be assigned.";
 
-RandomPureSimplicialComplexMCMCCorrelationTime::alldefault="Autocorrelation time could
-	not be computed since all measured values of the observables are stuck at the
-	values `1`. Exiting with default values corrT -> 2, corrTValues -> `2`.";
+RandomPureSimplicialComplexMCMCCorrelationTime::alldefault=
+	"Autocorrelation time could not be computed since all measured values of the "<>
+	"observables are stuck at the values `1`. Exiting with default values corrT -> 2, "<>
+	"corrTValues -> `2`.";
 
 
 (* ::Item::Closed:: *)
