@@ -6,9 +6,13 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
-`RandomUniformFacetLabeledPureSimplicialComplex` draws 2x to 103x faster. Same distribution,
-same output, same public interface — the draw was doing work proportional to the number of
-candidate facets where the number of distinct *weights* is a small constant.
+## [1.8.0] - 2026-08-13
+
+Performance release. `RandomUniformFacetLabeledPureSimplicialComplex` draws 2x to 103x faster.
+Same distribution, same output, **no public function added, removed or renamed, no argument
+order changed**, and the Wolfram Language 15.0+ requirement is unchanged — the draw was simply
+doing work proportional to the number of candidate facets where the number of distinct *weights*
+is a small constant.
 
 ### Changed
 - **The facet-labeled draw groups candidates by completion key.** `RandFLPCOne` weighed every
@@ -646,7 +650,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.0
 [1.7.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.1
 [1.7.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.0
 [1.6.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.6.0

@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.7.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.7.1. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.8.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -54,7 +54,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.7.1.paclet"];
+PacletInstall["/path/to/ECGrav-1.8.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -68,7 +68,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.7.1.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.8.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -168,9 +168,13 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.7.1). Earlier releases are preserved as git tags:
+current release (1.8.0). Earlier releases are preserved as git tags:
 
-- `v1.7.1` — current: the ground-state search reported minima that were not
+- `v1.8.0` — current: the facet-labeled sampler's draw grouped by completion
+  key — 2–103× faster with the same distribution and the same public interface,
+  because the number of distinct candidate *weights* per facet is a small constant
+  where the number of candidates is not
+- `v1.7.1` — the ground-state search reported minima that were not
   minima — a sweep never weighed the state it started from, so the state a replica
   swap handed it was invisible, and reported energies are now the hamiltonian's own
   values rather than incremental accumulations
