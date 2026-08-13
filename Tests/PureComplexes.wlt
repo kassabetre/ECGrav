@@ -798,6 +798,35 @@ VerificationTest[
     TestID -> "RandomUniformFacetLabeled-burnside-weights"
 ];
 
+(* The draw groups candidates by completion key instead of weighing them one at a time, which
+   rests on two pieces of bookkeeping in RandFLPCCandTable: the packed table must list exactly
+   the admissible facets, and the codes -- updated in place as blocks are covered rather than
+   recomputed -- must still decode to nu(uncovered \ S) however many facets have been laid down.
+   Get either wrong and the sampler still returns perfectly plausible complexes, drawn from the
+   wrong distribution, so check the two identities against the definitions they replace over
+   every cycle type that can occur. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, t}, {p, 2, 4}, {n, 2, 11}, {t, IntegerPartitions[n, All, Range[p]]}], 2],
+        Function[pt, Module[
+            {p = pt[[1]], sizes = pt[[2]], nb, cands, codes, radix, containing, uncov, nuUncov, ok, S},
+            nb = Length[sizes];
+            {cands, codes, radix, containing} = ECGrav`Private`RandFLPCCandTable[sizes, p];
+            ok = Sort[cands] === Sort[Select[Subsets[Range[nb], {1, p}], Total[sizes[[#]]] == p &]];
+            uncov = ConstantArray[1, nb];
+            nuUncov = Count[sizes, #] & /@ Range[p];
+            Do[
+                ok = ok && AllTrue[Range[Length[cands]], Function[i,
+                    nuUncov - Reverse[IntegerDigits[codes[[i]], p + 1, p]] ===
+                        (Count[sizes[[Complement[Flatten[Position[uncov, 1]], cands[[i]]]]], #] & /@ Range[p])]];
+                S = cands[[Mod[step, Length[cands], 1]]];
+                Do[uncov[[b]] = 0; nuUncov[[sizes[[b]]]] -= 1;
+                   codes[[containing[[b]]]] -= radix[[sizes[[b]]]], {b, Pick[S, uncov[[S]], 1]}]
+            , {step, 1, Min[6, Length[cands]]}];
+            ok]]],
+    True,
+    TestID -> "RandFLPCCandTable-keys-track-uncovered"
+];
+
 (* Uniformity over the facet-labeled classes, the property the sampler exists to have. Enumerate
    the classes by canonicalising over the n! relabellings and chi-square the draw. Pinned to the
    serial branch so the seed fixes the outcome; the parallel branch splits the stream by kernel

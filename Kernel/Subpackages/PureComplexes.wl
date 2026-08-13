@@ -1696,7 +1696,7 @@ number of bytes reclaimed. Nothing else in the package holds on to either, so ca
 always safe; it only costs the rebuilding.*)
 Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
 		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF,
-			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,NumULPCA,
+			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,RandFLPCCandTable,NumULPCA,
 			RandULPCOrbits,RandULPCNd,RandULPCSubMulti,RandULPCFixCov,RandULPCTypeWeights,
 			RandULPCProfiles,RandULPCCCov,RandULPCComps}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
@@ -3816,7 +3816,19 @@ $Failed);
    The state is indexed by the multiplicity vector of uncovered block sizes rather than by the
    set of uncovered blocks. Blocks of equal size are interchangeable at this point, so that turns
    a 2^(number of blocks) inclusion-exclusion into O(n^p) -- the same polynomial scaling, and the
-   same independence of M, that NumFacetLabeledPureComplexes has. *)
+   same independence of M, that NumFacetLabeledPureComplexes has.
+
+   That indexing is also what makes step 3 cheap, and the draw is organised around it. A
+   candidate's weight depends on it ONLY through nu(uncovered \ S), a multiplicity vector of
+   block sizes summing to at most p, so the number of distinct weights per facet is at most the
+   number of partitions of 0..p -- 4 at p=2, 7 at p=3, 12 at p=4 -- however many hundreds of
+   candidates there are. Candidates are therefore grouped by that key and the group drawn with
+   weight (size of group) x (completions), then a member uniformly: same distribution, since
+   members of a group have equal weight, but a handful of memo lookups per facet instead of one
+   per candidate. Measured warm against the previous body: 2.1x at {2,4,6}, 17.6x at {3,6,12},
+   51.5x at {4,6,15}, 76.8x at {3,12,24}, 102.9x at {4,8,20}, 87.5x at {3,15,30}. The key is
+   carried as a base-(p+1) integer code per candidate, updated in place when a block is first
+   covered rather than recomputed. *)
 
 (* Private helper *)
 RandFLPCWeightCounts[nu_List]:=RandFLPCWeightCounts[nu]=
@@ -3863,24 +3875,55 @@ Module[{types,lambdas},
 ];
 
 (* Private helper: sample count above which the facet-labeled draw goes to ParallelTable. -----
-   Kept separate from $RandomComplexParallelThreshold because the per-sample costs differ by
-   more than an order of magnitude: a vertex-labeled sample is tens of microseconds, a
-   facet-labeled one a few hundred, so parallel pays off far sooner here. Measured crossover on
-   11 subkernels with kernels already up: 50 samples for {3,4,8}, 100 for {2,3,4} and {2,5,8},
-   200 for {3,3,5}. At 100 the ratios run 0.93 to 1.77 and by 200 they are all above 1, so 100
-   sits at the crossover. Gated on $KernelCount as everywhere else, so a small call never
+   Kept separate from $RandomComplexParallelThreshold because the per-sample costs differ: a
+   vertex-labeled sample is tens of microseconds, a facet-labeled one a few hundred.
+
+   Was 100, which suited a draw costing 3-60 ms. Grouping the candidates by completion key (see
+   RandFLPCOne) cut that to 0.07-1.2 ms and moved the crossover out with it, because what the
+   parallel branch pays is fixed rather than per-sample: DistributedContexts ships the whole of
+   ECGrav`Private` -- memo tables included, so the cost grows as they fill -- on every call. At
+   100 samples parallel had become a 3x to 16x PESSIMISATION. Remeasured on 11 subkernels with
+   kernels up and tables warm, the crossover runs 200 at {2,3,4}, 300 at {2,4,6}, 800 at
+   {3,6,12}, 1700 at {4,6,15}, 2800 at {3,10,20} and past 3200 at {4,8,20}. No single constant
+   is right everywhere and the penalties are lopsided -- too low costs up to 16x, too high costs
+   at most the parallel speedup, which is only 2-3x anywhere near the crossover -- so this sits
+   at the top of that range rather than the middle. At 2000 the ratios run 0.87 to 2.34 and by
+   5000 they are 1.49 to 3.48. Gated on $KernelCount as everywhere else, so a small call never
    quietly launches kernels. *)
 
-$RandomFacetLabeledParallelThreshold=100;
+$RandomFacetLabeledParallelThreshold=2000;
 
 (* Private helper *)
 RandFLPCGoParallel[numSamples_Integer]:=
 	numSamples>$RandomFacetLabeledParallelThreshold&&$KernelCount>0;
 
 (* Private helper *)
+RandFLPCCandTable[sizes_List,p_Integer]:=RandFLPCCandTable[sizes,p]=
+(*Everything about a cycle type that does not change from draw to draw: every admissible facet as
+a set of block indices (blocks have size >= 1, so a facet uses at most p of them), each one's
+weight key nu(S) packed into a base-(p+1) integer, the place values of that packing, and the
+blocks-to-candidates incidence used to update the keys. Built once per cycle type, of which there
+are only PartitionsP-many; cleared by NumPCClearCache.*)
+Module[{nb=Length[sizes],cands,codes,radix,containing},
+	cands=Join@@Table[
+		With[{sk=Subsets[Range[nb],{k}]},
+			If[Length[sk]==0,{},
+				Pick[sk,Unitize[Total[Partition[sizes[[Flatten[sk]]],k],{2}]-p],0]]]
+	,{k,1,Min[p,nb]}];
+	radix=(p+1)^Range[0,p-1];
+	(*entry k of nu is at most p, so base p+1 packs it without carrying*)
+	codes=If[cands==={},{},Table[Count[sizes[[c]],k],{c,cands},{k,1,p}] . radix];
+	containing=Lookup[
+		GroupBy[Flatten[MapIndexed[Function[{c,ix},{#,First[ix]}&/@c],cands],1],First->Last],
+		Range[nb],{}];
+	{cands,codes,radix,containing}
+];
+
+(* Private helper *)
 RandFLPCOne[p_Integer,MM_Integer,n_Integer]:=
 (*One uniform facet-labeled complex, by the four steps above.*)
-Module[{types,lambdas,ws,pick,sizes,lambda,blocks,cands,used={},uncov,nuOf,avail,weights,choice,facets},
+Module[{types,lambdas,ws,pick,sizes,lambda,blocks,cands,codes,radix,containing,
+		nc,dead={},uncov,nuUncov,eff,tal,weights,key,ci,choice},
 
 	{types,lambdas,ws}=RandFLPCTypeWeights[p,MM,n];
 	pick=RandomChoice[ws->Range[Length[types]]];
@@ -3890,22 +3933,35 @@ Module[{types,lambdas,ws,pick,sizes,lambda,blocks,cands,used={},uncov,nuOf,avail
 	(*a uniform partition of [n] into blocks of these sizes*)
 	blocks=TakeList[RandomSample[Range[n]],sizes];
 
-	(*every admissible facet, as a set of block indices; blocks have size >= 1, so at most p*)
-	cands=Select[Subsets[Range[Length[sizes]],{1,p}],Total[sizes[[#]]]==p&];
+	{cands,codes,radix,containing}=RandFLPCCandTable[sizes,p];
+	nc=Length[cands];
+	uncov=ConstantArray[1,Length[sizes]];
+	(*nu of the uncovered blocks; with none covered yet that is the cycle type itself*)
+	nuUncov=lambda;
 
-	nuOf[idxs_]:=Count[sizes[[idxs]],#]&/@Range[p];
-	uncov=Range[Length[sizes]];
-
-	facets=Table[
-		avail=Complement[cands,used];
-		weights=Table[RandFLPCCompletions[lambda,MM,j+1,nuOf[Complement[uncov,S]]],{S,avail}];
-		choice=RandomChoice[weights->avail];
-		AppendTo[used,choice];
-		uncov=Complement[uncov,choice];
+	(*codes[[i]] is nu(cands[[i]] intersect uncovered), so the completion key of candidate i is
+	nuUncov - codes[[i]] unpacked. Candidates already spent are marked with the code -1, which no
+	real key can take. Part assignment copies, so neither codes nor nuUncov writes through to the
+	memoised tables they start out sharing.*)
+	Table[
+		eff=codes;
+		If[dead=!={},eff[[dead]]=-1];
+		tal=DeleteCases[Tally[eff],{-1,_}];
+		weights=Table[
+			RandFLPCCompletions[lambda,MM,j+1,nuUncov-Reverse[IntegerDigits[t[[1]],p+1,p]]]
+		,{t,tal}];
+		key=RandomChoice[(tal[[All,2]]*weights)->tal[[All,1]]];
+		ci=RandomChoice[Pick[Range[nc],eff,key]];
+		AppendTo[dead,ci];
+		choice=cands[[ci]];
+		(*only blocks this facet covers for the first time change any key*)
+		Do[
+			uncov[[b]]=0;
+			nuUncov[[sizes[[b]]]]-=1;
+			codes[[containing[[b]]]]-=radix[[sizes[[b]]]]
+		,{b,Pick[choice,uncov[[choice]],1]}];
 		Sort[Catenate[blocks[[choice]]]]
-	,{j,0,MM-1}];
-
-	facets
+	,{j,0,MM-1}]
 ];
 
 

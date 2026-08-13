@@ -25,7 +25,10 @@ ECGrav provides two complementary toolkits:
 
 For the mathematics of the model — the energy functionals, observables, and
 statistical mechanics, plus background on the emergent-gravity motivation — see
-**[Theory.md](Theory.md)**.
+**[Theory.md](Theory.md)**. The exact samplers and counters over pure complexes have
+their own specifications: **[FacetLabeledSampler.md](FacetLabeledSampler.md)**,
+**[UnlabeledSampler.md](UnlabeledSampler.md)**, and
+**[UnlabeledCount.md](UnlabeledCount.md)**.
 
 ---
 

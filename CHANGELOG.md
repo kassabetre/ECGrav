@@ -6,6 +6,56 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+`RandomUniformFacetLabeledPureSimplicialComplex` draws 2x to 103x faster. Same distribution,
+same output, same public interface — the draw was doing work proportional to the number of
+candidate facets where the number of distinct *weights* is a small constant.
+
+### Changed
+- **The facet-labeled draw groups candidates by completion key.** `RandFLPCOne` weighed every
+  admissible facet separately: at `{4,6,15}` that is 441 candidates for each of 6 facets, and it
+  was essentially the whole cost of a sample. But a candidate's weight enters only through
+  `nu(uncovered \ S)`, a multiplicity vector of block sizes summing to at most `p`, so there are
+  at most `Sum[PartitionsP[i],{i,0,p}]` distinct weights per facet — 4 at `p=2`, 7 at `p=3`, 12
+  at `p=4` — however many hundreds of candidates exist. At `{4,6,15}` those 441 candidates carry
+  3 distinct keys. The draw now picks a key group with weight (group size) x (completions) and
+  then a member uniformly, which is the same distribution because members of a group have equal
+  weight. Keys ride as base-`(p+1)` integer codes updated in place when a block is first covered,
+  and the per-cycle-type candidate tables are memoised in the new private `RandFLPCCandTable`
+  (released by `NumPCClearCache` with the rest). Measured warm against the previous body: 2.1x at
+  `{2,4,6}`, 17.6x at `{3,6,12}`, 51.5x at `{4,6,15}`, 76.8x at `{3,12,24}`, **102.9x at
+  `{4,8,20}`** (52.8 ms to 0.51 ms per sample), 87.5x at `{3,15,30}`.
+- **`$RandomFacetLabeledParallelThreshold` raised from 100 to 2000.** What the parallel branch
+  pays is fixed rather than per-sample — `DistributedContexts` ships the whole of
+  `ECGrav`Private`, memo tables included, on every call — so cutting the serial cost by 20-100x
+  moved the crossover out with it. At 100 samples the parallel branch had become a 3x to 16x
+  *pessimisation*. Remeasured on 11 subkernels, the crossover now runs from 200 samples at
+  `{2,3,4}` to past 3200 at `{4,8,20}`; the constant sits at the top of that range because the
+  penalties are lopsided, too low costing up to 16x and too high costing at most the parallel
+  speedup, which is only 2-3x anywhere near the crossover.
+
+### Added
+- **`FacetLabeledSampler.md`**, a specification of the sampler alongside `Theory.md`,
+  `UnlabeledCount.md` and `UnlabeledSampler.md`: the pair-sampling principle, the lemma that
+  licenses the sequential facet draw, the `O(n^p)` state indexing, the grouped draw, the
+  identities that establish uniformity, a line-numbered implementation map, cost tables, and
+  references. Linked from the README, which now points at all three sampler specifications.
+- **`RandFLPCCandTable-keys-track-uncovered`**, pinning the two invariants the grouped draw rests
+  on — that the candidate table lists exactly the admissible facets, and that the incrementally
+  updated codes still decode to `nu(uncovered \ S)` after any sequence of facets — over every
+  cycle type with `p <= 4`, `n <= 11`. Get either wrong and the sampler still emits perfectly
+  plausible complexes from the wrong distribution, so the identities are checked directly rather
+  than through the output. The test was confirmed to fail under an injected wrong packing radix
+  and under skipped code updates before being trusted. 176 tests, all passing.
+
+### Notes
+- A rejection-free dynamic program over row-type multiplicities carrying the column-equality
+  partition as DP state was evaluated as an alternative and rejected. It is correct — its counts
+  agree with `NumFacetLabeledPureComplexes` on all 234 triples with `p <= 4`, `M <= 6` — but its
+  state space is `2^M (n+1) (p+1)^M Bell(M)`, and since `n <= pM` the only free axes are `p` and
+  `M`, both exponential. Its table costs 118 s and 1.8 GB at `{3,7,14}` and did not build in
+  180 s / 4 GB at `{3,8,16}`, where this sampler now draws in 0.27 ms. `FacetLabeledSampler.md`
+  section 11 records the measurements.
+
 ## [1.7.1] - 2026-08-13
 
 The ground-state search reported minima that were not minima. A sweep weighed a state's energy
