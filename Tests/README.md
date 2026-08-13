@@ -67,6 +67,35 @@ One trap worth knowing: `minEstates` is legitimately empty when nothing beats th
 invariant test passes a reachable threshold (`0.0`, not the `-100.0` used by the
 `Part::take` smoke test) precisely so the check has something to compare.
 
+That vacuity hid a real bug, so both invariant tests now demand a non-empty
+`minEstates` **and** assert the property internal consistency cannot see:
+the reported minimum must be at or below every energy the run wrote into its own
+chart. Consistency only says the recorded energy matches the recorded states; it
+says nothing about whether better states were visited and dropped, which is
+exactly what was happening. When a driver's own output records the series it
+measured, compare the summary against the series — not just against itself.
+
+**Do not assert float identity with `==`, `===`, or `floatEq`.** On machine reals all
+three are tolerant: `==` and `===` forgive about 65 ulps (`0.1+0.2 === 0.3` is
+True), and `floatEq` is 10^-6. Association key lookup is tolerant too, so
+`<|0.1+0.2 -> x|>[[Key[0.3]]]` finds the entry. When a test needs to know that a
+number is *exactly* the one a function computed — as
+`GraphSweepReplica-canonical-energies` does, since the values it rejects differ
+from the right answer by 10^-16 — use `Order[a, b] == 0`, which is bitwise.
+The corollary for the package itself: `==` and `<` share that tolerance and never
+both hold, so they are a consistent three-way comparison and drift of a few ulps
+is invisible — *except near zero*, where a relative tolerance has nothing to
+scale. Energy comparisons around `0.` are where to look.
+
+The two regression tests for that bug show a way around non-reproducibility that
+is stronger than either pinning or a smoke test: **make the chain deterministic by
+physics rather than by seed.** K4 is the exact ground state of `h[-1.,0.]` and
+every move out of it costs `+4`, so at beta 10 the acceptance weight is `Exp[-40]`
+and the chain provably cannot leave in the number of steps taken. The expected
+energy is then a hand-computed constant, and the test neither pins an RNG stream
+nor settles for a shape check. Freezing a chain this way works wherever a fixture's
+energy gap can be computed by hand.
+
 **Stochastic is not the same as unreproducible.** The whole complex-space MCMC family —
 `RandomPureSimplicialComplexMCMC` and its two stages — contains no `ParallelTable` in any of
 its ten definitions, so two runs under the same `SeedRandom` agree exactly and results *can*

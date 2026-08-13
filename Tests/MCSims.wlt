@@ -140,6 +140,82 @@ VerificationTest[
     TestID -> "GraphSweepReplica-smoke"
 ];
 
+(* The minimum a sweep reports must include the state the sweep STARTS from. The per-step
+   comparison sits inside If[accept==1,...], so before this was fixed only a state entered by
+   an ACCEPTED move could ever become the minimum: a sweep that started on a low
+   configuration and accepted nothing reported minEToBeat itself -- an energy no visited
+   state ever had -- with an empty minEstates to go with it.
+   That is the mechanism behind the GraphCTLSchedule / GraphMultiHistogram complaint. A
+   replica swap moves a configuration into a replica without any accepted move, and under a
+   different external field its energy is a number no sweep has weighed, so the receiving
+   replica never counted it.
+   Nothing here is pinned to a seed. K4 is the exact ground state of h[-1.,0.] (energy -12.),
+   and every move out of it costs +4, so at beta 10 the acceptance weight is Exp[-40] ~ 4*10^-18
+   and the chain provably sits at -12. for all 120 steps. minEToBeat is tested both ABOVE the
+   seed energy (0.) and BETWEEN it and zero (-5.), because the old code returned the threshold
+   in both cases. Both overloads carried the same hole. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{withDelH, noDelH},
+        withDelH = Table[
+            ECGrav`GraphSweepReplica[K4, 10.0, h[-1.0, 0.0], dH[-1.0, 0.0], 20, thr, 0],
+            {thr, {0.0, -5.0}}];
+        noDelH = ECGrav`GraphSweepReplica[K4, 10.0, h[-1.0, 0.0], 20, 0.0, 0];
+        {#[[1, "minEnergy"]] & /@ withDelH,
+         #[[1, "minEstates"]] === {K4} & /@ withDelH,
+         noDelH[[1, "minEnergy"]],
+         noDelH[[1, "minEstates"]] === {K4}}]],
+    {{-12., -12.}, {True, True}, -12., True},
+    TestID -> "GraphSweepReplica-counts-its-seed"
+];
+
+(* The two numbers a sweep returns must be the hamiltonian's own values, not accumulations.
+   The running energy is built incrementally (energy += delE) and drifts a few ulps over a
+   sweep. On machine reals == and < share one RELATIVE tolerance, so that drift is normally
+   invisible -- but a relative tolerance has nothing to scale at zero. h[0.1,0.1] is repulsive
+   in both couplings, so its ground state is the empty graph at exactly 0., and the sweep used
+   to report minima like -4.163336342344337*^-16: a minimum BELOW the least energy the model
+   can produce, which then compares unequal to 0. and drops the states tying it.
+   Order[a,b]==0 rather than ==, ===, or floatEq, because all three are tolerant on machine
+   reals and would pass on exactly the values this is meant to reject. Order is bitwise.
+   Several seeds because which one lands on the zero-energy state is not fixed; the assertions
+   hold for every run either way. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{seedG, runs, hz},
+        hz = ECGrav`HIsing[#, 0.1, 0.1] &;
+        seedG = Normal[AdjacencyMatrix[CycleGraph[7]]];
+        runs = Table[SeedRandom[s];
+            ECGrav`GraphSweepReplica[seedG, 4.0, h[0.1, 0.1], dH[0.1, 0.1], 40, 1000.0, 0],
+            {s, 6}];
+        {(* no reported minimum lies below the model's own floor of zero *)
+         AllTrue[runs, #[[1, "minEnergy"]] >= 0. &],
+         (* each reported minimum is bit-for-bit the hamiltonian of the states reported with it *)
+         AllTrue[runs, With[{r = #},
+             AllTrue[r[[1, "minEstates"]], Order[hz[#], r[[1, "minEnergy"]]] == 0 &]] &],
+         (* and the end state's energy is the hamiltonian's value, not the accumulated one *)
+         AllTrue[runs, Order[hz[#[[2, "graph"]]], #[[2, "energy"]]] == 0 &],
+         (* the run really does reach the zero-energy ground state, so the case above is live *)
+         AnyTrue[runs, #[[1, "minEnergy"]] == 0. &]}]],
+    {True, True, True, True},
+    TestID -> "GraphSweepReplica-canonical-energies"
+];
+
+(* The same hole reached the exported drivers, which is where it was reported.
+   GraphComputeCorrelationTime starts its running minimum AT minEToBeat with no states and
+   relies entirely on GraphSweepReplica to improve it, so a chain frozen below the threshold
+   returned the threshold and an empty minEstates. Same provably-frozen K4 construction as
+   above, so this is deterministic rather than a seed pin.
+   GraphEquilibriate is not covered here because it never had the hole: it initialises its
+   minimum from hamiltonian[seedGraph] directly rather than from the threshold. *)
+VerificationTest[
+    Block[{Print = Null &}, Module[{ct, ctNoDelH},
+        ct = ECGrav`GraphComputeCorrelationTime[K4, 10.0, h[-1.0, 0.0], dH[-1.0, 0.0], 21, 0.0, 1, 0];
+        ctNoDelH = ECGrav`GraphComputeCorrelationTime[K4, 10.0, h[-1.0, 0.0], 21, 0.0, 1, 0];
+        {ct[[1, "minEnergy"]], ct[[1, "minEstates"]] === {K4},
+         ctNoDelH[[1, "minEnergy"]], ctNoDelH[[1, "minEstates"]] === {K4}}]],
+    {-12., True, -12., True},
+    TestID -> "GraphComputeCorrelationTime-counts-frozen-seed"
+];
+
 (* GraphEquilibriate must run AND emit its energy-vs-time plot. *)
 VerificationTest[
     Module[{n}, SeedRandom[103];
@@ -181,11 +257,19 @@ VerificationTest[
         {n >= 1,
          Length[res] === 3,
          groundStatesConsistentQ[res[[1]], HH, 6],
+         (* groundStatesConsistentQ passes vacuously on an empty minEstates, which is exactly
+            what the ground-state search used to return when no ACCEPTED move beat the
+            threshold, so demand states and demand that the reported minimum is at or below
+            every energy the run wrote into its own chart (column 3). That last inequality is
+            the reported symptom stated directly: a returned minimum above an energy the run
+            recorded is a minimum that is not the minimum. *)
+         res[[1]]["minEstates"] =!= {},
+         res[[1]]["minEnergy"] <= Min[Join @@ (#["data"][[All, 3]] & /@ Values[res[[2]]])] + 10.^-9,
          mcReplicasConsistentQ[res[[3]], HH, 6],
          AllTrue[Values[res[[3]]], IntegerQ[#["eqlT"]] && #["eqlT"] > 0 && #["corrT"] >= 2 &],
          Sort[Keys[res[[3]]]] === Sort[Keys[res[[2]]]],
          AllTrue[Values[res[[2]]], MatchQ[#["minusBetaF"], _Real] &]}],
-    {True, True, True, True, True, True, True},
+    {True, True, True, True, True, True, True, True, True},
     TestID -> "GraphMultiHistogram-invariants"
 ];
 
@@ -221,11 +305,14 @@ VerificationTest[
         {Length[r] === 4,
          r[[1]]["minEstates"] =!= {},
          groundStatesConsistentQ[r[[1]], HH, 6],
+         (* As in the multihistogram invariants: the reported minimum must be at or below
+            every energy the run recorded in its chart (column 3), keyed here by beta. *)
+         r[[1]]["minEnergy"] <= Min[Join @@ (#[[All, 3]] & /@ Values[r[[2]]])] + 10.^-9,
          mcReplicasConsistentQ[r[[3]], HH, 6],
          Sort[#["beta"] & /@ Values[r[[3]]]] === {0.1, 0.2},
          AllTrue[Values[r[[4]]], 0 <= #["swapAccept"] <= #["swapTry"] &],
          AllTrue[Values[r[[4]]], Length[#["history"]] > 0 &]}]],
-    {True, True, True, True, True, True, True},
+    {True, True, True, True, True, True, True, True},
     TestID -> "GraphParallelTempering-invariants"
 ];
 

@@ -1164,11 +1164,19 @@ Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Am
 
 
 curE=curE+deltaEtable[flipSpin];
+(*curE is accumulated and drifts from the hamiltonian's own value; == and < on machine reals
+share one RELATIVE tolerance, which absorbs that everywhere except near zero, where there is
+nothing for it to scale. So gate on the accumulated value and let the hamiltonian decide and
+be stored -- which also pins curE back to the exact energy for the rest of the run. See the
+fuller note in GraphSweepReplica.*)
+If[curE<minE||curE==minE,
+curE=hamiltonian[Amcur,hparams];
 If[curE<minE,
 minE=curE;
 minStates={Amcur},
 If[curE==minE,
 minStates=Join[minStates,{Amcur}];
+];
 ];
 ];
 
@@ -1254,11 +1262,19 @@ Amcur[[flipSpin[[1]],flipSpin[[2]]]]=Amcur[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Am
 
 
 curE=curE+deltaEtable[flipSpin];
+(*curE is accumulated and drifts from the hamiltonian's own value; == and < on machine reals
+share one RELATIVE tolerance, which absorbs that everywhere except near zero, where there is
+nothing for it to scale. So gate on the accumulated value and let the hamiltonian decide and
+be stored -- which also pins curE back to the exact energy for the rest of the run. See the
+fuller note in GraphSweepReplica.*)
+If[curE<minE||curE==minE,
+curE=hamiltonian[Amcur,hparams];
 If[curE<minE,
 minE=curE;
 minStates={Amcur},
 If[curE==minE,
 minStates=Join[minStates,{Amcur}];
+];
 ];
 ];
 
@@ -1389,6 +1405,16 @@ curE=curE+delE;
 Print["  minE ",minE, " h[gstate] ",hamiltonian[minStates[[1]]]];
 Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excitedStates[[1]]]];*)
 
+(*curE is accumulated and drifts from the hamiltonian's own value. == and < share one
+RELATIVE tolerance, which absorbs the drift everywhere except near zero, where it has nothing
+to scale and a level sitting at exactly 0. is recorded as a small negative number instead. So
+the accumulated value only gates; the hamiltonian decides and is stored, and curE is pinned
+back to it. The gate is curE <= excitedEnergy because that is the union of all four branch
+conditions -- anything above the first excited level is recorded nowhere. See the fuller note
+in GraphSweepReplica.*)
+If[curE<excitedEnergy||curE==excitedEnergy,
+curE=SetPrecision[hamiltonian[Amcur,hparams],precision];
+
 Which[
 	curE<minE,
 		{excitedEnergy=minE; excitedStates=minStates; minE=curE; minStates={Amcur};},
@@ -1398,6 +1424,7 @@ Which[
 		{excitedEnergy=curE; excitedStates={Amcur};},
 	curE==excitedEnergy&&Length[excitedStates]<maxNumOfSavedStates,
 		{excitedStates=Join[excitedStates,{Amcur}];}
+];
 ];
 
 (*Print["After Which:, curE ",curE," h[curstate] ",hamiltonian[Amcur]];
@@ -1523,6 +1550,14 @@ curE=curE+delE;
 Print["  minE ",minE, " h[gstate] ",hamiltonian[minStates[[1]]]];
 Print[ "  excitedEnergy ",excitedEnergy," h[excitedStates] ",hamiltonian[excitedStates[[1]]]];*)
 
+(*Accumulated curE gates, hamiltonian decides and is stored; see the note in the overload
+above. The gate is the union of all four branch conditions, curE <= excitedEnergy.
+Note this If, like the Which it wraps, is deliberately left WITHOUT a trailing semicolon: it
+is the last expression of the enclosing If[accept==1,...], and adding one there changes what
+that If returns.*)
+If[curE<excitedEnergy||curE==excitedEnergy,
+curE=SetPrecision[hamiltonian[Amcur,hparams],precision];
+
 Which[
 	curE<minE,
 		{excitedEnergy=minE;
@@ -1537,6 +1572,7 @@ Which[
 		excitedStates={Amcur};},
 	curE==excitedEnergy&&Length[excitedStates]<maxNumOfSavedStates,
 		{excitedStates=Join[excitedStates,{Amcur}];}
+]
 ]
 
 (*Print["After Which:, curE ",curE," h[Amcur] ",hamiltonian[Amcur]];
@@ -1851,6 +1887,18 @@ expDelETable=<||>;
 
 data=<|"graph"->seedGraph,"energy"->hamiltonian[seedGraph,hparams], "mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>;
 
+(*The seed is a visited state: it is the configuration at step 0 and the one the sweep
+stays on through every rejected move. The per-step test below sits inside If[accept==1,...],
+so it can only ever see states entered by an accepted move -- without this the seed cannot
+enter the minimum at all, and a sweep that starts low and accepts nothing returns
+minEToBeat, an energy no visited state had. This is also what counts a configuration handed
+in by a replica swap: it arrives without an accepted move and is the seed of the next sweep.
+Reassign minE only when strictly lower, matching the accept path; on a tie only the state is
+collected, and minStates is still empty here so nothing is dropped.*)
+If[data[[Key["energy"]]]<minE,
+	minE=data[[Key["energy"]]];minStates={seedGraph},
+	If[data[[Key["energy"]]]==minE,minStates={seedGraph}]];
+
 step[]:=(*Performs one spin flip step*)
 Block[{
 	curE=data[[Key["energy"]]],
@@ -1919,6 +1967,13 @@ We cannot reassign curE because it is passed by value i.e., is is immutable, hen
 (*End diagnostic*)*)
 
 
+(*Deliberately compared on the ACCUMULATED energy, not on a fresh hamiltonian call. This is
+the hot path -- one step is a row sum through delH, while the hamiltonian is a matrix product,
+25-50x dearer -- and canonicalising here measured +24% to +51% on the sweep. The accumulated
+value drifts a few ulps, which == and < absorb: on machine reals they share one relative
+tolerance and never both hold, so this stays a consistent three-way comparison. What the
+relative tolerance cannot cover is energies at or near zero, and that is repaired once after
+the loop instead, where it costs one call per sweep rather than tens of thousands.*)
 If[curE+delE<minE,minE=curE+delE;minStates={data[[Key["graph"]]]},
 If[curE+delE==minE&&Length[minStates]<maxGStateCount,minStates=DeleteDuplicates[Union[minStates,{data[[Key["graph"]]]}]]]];
 
@@ -1929,6 +1984,22 @@ Do[step[];
 
 ,{i,NN*vCount (vCount-1)/2}];
 
+
+(*Canonicalise the two numbers that leave this function, off the hot path. Tracking above runs
+on the accumulated energy, which drifts a few ulps from the hamiltonian's own value; == and <
+absorb that through the relative tolerance they share. A relative tolerance has nothing to
+scale at zero, though, so a ground state whose true energy is exactly 0. was reported as a
+small NEGATIVE number -- a minimum below anything the model can produce, which then fails ==
+against 0. Recomputing makes the reported minimum exactly the energy of the reported states.
+Two calls, once per sweep, rather than one per step: NN is the caller's correlation time and
+can be as low as 2, so anything proportional to Length[minStates] here could outweigh the
+sweep itself. The remaining states are left as collected -- separating them from minStates[[1]]
+would take a hamiltonian that resolves ~10^-15, which drift cannot manufacture.
+data's energy is resynchronised for the same reason: it is what the drivers chart, what they
+measure, and what seeds the next sweep.*)
+If[minStates=!={},minE=hamiltonian[minStates[[1]],hparams]];
+
+data[[Key["energy"]]]=hamiltonian[data[[Key["graph"]]],hparams];
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
 
@@ -1971,6 +2042,12 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 expDelETable=<||>;
 
 data=<|"graph"->seedGraph,"energy"->hamiltonian[seedGraph,hparams], "mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>;
+
+(*The seed is a visited state; see the note in the overload above. Without this the sweep
+can only ever report states entered by an accepted move.*)
+If[data[[Key["energy"]]]<minE,
+	minE=data[[Key["energy"]]];minStates={seedGraph},
+	If[data[[Key["energy"]]]==minE,minStates={seedGraph}]];
 
 step[]:=(*Performs one spin flip step*)
 Module[{
@@ -2039,6 +2116,8 @@ data[[Key["mag"]]]+= (2.0/(vCount(vCount-1)))*(2*data[[Key["graph"]]][[row,col]]
 *)
 (*Note, below since flip is accepted, the energy of the new state is curE + delE. We cannot reassign curE because it is passed by value i.e., is is immutable, hence the use of curE + delE *)
 
+(*Compared on the accumulated energy; canonicalised after the loop. See the note in the
+overload above for why the hot path is left alone.*)
 If[curE+delE<minE,minE=curE+delE;minStates={data[[Key["graph"]]]},
 If[curE+delE==minE&&Length[minStates]<maxGStateCount,minStates=DeleteDuplicates[Union[minStates,{data[[Key["graph"]]]}]]]];
 
@@ -2049,6 +2128,22 @@ Do[step[];
 
 ,{i,NN*vCount (vCount-1)/2}];
 
+
+(*Canonicalise the two numbers that leave this function, off the hot path. Tracking above runs
+on the accumulated energy, which drifts a few ulps from the hamiltonian's own value; == and <
+absorb that through the relative tolerance they share. A relative tolerance has nothing to
+scale at zero, though, so a ground state whose true energy is exactly 0. was reported as a
+small NEGATIVE number -- a minimum below anything the model can produce, which then fails ==
+against 0. Recomputing makes the reported minimum exactly the energy of the reported states.
+Two calls, once per sweep, rather than one per step: NN is the caller's correlation time and
+can be as low as 2, so anything proportional to Length[minStates] here could outweigh the
+sweep itself. The remaining states are left as collected -- separating them from minStates[[1]]
+would take a hamiltonian that resolves ~10^-15, which drift cannot manufacture.
+data's energy is resynchronised for the same reason: it is what the drivers chart, what they
+measure, and what seeds the next sweep.*)
+If[minStates=!={},minE=hamiltonian[minStates[[1]],hparams]];
+
+data[[Key["energy"]]]=hamiltonian[data[[Key["graph"]]],hparams];
 
 result={<|"minEnergy"->minE,"minEstates"->minStates|>,data};
 
@@ -4504,6 +4599,29 @@ While[numsweeps<=NN,
 ]][[2]];
 
 
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
+
+
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[externalFieldTable]]]}]|>;
 
 
@@ -4829,6 +4947,29 @@ While[numsweeps<=NN,
 	numsweeps++;
 
 ]][[2]];
+
+
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
 
 
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;Length[externalFieldTable]]]}]|>;
@@ -7356,6 +7497,29 @@ measurements=Reap[
 ][[2]];
 
 
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
+
+
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 
 (*remove the -1's in the initiation*)
@@ -7629,6 +7793,29 @@ measurements=Reap[
 ][[2]];
 
 
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
+
+
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 
 (*remove the -1's in the initiation*)
@@ -7856,6 +8043,28 @@ measurements=Reap[
 	]
 ][[2]];
 
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
+
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 
 
@@ -8079,6 +8288,28 @@ measurements=Reap[
 		numsweeps++;
 	]
 ][[2]];
+
+(*The loop runs sweep -> update ground states -> swap, so the configuration a replica holds
+after the LAST swap never reaches that update: it is not swept again. Every earlier
+post-swap configuration is accounted for because it seeds the next sweep, and a sweep now
+weighs the state it starts from (see GraphSweepReplica); only the final one is left, and it
+is collected here. Under a swap a configuration crosses to a replica with a different
+external field, where its energy is a different number that no sweep has ever weighed, so
+the energy is recomputed under this replica's own field -- which also keeps the recorded
+minimum exactly equal to the energy of the recorded state.*)
+Do[
+	candminE=Apply[hamiltonian,Join[{replicas[[Key[i],Key["state"],Key["graph"]]]}
+				,replicas[[Key[i],Key["externalField"]]]]];
+
+	If[candminE<groundStates[[Key[i],Key["minEnergy"]]],
+		groundStates[[Key[i],Key["minEnergy"]]]=candminE;
+		groundStates[[Key[i],Key["minEstates"]]]={replicas[[Key[i],Key["state"],Key["graph"]]]},
+		If[candminE==groundStates[[Key[i],Key["minEnergy"]]]&&Length[groundStates[[Key[i],Key["minEstates"]]]]<=maxGStateCount,
+			groundStates[[Key[i],Key["minEstates"]]]=Union[groundStates[[Key[i],Key["minEstates"]]]
+				,{replicas[[Key[i],Key["state"],Key["graph"]]]}];
+		];
+	];
+,{i,numRep}];
 
 chart=<|Table[i[[1,2]]->i,{i,measurements[[1;;numRep]]}]|>;
 

@@ -6,6 +6,62 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Fixed
+- **The ground-state search reported minima that were not minima.** `GraphSweepReplica` (both
+  overloads) tested a state's energy against its running minimum only inside
+  `If[accept==1,...]`, so a state could enter the minimum only by being *stepped into* by an
+  accepted move. The state a sweep *starts from* was therefore never weighed — and it is the
+  state the chain occupies through every rejected move. A sweep that began on a low
+  configuration and accepted nothing returned `minEToBeat` itself, an energy no visited state
+  ever had, with an empty `minEstates`. Seeded on K4, the ground state of `h[-1.,0.]`, at
+  beta 10 where nothing is accepted, the sweep sat at `-12.` for all 120 steps and reported
+  `-50.` when asked to beat `-50.`. The sweep now weighs its seed, which is what its own
+  documentation always promised ("the minimum energy visited throughout the sweep").
+- **Consequently, per-replica minima under parallel tempering were wrong in the reported way:
+  the last states visited could have lower energy than the minimum returned.** A replica swap
+  moves a configuration into a replica without any accepted move, and under that replica's
+  external field its energy is a different number no sweep had ever weighed. Fixing the sweep
+  covers every such configuration, since each one seeds the receiving replica's next sweep.
+  The configuration held after the *final* swap is not swept again, so the six drivers that
+  track minima per replica — `GraphMultiHistogram` and `GraphParallelTempering`, external-field
+  overloads, with and without `delH` — now collect it once the measurement loop ends,
+  recomputing its energy under that replica's own field. This is what `GraphCTLSchedule`
+  returns, via `GraphMultiHistogram`. The beta-swap drivers were not affected: they keep one
+  global minimum under a single hamiltonian, so a swap moves no energy they had not seen.
+- `GraphComputeCorrelationTime` (both overloads) inherited the same hole directly: it starts
+  its running minimum *at* `minEToBeat` with no states and relies entirely on the sweep to
+  improve it, so a frozen chain returned the threshold. `GraphEquilibriate` was never
+  affected — it initialises from `hamiltonian[seedGraph]` rather than from the threshold.
+
+- **Reported energies are now the hamiltonian's own values rather than accumulations.** The
+  sweep builds its energy incrementally (`energy += delE`) and drifts a few ulps from
+  `hamiltonian[state]`. On machine reals `==` and `<` share one *relative* tolerance and never
+  both hold, so that drift is normally invisible — but a relative tolerance has nothing to
+  scale at zero. For a hamiltonian whose ground state sits at exactly `0.`, `GraphSweepReplica`
+  reported minima such as `-4.163336342344337*^-16`: a minimum below the least energy the model
+  can produce, which then compares unequal to `0.` and drops the states tying it. Both sweep
+  overloads now recompute the reported minimum, and the returned state's energy, from the
+  hamiltonian once the sweep ends — two calls per sweep, off the hot path, where canonicalising
+  inside the step loop measured +24% to +51% (the hamiltonian is a matrix product, 25–50× a
+  `delH` step). `SGradDescent` and `SimulatedAnnealing` (both overloads each) canonicalise
+  in-loop instead, which measured within noise there because each of their steps already scans
+  the whole edge list; for `SimulatedAnnealing` this covers `excitedEnergy` and `excitedStates`
+  as well. Note `data`'s energy is now exact, so charted energies, specific heats and free
+  energies can differ from earlier versions in their last bits.
+
+### Added
+- Two deterministic regression tests, `GraphSweepReplica-counts-its-seed` and
+  `GraphComputeCorrelationTime-counts-frozen-seed`, built on a provably frozen chain rather
+  than on a pinned seed. Both `GraphMultiHistogram-invariants` and
+  `GraphParallelTempering-invariants` now also assert that the reported minimum is at or below
+  every energy the run recorded in its own chart, and that `minEstates` is non-empty —
+  `groundStatesConsistentQ` passes vacuously when it is empty, which is exactly what the bug
+  produced.
+- `GraphSweepReplica-canonical-energies`, which asserts with `Order[a,b]==0` that the reported
+  minimum is bit-for-bit the hamiltonian of the states reported with it. `==`, `===` and the
+  suite's `floatEq` are all tolerant on machine reals and pass on precisely the values that
+  test exists to reject.
+
 ## [1.7.0] - 2026-08-13
 
 Equilibriation and correlation time, audited and rebuilt. The convergence test that every
