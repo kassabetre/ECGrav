@@ -6,6 +6,41 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-08-14
+
+The energy-callback check added in 1.7.0 rejected **correct** hamiltonians in every external-field
+driver, returning `$Failed` with `ECGrav::badham` before doing any work. If you run
+`GraphMultiHistogram`, `GraphCTLSchedule` or `GraphParallelTempering` over a table of external
+field values, this affects you on 1.7.0, 1.7.1 and 1.8.0.
+
+Bug fix only. No public function was removed, no argument order changed, no new setting, and no
+result that previously computed changes value.
+
+### Fixed
+- **The energy-callback probe used the wrong arity in every external-field driver.** In an
+  external-field run the callbacks' parameters are a row of the field table, not `hparams`: the
+  driver does `Apply[hamiltonian, externalFieldTable[[i]]]` and `hparams` is empty, so the
+  callback is ultimately called as `h[graph, field]`. The probe nonetheless evaluated `h[graph]`,
+  which for a hamiltonian written the way those drivers require — `h[am_List, f_Real]`, passed as
+  `h[]` — comes back unevaluated and is not a number, so the driver rejected it. On a reported
+  8-vertex `GraphCTLSchedule` over five `NT0` values, `h[seed, -0.5]` is `310.` while `h[seed]` is
+  unevaluated, and the run died at the gate. Eight probe sites now pass a real field row: the
+  `externalFieldTable` overloads of `GraphMultiHistogram` (2) and `GraphCTLSchedule` (4), and the
+  two external-field `GraphParallelTempering` overloads that take replicas from a previous run,
+  where the row comes from `inputReplicas[[1,"externalField"]]`. The beta-tempering overloads are
+  untouched — there `hparams` really is the parameter list and their probes were always correct.
+
+### Added
+- **`EnergyCallbackProbe-external-field-arity`** in `Tests/MCSims.wlt`. There were no tests on
+  this check at all, which is why the bug shipped. It asserts that the field-row arity is
+  accepted, that the old `hparams` probe rejects it — so the test cannot pass vacuously — and that
+  an undefined head is still rejected. It also records one limit rather than hiding it: a
+  slot-based pure `Function` ignores extra arguments, so it satisfies this probe and is caught one
+  level in, by the inner driver's own probe on the applied form. 177 tests, all passing.
+
+### Notes
+- The README's test count had gone stale at 148 and is corrected to 177.
+
 ## [1.8.0] - 2026-08-13
 
 Performance release. `RandomUniformFacetLabeledPureSimplicialComplex` draws 2x to 103x faster.
@@ -650,7 +685,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.1
 [1.8.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.0
 [1.7.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.1
 [1.7.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.0
