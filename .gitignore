@@ -1,4 +1,4 @@
 .DS_Store
 build/*
-!build/ECGrav-1.6.0.paclet
+!build/ECGrav-1.7.0.paclet
 .claude/settings.local.json

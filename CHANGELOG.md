@@ -6,6 +6,29 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-13
+
+Equilibriation and correlation time, audited and rebuilt. The convergence test that every
+Monte Carlo driver depends on was comparing a squared difference of window *means* against the
+variance of *individual* samples -- quantities that differ by the effective sample size -- so it
+was in effect testing whether the autocorrelation time was short rather than whether the
+replicas agreed, and a systematic 1-sigma offset between half of them passed 99% of the time.
+It now compares like with like, watches two observables instead of one, says so out loud when
+neither varied, and runs once per window rather than once per sweep. The correlation-time stage
+no longer takes its run length from the burn-in. Alongside that, the two user settings finally
+reach parallel subkernels: `DistributeDefinitions` had been silently shipping nothing.
+
+The complex-space MCMC family also gained real test coverage over this cycle -- all four
+definitions of `RandomPureSimplicialComplexMCMC` and both stages beneath it, 172 tests in all.
+No public function was removed and no argument order changed. One public setting is new,
+`$ECGravMaxCorrelationSweeps`.
+
+Note for anyone relying on reproducibility: equilibriation stops at a different sweep than it
+did at 1.6.0, so `eqlT`, and everything downstream of it, differs for a given `SeedRandom`. Any
+`eqlT` recorded from an earlier version is an underestimate. `GraphEquilibriate::noconv` gained
+an argument slot, and `::nosignal` / `::shortrun` are new messages that can appear on runs that
+used to be silent.
+
 ### Changed
 - **Recalibrated the equilibriation convergence criterion** in all four equilibriators
   (`GraphEquilibriate` ×2, `RandomPureSimplicialComplexMCMCEquilibriate` ×2). The criterion
