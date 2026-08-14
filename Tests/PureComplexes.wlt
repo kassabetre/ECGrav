@@ -1097,9 +1097,51 @@ VerificationTest[
         {Keys[r], r["eqlT"], Length[r["corrTValues"]],
          AllTrue[r["corrTValues"], IntegerQ[#] && # >= 2 &],
          r["corrT"] === Max[r["corrTValues"]],
+         r["corrTMeasured"],
          ECGrav`PureComplexQ[r["state"]["complex"]], Length[r["state"]["complex"]]}],
-    {{"eqlT", "corrT", "corrTValues", "state"}, 12, 4, True, True, True, 4},
+    {{"eqlT", "corrT", "corrTValues", "corrTMeasured", "state"}, 12, 4, True, True, True,
+     True, 4},
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-shape"
+];
+
+(* corrTMeasured separates the two ways corrT can be 2: computed from an autocorrelation
+   integral that really did come out at or below the floor, versus never computed at all. The
+   number alone cannot tell them apart, which is what this flag exists to fix -- the same
+   problem, and the same remedy, as the "converged" key on the equilibriators.
+
+   Three cases, one run each. A normal run measures it. A run with one constant operator still
+   measures it -- corrT is the max over the observables that DO fluctuate, and the energy here
+   always does, so a single stuck operator must not flip the flag. And a run too short to have
+   any lag range -- eqlT 2 gives numsweeps 10, so lastLag is 0 and no term ever enters the
+   integral -- leaves corrT at the default with nothing frozen at all. That last case is the
+   one no message reports, so the flag is its only signal.
+
+   The all-frozen case cannot be built here: this chain moves by construction, so the energy
+   never freezes. It is covered on the graph side, where a low-temperature run genuinely locks
+   up (GraphComputeCorrelationTime-corrTMeasured in Tests/MCSims.wlt). *)
+VerificationTest[
+    Module[{normal, oneStuck, tooShort},
+        SeedRandom[512];
+        normal = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 31,
+                {Function[c, Total[Flatten[c]]]}, 1]];
+        SeedRandom[513];
+        oneStuck = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 31,
+                {Function[c, 7.5]}, 1]];
+        SeedRandom[514];
+        tooShort = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 2,
+                {Function[c, Total[Flatten[c]]]}, 1]];
+        {normal["corrTMeasured"],
+         oneStuck["corrTMeasured"],
+         tooShort["corrTMeasured"],
+         (* all three report corrT as an ordinary integer, so the flag carries information the
+            number does not *)
+         AllTrue[{normal, oneStuck, tooShort}, IntegerQ[#["corrT"]] &],
+         tooShort["corrT"]}],
+    {True, True, False, True, 2},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-corrTMeasured"
 ];
 
 (* Differential test of the reported correlation times against an independent
@@ -1327,7 +1369,8 @@ VerificationTest[
          Last[meas][[-1]] === data[["state", "complex"]],
          Keys[data], data["converged"], data["eqlT"], data["corrT"], data["corrTValues"]}],
     {5, {6, 6, 6, 6, 6}, Range[5], True, False, True, True,
-     {"eqlT", "converged", "state", "corrT", "corrTValues"}, True, 101, 2, {2, 2, 2, 2}},
+     {"eqlT", "converged", "state", "corrT", "corrTValues", "corrTMeasured"}, True, 101, 2,
+     {2, 2, 2, 2}},
     TestID -> "RandomPureSimplicialComplexMCMC-measurements-are-self-consistent"
 ];
 

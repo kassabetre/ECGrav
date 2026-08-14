@@ -4848,9 +4848,14 @@ RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,eqlT_Integer, op
 
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],
 		data,sweepOutput,observablesTable,
-		fluctuatingObservableIndices,corrTValues,numsweeps},
+		fluctuatingObservableIndices,corrTValues,corrTPairs,numsweeps},
 
+(*corrTMeasured says whether corrT came from an autocorrelation integral or from the floor it
+	defaults to. A frozen observable, or a run too short to have a lag range, leaves corrT at 2
+	-- which is also a perfectly ordinary answer for a chain that really does decorrelate in
+	two sweeps, so the two cases are indistinguishable in the number alone.*)
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
+		"corrTMeasured"->False,
 		"state"-><|"complex"->Sort[Sort/@seedComplex],"vertexCount"->Length[DeleteDuplicates[Flatten[seedComplex]]],
 		"weight"->1.0,"energy" ->0.0|>|>;
 
@@ -4903,9 +4908,9 @@ If[fluctuatingObservableIndices=={},
 		never enter the answer. Walk the lags and stop there rather than tabulating all
 		numsweeps-10 of them and discarding the tail; the running sum below is the same one,
 		term for term, that the tabulated form produced. *)
-	corrTValues=Table[
+	corrTPairs=Table[
 		Module[{observable=observablesTable[[i]],norm,corrSum=0.0,corr,t=0,lastLag=numsweeps-10,
-				reachedTurnover=False},
+				reachedTurnover=False,terms=0},
 			norm=CorrelationTime[0,observable];
 			If[norm==0.0,norm=1.0];
 				(*the time 0 correlation can be 0 sometimes*)
@@ -4915,19 +4920,28 @@ If[fluctuatingObservableIndices=={},
 				Which[
 					corr<=0,
 						(*the first non-positive value is the last term of the integral*)
-						corrSum+=corr;reachedTurnover=True,
+						corrSum+=corr;terms++;reachedTurnover=True,
 					t+1<=lastLag,
 						(*if the autocorrelation never turns over the integral stops one lag
 							short, which is what the tabulated form did*)
-						corrSum+=corr
+						corrSum+=corr;terms++
 				];
 				t++
 			];
-			Max[Ceiling[corrSum],2]
+			(*terms>0 separates a computed correlation time from one that fell back to the
+				floor for want of any lag range at all; see corrTMeasured below.*)
+			{Max[Ceiling[corrSum],2],terms>0}
 		]
 		,{i,fluctuatingObservableIndices}];
 
+	corrTValues=corrTPairs[[All,1]];
+
 	data[[Key["corrT"]]]=Max[corrTValues];
+
+	(*corrT is the max over the fluctuating observables, so it is measured as soon as any one
+		of them yielded an integral. The frozen ones keep the default of 2 in corrTValues but
+		never reach corrT.*)
+	data[[Key["corrTMeasured"]]]=AnyTrue[corrTPairs[[All,2]],TrueQ];
 
 	(*A run this short may not resolve what it found: 20 correlation times is the usual
 		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -4962,11 +4976,16 @@ RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex_List,HoldNumberOfVert
 *)
 
 Module[{purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],nV=Length[DeleteDuplicates[Flatten[seedComplex]]],data,sweepOutput,observablesTable,
-	fluctuatingObservableIndices,corrTValues,numsweeps},
+	fluctuatingObservableIndices,corrTValues,corrTPairs,numsweeps},
 
 Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMCCorrelationTime[seedComplex,eqlT, operators,labelingChoise], "ECGravReturn$56"]];
 
+(*corrTMeasured says whether corrT came from an autocorrelation integral or from the floor it
+	defaults to. A frozen observable, or a run too short to have a lag range, leaves corrT at 2
+	-- which is also a perfectly ordinary answer for a chain that really does decorrelate in
+	two sweeps, so the two cases are indistinguishable in the number alone.*)
 data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
+		"corrTMeasured"->False,
 	"state"-><|"complex"->Sort[Sort/@seedComplex],"edgeCount"->Length[Union@@(Subsets[#,{2}]&/@(Sort/@seedComplex))],"weight"->1.0,"energy" ->0.0|>|>;
 
 (*The equilibriation time and the length of run needed to measure an autocorrelation time
@@ -5014,9 +5033,9 @@ If[fluctuatingObservableIndices=={},
 		never enter the answer. Walk the lags and stop there rather than tabulating all
 		numsweeps-10 of them and discarding the tail; the running sum below is the same one,
 		term for term, that the tabulated form produced. *)
-	corrTValues=Table[
+	corrTPairs=Table[
 		Module[{observable=observablesTable[[i]],norm,corrSum=0.0,corr,t=0,lastLag=numsweeps-10,
-				reachedTurnover=False},
+				reachedTurnover=False,terms=0},
 			norm=CorrelationTime[0,observable];
 			If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 			While[!reachedTurnover&&t<=lastLag,
@@ -5025,19 +5044,28 @@ If[fluctuatingObservableIndices=={},
 				Which[
 					corr<=0,
 						(*the first non-positive value is the last term of the integral*)
-						corrSum+=corr;reachedTurnover=True,
+						corrSum+=corr;terms++;reachedTurnover=True,
 					t+1<=lastLag,
 						(*if the autocorrelation never turns over the integral stops one lag
 							short, which is what the tabulated form did*)
-						corrSum+=corr
+						corrSum+=corr;terms++
 				];
 				t++
 			];
-			Max[Ceiling[corrSum],2]
+			(*terms>0 separates a computed correlation time from one that fell back to the
+				floor for want of any lag range at all; see corrTMeasured below.*)
+			{Max[Ceiling[corrSum],2],terms>0}
 		]
 		,{i,fluctuatingObservableIndices}];
 
+	corrTValues=corrTPairs[[All,1]];
+
 	data[[Key["corrT"]]]=Max[corrTValues];
+
+	(*corrT is the max over the fluctuating observables, so it is measured as soon as any one
+		of them yielded an integral. The frozen ones keep the default of 2 in corrTValues but
+		never reach corrT.*)
+	data[[Key["corrTMeasured"]]]=AnyTrue[corrTPairs[[All,2]],TrueQ];
 
 	(*A run this short may not resolve what it found: 20 correlation times is the usual
 		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -5111,6 +5139,10 @@ Tempoutput=RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex
 
 data[["corrT"]]=Tempoutput[[Key["corrT"]]];
 data[["corrTValues"]]=Tempoutput[[Key["corrTValues"]]];
+(*Carried through rather than dropped: the sampling interval below is data[["corrT"]], so a
+	caller of this driver needs the same means of telling a measured interval from the floor
+	that a caller of the correlation-time function directly would have.*)
+data[["corrTMeasured"]]=Tempoutput[[Key["corrTMeasured"]]];
 data[[Key["state"]]]=Tempoutput[[Key["state"]]];
 
 (*(******************************************
@@ -5199,6 +5231,10 @@ Tempoutput=RandomPureSimplicialComplexMCMCCorrelationTime[data[["state","complex
 
 data[["corrT"]]=Tempoutput[[Key["corrT"]]];
 data[["corrTValues"]]=Tempoutput[[Key["corrTValues"]]];
+(*Carried through rather than dropped: the sampling interval below is data[["corrT"]], so a
+	caller of this driver needs the same means of telling a measured interval from the floor
+	that a caller of the correlation-time function directly would have.*)
+data[["corrTMeasured"]]=Tempoutput[[Key["corrTMeasured"]]];
 data[[Key["state"]]]=Tempoutput[[Key["state"]]];
 
 

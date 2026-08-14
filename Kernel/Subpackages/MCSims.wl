@@ -2642,7 +2642,8 @@ $Failed);
 
 LazyCorrelationTime[observable_List,lastLag_Integer,progressStep_Integer,
 	progressSuffix_String]:=
-Module[{norm,curve,filled=0,corrSum=0.0,corr,t=0,tmax,reachedTurnover=False,plotLast},
+Module[{norm,curve,filled=0,corrSum=0.0,corr,t=0,tmax,reachedTurnover=False,plotLast,
+	terms=0},
 	norm=CorrelationTime[0,observable];
 	If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
 
@@ -2662,11 +2663,11 @@ Module[{norm,curve,filled=0,corrSum=0.0,corr,t=0,tmax,reachedTurnover=False,plot
 		Which[
 			corr<=0,
 				(*the first non-positive value is the last term of the integral*)
-				corrSum+=corr;reachedTurnover=True,
+				corrSum+=corr;terms++;reachedTurnover=True,
 			t+1<=lastLag,
 				(*if the autocorrelation never turns over the integral stops one lag short,
 					which is what the tabulated form did*)
-				corrSum+=corr
+				corrSum+=corr;terms++
 		];
 		t++
 	];
@@ -2680,7 +2681,13 @@ Module[{norm,curve,filled=0,corrSum=0.0,corr,t=0,tmax,reachedTurnover=False,plot
 	While[filled<plotLast,
 		curve[[filled+1]]=CorrelationTime[filled,observable]/norm;filled++];
 
-	<|"corrT"->Max[Ceiling[corrSum],2],"tmax"->tmax,"curve"->Take[curve,filled]|>
+	(*"measured" separates a correlation time that was computed from one that merely fell back
+		to the floor. The integral is empty when the run is too short to have a lag range at all
+		(numsweeps<10 leaves lastLag<0), and then corrT is 2 for want of any evidence rather
+		than because the chain decorrelates in two sweeps -- outputs that are otherwise
+		indistinguishable.*)
+	<|"corrT"->Max[Ceiling[corrSum],2],"tmax"->tmax,"curve"->Take[curve,filled],
+		"measured"->terms>0|>
 ];
 
 
@@ -2731,9 +2738,15 @@ maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 Which[EnergyOrMag==0,EorM = "energy",EnergyOrMag==1,EorM = "mag"];
 
 
+(*corrTMeasured says whether corrT came from an autocorrelation integral or from the floor it
+	defaults to. A frozen observable, or a run too short to have a lag range, leaves corrT at 2
+	-- which is also a perfectly ordinary answer for a chain that really does decorrelate in
+	two sweeps, so the two cases are indistinguishable in the number alone. Callers that care
+	whether the sampling interval means anything branch on this rather than guessing.*)
 data=<|"minEnergy" ->minEToBeat,
 		"minEstates"->{},
 		"beta"->beta, "externalField"->{hparams}, "eqlT"->eqlT, "corrT"->2,
+		"corrTMeasured"->False,
 		"state"-><|"graph"->seedGraph,"energy" ->hamiltonian[seedGraph,hparams],
 		"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
@@ -2800,6 +2813,7 @@ Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=corrData[[Key["corrT"]]];
+data[[Key["corrTMeasured"]]]=corrData[[Key["measured"]]];
 
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -2860,9 +2874,10 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,EorMTabl
 	Which[EnergyOrMag==0,EorM = "energy",EnergyOrMag==1,EorM = "mag"];
 
 
+(*See the primary overload for what corrTMeasured distinguishes.*)
 data=<|"minEnergy" ->minEToBeat,
 		"minEstates"->{},"beta"->beta,"externalField"->{hparams},
-		"eqlT"->eqlT,"corrT"->2,
+		"eqlT"->eqlT,"corrT"->2,"corrTMeasured"->False,
 		"state"-><|"graph"->seedGraph,"energy" ->hamiltonian[seedGraph,hparams],
 		"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
@@ -2930,6 +2945,7 @@ Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
 data[[Key["corrT"]]]=corrData[[Key["corrT"]]];
+data[[Key["corrTMeasured"]]]=corrData[[Key["measured"]]];
 
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -2989,7 +3005,8 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
 	data=<|"minEnergy" ->minEToBeat,"minEstates"->{},"beta"->beta,"externalField"->{hparams},
-			"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],"state"-><|"graph"->seedGraph,
+			"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
+			"corrTMeasured"->False,"state"-><|"graph"->seedGraph,
 			"energy" ->hamiltonian[seedGraph,hparams],
 			"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
@@ -3147,7 +3164,8 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 		keep the default of 2 and the rest are filled in by index below. This used to start
 		empty and be overwritten wholesale, which left no slot for a stuck observable.*)
 	data=<|"minEnergy" ->minEToBeat,"minEstates"->{},"beta"->beta,"externalField"->{hparams},
-			"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],"state"-><|"graph"->seedGraph,
+			"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
+			"corrTMeasured"->False,"state"-><|"graph"->seedGraph,
 			"energy" ->hamiltonian[seedGraph,hparams],
 			"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
@@ -3239,6 +3257,11 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 		corrTValues=corrData[[All,Key["corrT"]]];
 
 		data[[Key["corrT"]]]=Max[corrTValues];
+
+		(*corrT is the max over the fluctuating observables, so it is measured as soon as any
+			one of them yielded an integral. The frozen ones keep the default of 2 in
+			corrTValues but never reach corrT.*)
+		data[[Key["corrTMeasured"]]]=AnyTrue[corrData[[All,Key["measured"]]],TrueQ];
 
 		(*A run this short may not resolve what it found: 20 correlation times is the usual
 			minimum, and the cap can bite before that. Said once, at the end, where corrT is

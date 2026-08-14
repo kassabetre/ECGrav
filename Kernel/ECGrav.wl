@@ -967,17 +967,26 @@ Inputs are:,\[IndentingNewLine]1. seedGraph = List, adjacency matrix of the seed
    will be saved.,\[IndentingNewLine]7. EnergyOrMag = Integer, a variable to specify whether energy or magnetization is used to 
     compute correlation time. If EnergyOrMag = 0, energy is used; if EnergyOrMag = 1, 
     magnetization is used. OR, 
-7. operators = a list of functions whose correlation time is to be computed,\[IndentingNewLine]8. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the 
-   graphs unlabeled so graphs are labeled, 
-   UnlabeledVerticesYes = 1 means graphs are unlabeled.,\[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the equilibriation and the states with that 
-    energy. If multiple states have degenerate minimum energy, they will all be included, 
-    but if multiple identical adjacency graphs are found, only one unique adjacency graph 
-    is kept. \[IndentingNewLine]2. The second association has the inverse temperature, equilibriation time, 
-    correlation timeand the final state visited, which itself is an association which 
-    includes the adjacency matrix, 
-   magnetization, and energy, 
+7. operators = a list of functions whose correlation time is to be computed,\[IndentingNewLine]8. UnlabeledVerticesYes = Integer, 0 means no selection probability to make the
+   graphs unlabeled so graphs are labeled,
+   UnlabeledVerticesYes = 1 means graphs are unlabeled.,\[IndentingNewLine]\[IndentingNewLine]Outputs a list with two associations,\[IndentingNewLine]1. the minimum energy visited throughout the equilibriation and the states with that
+    energy. If multiple states have degenerate minimum energy, they will all be included,
+    but if multiple identical adjacency graphs are found, only one unique adjacency graph
+    is kept. \[IndentingNewLine]2. The second association has the inverse temperature, equilibriation time,
+    correlation timeand the final state visited, which itself is an association which
+    includes the adjacency matrix,
+   magnetization, and energy,
    i.e., <|'state'-><|'graph;->curAmat,`energy' \[Rule]hamiltonian[curAmat],
                       'mag'\[Rule]Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>.
+
+That second association also carries 'corrTMeasured', which is True when corrT came from an
+autocorrelation integral and False when it is the floor of 2 that every correlation time
+defaults to. It is False when every observable was frozen, and when the run was too short to
+have a lag range at all -- neither of which is distinguishable from a chain that genuinely
+decorrelates in two sweeps by looking at corrT alone. corrT is what the drivers pass as the
+sweep count between measurements, so branch on this before treating it as one; a frozen chain
+is not necessarily a failed run -- at high beta it usually means the ground state was found --
+so what to do about it belongs to the caller.
 
 Both energy callbacks are passed as inert head[params] expressions and are called as
 hamiltonian[adjacencyMatrix,hparams] and delH[adjacencyMatrix,delHparams,i,j]. Define the
@@ -2786,8 +2795,15 @@ RandomPureSimplicialComplexMCMCCorrelationTime::usage="
 	takes as an input equilibriated complex, the equlibriation time, a list of functions, and 
 	a choice of labeleing and determines the correltion time. Correlation time is the maximum 
 	of the correlation times for energy = -Log[prob], the operator which counts the number
-	of edges, and the input list of operators. labelingChoise is an 
-	integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled.";
+	of edges, and the input list of operators. labelingChoise is an
+	integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled.
+	The result carries \"corrTMeasured\", which is True when corrT came from an
+	autocorrelation integral and False when it is the floor of 2 that every correlation time
+	defaults to. It is False when every observable was frozen, and when the run was too short
+	to have a lag range at all -- neither of which is distinguishable from a chain that
+	genuinely decorrelates in two sweeps by looking at corrT alone. Branch on it before
+	treating corrT as a sampling interval; a frozen chain is not necessarily a failed run, so
+	the choice of what to do about it belongs to the caller.";
 	
 (* :Error Messages: *)
 

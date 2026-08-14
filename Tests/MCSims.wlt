@@ -377,6 +377,46 @@ VerificationTest[
     TestID -> "GraphComputeCorrelationTime-short-run-returns-number"
 ];
 
+(* corrTMeasured separates the two ways corrT can come back as 2: computed from an
+   autocorrelation integral that really did land on the floor, versus never computed at all.
+   The number alone cannot tell them apart -- the same problem the "converged" key was added to
+   the equilibriators to fix, and the reason a stuck run is not simply given a bigger corrT:
+   corrT is the sweep count the drivers pass to GraphSweepReplica, so inflating it would
+   multiply the cost of every production run that froze, and at high beta freezing usually
+   means the ground state was found rather than that anything went wrong.
+
+   Four cases across all four overloads. A normal run measures it. K4 at beta 10 is the
+   provably-frozen construction used above: nothing fluctuates, ::alldefault fires, and the
+   flag is False. A single constant operator alongside a live one must NOT flip it, since
+   corrT is the max over the observables that do fluctuate. And eqlT 1 gives numsweeps 5, so
+   there is no lag range at all and no term enters the integral -- the case no message reports,
+   where the flag is the only signal. *)
+VerificationTest[
+    Module[{normal, allFrozen, oneStuck, tooShort, ops = {Function[g, 1.0*Total[Flatten[g]]]}},
+        SeedRandom[606];
+        normal = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], 21, 0.0, 1, 0]];
+        allFrozen = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[K4, 10.0, h[-1.0, 0.0], dH[-1.0, 0.0], 21, 0.0, ops, 0]];
+        SeedRandom[607];
+        oneStuck = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 21, 0.0,
+                Append[ops, Function[g, 7.5]], 0]];
+        SeedRandom[608];
+        tooShort = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 1, 0.0, 1, 0]];
+        {normal[[2, "corrTMeasured"]],
+         allFrozen[[2, "corrTMeasured"]],
+         oneStuck[[2, "corrTMeasured"]],
+         tooShort[[2, "corrTMeasured"]],
+         (* all four report corrT as an ordinary integer, so the flag carries information the
+            number does not -- and the two False cases both report exactly 2 *)
+         AllTrue[{normal, allFrozen, oneStuck, tooShort}, IntegerQ[#[[2, "corrT"]]] &],
+         {allFrozen[[2, "corrT"]], tooShort[[2, "corrT"]]}}],
+    {True, False, True, False, True, {2, 2}},
+    TestID -> "GraphComputeCorrelationTime-corrTMeasured"
+];
+
 (* Both operator-list overloads emit the autocorrelation plot. The one without delH did not
    draw one at all before, which is why it is asserted separately from the plot test above. *)
 VerificationTest[

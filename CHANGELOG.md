@@ -61,12 +61,29 @@ overloads give 400 of 400 exact matches on every value the old code was able to 
   onto the wrong line.
 
 ### Added
-- Six tests in `Tests/MCSims.wlt`, taking the complex side's as the template — the graph side had
-  two, which is why all of this survived. They pin the integration rule against the prelude's
-  independent oracle on both operator-list overloads (with a monotone ramp forcing the
-  never-turns-over branch, and a shuffled-series vacuity guard), the `::stuck` value, the
-  all-frozen `::alldefault` path, that short runs return a number, and that both operator-list
-  overloads emit their plot. All six fail against the previous code. 183 tests, all passing.
+- **`"corrTMeasured"` in the result of every correlation-time routine**, on both the graph and
+  complex sides, and carried through `RandomPureSimplicialComplexMCMC`. It is `True` when `corrT`
+  came from an autocorrelation integral and `False` when it is the floor of 2 that every
+  correlation time defaults to — which happens when every observable was frozen, and when the run
+  was too short to have a lag range at all. Neither was distinguishable from a chain that
+  genuinely decorrelates in two sweeps by looking at `corrT` alone, and the second is reported by
+  no message, so the flag was its only possible signal. Same remedy, for the same reason, as the
+  `"converged"` key on the equilibriators.
+
+  Deliberately a flag rather than a larger default. `corrT` is the sweep count the drivers hand
+  to `GraphSweepReplica`, so cost is linear in it: inflating it for stuck runs would multiply the
+  cost of every run that froze, and at high beta a frozen chain usually means the ground state was
+  found rather than that anything went wrong. A single stuck observable alongside a live one does
+  **not** clear the flag — `corrT` is the maximum over the observables that do fluctuate. What to
+  do about an unmeasured correlation time is left to the caller. Additive: no existing value
+  changes, re-verified against the same 96 end-to-end configurations (400/400).
+- Seven tests in `Tests/MCSims.wlt` and one in `Tests/PureComplexes.wlt`, taking the complex
+  side's as the template — the graph side had two, which is why all of this survived. They pin the
+  integration rule against the prelude's independent oracle on both operator-list overloads (with
+  a monotone ramp forcing the never-turns-over branch, and a shuffled-series vacuity guard), the
+  `::stuck` value, the all-frozen `::alldefault` path, that short runs return a number, that both
+  operator-list overloads emit their plot, and each of the four cases `corrTMeasured` separates.
+  All six of the rewrite tests fail against the previous code. 185 tests, all passing.
 
 ## [1.8.1] - 2026-08-14
 
