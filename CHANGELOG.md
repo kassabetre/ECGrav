@@ -6,6 +6,8 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-08-14
+
 `GraphComputeCorrelationTime` was well behind its complex-space twin,
 `RandomPureSimplicialComplexMCMCCorrelationTime`, which had been rewritten in 1.7.0. This brings
 the four graph overloads up to it: the lazy lag walk, and the three defects the complex side had
@@ -764,7 +766,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.9.0
 [1.8.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.1
 [1.8.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.0
 [1.7.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.7.1
