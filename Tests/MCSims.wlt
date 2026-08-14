@@ -235,6 +235,160 @@ VerificationTest[
     TestID -> "GraphComputeCorrelationTime-emits-plot"
 ];
 
+(* ---------- GraphComputeCorrelationTime: the integration rule ----------
+
+   Differential test of the reported correlation times against the independent implementation
+   of the documented integration rule in the prelude (mcmcCorrT), which is the same rule both
+   sides of the package run. This is what pins the lazy lag walk: it computes only the lags up
+   to the turnover, and must still produce exactly what tabulating every lag produced.
+
+   The driver measures its own observables internally, so the test recovers them: one supplied
+   operator records the graph it is handed, which is the post-sweep graph the driver measures
+   in the same iteration, and the energy and magnetization are deterministic functions of it
+   (mag being Total[Flatten[g]]/(v(v-1)), written exactly as the driver writes it).
+
+   The second operator is a sweep counter -- a monotone ramp whose autocorrelation never turns
+   over, which forces the lag walk to run to the end of its range instead of stopping after a
+   handful of terms. Without it every value sits on the floor of 2 and the comparison is
+   nearly vacuous: turnedOver below records that BOTH branches of the integral were taken --
+   terminating on a non-positive term, and running out of lags one short of lastLag.
+
+   Vacuity guard: the same oracle on shuffled series, whose autocorrelation is destroyed, must
+   give a different answer. *)
+VerificationTest[
+    Module[{recorded = {}, sweepNo = 0, r, numsweeps, rows, oracle, shuffled, nV = 6},
+        SeedRandom[601];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], 31, 0.0,
+                {Function[g, AppendTo[recorded, g]; 1.0*Total[Flatten[g]]],
+                 Function[g, 1.0*(++sweepNo)]}, 0]];
+        numsweeps = Length[recorded];
+        rows = {ECGrav`HIsing[#, -1.0, 0.0] & /@ recorded,
+                Total[Flatten[#]]*1.0/(nV (nV - 1)) & /@ recorded,
+                1.0*Total[Flatten[#]] & /@ recorded,
+                1.0*Range[numsweeps]};
+        oracle = mcmcCorrT[#, numsweeps - 10] & /@ rows;
+        SeedRandom[9];
+        shuffled = mcmcCorrT[RandomSample[#], numsweeps - 10][[1]] & /@ rows;
+        {numsweeps, Last[recorded] === r[[2, "state", "graph"]],
+         r[[2, "corrTValues"]],
+         r[[2, "corrTValues"]] === oracle[[All, 1]],
+         r[[2, "corrT"]] === Max[oracle[[All, 1]]],
+         oracle[[All, 2]],                        (* turnover reached on each series? *)
+         shuffled =!= oracle[[All, 1]]}],
+    {155, True, {3, 2, 2, 53}, True, True, {True, True, True, False}, True},
+    TestID -> "GraphComputeCorrelationTime-integration-rule"
+];
+
+(* The same rule on the overload that takes no delH. It is a separate body from the one above
+   -- and until this was written it was the only one of the four with no stuck-observable
+   handling at all -- so it gets its own oracle rather than being assumed equivalent. *)
+VerificationTest[
+    Module[{recorded = {}, sweepNo = 0, r, numsweeps, rows, oracle, nV = 6},
+        SeedRandom[602];
+        r = Quiet@Block[{Print = Null &},
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 31, 0.0,
+                {Function[g, AppendTo[recorded, g]; 1.0*Total[Flatten[g]]],
+                 Function[g, 1.0*(++sweepNo)]}, 0]];
+        numsweeps = Length[recorded];
+        rows = {ECGrav`HIsing[#, -1.0, 0.0] & /@ recorded,
+                Total[Flatten[#]]*1.0/(nV (nV - 1)) & /@ recorded,
+                1.0*Total[Flatten[#]] & /@ recorded,
+                1.0*Range[numsweeps]};
+        oracle = mcmcCorrT[#, numsweeps - 10] & /@ rows;
+        {numsweeps, r[[2, "corrTValues"]],
+         r[[2, "corrTValues"]] === oracle[[All, 1]],
+         r[[2, "corrT"]] === Max[oracle[[All, 1]]],
+         oracle[[All, 2]]}],
+    {155, {2, 2, 2, 53}, True, True, {True, True, True, False}},
+    TestID -> "GraphComputeCorrelationTime-integration-rule-no-delH"
+];
+
+(* A frozen observable must be excluded, named, and reported with ITS OWN stuck value.
+   Both halves were broken. The overload with delH indexed the value two rows above the one it
+   named, so for the operator at row 4 it printed the magnetization's value; the overload
+   without delH did no filtering at all, leaving a Null in the autocorrelation table which
+   indexed its way into corrT and returned it as an unevaluated Sum rather than a number.
+   Hence the IntegerQ assertions: a shape check alone passed on the broken output.
+
+   The constant operator sits at row 4 (energy, mag, fluctuating operator, frozen operator),
+   which is exactly where the misindexed value differed from the right one. *)
+VerificationTest[
+    Module[{args3, args4, r3, r4, ops},
+        ops = {Function[g, 1.0*Total[Flatten[g]]], Function[g, 7.5]};
+        SeedRandom[603];
+        args3 = messageArguments["GraphComputeCorrelationTime::stuck",
+            r3 = Quiet@Block[{Print = Null &},
+                ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0],
+                    21, 0.0, ops, 0]]];
+        SeedRandom[603];
+        args4 = messageArguments["GraphComputeCorrelationTime::stuck",
+            r4 = Quiet@Block[{Print = Null &},
+                ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 21, 0.0, ops, 0]]];
+        {args3, args4,
+         VectorQ[r3[[2, "corrTValues"]], IntegerQ], IntegerQ[r3[[2, "corrT"]]],
+         VectorQ[r4[[2, "corrTValues"]], IntegerQ], IntegerQ[r4[[2, "corrT"]]],
+         Length[r3[[2, "corrTValues"]]], Length[r4[[2, "corrTValues"]]]}],
+    {{{Function[g, 7.5], 7.5}}, {{Function[g, 7.5], 7.5}},
+     True, True, True, True, 4, 4},
+    TestID -> "GraphComputeCorrelationTime-frozen-observable"
+];
+
+(* When nothing fluctuates, both operator-list overloads report ::alldefault and leave every
+   correlation time at the floor. K4 at beta 10 is the provably-frozen construction used by
+   GraphComputeCorrelationTime-counts-frozen-seed above, so this is deterministic. *)
+VerificationTest[
+    Module[{ad3, ad4, r3, r4, ops = {Function[g, 1.0*Total[Flatten[g]]]}},
+        ad3 = messageArguments["GraphComputeCorrelationTime::alldefault",
+            r3 = Quiet@Block[{Print = Null &},
+                ECGrav`GraphComputeCorrelationTime[K4, 10.0, h[-1.0, 0.0], dH[-1.0, 0.0],
+                    21, 0.0, ops, 0]]];
+        ad4 = messageArguments["GraphComputeCorrelationTime::alldefault",
+            r4 = Quiet@Block[{Print = Null &},
+                ECGrav`GraphComputeCorrelationTime[K4, 10.0, h[-1.0, 0.0], 21, 0.0, ops, 0]]];
+        {Length[ad3], Length[ad4], ad3 === ad4,
+         ad3[[1, 1]], ad3[[1, 2]],
+         r3[[2, "corrTValues"]], r4[[2, "corrTValues"]],
+         r3[[2, "corrT"]], r4[[2, "corrT"]]}],
+    {1, 1, True, {{-12.}, {1.}, {12.}}, {2, 2, 2}, {2, 2, 2}, {2, 2, 2}, 2, 2},
+    TestID -> "GraphComputeCorrelationTime-all-frozen"
+];
+
+(* A run too short to have a lag range at all must still return a NUMBER.
+   eqlT 1 gives numsweeps = 5, so lastLag = numsweeps - 10 = -5 and there is no lag to
+   integrate over. The tabulated form took FirstPosition's default -- a bare integer rather
+   than a position list -- indexed it, and handed back corrT as an unevaluated expression;
+   every one of the four overloads did this, and a caller then multiplied its sweep count by
+   it. IntegerQ is the whole point of the test: the broken values were still Max[...] shaped
+   and compared equal to nothing. *)
+VerificationTest[
+    Module[{ops = {Function[g, 1.0*Total[Flatten[g]]]}, rs},
+        SeedRandom[604];
+        rs = Quiet@Block[{Print = Null &},
+            {ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], 1, 0.0, 1, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 1, 0.0, 1, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], 1, 0.0, ops, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 1, 0.0, ops, 0]}];
+        {#[[2, "corrT"]] & /@ rs,
+         AllTrue[rs, IntegerQ[#[[2, "corrT"]]] &],
+         VectorQ[rs[[3, 2, "corrTValues"]], IntegerQ],
+         VectorQ[rs[[4, 2, "corrTValues"]], IntegerQ]}],
+    {{2, 2, 2, 2}, True, True, True},
+    TestID -> "GraphComputeCorrelationTime-short-run-returns-number"
+];
+
+(* Both operator-list overloads emit the autocorrelation plot. The one without delH did not
+   draw one at all before, which is why it is asserted separately from the plot test above. *)
+VerificationTest[
+    Module[{ops = {Function[g, 1.0*Total[Flatten[g]]]}}, SeedRandom[605];
+        {emittedGraphicsCount[
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], 21, 2.0, ops, 0]] >= 1,
+         emittedGraphicsCount[
+            ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], 21, 2.0, ops, 0]] >= 1}],
+    {True, True},
+    TestID -> "GraphComputeCorrelationTime-operator-overloads-emit-plot"
+];
+
 (* GraphMultiHistogram must emit its plots and return internally consistent output.
    The driver is not seed-reproducible -- two runs under the same SeedRandom give different
    numbers -- so there is no value to pin. Instead assert what must hold for ANY correct run:

@@ -6,6 +6,68 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+`GraphComputeCorrelationTime` was well behind its complex-space twin,
+`RandomPureSimplicialComplexMCMCCorrelationTime`, which had been rewritten in 1.7.0. This brings
+the four graph overloads up to it: the lazy lag walk, and the three defects the complex side had
+already had fixed. Relevant if you raise `$ECGravMaxCorrelationSweeps` — the measurement was
+quadratic in the run length, so a bigger cap cost as its square.
+
+Every correlation time that previously computed is unchanged. Verified two ways: 147 synthetic
+AR(1) series (rho 0 to 0.99, corrT up to 82) agree with the tabulated form on `corrT`, on the
+integration cut-off, and on the plotted curve, term for term, with a negative control that
+separates the conventions in 72 of them; and 96 end-to-end configurations across all four
+overloads give 400 of 400 exact matches on every value the old code was able to produce.
+
+### Changed
+- **The lag table is walked, not tabulated.** The integral stops at the first non-positive
+  autocorrelation, but all `numsweeps-10` lags were computed first and the tail discarded — about
+  990 of them at the default cap, to use a handful. Each costs O(run length), so the measurement
+  was quadratic. A new private `LazyCorrelationTime` walks the lags, stops at the turnover, and
+  then extends the curve — without summing — over exactly the window the plot displays. Measured
+  on the correlation step alone: 8-54x at 1000 sweeps, 20-155x at 5000, 70-581x at 20000, the
+  range running from strongly autocorrelated to uncorrelated observables. Both conventions of the
+  tabulated form are preserved deliberately: the terminating non-positive term is part of the
+  integral, and an autocorrelation that never turns over stops one lag short.
+
+  One case does not gain: an observable that never turns over at all — a drifting or monotone
+  one — still walks the whole range, and the walk carries about 20-25% more interpreter overhead
+  per lag than the vectorised `Table` it replaced. That is a constant factor, flat in the run
+  length rather than growing with it (0.75x at 1000 sweeps, 0.81x at 10000), and the curve is
+  filled by index rather than by `AppendTo`, which would otherwise have restored the quadratic
+  cost precisely in that case.
+
+### Fixed
+- **`corrT` came back as an unevaluated expression instead of a number on short runs.** All four
+  overloads read the integration cut-off from `FirstPosition[...,numsweeps-10][[1]]`, whose
+  default was a bare integer rather than a position list. Whenever the autocorrelation never went
+  non-positive — which every run with `numsweeps < 10` does, its lag table being empty — that
+  indexed an integer, and `corrT` came back as a symbolic `Max[...]`. Callers then multiplied
+  their sweep counts by it. `eqlT <= 1` reaches this on any input. The lazy walk removes the
+  construct rather than patching it.
+- **The overload with an operator list and no delH had no stuck-observable handling at all.** A
+  frozen observable — a constant operator, and `Length[g]` is one, since the vertex count does not
+  change during a sweep — put a `Null` in the autocorrelation table, which indexed its way into
+  `corrT` and returned it unevaluated. It now filters frozen observables, reports them through
+  `::stuck` and `::alldefault`, emits `::shortrun`, initialises `corrTValues` with one slot per
+  observable, and draws the autocorrelation plot, matching the overload that takes a delH. Two
+  driver paths reach it: the no-delH external-field overloads of `GraphMultiHistogram` and
+  `GraphParallelTempering`.
+- **`::stuck` reported the wrong value** in the operator-list overload with delH: the branch named
+  `operators[[i-2]]` but printed `observablesTable[[i-2,1]]`, so a stuck operator was reported
+  with the value of the observable two rows above it — for the first operator, the energy. Same
+  fix the complex side received.
+- **The autocorrelation plot's legend ran ahead of its curves.** Only fluctuating observables get
+  a curve, but the legend was built from all of them, so any stuck observable shifted every label
+  onto the wrong line.
+
+### Added
+- Six tests in `Tests/MCSims.wlt`, taking the complex side's as the template — the graph side had
+  two, which is why all of this survived. They pin the integration rule against the prelude's
+  independent oracle on both operator-list overloads (with a monotone ramp forcing the
+  never-turns-over branch, and a shuffled-series vacuity guard), the `::stuck` value, the
+  all-frozen `::alldefault` path, that short runs return a number, and that both operator-list
+  overloads emit their plot. All six fail against the previous code. 183 tests, all passing.
+
 ## [1.8.1] - 2026-08-14
 
 The energy-callback check added in 1.7.0 rejected **correct** hamiltonians in every external-field

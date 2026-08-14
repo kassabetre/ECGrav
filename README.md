@@ -154,7 +154,7 @@ Documentation Center, along with an **ECGrav** guide (API by theme) and a
 
 ## Tests
 
-The `Tests/` directory holds a `.wlt` regression suite (177 tests) that loads the
+The `Tests/` directory holds a `.wlt` regression suite (183 tests) that loads the
 package **from source**:
 
 ```wolfram

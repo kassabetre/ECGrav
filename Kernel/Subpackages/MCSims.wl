@@ -2613,6 +2613,78 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
+(*LazyCorrelationTime*)
+
+
+(* Private helper *)
+(* The integration stops at the first non-positive autocorrelation, so lags past that point
+	never enter the answer. Walk the lags and stop there rather than tabulating all
+	numsweeps-10 of them and discarding the tail: the running sum below is the same one, term
+	for term, that the tabulated form produced. Every autocorrelation costs O(Length[table]),
+	so the tabulated form was quadratic in the run length -- with the default cap it computed
+	about 990 of them to use a handful, and raising the cap made that worse as the square.
+
+	Two conventions of the tabulated form are reproduced exactly, and both are load-bearing.
+	The first non-positive term IS the last term of the integral. And when the autocorrelation
+	never turns over, FirstPosition's fallback left the sum one lag short of the table, which
+	is what the t+1<=lastLag guard keeps doing.
+
+	The graph overloads plot the curve out to four times the turnover, so the walk is then
+	extended -- without summing -- to cover exactly the window the tabulated form sliced out
+	of its full table, and no further. That extension is what the tmax in the returned
+	association is for; it is the 1-based position the tabulated form computed.
+
+	This replaces FirstPosition[corrTable,_?(#<=0&),lastLag][[1]], whose default was a bare
+	integer rather than a position list: whenever the autocorrelation never went non-positive
+	-- which every run with numsweeps<10 does, its lag table being empty -- that indexed an
+	integer, left tmax unevaluated, and the Sum built on it came back as symbolic garbage in
+	place of corrT. Walking the lags removes the construct rather than patching it. *)
+
+LazyCorrelationTime[observable_List,lastLag_Integer,progressStep_Integer,
+	progressSuffix_String]:=
+Module[{norm,curve,filled=0,corrSum=0.0,corr,t=0,tmax,reachedTurnover=False,plotLast},
+	norm=CorrelationTime[0,observable];
+	If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
+
+	(*Filled by index rather than by AppendTo. The walk usually stops after a handful of lags,
+		but an observable whose autocorrelation never turns over -- a drifting or monotone one
+		-- walks the whole range, and AppendTo costs O(length) a time, which would make that
+		case quadratic again in exactly the way this function exists to avoid. Measured on a
+		ramp at 10000 sweeps, appending was about twice as slow as the tabulated form it
+		replaced. Position k holds lag k-1.*)
+	curve=ConstantArray[0.0,Max[lastLag+1,0]];
+
+	While[!reachedTurnover&&t<=lastLag,
+		If[Mod[t,progressStep]==0,
+			PrintTemporary["      computing corrT at t = ",t,progressSuffix]];
+		corr=CorrelationTime[t,observable]/norm;
+		filled++;curve[[filled]]=corr;
+		Which[
+			corr<=0,
+				(*the first non-positive value is the last term of the integral*)
+				corrSum+=corr;reachedTurnover=True,
+			t+1<=lastLag,
+				(*if the autocorrelation never turns over the integral stops one lag short,
+					which is what the tabulated form did*)
+				corrSum+=corr
+		];
+		t++
+	];
+
+	(*At turnover the t++ above has already made t the 1-based position. Otherwise this is
+		FirstPosition's fallback, clamped so a run too short to have any lags at all leaves an
+		empty plot window rather than a negative one.*)
+	tmax=If[reachedTurnover,t,Max[lastLag,0]];
+
+	plotLast=Min[lastLag+1,4*tmax];
+	While[filled<plotLast,
+		curve[[filled+1]]=CorrelationTime[filled,observable]/norm;filled++];
+
+	<|"corrT"->Max[Ceiling[corrSum],2],"tmax"->tmax,"curve"->Take[curve,filled]|>
+];
+
+
+(* ::Item::Closed:: *)
 (*GraphComputeCorrelationTime Primary*)
 
 
@@ -2652,7 +2724,7 @@ Depends on the functions: GraphSweepReplicas, CorrelationTime.,
 
  *)
 
-Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,EorMTable,corrTable,tmax,norm,numsweeps,EorM = "energy",empair,maxNumSweeps=5000},
+Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,EorMTable,corrTable,corrData,tmax,numsweeps,EorM = "energy",empair,maxNumSweeps=5000},
 
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
@@ -2714,27 +2786,20 @@ If[Length[DeleteDuplicates[EorMTable]]>1,
 (*If the magnetizations have all equal value, then correlation time can not be 
 computed, so this loop will be exited with the default corrT left at 2 *)
 
-	norm=CorrelationTime[0,EorMTable];
+	(* Walks the lags and stops at the turnover; see LazyCorrelationTime for the conventions
+		it reproduces. *)
+	corrData=LazyCorrelationTime[EorMTable,numsweeps-10,Ceiling[numsweeps/5.0],
+		" hparams "<>ToString[{hparams}]];
 
-
-	If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
-
-
-	corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
-		PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
-		CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
-	]/norm;
-
-
-tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
+	corrTable=corrData[[Key["curve"]]];
+	tmax=corrData[[Key["tmax"]]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
 
 Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
 	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
-data[[Key["corrT"]]]=
-Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2];
+data[[Key["corrT"]]]=corrData[[Key["corrT"]]];
 
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -2788,7 +2853,7 @@ Depends on the functions: GraphSweepReplicas, CorrelationTime.,
  *)
 
 Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,EorMTable,
-	corrTable,tmax,norm,numsweeps,EorM = "energy",empair,maxNumSweeps=5000},
+	corrTable,corrData,tmax,numsweeps,EorM = "energy",empair,maxNumSweeps=5000},
 
 	maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
@@ -2852,26 +2917,19 @@ If[Length[DeleteDuplicates[EorMTable]]>1,
 
 (*If the magnetizations have all equal value, then correlation time can not be computed, so this loop will be exited with the default corrT left at 2 *)
 
-norm=CorrelationTime[0,EorMTable];
+(* Walks the lags and stops at the turnover; see LazyCorrelationTime for the conventions
+	it reproduces. *)
+corrData=LazyCorrelationTime[EorMTable,numsweeps-10,Ceiling[numsweeps/5.0],
+	" hparams "<>ToString[{hparams}]];
 
-
-If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
-
-
-corrTable=Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
-	PrintTemporary["      computing corrT at t = ",t," hparams ",{hparams}]];
-	CorrelationTime[t,EorMTable],{t,0,numsweeps-10}
-]/norm;
-
-
-tmax=(FirstPosition[corrTable,_?(#<=0&),numsweeps-10])[[1]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
+corrTable=corrData[[Key["curve"]]];
+tmax=corrData[[Key["tmax"]]]; (* A place to stop the integration for calculation of correlation time is when the autocorrelation value first becomes negative*)
 
 Print[ListLinePlot[corrTable[[1;;Min[Length[corrTable],4*tmax]]],PlotRange->Full,
 	PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams { "<>
 	StringJoin[Riffle[ToString/@{hparams},", "]]<>" }"]];
 
-data[[Key["corrT"]]]=
-Max[Ceiling[Sum[corrTable[[t]],{t,tmax}]],2];
+data[[Key["corrT"]]]=corrData[[Key["corrT"]]];
 
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
@@ -2925,7 +2983,8 @@ Depends on the functions: GraphSweepReplicas, CorrelationTime.,
  *)
 
 Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observablesTable,
-	fluctuatingObservableIndices,norm,corrTable,tmaxVals,corrTValues,numsweeps},
+	fluctuatingObservableIndices,corrData,corrTable,observableNames,tmaxVals,corrTValues,
+	numsweeps},
 
 	maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
@@ -2986,7 +3045,9 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 				i==2,
 				Message[GraphComputeCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
 				i>2,
-				Message[GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i-2,1]]]];
+				(*the value reported has to be the stuck observable's own, not the one two
+					rows up -- for i==3 that named the first operator but printed the energy*)
+				Message[GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i,1]]]];
 		Nothing],
 	{i,1,Length[observablesTable]}];
 
@@ -2994,36 +3055,34 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 	If[fluctuatingObservableIndices=={},
 		Message[GraphComputeCorrelationTime::alldefault,
 			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
-		corrTable=Table[
-
-			norm=CorrelationTime[0,observablesTable[[i]]];
-			If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
-
-			Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
-				PrintTemporary["      computing corrT at t = ",t]];
-				CorrelationTime[t,observablesTable[[i]]],
-			{t,0,numsweeps-10}]/norm
-
-
+		(* Walks the lags and stops at the turnover; see LazyCorrelationTime for the
+			conventions it reproduces. *)
+		corrData=Table[
+			LazyCorrelationTime[observablesTable[[i]],numsweeps-10,Ceiling[numsweeps/5.0],""]
 		,{i,fluctuatingObservableIndices}];
-	
-	
-		tmaxVals=Table[(FirstPosition[cT,_?(#<=0&),numsweeps-10])[[1]],{cT,corrTable}]; 
-		(* A place to stop the integration for calculation of correlation time is when the 
+
+		corrTable=corrData[[All,Key["curve"]]];
+
+		tmaxVals=corrData[[All,Key["tmax"]]];
+		(* A place to stop the integration for calculation of correlation time is when the
 		autocorrelation value first becomes negative*)
-	
-	
+
+		observableNames=Flatten[{"energy","mag",ToString/@operators}];
+
 		Print[
 			ListLinePlot[
 				Table[corrTable[[i,1;;Min[Length[corrTable[[i]]],4*tmaxVals[[i]]]]]
 				,{i,1,Length[corrTable]}],
-				PlotLegends->Flatten[{"energy","mag",ToString/@operators}],
+				(*only the fluctuating observables have a curve, so the legend is taken at
+					those indices -- over all of them the labels ran ahead of the curves as
+					soon as anything was stuck*)
+				PlotLegends->observableNames[[fluctuatingObservableIndices]],
 				PlotRange->Full,
 				PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams "<>ToString[{hparams}]
 			]
 		];
 
-		corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
+		corrTValues=corrData[[All,Key["corrT"]]];
 
 		
 		data[[Key["corrT"]]]=Max[corrTValues];
@@ -3079,12 +3138,16 @@ Depends on the functions: GraphSweepReplicas, CorrelationTime.,
  *)
 
 Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observablesTable,
-	norm,corrTable,tmaxVals,corrTValues,numsweeps},
+	fluctuatingObservableIndices,corrData,corrTable,observableNames,tmaxVals,corrTValues,
+	numsweeps},
 
 	maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
 
+	(*One entry per observable, matching the operator-list overload with delH: the frozen ones
+		keep the default of 2 and the rest are filled in by index below. This used to start
+		empty and be overwritten wholesale, which left no slot for a stuck observable.*)
 	data=<|"minEnergy" ->minEToBeat,"minEstates"->{},"beta"->beta,"externalField"->{hparams},
-			"eqlT"->eqlT,"corrT"->2,"corrTValues"->{},"state"-><|"graph"->seedGraph,
+			"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],"state"-><|"graph"->seedGraph,
 			"energy" ->hamiltonian[seedGraph,hparams],
 			"mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>|>;
 
@@ -3126,34 +3189,66 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 	];
 
 
-	corrTable=Table[
-		If[Length[DeleteDuplicates[oTbl]]>1,
+	(*If the measured observable values have all equal value, then correlation time can not be
+		computed, so fluctuating selects the measurements whose correlation time can be
+		computed. If none of the measurements fluctuate and are all stuck at a single value,
+		the program will return the default values corrT -> 2 and corrTValues -> {2,2,...,2}.
+		Without this filter a stuck observable put a Null in the table, which then indexed its
+		way into corrT and returned it unevaluated rather than as a number.*)
+	fluctuatingObservableIndices=
+	Table[
+		If[Length[DeleteDuplicates[observablesTable[[i]]]]>1,i,
+			Which[
+				i==1,
+				Message[GraphComputeCorrelationTime::stuck, "the energy", observablesTable[[1,1]]],
+				i==2,
+				Message[GraphComputeCorrelationTime::stuck, "the magnetization", observablesTable[[2,1]]],
+				i>2,
+				Message[GraphComputeCorrelationTime::stuck, operators[[i-2]], observablesTable[[i,1]]]];
+		Nothing],
+	{i,1,Length[observablesTable]}];
 
-		(*If the magnetizations have all equal value, then correlation time can not be computed, 
-		so this loop will be exited with the default corrT left at 2 *)
 
-		norm=CorrelationTime[0,oTbl];
-		If[norm==0.0,norm=1.0]; (*the time 0 correlation can be 0 sometimes*)
+	If[fluctuatingObservableIndices=={},
+		Message[GraphComputeCorrelationTime::alldefault,
+			DeleteDuplicates[#]&/@observablesTable,data[[Key["corrTValues"]]]],
+		(* Walks the lags and stops at the turnover; see LazyCorrelationTime for the
+			conventions it reproduces. *)
+		corrData=Table[
+			LazyCorrelationTime[observablesTable[[i]],numsweeps-10,Ceiling[numsweeps/5.0],""]
+		,{i,fluctuatingObservableIndices}];
 
-		Table[If[Mod[t,Ceiling[numsweeps/5.0]]==0,
-			PrintTemporary["      computing corrT at t = ",t]];
-			CorrelationTime[t,oTbl],
-		{t,0,numsweeps-10}]/norm
+		corrTable=corrData[[All,Key["curve"]]];
 
-		]
+		tmaxVals=corrData[[All,Key["tmax"]]];
+		(* A place to stop the integration for calculation of correlation time is when the
+		autocorrelation value first becomes negative*)
 
-	,{oTbl,observablesTable}];
+		observableNames=Flatten[{"energy","mag",ToString/@operators}];
 
-	tmaxVals=Table[(FirstPosition[cT,_?(#<=0&),numsweeps-10])[[1]],{cT,corrTable}]; 
-	(* A place to stop the integration for calculation of correlation time is when the 
-	autocorrelation value first becomes negative*)
+		Print[
+			ListLinePlot[
+				Table[corrTable[[i,1;;Min[Length[corrTable[[i]]],4*tmaxVals[[i]]]]]
+				,{i,1,Length[corrTable]}],
+				PlotLegends->observableNames[[fluctuatingObservableIndices]],
+				PlotRange->Full,
+				PlotLabel->"t vs auto correlation for beta "<>ToString[beta]<>" hparams "<>ToString[{hparams}]
+			]
+		];
 
-	
-	corrTValues=Table[Max[Ceiling[Sum[corrTable[[i,t]],{t,1,tmaxVals[[i]]}]],2],{i,1,Length[corrTable]}];
+		corrTValues=corrData[[All,Key["corrT"]]];
 
-	data[[Key["corrT"]]]=Max[corrTValues];
+		data[[Key["corrT"]]]=Max[corrTValues];
 
-	data[[Key["corrTValues"]]]=corrTValues;
+		(*A run this short may not resolve what it found: 20 correlation times is the usual
+			minimum, and the cap can bite before that. Said once, at the end, where corrT is
+			known.*)
+		If[data[[Key["corrT"]]]>numsweeps/20,
+			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+
+		Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
+
+	];
 
 	result={<|"minEnergy"->data[[Key["minEnergy"]]],"minEstates"->data[[Key["minEstates"]]]|>,data[[3;;All]]};
 
