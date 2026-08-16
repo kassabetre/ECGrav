@@ -50,6 +50,32 @@ VerificationTest[ECGrav`EulerChi[torus], 0, TestID -> "EulerChi-torus"];
 VerificationTest[ECGrav`EulerChi[kleinbottle], 0, TestID -> "EulerChi-kleinbottle"];
 VerificationTest[ECGrav`EulerChi[Table[0, {5}, {5}]], 5, TestID -> "EulerChi-5-isolated-vertices"];
 
+(* The empty complex has no simplices, so its alternating sum is 0 -- and it must come back as
+   a number, silently, not as $Failed with ::argerr. Both List overloads gate on Depth == 3 and
+   Depth[{}] is 2, so {} used to reach the catch-all even though the adjacency helper's own
+   n == 0 branch already returned 0.
+
+   This is not a hypothetical shape. {} is what the link of an edge slices to when its two
+   endpoints share no neighbour: any callback that computes a change under toggling edge (i,j)
+   evaluates am[[sphInt, sphInt]], and on a sparse graph a large fraction of pairs have an
+   empty link. The second assertion is that concrete route, on a graph whose vertices 1 and 2
+   share nothing; before the fix it returned -1 + $Failed and poisoned every Metropolis step
+   built on it. *)
+VerificationTest[
+    Module[{noCommonNbr = {{0,0,1,0},{0,0,0,1},{1,0,0,0},{0,1,0,0}}, link, toggled},
+        link = noCommonNbr[[{}, {}]];
+        toggled = noCommonNbr;
+        toggled[[1,2]] = toggled[[2,1]] = 1;
+        {ECGrav`EulerChi[{}],
+         link === {},
+         ECGrav`EulerChi[link],
+         (* the link-of-an-edge identity the empty case has to satisfy: toggling an edge
+            changes chi by chi(link) - 1, which for an empty link is -1 *)
+         ECGrav`EulerChi[link] - 1 === ECGrav`EulerChi[toggled] - ECGrav`EulerChi[noCommonNbr]}],
+    {0, True, 0, True},
+    TestID -> "EulerChi-empty-complex-is-0"
+];
+
 (* ---------- Counting / combinatorics ---------- *)
 
 (* NumVertexLabeledPureComplexes[p,q,n] counts q-element sets of p-subsets of [n] whose union is all of

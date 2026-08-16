@@ -858,6 +858,25 @@ With[{maxCliques=FindClique[g,\[Infinity],All]},
 EulerChi[maxCliques]
 ];
 
+(* Overload Pattern *)
+EulerChi[{}]:=
+(*The empty complex has no simplices, so its Euler characteristic is the empty alternating
+	sum, 0. This is the convention EulerChiAM above already follows internally (its n==0
+	branch), but nothing could reach it: BOTH List overloads gate on Depth==3, and Depth[{}]
+	is 2, so the empty matrix fell through to the catch-all and came back $Failed.
+
+	It arrives by way of the link of an edge. Code that computes how a quantity changes when
+	edge (i,j) is toggled evaluates it on am[[sphInt,sphInt]], where sphInt is the common
+	neighbourhood of i and j; when the two share no neighbour that slice is {}. On a sparse
+	graph this is not an edge case at all -- on 12 vertices with 18 edges, 32 of the 66 pairs
+	have an empty link -- so a Monte Carlo run over such a callback hit it almost at once,
+	while a spot check on one hand-picked pair did not.
+
+	{} reads as either an empty facet list or an empty adjacency matrix. Both denote the empty
+	complex and both give 0, so one definition serves, and matching the literal leaves the two
+	Depth-gated overloads untouched.*)
+0;
+
 (* Catch-all Pattern *)
 EulerChi[args___]:=(Message[EulerChi::argerr, args];
 $Failed);

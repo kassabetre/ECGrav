@@ -1828,12 +1828,17 @@ FacetOrder::argerr="Input must be of the form FacetOrder[facetsLst_List].";
 (* :Usage Messages: *)
 	
 EulerChi::usage="EulerChi[facetsList_List]; overloads EulerChi[Amat_List],
-	EulerChi[g_Graph] gives the Euler Characteristic of the 
-	complex given as a list of facets facetsLst, a graph g, .";
+	EulerChi[g_Graph] gives the Euler Characteristic of the
+	complex given as a list of facets facetsLst, a graph g, .
+	EulerChi[{}] is 0: the empty complex has no simplices, so its alternating sum is empty.
+	That case is reached in practice through the link of an edge -- the common neighbourhood
+	of two vertices, am[[sphInt,sphInt]], is {} whenever they share no neighbour, which is
+	common on sparse graphs.";
 
 (* :Error Messages: *)
 
-EulerChi::argerr="Input must be of the form EulerChi[facetsList_List].";
+EulerChi::argerr="Input must be of the form EulerChi[facetsList_List], 
+	EulerChi[AdjMat_List], or EulerChi[g_Graph].";
 
 
 (* ::Item::Closed:: *)
