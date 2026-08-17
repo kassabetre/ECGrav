@@ -1372,15 +1372,21 @@ rate = SetPrecision[Exp[Log[betai/betaf]*roundLength/NN],precision];
 Print["finalstate ", finalState];*)
 
 step[bta_]:=
-Block[{delE,expdelE,flipSpin,accept},
+Block[{delE,flipSpin,accept},
 
 	Catch[flipSpin=RandomChoice[edgeList];
 	delE = N[delH[Amcur,delHparams,flipSpin[[1]],flipSpin[[2]]],precision];
 		
 	accept = 0;
+	(*Log space, as at the other acceptance sites. The SetPrecision here looked as though it
+		kept this one out of the underflow range, and it did not: N[machineReal,precision]
+		cannot ADD precision -- only SetPrecision fabricates digits -- so delE above stays at
+		MachinePrecision, and arbitrary*machine is machine. The product collapsed back and
+		underflowed exactly like everywhere else. Raising BOTH operands to `precision` would
+		have worked, at about five times the cost of a machine Exp, where the log form costs
+		about one. Note the comparison is <=, as it was.*)
 	If[delE<=0,accept = 1,
-		expdelE = N[Exp[-SetPrecision[bta,precision]*delE],precision];
-		If[RandomReal[]<=expdelE,accept =1];
+		If[Log[RandomReal[]]<=-bta*delE,accept =1];
 	];
 
 If[accept ==0, Throw[0, "ECGravReturn$3"]];
@@ -1520,7 +1526,7 @@ rate = SetPrecision[Exp[Log[betai/betaf]*roundLength/NN],precision];
 Print["finalstate ", finalState];*)
 
 step[bta_Real]:=
-Block[{delE,expdelE,flipSpin,accept},
+Block[{delE,flipSpin,accept},
 
 Catch[flipSpin=RandomChoice[edgeList];
 Amnext[[flipSpin[[1]],flipSpin[[2]]]]=Amnext[[flipSpin[[2]],flipSpin[[1]]]]=Mod[Amnext[[flipSpin[[1]],flipSpin[[2]]]]+1,2];
@@ -1533,9 +1539,9 @@ delE = N[hamiltonian[Amnext,hparams],precision]-curE;
 	N[hamiltonian[Amnext],precision], " h[Amnext] - h[Amcur] ",N[hamiltonian[Amnext]-hamiltonian[Amcur],precision]];*)
 	
 accept = 0;
+(*Log space; see the delH overload above for why the SetPrecision it replaced was inert.*)
 If[delE<=0,accept = 1,
-	expdelE = N[Exp[-SetPrecision[bta,precision]*delE],precision];
-	If[RandomReal[]<=expdelE,accept =1];
+	If[Log[RandomReal[]]<=-bta*delE,accept =1];
 ];
 
 If[accept==0,Amnext=Amcur;Throw[0, "ECGravReturn$4"]];
@@ -1784,7 +1790,7 @@ Amat = seedAmat;
 AmatNew = Amat;
 
 
-MCStep[]:=Module[{l,lp,m,i,j,deltaE,expBetaDE,accept},(*one MC flip attempt*)
+MCStep[]:=Module[{l,lp,m,i,j,deltaE,accept},(*one MC flip attempt*)
 Do[
 AmatNew = Amat;
 l=RandomInteger[{1,maxEdgeCount}];
@@ -1801,10 +1807,14 @@ i=l-(j-1)(j-2)/2;
 AmatNew[[i,j]]=Mod[Amat[[i,j]]+1,2];AmatNew[[j,i]]=AmatNew[[i,j]];
 deltaE=hamiltonian[AmatNew]-hamiltonian[Amat];
 accept=False;
+(*Compared in log space. u<Exp[-beta*deltaE] and Log[u]<-beta*deltaE decide identically --
+	Log is monotonic -- but Exp[-beta*deltaE] stops being representable once beta*deltaE
+	passes about 709, and producing an unnormalized result costs roughly 19 times a normal
+	Exp. The information is all in beta*deltaE, an ordinary machine number; exponentiating
+	is what pushes it out of range.*)
 If[
 deltaE<=0,accept=True,
-expBetaDE=Exp[-beta*deltaE];
-If[RandomReal[]<expBetaDE,accept=True]
+If[Log[RandomReal[]]<-beta*deltaE,accept=True]
 ];
 If[accept,
 Amat = AmatNew;
@@ -1879,11 +1889,10 @@ Outputs a list with two associations,
 1. the minimum energy visited throughout the sweep states with that energy. If multiple states have degenerate minimum energy, they will all be included. It saves only non-isomorphic graphs. ,
 2. The second association is the temperature, final graph, energy, and magnetization at the end of the sweeps.
 *)
-Module[{result,vCount=Length[seedGraph],minE, minStates,maxGStateCount,expDelETable,data,step},
+Module[{result,vCount=Length[seedGraph],minE, minStates,maxGStateCount,data,step},
 minE = minEToBeat;
 minStates={};
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
-expDelETable=<||>;
 
 data=<|"graph"->seedGraph,"energy"->hamiltonian[seedGraph,hparams], "mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>;
 
@@ -1908,7 +1917,7 @@ Block[{
 	newAmat,
 	selectionProb,
 	delE,
-	expdelE,
+	logRatio,
 	accept
 },
 
@@ -1930,20 +1939,38 @@ Print["row col :",row," " ,col," newAmat is ",newAmat//MatrixForm];
 Print[" selectionProb ",selectionProb];*)
 
 accept = 0;
-expdelE = Lookup[expDelETable,delE];
-If[MissingQ[expdelE],
-expdelE=Exp[-delE*beta];expDelETable[[Key[delE]]]=expdelE];
+
+(*The Metropolis-Hastings ratio, in log space. Log[u]<logRatio and
+	u<selectionProb*Exp[-delE*beta] decide identically -- Log is monotonic -- but the product
+	form is not representable across much of this model's range: at beta 7.5 a single edge
+	toggle reaches beta*delE of two thousand and more, where Exp underflows and an
+	unnormalized result costs about nineteen times a normal one. All the information is in
+	beta*delE, an ordinary machine number; exponentiating is what pushes it out of range.
+
+	Clamping Exp alone would not have sufficed here. selectionProb is a ratio of automorphism
+	group orders and can sit well below 1, so the PRODUCT underflows in its own right even
+	when Exp did not. The log form removes both at once.
+
+	selectionProb is an exact Integer or Rational, so it is numericised before the Log: Log of
+	an exact ratio stays symbolic and drags symbolic arithmetic through every proposal, at
+	about 1.7x. The accept-outright threshold is 0 rather than 1 because Log[1]==0.
+
+	The cache this replaced (expDelETable, keyed on delE) existed only to amortise Exp. There
+	is no Exp left, and -delE*beta is a single multiply, so it is gone.*)
+logRatio = Log[N[selectionProb]] - delE*beta;
 
 (*If[delE<=0,accept = 1,
 
-If[RandomReal[]<selectionProb*expdelE,accept =1],
+If[Log[RandomReal[]]<logRatio,accept =1],
 accept = 0
 ]; (*This seems to work well and ca reduce the number of automorphism group order calculationsthough it doesn't have a sound logical basis*)*)
 
 
-If[selectionProb*expdelE>=1,accept = 1,
+(*Three branches on purpose: the fourth argument of If fires when the comparison is
+	undetermined -- which is what a non-numeric delE gives -- and it rejects. Keep it.*)
+If[logRatio>=0,accept = 1,
 
-If[RandomReal[]<selectionProb*expdelE,accept =1],
+If[Log[RandomReal[]]<logRatio,accept =1],
 accept = 0
 ];
 
@@ -2035,11 +2062,10 @@ Outputs a list with two associations,
 1. the minimum energy visited throughout the sweep states with that energy. If multiple states have degenerate minimum energy, they will all be included. It saves only non-isomorphic graphs. ,
 2. The second association is the temperature, final graph, energy, and magnetization at the end of the sweeps.
 *)
-Module[{result,vCount=Length[seedGraph],minE, minStates,maxGStateCount,expDelETable,data,step},
+Module[{result,vCount=Length[seedGraph],minE, minStates,maxGStateCount,data,step},
 minE = minEToBeat;
 minStates={};
 maxGStateCount=500;(*Maximum count for lowest energy states to be saved.*)
-expDelETable=<||>;
 
 data=<|"graph"->seedGraph,"energy"->hamiltonian[seedGraph,hparams], "mag"->Total[Flatten[seedGraph]]*1.0/(vCount(vCount-1))|>;
 
@@ -2058,7 +2084,7 @@ Module[{
 	newAmat,
 	selectionProb,
 	delE,
-	expdelE,
+	logRatio,
 	accept},
 
 col=RandomInteger[{row+1,vCount}];
@@ -2079,14 +2105,32 @@ Print["row col :",row," " ,col," newAmat is ",newAmat//MatrixForm];
 Print[" selectionProb ",selectionProb];*)
 
 accept = 0;
-expdelE = Lookup[expDelETable,delE];
-If[MissingQ[expdelE],
-expdelE=Exp[-delE*beta];expDelETable[[Key[delE]]]=expdelE];
+
+(*The Metropolis-Hastings ratio, in log space. Log[u]<logRatio and
+	u<selectionProb*Exp[-delE*beta] decide identically -- Log is monotonic -- but the product
+	form is not representable across much of this model's range: at beta 7.5 a single edge
+	toggle reaches beta*delE of two thousand and more, where Exp underflows and an
+	unnormalized result costs about nineteen times a normal one. All the information is in
+	beta*delE, an ordinary machine number; exponentiating is what pushes it out of range.
+
+	Clamping Exp alone would not have sufficed here. selectionProb is a ratio of automorphism
+	group orders and can sit well below 1, so the PRODUCT underflows in its own right even
+	when Exp did not. The log form removes both at once.
+
+	selectionProb is an exact Integer or Rational, so it is numericised before the Log: Log of
+	an exact ratio stays symbolic and drags symbolic arithmetic through every proposal, at
+	about 1.7x. The accept-outright threshold is 0 rather than 1 because Log[1]==0.
+
+	The cache this replaced (expDelETable, keyed on delE) existed only to amortise Exp. There
+	is no Exp left, and -delE*beta is a single multiply, so it is gone.*)
+logRatio = Log[N[selectionProb]] - delE*beta;
 
 
-If[selectionProb*expdelE>=1,accept = 1,
+(*Three branches on purpose: the fourth argument of If fires when the comparison is
+	undetermined -- which is what a non-numeric delE gives -- and it rejects. Keep it.*)
+If[logRatio>=0,accept = 1,
 
-	If[RandomReal[]<selectionProb*expdelE,accept =1],
+	If[Log[RandomReal[]]<logRatio,accept =1],
 	accept = 0
 ];
 
@@ -3961,7 +4005,13 @@ Print["Before swap, histories ",histories];*)
 
 accept=0;
 If[deltaBetaDeltaE>0,accept = 1,
-If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 ];
 
 
@@ -4263,7 +4313,13 @@ Print["Before swap, histories ",histories];*)
 
 accept=0;
 If[deltaBetaDeltaE>0,accept = 1,
-If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 ];
 
 
@@ -4581,7 +4637,8 @@ Do[
 
 	accept=0;
 	If[betaDelHDelConj>0,accept = 1,
-		If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+		(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 	];
 
 
@@ -4936,7 +4993,8 @@ Do[
 
 	accept=0;
 	If[betaDelHDelConj>0,accept = 1,
-		If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+		(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 	];
 
 
@@ -6693,7 +6751,13 @@ Do[
 
 accept=0;
 If[deltaBetaDeltaE>0,accept = 1,
-	If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+	(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 ];
 
 
@@ -6926,7 +6990,13 @@ Do[
 
 	accept=0;
 	If[deltaBetaDeltaE>0,accept = 1,
-		If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+		(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 	];
 
 
@@ -7102,7 +7172,13 @@ Do[
 
 	accept=0;
 	If[deltaBetaDeltaE>0,accept = 1,
-		If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+		(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 	];
 
 
@@ -7272,7 +7348,13 @@ Do[
 
 	accept=0;
 	If[deltaBetaDeltaE>0,accept = 1,
-		If[RandomReal[]<Exp[deltaBetaDeltaE],accept =1];
+		(*Compared in log space: Log[u]<x rather than u<Exp[x]. Log is monotonic, so the two
+	decide identically, but the exponential need not be representable. A favourable swap
+	makes this argument large and POSITIVE, and Exp then leaves machine arithmetic for
+	arbitrary precision -- Exp[775.] came back as 3.8*^336 carrying 13 digits of precision --
+	while an unfavourable one underflows. Log[RandomReal[]] can do neither: it lies in
+	[-745,0] for every representable draw.*)
+If[Log[RandomReal[]]<deltaBetaDeltaE,accept =1];
 	];
 
 
@@ -7530,7 +7612,8 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 		accept=0;
 		If[betaDelHDelConj>0,accept = 1,
-			If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+			(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 		];
 
 
@@ -7827,7 +7910,8 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 		accept=0;
 		If[betaDelHDelConj>0,accept = 1,
-			If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+			(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 		];
 
 
@@ -8082,7 +8166,8 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 		accept=0;
 		If[betaDelHDelConj>0,accept = 1,
-			If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+			(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 		];
 
 
@@ -8331,7 +8416,8 @@ Module[{replicaSwapMatchings,thisReplInd,nextReplInd,betaDelHDelConj,accept,
 
 		accept=0;
 		If[betaDelHDelConj>0,accept = 1,
-			If[RandomReal[]<Exp[betaDelHDelConj],accept =1];
+			(*Log space, for the reason given at the beta-swap sites above.*)
+If[Log[RandomReal[]]<betaDelHDelConj,accept =1];
 		];
 
 

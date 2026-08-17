@@ -199,6 +199,40 @@ VerificationTest[
     TestID -> "GraphSweepReplica-canonical-energies"
 ];
 
+(* The deep-reject regime, where the acceptance test used to stop being representable.
+
+   From the complete graph with J = -1 every proposal REMOVES an edge and so is uphill by 8,
+   making beta*delE = 3200 at beta 400 -- far past the ~709 where Exp[-beta*delE] ceases to be
+   a normalized double. The old form underflowed to 0. and rejected, which was the right answer
+   arrived at by luck; the log form compares Log[u] < -3200 and rejects on the arithmetic.
+   Either way the chain must sit still and return exact numbers, which is what this pins.
+
+   Both labelings are asserted because they take different paths: the unlabeled one multiplies
+   by a ratio of automorphism group orders, and that product underflows in its own right even
+   where Exp alone would not have.
+
+   This does not prove the message is gone -- that was checked separately against the previous
+   code (55 underflow messages versus 0, with identical energies, magnetizations and edge
+   counts over runs at beta 7.5 and 20). What it guards is that the rewrite did not disturb
+   the deep-reject path, which is where a sign slip or a wrong comparison threshold would
+   show up as a chain that wanders instead of freezing. *)
+VerificationTest[
+    Module[{K6 = Normal[AdjacencyMatrix[CompleteGraph[6]]], runs},
+        runs = Table[SeedRandom[77];
+            Quiet@Block[{Print = Null &},
+                ECGrav`GraphSweepReplica[K6, 400.0, h[-1.0, 0.0], dH[-1.0, 0.0], 40, 0.0, u]],
+          {u, {0, 1}}];
+        {(* nothing moved: every uphill proposal was rejected *)
+         AllTrue[runs, #[[2, "graph"]] === K6 &],
+         (* and the reported numbers are exact reals, not underflow debris *)
+         AllTrue[runs, NumberQ[#[[2, "energy"]]] && #[[2, "energy"]] == -60. &],
+         AllTrue[runs, #[[1, "minEnergy"]] == -60. &],
+         (* the regime really is past the representable range, so the case is live *)
+         400.0*ECGrav`delHIsing[Normal[AdjacencyMatrix[CompleteGraph[6]]], -1.0, 0.0, 1, 2] > 709}],
+    {True, True, True, True},
+    TestID -> "GraphSweepReplica-deep-reject-at-extreme-beta"
+];
+
 (* The same hole reached the exported drivers, which is where it was reported.
    GraphComputeCorrelationTime starts its running minimum AT minEToBeat with no states and
    relies entirely on GraphSweepReplica to improve it, so a chain frozen below the threshold
