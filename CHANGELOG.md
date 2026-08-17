@@ -6,6 +6,103 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-08-16
+
+Three fixes, all of them about a quantity leaving the range a machine number can hold.
+`EulerChi[{}]` returned `$Failed` instead of 0, which affects you if any energy callback takes the
+**link of an edge** — that slice is `{}` whenever the two endpoints share no neighbour. The
+Metropolis acceptance test now compares in log space, so high-beta runs no longer flood with
+`General::munfl`. And `SGradDescent`'s softmax is shifted by its maximum before exponentiating,
+which is the one that was failing outright rather than merely complaining.
+
+Bug fixes only. No public function was removed, no argument order changed, and no result that
+previously computed changes value — the acceptance decisions and the softmax distribution are
+both identical where the old code produced an answer at all, verified against it.
+
+### Fixed
+- **The empty complex now has an Euler characteristic of 0.** Both `List` overloads gate on
+  `Depth == 3`, and `Depth[{}]` is 2, so `{}` fell through to the catch-all — even though
+  `EulerChiAM`, which the adjacency overload delegates to, already had an `n == 0` branch
+  returning 0. The convention was implemented and unreachable.
+
+  This is not an exotic input. Any callback computing how a quantity changes when edge `(i,j)`
+  is toggled evaluates `am[[sphInt, sphInt]]`, and that slice is `{}` exactly when `i` and `j`
+  have no common neighbour. On sparse graphs that is most pairs — on 12 vertices with 18 edges,
+  32 of the 66. A reported `GraphCTLSchedule` run died this way: the user's `delEulerChi`
+  returned `-1 + $Failed`, which flowed into `dH` as the Metropolis energy delta. It survived a
+  spot check because that used one hand-picked pair whose link happened to be non-empty, and it
+  survived the `DelHUsableQ` gate because that probes `dH[seed, 1, 2]` — one pair, on the seed
+  graph. Neither can see a failure that depends on which pair and which state.
+
+  Matched as a literal rather than by widening either `Depth` guard, so the three existing
+  overloads are untouched. `{}` reads as either an empty facet list or an empty adjacency
+  matrix; both denote the empty complex and both give 0, so one definition serves.
+- **`EulerChi::argerr` named only the facet-list form** while the function accepts three. It now
+  names all of them, and the usage message documents the `{}` convention.
+- **The Metropolis acceptance test is compared in log space**, at all 17 sites: `Log[u] < -beta*dE`
+  rather than `u < Exp[-beta*dE]`. `Log` is monotonic, so the two decide identically — verified
+  over 34.5M plain comparisons and 220k covering the unlabeled path's automorphism-ratio factor,
+  with zero disagreements, and end-to-end against the previous code at beta 7.5 and 20, where
+  energies, magnetizations and edge counts came back identical.
+
+  The exponential is not representable across much of this model's range. At beta 7.5 a single
+  edge toggle on a 12-vertex graph reaches `beta*dE` of 2340 (mean 1570) against a threshold of
+  about 709, so most proposals underflowed; a run at beta 20 emitted 55 underflow messages where
+  the log form emits none. The cost is real but was never a correctness problem — `Exp[-775.]`
+  returns exactly `0.`, so the comparison rejected, which is the right answer. What it cost was
+  about **19x** on those calls: the penalty tracks the result leaving the normalized range, not
+  the size of the argument (`Exp[-700.]` is as fast as `Exp[-5.]`; `Exp[-730.]` is 19x slower).
+
+  Three things this had to get right, none of them a search-and-replace:
+  - `selectionProb` in the unlabeled path is an exact `Integer`/`Rational` ratio of automorphism
+    group orders. `Log` of an exact ratio stays symbolic and drags symbolic arithmetic through
+    every proposal at about 1.7x, so it is numericized first. The **product** also underflows in
+    its own right when that ratio is below 1, so clamping `Exp` alone would not have sufficed.
+  - The acceptance `If` has **three** branches; the fourth argument fires when the comparison is
+    undetermined and it means reject. That is what silently swallowed the `EulerChi` `$Failed`
+    described above, and it is preserved.
+  - `SimulatedAnnealing` looked immune because it wrapped `bta` in `SetPrecision`. It was not:
+    `N[machineReal, precision]` cannot *add* precision — only `SetPrecision` fabricates digits —
+    so `delE` stayed at machine precision and `arbitrary*machine` collapsed back to machine. It
+    underflowed like the rest. Raising both operands would have worked at about 5x the cost of a
+    machine `Exp`, where the log form costs about 1x.
+- **`SGradDescent`'s softmax over edges is shifted by its maximum before exponentiating.** This
+  one was a genuine failure rather than noise. The edge to flip is drawn with probability
+  proportional to `Exp[-beta*deltaE]`, and when every move is uphill — which any model whose
+  single-edge energies run to the hundreds reaches at high beta — every weight underflowed to
+  `0.`, `Total` came out `0.`, and `w/Total[w]` made every entry `Indeterminate`. `RandomChoice`
+  then failed outright. Measured on a complete graph at beta 200, the old code raised ten
+  distinct message types (`General::munfl`, `Power::infy`, `RandomChoice::wghtv`, `Part::partw`
+  and more) and returned through a cascade of errors; the new code raises none and returns a
+  proper distribution.
+
+  Note the sign runs the opposite way from the acceptance test: the exponent is `-beta*deltaE`,
+  so it is the **downhill** edges — the ones softmax exists to favour — that made it large and
+  positive and pushed `Exp` into arbitrary precision at the other end.
+
+  Subtracting the maximum is exact, since the common factor cancels from numerator and
+  denominator; over 20,000 well-conditioned tables the two forms agree to 7.8e-16, and the
+  benign smoke-test runs are unchanged. Entries more than 700 below the maximum are assigned the
+  `0.` they round to rather than exponentiated, which is what they already were to machine
+  accuracy and keeps the table off the underflow path entirely. Where the old form gave three
+  `Indeterminate`s, the new one recovers the distribution those weights actually have —
+  `1 : 1.9*^-98 : 2.7*^-261`.
+
+### Added
+- **`SGradDescent-softmax-survives-all-uphill`** in `Tests/MCSims.wlt`, asserting the run is
+  message-free rather than merely non-crashing — the old failure announced itself loudly and a
+  shape check passed straight through it. It fails against the previous code.
+- **`GraphSweepReplica-deep-reject-at-extreme-beta`** in `Tests/MCSims.wlt`, pinning the regime
+  where the old form stopped being representable: from the complete graph at beta 400 every
+  proposal is uphill by `beta*dE = 3200`, and the chain must sit still and return exact numbers,
+  on both the labeled and unlabeled paths.
+- **`EulerChi-empty-complex-is-0`** in `Tests/PureComplexes.wlt`, asserting both the value and
+  the concrete route that reaches it — the link-of-an-edge identity `chi(link) - 1`, on a graph
+  whose vertices 1 and 2 share no neighbour. It fails against the previous code. Separately
+  verified across 40 random 8-vertex graphs: 1120 toggled pairs, 302 of them with an empty link,
+  and the incremental identity agrees with recomputing `chi(new) - chi(old)` in every one.
+  188 tests, all passing.
+
 ## [1.9.0] - 2026-08-14
 
 `GraphComputeCorrelationTime` was well behind its complex-space twin,
@@ -766,7 +863,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.9.1
 [1.9.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.9.0
 [1.8.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.1
 [1.8.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.0
