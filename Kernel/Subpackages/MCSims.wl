@@ -1142,8 +1142,36 @@ minE = curE;
 minStates={Amcur};
 
 
-computeWeights[bta_Real]:=Module[{},
-Do[weightsTable[i]=Exp[-bta*deltaEtable[i]],{i,edgeList}];
+(*Softmax over the edges, shifted by its own maximum before exponentiating. The shift cancels
+	exactly -- Exp[a_i-m]/Sum[Exp[a_j-m]] is Exp[a_i]/Sum[Exp[a_j]] term for term, since the
+	common factor Exp[-m] divides out -- so the distribution is unchanged. What it buys is that
+	the largest weight becomes Exp[0]==1, which no longer overflows and guarantees Total>=1.
+
+	Both ends used to bite, and the exponent here is -bta*deltaE, so the signs are the opposite
+	way round from the Metropolis acceptance:
+
+	A DOWNHILL edge, which is exactly what this is meant to favour, makes the exponent large and
+	POSITIVE. Exp then left machine arithmetic for arbitrary precision -- Exp[1567.] came back
+	carrying 12.8 digits -- so the good moves were the expensive ones.
+
+	And when every edge is uphill, which any model whose single-edge energies run to the
+	hundreds reaches at high beta, every weight underflowed to 0., Total came out 0., and
+	weightsTable/Total[weightsTable] made every entry Indeterminate. RandomChoice then fails
+	outright rather than choosing badly. The shifted form keeps the relative weights that case
+	genuinely has -- 1 : 1.9*^-98 : 2.7*^-261 for three edges at 120, 150 and 200 -- where the
+	old form had destroyed all of it.
+
+	Association arithmetic threads elementwise and preserves key order, so the table is rebuilt
+	rather than filled key by key.*)
+computeWeights[bta_Real]:=Module[{logWeights},
+logWeights=-bta*deltaEtable;
+logWeights=logWeights-Max[logWeights];
+(*Everything below is now <=0, with at least one entry exactly 0. Entries far below it are
+	genuinely negligible -- an edge 700 nats behind the best has a relative weight under
+	1*^-304 and will never be drawn -- but exponentiating them would still leave the
+	normalized range and pay the underflow penalty on each one. Assigning the exact 0. they
+	round to costs nothing in accuracy and keeps the whole table on the fast path.*)
+weightsTable=Map[If[#<-700.,0.,Exp[#]]&,logWeights];
 weightsTable=weightsTable/Total[weightsTable];
 ];
 
@@ -1237,8 +1265,36 @@ weightsTable=deltaEtable;
 curE = hamiltonian[Amcur,hparams];
 minE = curE;
 minStates={Amcur};
-computeWeights[bta_Real]:=Module[{},
-Do[weightsTable[i]=Exp[-bta*deltaEtable[i]],{i,edgeList}];
+(*Softmax over the edges, shifted by its own maximum before exponentiating. The shift cancels
+	exactly -- Exp[a_i-m]/Sum[Exp[a_j-m]] is Exp[a_i]/Sum[Exp[a_j]] term for term, since the
+	common factor Exp[-m] divides out -- so the distribution is unchanged. What it buys is that
+	the largest weight becomes Exp[0]==1, which no longer overflows and guarantees Total>=1.
+
+	Both ends used to bite, and the exponent here is -bta*deltaE, so the signs are the opposite
+	way round from the Metropolis acceptance:
+
+	A DOWNHILL edge, which is exactly what this is meant to favour, makes the exponent large and
+	POSITIVE. Exp then left machine arithmetic for arbitrary precision -- Exp[1567.] came back
+	carrying 12.8 digits -- so the good moves were the expensive ones.
+
+	And when every edge is uphill, which any model whose single-edge energies run to the
+	hundreds reaches at high beta, every weight underflowed to 0., Total came out 0., and
+	weightsTable/Total[weightsTable] made every entry Indeterminate. RandomChoice then fails
+	outright rather than choosing badly. The shifted form keeps the relative weights that case
+	genuinely has -- 1 : 1.9*^-98 : 2.7*^-261 for three edges at 120, 150 and 200 -- where the
+	old form had destroyed all of it.
+
+	Association arithmetic threads elementwise and preserves key order, so the table is rebuilt
+	rather than filled key by key.*)
+computeWeights[bta_Real]:=Module[{logWeights},
+logWeights=-bta*deltaEtable;
+logWeights=logWeights-Max[logWeights];
+(*Everything below is now <=0, with at least one entry exactly 0. Entries far below it are
+	genuinely negligible -- an edge 700 nats behind the best has a relative weight under
+	1*^-304 and will never be drawn -- but exponentiating them would still leave the
+	normalized range and pay the underflow penalty on each one. Assigning the exact 0. they
+	round to costs nothing in accuracy and keeps the whole table on the fast path.*)
+weightsTable=Map[If[#<-700.,0.,Exp[#]]&,logWeights];
 weightsTable=weightsTable/Total[weightsTable];
 ];
 

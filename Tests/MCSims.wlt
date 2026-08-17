@@ -574,6 +574,40 @@ VerificationTest[
     TestID -> "SGradDescent-no-delH-smoke"
 ];
 
+(* The softmax over edges must survive a table where every move is uphill.
+
+   SGradDescent picks the next edge with probability proportional to Exp[-beta*deltaE]. From
+   the complete graph with J = -1 every toggle REMOVES an edge and costs +8, so at beta 200
+   every exponent is -1600 and the unshifted form underflowed the whole table to 0.; Total came
+   out 0., the normalisation made every weight Indeterminate, and RandomChoice then failed
+   outright. Measured on the previous code this run raised ten distinct message types --
+   General::munfl, Power::infy, RandomChoice::wghtv, Part::partw and more -- and returned
+   through a cascade of errors rather than a choice.
+
+   Subtracting the maximum before exponentiating leaves the distribution untouched (the factor
+   cancels) while making the largest weight exactly 1, so Total is never 0. Note the sign: the
+   exponent is -beta*deltaE, so it is the DOWNHILL edges -- the ones this is meant to favour --
+   that made it large and positive and pushed Exp into arbitrary precision at the other end.
+
+   Asserted as message-free rather than merely non-crashing, because the old failure announced
+   itself loudly and a shape check alone passed straight through it. The benign case is already
+   covered by the two smoke tests above, which pin that well-conditioned runs are unchanged. *)
+VerificationTest[
+    Module[{K6 = Normal[AdjacencyMatrix[CompleteGraph[6]]], msgs, r},
+        SeedRandom[302];
+        msgs = messageArguments["General::munfl",
+            r = Block[{Print = Null &},
+                ECGrav`SGradDescent[K6, h[-1.0, 0.0], dH[-1.0, 0.0], 200.0, 10]]];
+        {Length[msgs],
+         Head[r], NumberQ[r["minE"]], r["minE"] == -60.,
+         (* it really did stay in the all-uphill regime the whole way *)
+         r["LastState"] === K6,
+         (* and the case is live: every exponent is far past the representable range *)
+         200.0*ECGrav`delHIsing[K6, -1.0, 0.0, 1, 2] > 709}],
+    {0, Association, True, True, True, True},
+    TestID -> "SGradDescent-softmax-survives-all-uphill"
+];
+
 (* SimulatedAnnealing (inert h[..]/dH[..] form) anneals betai -> betaf and returns an
    association including the minimum energy visited. *)
 VerificationTest[
