@@ -254,16 +254,26 @@ Two scalars are watched, the energy and the vertex (or edge) count, and a scalar
 varied gets no vote. If none of them varied there is no evidence either way, and `::nosignal`
 says so rather than reporting convergence silently.
 
-**Correlation time.** The measurement run is `Min[5*eqlT, $ECGravMaxCorrelationSweeps]`. Both
-halves matter, because equilibriation time and measurement time are different quantities — how
+**Correlation time.** The measurement run is
+`Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT, $ECGravMaxCorrelationSweeps]]`, the
+multiplier defaulting to 5. Both halves matter, because equilibriation time and measurement time are different quantities — how
 long the chain took to forget where it started, against how long it takes to forget where it
 was a sweep ago — and only the second governs how long you have to watch. Deriving the run from
 `eqlT` alone meant widening the equilibriation window added a constant to `eqlT` and multiplied
 this run along with it, which is where a 0.9 s driver call became 16 s.
 
-One trap when writing tests against it: `lastLag = numsweeps - 10`, so at `5*eqlT` an `eqlT`
-below 3 leaves no lag range at all and every reported value collapses to the floor of 2. The
-short-run probe passes `eqlT -> 4` for exactly 20 sweeps; do not lower it.
+The multiplier is the half that binds on short runs — below `eqlT` 200 at the default cap, the
+multiple is the smaller of the two and raising the cap alone does nothing — so it is the knob a
+user with a short run actually needs. It appears twice per routine, once setting the run and once
+as slot 3 of `::shortrun`; the `-run-length-multiplier` tests on both sides check the message
+argument as well as the count, because the two moving apart makes the message misreport the
+setting it is telling you to raise.
+
+One trap when writing tests against it: `lastLag = numsweeps - 10`, so at the default `5*eqlT` an
+`eqlT` below 3 leaves no lag range at all and every reported value collapses to the floor of 2.
+The short-run probe passes `eqlT -> 4` for exactly 20 sweeps; do not lower it. A fractional
+multiplier is allowed and the run length is rounded up, which is what keeps `numsweeps - 10` an
+`Integer` — `LazyCorrelationTime` takes `lastLag_Integer` and would otherwise sit unevaluated.
 
 Failure is forced deterministically by setting `$ECGravMaxEquilibriationSweeps` **below 400**:
 the convergence criterion is inside `If[numsweeps > outWinLength, …]`, so it never runs and

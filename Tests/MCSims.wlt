@@ -338,6 +338,36 @@ VerificationTest[
     TestID -> "GraphComputeCorrelationTime-integration-rule-no-delH"
 ];
 
+(* $ECGravCorrelationRunMultiplier is the other half of the pair that sets the measurement run,
+   and the half that binds whenever the multiple is below the cap -- which at the default cap of
+   1000 is every eqlT under 200. Until it became a setting the multiple was a literal 5, so a
+   user who raised the cap to lengthen a short run got no change whatever, and had no knob that
+   worked. The recording operator counts the sweeps directly, as on the complex side.
+
+   The fractional case is here because a multiplier, unlike a sweep cap, invites one: 2.5*31 is
+   77.5, and the run length has to come out a whole number or numsweeps-10 is not an Integer and
+   LazyCorrelationTime does not match its own argument pattern -- it would return unevaluated and
+   be indexed as if it were an association. Rounded up, so no setting can ask for fewer sweeps
+   than it names. *)
+VerificationTest[
+    Module[{sweepsFor},
+        sweepsFor[mult_, eqlT_, cap_] := Module[{rec = {}},
+            Block[{ECGrav`$ECGravCorrelationRunMultiplier = mult,
+                   ECGrav`$ECGravMaxCorrelationSweeps = cap},
+                Quiet@Block[{Print = Null &}, SeedRandom[603];
+                    ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0],
+                        eqlT, 0.0,
+                        {Function[g, AppendTo[rec, g]; 1.0*Total[Flatten[g]]]}, 0]]];
+            Length[rec]];
+        {sweepsFor[5, 31, 1000],    (* the former literal, unmoved *)
+         sweepsFor[10, 31, 1000],   (* raising it lengthens the run ... *)
+         sweepsFor[2, 31, 1000],    (* ... and lowering it shortens it *)
+         sweepsFor[2.5, 31, 1000],  (* fractional: Ceiling[77.5], not 77 or unevaluated *)
+         sweepsFor[10, 31, 100]}],  (* the cap still wins where it is the smaller *)
+    {155, 310, 62, 78, 100},
+    TestID -> "GraphComputeCorrelationTime-run-length-multiplier"
+];
+
 (* A frozen observable must be excluded, named, and reported with ITS OWN stuck value.
    Both halves were broken. The overload with delH indexed the value two rows above the one it
    named, so for the operator at row 4 it printed the magnetization's value; the overload
@@ -693,13 +723,15 @@ VerificationTest[
         With[{path = src}, ParallelEvaluate[Get[path]]];
         ParallelNeeds["ECGrav`"];
         pushed = Block[{ECGrav`$ECGravMaxEquilibriationSweeps = 777,
-                        ECGrav`$ECGravMaxCorrelationSweeps = 333},
+                        ECGrav`$ECGravMaxCorrelationSweeps = 333,
+                        ECGrav`$ECGravCorrelationRunMultiplier = 9},
             ECGrav`Private`SyncParallelSettings[];
             ParallelEvaluate[{Last /@ OwnValues[ECGrav`$ECGravMaxEquilibriationSweeps],
-                              Last /@ OwnValues[ECGrav`$ECGravMaxCorrelationSweeps]}]];
+                              Last /@ OwnValues[ECGrav`$ECGravMaxCorrelationSweeps],
+                              Last /@ OwnValues[ECGrav`$ECGravCorrelationRunMultiplier]}]];
         shipped = DistributeDefinitions[ECGrav`$ECGravMaxCorrelationSweeps];
         CloseKernels[]; Quiet[LaunchKernels[]];
         {DeleteDuplicates[pushed], shipped}],
-    {{{{777}, {333}}}, {}},
+    {{{{777}, {333}, {9}}}, {}},
     TestID -> "SyncParallelSettings-reaches-subkernels"
 ];

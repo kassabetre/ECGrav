@@ -4884,8 +4884,10 @@ data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 PrintTemporary["computing correlation time with numsweeps ",numsweeps];
 
@@ -4965,7 +4967,7 @@ If[fluctuatingObservableIndices=={},
 	(*A run this short may not resolve what it found: 20 correlation times is the usual
 		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 	If[data[[Key["corrT"]]]>numsweeps/20,
-		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 
 	Do[data[[Key["corrTValues"],j]]=
 		corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],
@@ -5013,8 +5015,10 @@ data=<|"eqlT"->eqlT,"corrT"->2,"corrTValues"->Table[2,{Length[operators]+2}],
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 PrintTemporary["computing correlation time with numsweeps ",numsweeps];
 
@@ -5089,7 +5093,7 @@ If[fluctuatingObservableIndices=={},
 	(*A run this short may not resolve what it found: 20 correlation times is the usual
 		minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 	If[data[[Key["corrT"]]]>numsweeps/20,
-		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+		Message[RandomPureSimplicialComplexMCMCCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 
 	Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 ];

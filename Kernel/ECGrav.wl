@@ -28,7 +28,8 @@ Unprotect @@ Names["ECGrav`*"];
 (* Names["ECGrav`*"] yields SHORT names, so the exclusion must be written without the context
 	prefix or it silently matches nothing and ClearAll wipes the setting anyway. *)
 ClearAll @@ DeleteCases[Names["ECGrav`*"],
-	"$ECGravMaxEquilibriationSweeps"|"$ECGravMaxCorrelationSweeps"];
+	"$ECGravMaxEquilibriationSweeps"|"$ECGravMaxCorrelationSweeps"|
+	"$ECGravCorrelationRunMultiplier"];
 
 
 (* ::Title:: *)
@@ -101,6 +102,25 @@ $ECGravMaxCorrelationSweeps::usage="$ECGravMaxCorrelationSweeps caps the length 
 (* Guarded for the same reason as the budget above. *)
 If[!ValueQ[$ECGravMaxCorrelationSweeps],
 	$ECGravMaxCorrelationSweeps=1000];
+
+
+$ECGravCorrelationRunMultiplier::usage="$ECGravCorrelationRunMultiplier sets how many
+	equilibriation times long a correlation-time measurement run is: GraphComputeCorrelationTime
+	and RandomPureSimplicialComplexMCMCCorrelationTime each sweep for this multiple of the
+	equilibriation time they were handed, or $ECGravMaxCorrelationSweeps sweeps, whichever is
+	smaller. It is the other half of that pair, and the half that binds on short runs: at the
+	default cap of 1000 any equilibriation time below 200 makes the multiple the smaller of the
+	two, and raising the cap alone then changes nothing at all. The ::shortrun message reports
+	the run length that was used, so comparing that against the cap tells you which of the two
+	is worth raising. Any positive value is allowed, whole or not; the run length it implies is
+	rounded up to a whole number of sweeps. Distributed to subkernels alongside
+	$ECGravMaxCorrelationSweeps.";
+
+(* Guarded for the same reason as the budget above. The default of 5 is the value this was
+	hard-coded to before it became a setting, so correlation times measured under earlier
+	versions do not move. *)
+If[!ValueQ[$ECGravCorrelationRunMultiplier],
+	$ECGravCorrelationRunMultiplier=5];
 
 
 (* ::Title::Closed:: *)
@@ -1010,7 +1030,9 @@ GraphComputeCorrelationTime::shortrun=
 	"than the 20 correlation times it takes to resolve one reliably, so `1` is likely to be "<>
 	"an underestimate and samples spaced by it may still be correlated. The run length is "<>
 	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
-	"(currently `4`); raise the latter.";
+	"(currently `4`); raise whichever of $ECGravCorrelationRunMultiplier and "<>
+	"$ECGravMaxCorrelationSweeps is the binding one -- the run of `2` sweeps was capped if "<>
+	"that equals `4`, and set by the multiplier if it does not.";
 
 (* Concatenated for the same reason as ::noconv above. *)
 GraphComputeCorrelationTime::stuck=
@@ -2822,7 +2844,9 @@ RandomPureSimplicialComplexMCMCCorrelationTime::shortrun=
 	"than the 20 correlation times it takes to resolve one reliably, so `1` is likely to be "<>
 	"an underestimate and samples spaced by it may still be correlated. The run length is "<>
 	"the smaller of `3` times the equilibriation time and $ECGravMaxCorrelationSweeps "<>
-	"(currently `4`); raise the latter.";
+	"(currently `4`); raise whichever of $ECGravCorrelationRunMultiplier and "<>
+	"$ECGravMaxCorrelationSweeps is the binding one -- the run of `2` sweeps was capped if "<>
+	"that equals `4`, and set by the multiplier if it does not.";
 
 (* Concatenated for the same reason as ::noconv above. *)
 RandomPureSimplicialComplexMCMCCorrelationTime::stuck=
@@ -2940,7 +2964,9 @@ End[] (* End private context *)
 ];*)
 Protect @@ Names["ECGrav`*"];
 
-(* Both are user settings, so they have to stay assignable after the blanket Protect above. *)
-Unprotect[$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps];
+(* All three are user settings, so they have to stay assignable after the blanket Protect
+	above. *)
+Unprotect[$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps,
+	$ECGravCorrelationRunMultiplier];
 
 EndPackage[]

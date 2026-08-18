@@ -1226,7 +1226,8 @@ VerificationTest[
    the quadratic counter reports 6 where dropping the one-lag-short convention would report 7
    -- which is the only place either convention is visible in the output at all.
 
-   The run is 5*eqlT, so eqlT -> 4 is what asks for those 20 sweeps. Do not lower it further:
+   The run is 5*eqlT at the default multiplier, so eqlT -> 4 is what asks for those 20
+   sweeps. Do not lower it further:
    lastLag is numsweeps - 10, so eqlT 2 leaves no lag range at all and every value collapses
    to the floor.
 
@@ -1293,8 +1294,9 @@ VerificationTest[
    takes to forget where it was a sweep ago -- and only the second governs how long you have to
    watch. Deriving the run from eqlT made it scale with something it has no reason to scale
    with: widening the equilibriation comparison window added a constant to eqlT and multiplied
-   this run by three to ten with it. It is now the smaller of 5*eqlT and
-   $ECGravMaxCorrelationSweeps, and the recording operator counts the sweeps directly.
+   this run by three to ten with it. It is now the smaller of
+   $ECGravCorrelationRunMultiplier*eqlT and $ECGravMaxCorrelationSweeps -- the multiplier
+   defaulting to the 5 this test pins -- and the recording operator counts the sweeps directly.
 
    The last leg is the honest half of a cap: a run that turns out to be short for what it found
    -- fewer than the 20 correlation times it takes to resolve one -- says so. The sweep counter
@@ -1318,6 +1320,37 @@ VerificationTest[
          shortRun}],
     {155, 1000, 200, {{7, 20, 5, 1000}}},
     TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-run-length-is-capped"
+];
+
+(* The multiplier half of the same pair, on the complex side. Its own body, not a delegation to
+   the graph one, so it gets its own counts rather than being assumed equivalent.
+
+   The last leg is the one that catches a stale literal: the multiple appears TWICE in each
+   routine -- once setting the run, once as slot 3 of ::shortrun -- and the two have to move
+   together or the message misreports the very setting it is telling the user to raise. At
+   multiplier 10 and eqlT 4 the run is 40 sweeps, and the message has to say 10. *)
+VerificationTest[
+    Module[{sweepsFor, shortRun, n = 0},
+        sweepsFor[mult_, eqlT_, cap_] := Module[{rec = {}},
+            Block[{ECGrav`$ECGravCorrelationRunMultiplier = mult,
+                   ECGrav`$ECGravMaxCorrelationSweeps = cap},
+                Quiet@Block[{Print = Null &}, SeedRandom[801];
+                    ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, eqlT,
+                        {Function[c, AppendTo[rec, c]; Total[Flatten[c]]]}, 1]]];
+            Length[rec]];
+        shortRun = Block[{ECGrav`$ECGravCorrelationRunMultiplier = 10},
+            messageArguments["RandomPureSimplicialComplexMCMCCorrelationTime::shortrun",
+                Quiet@Block[{Print = Null &}, SeedRandom[508];
+                    ECGrav`RandomPureSimplicialComplexMCMCCorrelationTime[mcmcSeed24, 4,
+                        {Function[c, Total[Flatten[c]]], Function[c, ++n]}, 1]]]];
+        {sweepsFor[5, 31, 1000],    (* the former literal, unmoved *)
+         sweepsFor[12, 31, 1000],   (* raised *)
+         sweepsFor[3, 31, 1000],    (* lowered *)
+         sweepsFor[2.5, 31, 1000],  (* fractional: Ceiling[77.5] *)
+         sweepsFor[12, 31, 60],     (* the cap still wins where it is the smaller *)
+         shortRun}],
+    {155, 372, 93, 78, 60, {{14, 40, 10, 1000}}},
+    TestID -> "RandomPureSimplicialComplexMCMCCorrelationTime-run-length-multiplier"
 ];
 
 (* As with the equilibriator, False delegates to the shorter overload. *)

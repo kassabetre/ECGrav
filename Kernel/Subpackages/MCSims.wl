@@ -2324,12 +2324,15 @@ $syncedParallelSettings=None;
 	master's setting whether or not anything ever arrived, which is what kept the previous
 	implementation looking correct.*)
 SyncParallelSettings[]:=
-	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps}},
+	With[{state={$KernelCount,$ECGravMaxEquilibriationSweeps,$ECGravMaxCorrelationSweeps,
+			$ECGravCorrelationRunMultiplier}},
 		If[$KernelCount>0&&$syncedParallelSettings=!=state,
-			With[{budget=$ECGravMaxEquilibriationSweeps,cap=$ECGravMaxCorrelationSweeps},
+			With[{budget=$ECGravMaxEquilibriationSweeps,cap=$ECGravMaxCorrelationSweeps,
+				mult=$ECGravCorrelationRunMultiplier},
 				ParallelEvaluate[
 					ECGrav`$ECGravMaxEquilibriationSweeps=budget;
-					ECGrav`$ECGravMaxCorrelationSweeps=cap]];
+					ECGrav`$ECGravMaxCorrelationSweeps=cap;
+					ECGrav`$ECGravCorrelationRunMultiplier=mult]];
 			$syncedParallelSettings=state
 		]
 	];
@@ -2857,8 +2860,10 @@ data=<|"minEnergy" ->minEToBeat,
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}, 
 	" using Energy or Magnetization ",EorM, " numsweeps ",numsweeps];
@@ -2918,7 +2923,7 @@ data[[Key["corrTMeasured"]]]=corrData[[Key["measured"]]];
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 If[data[[Key["corrT"]]]>numsweeps/20,
-	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 
 ];
 
@@ -2988,8 +2993,10 @@ data=<|"minEnergy" ->minEToBeat,
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 PrintTemporary["computing correlation time at beta ",beta, " hparams ",{hparams}, 
 	" using Energy or Magnetization ",EorM, " numsweeps ",numsweeps];
@@ -3050,7 +3057,7 @@ data[[Key["corrTMeasured"]]]=corrData[[Key["measured"]]];
 (*A run this short may not resolve what it found: 20 correlation times is the usual
 	minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 If[data[[Key["corrT"]]]>numsweeps/20,
-	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+	Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 
 ];
 
@@ -3116,8 +3123,10 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 	PrintTemporary["computing correlation time at beta ",beta," hparams ",{hparams}, " numsweeps ",numsweeps];
 
@@ -3207,7 +3216,7 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 		(*A run this short may not resolve what it found: 20 correlation times is the usual
 			minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 		If[data[[Key["corrT"]]]>numsweeps/20,
-			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 		Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 		(*data[[Key["corrTValues"]]]=Table[If[MemberQ[i,]data[[Key["corrTValues"],i]],corrTValues,{i,1,Length[data[[Key["corrTValues"]]]]}]];*)
 
@@ -3275,8 +3284,10 @@ Module[{result,vCount=Length[seedGraph],data,maxGStateCount,sweepOutput,observab
 	governs this. Deriving the run length from eqlT alone made the measurement scale with
 	something it has no reason to scale with: widening the equilibriation comparison window
 	added a constant to eqlT and multiplied this run by three to ten with it. Capped, and
-	checked afterwards against what it actually found.*)
-numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
+	checked afterwards against what it actually found. The multiple is
+	$ECGravCorrelationRunMultiplier, which need not be a whole number, so the run length it
+	implies is rounded up to one.*)
+numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelationSweeps]];
 
 	PrintTemporary["computing correlation time at beta ",beta," hparams ",{hparams}, " numsweeps ",numsweeps];
 
@@ -3367,7 +3378,7 @@ numsweeps=Min[5*eqlT,$ECGravMaxCorrelationSweeps];
 			minimum, and the cap can bite before that. Said once, at the end, where corrT is
 			known.*)
 		If[data[[Key["corrT"]]]>numsweeps/20,
-			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,5,$ECGravMaxCorrelationSweeps]];
+			Message[GraphComputeCorrelationTime::shortrun,data[[Key["corrT"]]],numsweeps,$ECGravCorrelationRunMultiplier,$ECGravMaxCorrelationSweeps]];
 
 		Do[data[[Key["corrTValues"],j]]=corrTValues[[First@Flatten[Position[fluctuatingObservableIndices,j]]]],{j,fluctuatingObservableIndices}];
 
