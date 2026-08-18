@@ -6,6 +6,55 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-08-17
+
+The correlation-time routines sized their measurement run as `Min[5*eqlT,
+$ECGravMaxCorrelationSweeps]`. The cap was a setting; the multiplier was a literal. Since the
+smaller of the two wins, and `5*eqlT` is the smaller for every `eqlT` below 200 at the default
+cap of 1000, a user on a short run who raised the cap to lengthen it saw no change at all and had
+no knob that worked. The multiplier is now a setting too.
+
+No measured value moves: the default is the 5 it was hard-coded to.
+
+### Added
+- **`$ECGravCorrelationRunMultiplier`**, defaulting to 5, sets how many equilibriation times long
+  a correlation-time measurement run is. The run length is now
+  `Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT, $ECGravMaxCorrelationSweeps]]` in all six
+  routines — the four `GraphComputeCorrelationTime` overloads and both
+  `RandomPureSimplicialComplexMCMCCorrelationTime` overloads.
+
+  It is the half of the pair that binds on short runs, which is exactly the case where a run is
+  too short to resolve what it found. To tell which of the two is binding, read the run length the
+  `::shortrun` message reports: equal to the cap means capped, anything else means the multiplier
+  set it.
+
+  Fractional values are allowed and the run length is rounded up. That is not cosmetic — the lag
+  range is `numsweeps - 10` and `LazyCorrelationTime` takes `lastLag_Integer`, so a non-integral
+  run length would leave it unevaluated and then be indexed as though it were an association.
+
+  Settable by plain assignment, like the other two settings: it survives a package re-load, stays
+  assignable after the blanket `Protect`, and `SyncParallelSettings` pushes it to the subkernels
+  alongside `$ECGravMaxCorrelationSweeps` so a parallel driver does not silently fall back to the
+  subkernel's own default.
+
+### Changed
+- **Both `::shortrun` messages ended in "raise the latter"**, meaning the cap — which was the only
+  advice that could be given when the multiplier was a literal, and is now wrong whenever the
+  multiplier is what set the run. They name both settings and tell you how to work out which one
+  is binding. The multiplier is message slot 3, so it also now reports the value actually in
+  effect rather than a hard-coded 5.
+
+### Tests
+- `GraphComputeCorrelationTime-run-length-multiplier` and
+  `RandomPureSimplicialComplexMCMCCorrelationTime-run-length-multiplier` count the sweeps a run
+  actually takes at raised, lowered, fractional and cap-bound multipliers. The complex-side test
+  also checks the `::shortrun` argument, since the multiplier appears twice per routine — once
+  setting the run, once in the message — and the two moving apart would make the message
+  misreport the setting it is telling you to raise.
+- `SyncParallelSettings-reaches-subkernels` now covers the new setting, checked through
+  `OwnValues` on the subkernel rather than `ParallelEvaluate[sym]`, which inlines the master's
+  value and would report success either way.
+
 ## [1.9.1] - 2026-08-16
 
 Three fixes, all of them about a quantity leaving the range a machine number can hold.
