@@ -6,6 +6,8 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-08-19
+
 ### Tests
 - **The sweep's dependence on beta is pinned.** `GraphSweepReplica` reads `beta` in exactly one
   place — `logRatio = Log[selectionProb] - delE*beta` — and nothing else in the driver touches it.
