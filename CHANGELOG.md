@@ -62,6 +62,45 @@ semantic-ish; breaking changes are called out explicitly.
   samples, on a fixture whose means are nonzero *and* whose cross second moment is negative, so a
   single case exercises both defects. Cost: the metric interpolation now also builds `numVars`
   first-moment interpolants alongside the `numVars(numVars+1)/2` second-moment ones.
+- **`GraphCTLSchedule` placed replicas on an extrapolated metric.** The metric is interpolated
+  over the bounding *box* of the bootstrap field table, but a box is not the region the bootstrap
+  run actually covered. The corners are reached purely by extrapolation — the function really is
+  named `ExtrapolatedExpectationValue` — and a metric invented there can attract replicas to
+  parts of parameter space where nothing was ever sampled. The existing `pSoft` exponent, which
+  "softens extreme spikes so one region doesn't eat all points", was treating the symptom.
+
+  The replica density is now masked by the **Kish effective sample size** of the MBAR reweighting
+  at each point: `rho` is zero wherever fewer than 1% of the samples effectively stand behind the
+  estimate. Measured on a 12-field, 1200-sample synthetic reweighting, the effective count runs
+  127–300 across the sampled range and drops to exactly 1.0 one step outside it, so the floor sits
+  in a wide gap rather than cutting through the distribution.
+
+  This is a hard restriction of the domain, not a reweighting. Inside the supported region the
+  density is still exactly `Sqrt[Det[g]]^pSoft`, which is what makes the spacing
+  constant-thermodynamic-length; weighting by effective sample size instead would have tilted
+  schedules towards well-sampled regions and stopped being CTL.
+
+  It is geometry-free, which is deliberate. The unsupported region is an unvisited box corner for
+  ordinary multi-field tempering and a fan through the origin for a hamiltonian in homogeneous
+  `c·O` form, and a support test handles both without either case needing its own grid shape.
+
+  **Limitation, stated because it is easy to over-trust:** effective sample size measures weight
+  *concentration*, not distributional gaps. A region can carry a respectable effective count and
+  still be badly extrapolated if the true distribution there lives outside what was sampled. This
+  is a necessary condition for trusting a point, not a sufficient one.
+
+  The new private `MBAREffectiveSampleSize` computes it in log space with a maximum shift. The
+  direct form does not fail under extrapolation — WL escapes to arbitrary precision rather than
+  overflowing — but that escape is expensive: 34x slower one field-width outside the sampled range
+  on a 60-sample fixture, and unfinished after ten minutes on a 720-sample one, against a log form
+  flat in the target. Cost is one additional interpolant per schedule.
+
+### Notes
+- **`LogSumExp` shifts by the mean, not the maximum.** Mathematically identical, but the mean
+  shift does not survive a wide spread of exponents — the largest term can still overflow. This is
+  why `MBAREffectiveSampleSize` does its own maximum shift locally rather than calling it. Not
+  changed here; flagged because the 1.9.1 work fixed exactly this pattern in `SGradDescent`'s
+  softmax and did not reach `LogSumExp` itself.
 
 ## [1.10.0] - 2026-08-17
 

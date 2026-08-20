@@ -132,6 +132,42 @@ VerificationTest[
     TestID -> "CTLMetricFromMoments-is-the-covariance"
 ];
 
+(* The CTL interpolates its metric over the bounding BOX of the bootstrap field table, and a box
+   is not the region the bootstrap run covered -- the corners are reached by extrapolation, and a
+   metric invented there can place replicas where nothing was sampled. The effective sample size
+   is what the density is masked with to prevent that, so it has to be right in two regimes: equal
+   to the sample count where every sample contributes, and collapsing towards 1 where one sample
+   carries the weight.
+
+   The oracle is the Kish ratio written directly, without logs, sharing no code with the
+   implementation. It is used here as a correctness check only: the direct form does not fail
+   under extrapolation, since WL escapes to arbitrary precision rather than overflowing, but that
+   escape is why the shipped version works in log space -- 34x slower one field-width out on a
+   60-sample fixture, and unfinished after ten minutes on a 720-sample one. *)
+VerificationTest[
+    Module[{mbF, meas, mbF1, meas1, oracle, ess},
+        ess = ECGrav`Private`MBAREffectiveSampleSize;
+        oracle[bt_, h_, f_, m_] := Module[{ks = Keys[f], nv = Length /@ m, u},
+            u = Flatten@Table[Table[
+                1/Sum[nv[[Key[j]]] Exp[-f[[Key[j]]]] Exp[bt (h - j) . m[[Key[i], s]]], {j, ks}],
+                {s, 1, nv[[Key[i]]]}], {i, ks}];
+            Total[u]^2/Total[u^2]];
+        mbF = <|{0.} -> 0., {1.} -> 0.|>;
+        meas = <|{0.} -> {{1.}, {2.}, {3.}}, {1.} -> {{1.}, {2.}, {3.}}|>;
+        (* one field with the target on it: every denominator is identical, so every sample
+           carries the same weight and the effective count is the actual count *)
+        mbF1 = <|{0.} -> 0.3|>;
+        meas1 = <|{0.} -> {{1.}, {5.}, {9.}, {-2.}}|>;
+        {AllTrue[{0., 0.5, 60., 800.},
+            Abs[ess[1.0, {#}, mbF, meas] - oracle[1.0, {#}, mbF, meas]] < 10.^-9 &],
+         Abs[ess[1.0, {0.}, mbF1, meas1] - 4] < 10.^-9,     (* equal weights -> N *)
+         1 <= ess[1.0, {0.5}, mbF, meas] <= 6,              (* bounded by 1 and N *)
+         ess[1.0, {0.}, mbF, meas] > 5,                     (* well supported *)
+         ess[1.0, {800.}, mbF, meas] < 2.5}],               (* extrapolated: collapses *)
+    {True, True, True, True, True},
+    TestID -> "MBAREffectiveSampleSize-matches-Kish-and-collapses-off-support"
+];
+
 (* ---------- Exact enumeration (deterministic) ---------- *)
 
 (* K4 and C6 are the two lowest levels; energies -12 and -6.

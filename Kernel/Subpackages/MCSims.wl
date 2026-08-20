@@ -589,6 +589,63 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
+(*MBAREffectiveSampleSize*)
+
+
+(* Private helper *)
+(*Kish effective sample size of the MBAR reweighting at one target field point:
+	(Sum u)^2 / Sum u^2 over the per-sample weights u, which are the reciprocals of exactly the
+	denominators ExtrapolatedExpectationValue divides by. It runs from 1, where a single sample
+	carries all the weight, to the total sample count, where every sample contributes equally, and
+	it needs no free energy: the weights enter the ratio unnormalised, so the overall constant
+	cancels.
+
+	It exists because the CTL interpolates its metric over the bounding BOX of the bootstrap field
+	table, and a box is not the region the bootstrap run actually covered. The corners get reached
+	by extrapolation -- the function really is called ExtrapolatedExpectationValue -- and a metric
+	invented there can place replicas where nothing was ever sampled. The effective sample size is
+	the honest statement of how much data stands behind the estimate at a point, so masking the
+	replica density with it removes those regions without assuming any particular geometry. That
+	matters for ordinary multi-field tempering, whose box has unvisited corners, and it matters
+	more for a hamiltonian in homogeneous c.O form, where the reachable set is a fan through the
+	origin and most of its bounding box is empty.
+
+	Computed in log space with a maximum shift. The denominators are sums of exponentials whose
+	arguments spread as the target moves away from the sampled fields, which is precisely the
+	regime this function is asked about. The direct form does not fail there -- WL escapes to
+	arbitrary precision rather than overflowing -- but the escape is expensive: measured on a
+	60-sample fixture it runs 34x slower one field-width outside the sampled range, and on a
+	720-sample one it did not finish in ten minutes, while the log form is flat in the target.
+	Inside the sampled range the log form costs about 25% more, which is the trade. Note the
+	package's own LogSumExp shifts by the MEAN rather than the maximum, which does not survive
+	this spread; the shift here is local for that reason.*)
+MBAREffectiveSampleSize[betaFixed_Real,targetExtField_List,
+	minusBetaF_Association,conjugateExtFieldMeasurements_Association]:=
+Module[{extFieldVals=Keys[minusBetaF],nValuesAssn,logu,mx},
+	nValuesAssn=Length/@conjugateExtFieldMeasurements;
+
+	(*log of the unnormalised weight of every sample: minus the log of its MBAR denominator*)
+	logu=Flatten[Table[
+		Table[
+			-With[{terms=Table[
+					Log[N[nValuesAssn[[Key[j]]]]]-minusBetaF[[Key[j]]]
+						+betaFixed*(targetExtField-j) . conjugateExtFieldMeasurements[[Key[i],s]]
+				,{j,extFieldVals}]},
+				With[{m=Max[terms]},m+Log[Total[Exp[Clip[terms-m,{-700.,0.}]]]]]]
+		,{s,1,nValuesAssn[[Key[i]]]}]
+	,{i,extFieldVals}]];
+
+	(*Shifted differences are non-positive by construction, so the only exposure is at the bottom
+		of the range, where a term contributes nothing to its sum anyway. Clipped rather than left
+		to underflow: below the subnormal boundary Exp both warns and costs a large constant
+		factor, and this runs once per interpolation grid point.*)
+	mx=Max[logu];
+	Exp[2*(mx+Log[Total[Exp[Clip[logu-mx,{-700.,0.}]]]])
+		-(2*mx+Log[Total[Exp[Clip[2*(logu-mx),{-700.,0.}]]]])]
+];
+
+
+(* ::Item::Closed:: *)
 (*CTLMetricFromMoments*)
 
 
@@ -6217,8 +6274,8 @@ Outputs a list with the following elements:,
 
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
-	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
+	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,essMinFraction=0.01,h,hVars,
+	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6282,9 +6339,26 @@ meanInterpolationAsn=<|
 					DistributedContexts->{$Context,"ECGrav`Private`"}])
 	,{i,1,numVars}]|>;
 
+(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
+	metric at each point. The box the metric is interpolated over is the bounding box of the
+	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
+	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
+essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}]
+		/.{y__}:>Join@@ParallelTable[
+			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaFAssn,chartConjugateField]},y,
+			DistributedContexts->{$Context,"ECGrav`Private`"}]);
+
 
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
 meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
+essInterpolationFn=Interpolation[essInterpolationFn];
+
+(*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
+	fraction of the total so it scales with the run: a target sitting inside the sampled region
+	draws on at least one replica's worth of data, which is a far larger share than this, while
+	one reached only by extrapolation collapses towards a single dominant sample.*)
+essFloor=essMinFraction*Total[Length/@chartConjugateField];
 
 
 (* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
@@ -6301,7 +6375,14 @@ sigmaMat[x__?NumericQ]:=
 	p<1 flattens.*)
 
 
-rho[x__?NumericQ]:=(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft);
+(*Zero where MBAR has no support, so no replica is placed on an extrapolated metric. The mask is
+	a hard restriction of the domain rather than a reweighting: inside the supported region the
+	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
+	-length. Weighting by the effective sample size instead would have tilted the schedule towards
+	well-sampled regions and stopped being CTL.*)
+rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+	0.0,
+	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
 (* Metric distance function 
 	(*Metric distance squared between two field points using midpoint metric:d^2=\[CapitalDelta]H^T (\[Beta]^2 \[CapitalSigma](mid)) \[CapitalDelta]H*)*)
@@ -6412,8 +6493,8 @@ Outputs a list with the following elements:,
 
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
-	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
+	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,essMinFraction=0.01,h,hVars,
+	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6477,9 +6558,26 @@ meanInterpolationAsn=<|
 					DistributedContexts->{$Context,"ECGrav`Private`"}])
 	,{i,1,numVars}]|>;
 
+(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
+	metric at each point. The box the metric is interpolated over is the bounding box of the
+	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
+	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
+essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}]
+		/.{y__}:>Join@@ParallelTable[
+			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaFAssn,chartConjugateField]},y,
+			DistributedContexts->{$Context,"ECGrav`Private`"}]);
+
 
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
 meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
+essInterpolationFn=Interpolation[essInterpolationFn];
+
+(*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
+	fraction of the total so it scales with the run: a target sitting inside the sampled region
+	draws on at least one replica's worth of data, which is a far larger share than this, while
+	one reached only by extrapolation collapses towards a single dominant sample.*)
+essFloor=essMinFraction*Total[Length/@chartConjugateField];
 
 
 (* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
@@ -6496,7 +6594,14 @@ sigmaMat[x__?NumericQ]:=
 	p<1 flattens.*)
 
 
-rho[x__?NumericQ]:=(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft);
+(*Zero where MBAR has no support, so no replica is placed on an extrapolated metric. The mask is
+	a hard restriction of the domain rather than a reweighting: inside the supported region the
+	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
+	-length. Weighting by the effective sample size instead would have tilted the schedule towards
+	well-sampled regions and stopped being CTL.*)
+rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+	0.0,
+	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
 (* Metric distance function 
 	(*Metric distance squared between two field points using midpoint metric:d^2=\[CapitalDelta]H^T (\[Beta]^2 \[CapitalSigma](mid)) \[CapitalDelta]H*)*)
@@ -6601,8 +6706,8 @@ Inputs are:,
 Outputs the external field schedule (a list containing the external field values, 
 	edge list for swaps, and an association matching external field values to edge labels).*)
 
-Module[{result,numVars=Length[hMins],numInterpolatingSamples=20,pSoft=0.96,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
+Module[{result,numVars=Length[hMins],numInterpolatingSamples=20,pSoft=0.96,essMinFraction=0.01,h,hVars,
+	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
 	centers,edges,swapGraph,neighbors,numNeighbors,replicasDistMat,replicaLabels},
 
 
@@ -6649,9 +6754,26 @@ Table[
 						DistributedContexts->{$Context,"ECGrav`Private`"}])
 ,{i,1,numVars}]|>;
 
+(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
+	metric at each point. The box the metric is interpolated over is the bounding box of the
+	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
+	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
+essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}]
+		/.{y__}:>Join@@ParallelTable[
+			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaF,conjugateFieldMeasurements]},y,
+			DistributedContexts->{$Context,"ECGrav`Private`"}]);
+
 
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
 meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
+essInterpolationFn=Interpolation[essInterpolationFn];
+
+(*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
+	fraction of the total so it scales with the run: a target sitting inside the sampled region
+	draws on at least one replica's worth of data, which is a far larger share than this, while
+	one reached only by extrapolation collapses towards a single dominant sample.*)
+essFloor=essMinFraction*Total[Length/@conjugateFieldMeasurements];
 
 
 (* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
@@ -6667,7 +6789,14 @@ sigmaMat[x__?NumericQ]:=
 (*soften extreme spikes so one region doesn't eat all points.Set p=1 for pure rho;p<1 flattens.*)
 
 
-rho[x__?NumericQ]:=(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft);
+(*Zero where MBAR has no support, so no replica is placed on an extrapolated metric. The mask is
+	a hard restriction of the domain rather than a reweighting: inside the supported region the
+	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
+	-length. Weighting by the effective sample size instead would have tilted the schedule towards
+	well-sampled regions and stopped being CTL.*)
+rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+	0.0,
+	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
 (* Metric distance function 
 (*Metric distance squared between two field points using midpoint metric:d^2=\[CapitalDelta]H^T (\[Beta]^2 \[CapitalSigma](mid)) \[CapitalDelta]H*)*)
