@@ -6302,7 +6302,11 @@ centers=Mean/@FindClusters[samples,numReplicas,
 
 centers=Select[centers,(And@@Thread[hMins<=#<=hMaxs])&];
 
-centers=LexicographicSort[Sort/@centers,NumericalOrder];
+(*Orders the LIST of centers. Do NOT map Sort over them: a center is a field VECTOR whose
+	component i is the coupling of conjugate observable i, so permuting its components hands the
+	replica different physical parameters with nothing a caller can see changing. Mapping Sort is
+	the identity at one external field, which is how it survived here undetected.*)
+centers=LexicographicSort[centers,NumericalOrder];
 
 
 (* ==========4) DEFINE SWAP NEIGHBORS USING THE LOCAL METRIC=============*)
@@ -6475,7 +6479,11 @@ centers=Mean/@FindClusters[samples,numReplicas,
 		Method->{"KMeans","MaxIterations"->200,"Standardize"->False},
 		DistanceFunction->metricDistance];
 
-centers=LexicographicSort[Sort/@centers,NumericalOrder];
+(*Orders the LIST of centers. Do NOT map Sort over them: a center is a field VECTOR whose
+	component i is the coupling of conjugate observable i, so permuting its components hands the
+	replica different physical parameters with nothing a caller can see changing. Mapping Sort is
+	the identity at one external field, which is how it survived here undetected.*)
+centers=LexicographicSort[centers,NumericalOrder];
 
 
 (* ==========4) DEFINE SWAP NEIGHBORS USING THE LOCAL METRIC=============*)
@@ -6629,7 +6637,11 @@ centers=Mean/@FindClusters[samples,numReplicas,
 
 centers=Select[centers,(And@@Thread[hMins<=#<=hMaxs])&];
 
-centers=LexicographicSort[Sort/@centers,NumericalOrder];
+(*Orders the LIST of centers. Do NOT map Sort over them: a center is a field VECTOR whose
+	component i is the coupling of conjugate observable i, so permuting its components hands the
+	replica different physical parameters with nothing a caller can see changing. Mapping Sort is
+	the identity at one external field, which is how it survived here undetected.*)
+centers=LexicographicSort[centers,NumericalOrder];
 
 
 (* ==========4) DEFINE SWAP NEIGHBORS USING THE LOCAL METRIC=============*)

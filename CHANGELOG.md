@@ -6,6 +6,28 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Fixed
+- **`GraphCTLSchedule` permuted the components of a replica's external-field vector.** The
+  replica centers were ordered with `LexicographicSort[Sort/@centers, NumericalOrder]`, and the
+  inner `Sort` sorted the components *inside* each center rather than ordering the list of
+  centers. Each center is a field vector whose component `i` is the coupling of conjugate
+  observable `i`, so permuting them hands the replica different physical parameters.
+
+  With a single external field the inner `Sort` is the identity, which is why this survived —
+  and the three multi-field overloads, which require `Length[externalFieldTable[[1]]] > 1`, were
+  the only callers that could reach it. There it swapped the components of any center whose
+  entries were not already ascending, **and only those**, so a schedule came back with some
+  replicas correct and others carrying permuted couplings: the result is not even a permutation
+  of the centers the clustering produced. On a hamiltonian written in the homogeneous form
+  `c·O`, where the first component is beta and the rest are beta times the physical fields, it
+  turns a positive beta into whichever coupling happened to be smallest.
+
+  Single-field schedules are unaffected: the inner `Sort` is the identity on length-1 vectors, so
+  no existing one-field result changes. Untested — `centers` is a `Module` local, so reaching it
+  needs a full schedule run (an MC bootstrap, 400 MBAR extrapolations, 40,000 kernel-density
+  draws), and the comment now carried at each of the three sites is the guard against the inner
+  `Sort` coming back.
+
 ## [1.10.0] - 2026-08-17
 
 The correlation-time routines sized their measurement run as `Min[5*eqlT,
