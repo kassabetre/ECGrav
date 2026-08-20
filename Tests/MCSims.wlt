@@ -303,6 +303,44 @@ VerificationTest[
     TestID -> "GraphSweepReplica-deep-reject-at-extreme-beta"
 ];
 
+(* beta enters the sweep in exactly one place -- logRatio = Log[selectionProb] - delE*beta -- and
+   nothing else in the driver reads it. That is what makes a HOMOGENEOUS reparameterisation
+   possible: rewrite the hamiltonian so every coupling is explicit, H = Sum_i c_i O_i, run at
+   bt = 1 with c scaled by beta, and the chain is not merely similar but IDENTICAL, because the
+   code only ever forms the product beta*delH.
+
+   This matters because the multi-field tempering path (GraphCTLSchedule, GraphMultiHistogram,
+   GraphParallelTempering) tempers the field vector c at FIXED bt, so beta is not one of its
+   coordinates. Promoting the beta-conjugate part of the hamiltonian to a conjugate observable
+   with its own coupling makes it one, and that trick is only sound while this identity holds. If
+   a second use of beta is ever added to the acceptance, this test is what notices.
+
+   HIsing is linear and homogeneous in (J,L) with no constant term, so scaling beta into the
+   couplings is exactly the reparameterisation: beta*HIsing[am,J,L] == HIsing[am,beta J,beta L],
+   checked here to 4.4e-16. The last column is the vacuity guard -- a frozen chain would return
+   the seed from both runs and compare equal for no reason. *)
+VerificationTest[
+    Module[{res},
+        res = Table[
+            Module[{orig, hom},
+                SeedRandom[9091];
+                orig = ECGrav`GraphSweepReplica[C6, bt, h[-1.0, 0.3], dH[-1.0, 0.3], 25, 0.0, 0];
+                SeedRandom[9091];
+                hom = ECGrav`GraphSweepReplica[C6, 1.0, h[bt*-1.0, bt*0.3],
+                        dH[bt*-1.0, bt*0.3], 25, 0.0, 0];
+                {orig[[2, Key["graph"]]] === hom[[2, Key["graph"]]],
+                 Abs[bt*orig[[2, Key["energy"]]] - hom[[2, Key["energy"]]]] < 10.^-9,
+                 orig[[2, Key["graph"]]] =!= C6}],
+            {bt, {0.4, 0.7, 2.0, 5.0}}];
+        {AllTrue[res, #[[1]] &],                         (* identical chain *)
+         AllTrue[res, #[[2]] &],                         (* recorded energy scales by beta *)
+         AllTrue[res, #[[3]] &],                         (* and the chain actually moved *)
+         Abs[0.7*ECGrav`HIsing[C6, -1.0, 0.3]
+             - ECGrav`HIsing[C6, 0.7*-1.0, 0.7*0.3]] < 10.^-12}],
+    {True, True, True, True},
+    TestID -> "GraphSweepReplica-homogeneous-reparameterisation-is-identical"
+];
+
 (* The same hole reached the exported drivers, which is where it was reported.
    GraphComputeCorrelationTime starts its running minimum AT minEToBeat with no states and
    relies entirely on GraphSweepReplica to improve it, so a chain frozen below the threshold

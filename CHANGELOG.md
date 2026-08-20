@@ -6,6 +6,20 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Tests
+- **The sweep's dependence on beta is pinned.** `GraphSweepReplica` reads `beta` in exactly one
+  place — `logRatio = Log[selectionProb] - delE*beta` — and nothing else in the driver touches it.
+  That is what makes a *homogeneous reparameterisation* sound: rewrite a hamiltonian so every
+  coupling is explicit, `H = Sum_i c_i O_i`, run at `bt = 1` with `c` scaled by beta, and the chain
+  is not merely similar but identical, because the code only ever forms the product `beta*delH`.
+
+  This matters because the multi-field tempering path tempers the field vector `c` at *fixed* `bt`,
+  so beta is not one of its coordinates. Promoting the beta-conjugate part of a hamiltonian to a
+  conjugate observable with its own coupling makes it one — which is how a single ladder can
+  temper in temperature and external field together — and that construction is only valid while
+  this identity holds. If a second use of beta is ever added to the acceptance, the new test
+  notices: injecting one makes it fail on both the trajectory and the energy-scaling row.
+
 ### Fixed
 - **`GraphCTLSchedule` permuted the components of a replica's external-field vector.** The
   replica centers were ordered with `LexicographicSort[Sort/@centers, NumericalOrder]`, and the
