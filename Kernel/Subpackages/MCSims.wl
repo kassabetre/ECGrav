@@ -589,6 +589,37 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
+(*CTLMetricFromMoments*)
+
+
+(* Private helper *)
+(*Assembles the thermodynamic metric that governs replica placement, from MBAR-extrapolated
+	moments of the conjugate observables:
+
+		S_ij = bt^2 (E[O_i O_j] - E[O_i] E[O_j]).
+
+	The subtraction is the whole content of this function, and it used to be missing: the second
+	moments were fed in directly under a comment claiming Cov. The metric is the Fisher
+	information, and for an exponential family in these natural parameters that is the COVARIANCE
+	of the sufficient statistics. E[O_i O_j] overstates it by E[O_i]E[O_j], and those means are
+	not small -- with one external field the error is a smooth positive inflation, so schedules
+	still looked plausible; with several fields, or with a hamiltonian in homogeneous c.O form
+	where one conjugate observable carries the whole energy, the mean term dominates and placement
+	stops tracking fluctuations altogether.
+
+	Only the DIAGONAL is floored at zero. A variance cannot be negative, so a negative one is MBAR
+	noise and zero is the right floor. A covariance can legitimately be negative, and the previous
+	code clipped every entry with Max[0.0,...], which silently zeroed the off-diagonals whenever
+	two observables were anti-correlated -- precisely the cross terms that make one multi-field
+	schedule better than one schedule per axis. Residual indefiniteness from noise is absorbed
+	downstream, where Det and the quadratic form in metricDistance are both floored at zero.*)
+CTLMetricFromMoments[bt_?NumericQ,m1_List,m2_List]:=
+	With[{cov=m2-Outer[Times,m1,m1],nv=Length[m1]},
+		bt^2*Table[If[i==j,Max[0.0,cov[[i,j]]],cov[[i,j]]],{i,1,nv},{j,1,nv}]
+	];
+
+
+(* ::Item::Closed:: *)
 (*Constrained Probability of the Conjugate Field*)
 
 
@@ -6187,7 +6218,7 @@ Outputs a list with the following elements:,
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
 	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,h,hVars,
-	sigmaInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
+	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6222,31 +6253,47 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 	interpolation of thermodynamic metric"];
 
 
+(*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
+	these in CTLMetricFromMoments, and a cross moment between anti-correlated observables is
+	legitimately negative.*)
 sigmaInterpolationAsn=<|
 	Table[
 		Table[
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
-					{hVars,Max[0.0,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
 						chartConjugateField,chartConjugateField[[All,All,i]]
-						*chartConjugateField[[All,All,j]]]]},y,
+						*chartConjugateField[[All,All,j]]]},y,
 						DistributedContexts->{$Context,"ECGrav`Private`"}])
 			,{i,1,j}]
 	,{j,1,numVars}]|>;
 
 
+(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
+	consistent at the points where they are subtracted.*)
+meanInterpolationAsn=<|
+	Table[
+		i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+					(hMaxs-hMins)/numInterpolatingSamples}]
+			/.{y__}:>Join@@ParallelTable[
+				{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					chartConjugateField,chartConjugateField[[All,All,i]]]},y,
+					DistributedContexts->{$Context,"ECGrav`Private`"}])
+	,{i,1,numVars}]|>;
+
+
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
+meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
 
 
-(* Build Sigma Matrix, S_{a,b}=b^2Cov(M^a,M^b)*)
-sigmaMat[x__?NumericQ]:=With[
-	{mat=Table[
-		Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
-		,{j,1,numVars}]},
-
-	bt^2*mat
-];
+(* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
+sigmaMat[x__?NumericQ]:=
+	CTLMetricFromMoments[bt,
+		Table[meanInterpolationAsn[[Key[i]]][x],{i,1,numVars}],
+		Table[
+			Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
+			,{j,1,numVars}]];
 
 
 (* Density function*)
@@ -6366,7 +6413,7 @@ Outputs a list with the following elements:,
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
 	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,h,hVars,
-	sigmaInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
+	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6401,31 +6448,47 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 	interpolation of thermodynamic metric"];
 
 
+(*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
+	these in CTLMetricFromMoments, and a cross moment between anti-correlated observables is
+	legitimately negative.*)
 sigmaInterpolationAsn=<|
 	Table[
 		Table[
 			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
 						(hMaxs-hMins)/numInterpolatingSamples}]
 				/.{y__}:>Join@@ParallelTable[
-					{hVars,Max[0.0,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
 						chartConjugateField,chartConjugateField[[All,All,i]]
-						*chartConjugateField[[All,All,j]]]]},y,
+						*chartConjugateField[[All,All,j]]]},y,
 						DistributedContexts->{$Context,"ECGrav`Private`"}])
 			,{i,1,j}]
 	,{j,1,numVars}]|>;
 
 
+(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
+	consistent at the points where they are subtracted.*)
+meanInterpolationAsn=<|
+	Table[
+		i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+					(hMaxs-hMins)/numInterpolatingSamples}]
+			/.{y__}:>Join@@ParallelTable[
+				{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
+					chartConjugateField,chartConjugateField[[All,All,i]]]},y,
+					DistributedContexts->{$Context,"ECGrav`Private`"}])
+	,{i,1,numVars}]|>;
+
+
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
+meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
 
 
-(* Build Sigma Matrix, S_{a,b}=b^2Cov(M^a,M^b)*)
-sigmaMat[x__?NumericQ]:=With[
-	{mat=Table[
-		Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
-		,{j,1,numVars}]},
-
-	bt^2*mat
-];
+(* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
+sigmaMat[x__?NumericQ]:=
+	CTLMetricFromMoments[bt,
+		Table[meanInterpolationAsn[[Key[i]]][x],{i,1,numVars}],
+		Table[
+			Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
+			,{j,1,numVars}]];
 
 
 (* Density function*)
@@ -6539,7 +6602,7 @@ Outputs the external field schedule (a list containing the external field values
 	edge list for swaps, and an association matching external field values to edge labels).*)
 
 Module[{result,numVars=Length[hMins],numInterpolatingSamples=20,pSoft=0.96,h,hVars,
-	sigmaInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
+	sigmaInterpolationAsn,meanInterpolationAsn,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
 	centers,edges,swapGraph,neighbors,numNeighbors,replicasDistMat,replicaLabels},
 
 
@@ -6558,30 +6621,46 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 	interpolation of Fisher matrix"];
 
 
+(*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
+	these in CTLMetricFromMoments, and a cross moment between anti-correlated observables is
+	legitimately negative.*)
 sigmaInterpolationAsn=<|
 Table[
 	Table[
 		{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
 			/.{y__}:>Join@@ParallelTable[
-					{hVars, Max[0.0,ExtrapolatedExpectationValue[bt,hVars,
+					{hVars, ExtrapolatedExpectationValue[bt,hVars,
 							minusbetaF,conjugateFieldMeasurements,conjugateFieldMeasurements[[All,All,i]]
-							*conjugateFieldMeasurements[[All,All,j]]]]},y,
+							*conjugateFieldMeasurements[[All,All,j]]]},y,
 							DistributedContexts->{$Context,"ECGrav`Private`"}])
 		,{i,1,j}]
 ,{j,1,numVars}]|>;
 
 
+(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
+	consistent at the points where they are subtracted.*)
+meanInterpolationAsn=<|
+Table[
+	i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
+		/.{y__}:>Join@@ParallelTable[
+				{hVars, ExtrapolatedExpectationValue[bt,hVars,
+						minusbetaF,conjugateFieldMeasurements,
+						conjugateFieldMeasurements[[All,All,i]]]},y,
+						DistributedContexts->{$Context,"ECGrav`Private`"}])
+,{i,1,numVars}]|>;
+
+
 sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
+meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
 
 
-(* Build Sigma Matrix, S_{a,b}=b^2Cov(M^a,M^b)*)
+(* Build Sigma Matrix, S_{a,b}=bt^2*Cov(M^a,M^b) *)
 sigmaMat[x__?NumericQ]:=
-	With[{mat=Table[
-		Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
-	,{j,1,numVars}]},
-
-	bt^2*mat
-];
+	CTLMetricFromMoments[bt,
+		Table[meanInterpolationAsn[[Key[i]]][x],{i,1,numVars}],
+		Table[
+			Table[sigmaInterpolationAsn[[Key[Sort[{i,j}]]]][x],{i,1,numVars}]
+		,{j,1,numVars}]];
 
 
 (* Density function*)

@@ -98,6 +98,40 @@ VerificationTest[
     0., SameTest -> floatEq, TestID -> "ComputeMinusBetaTimesFreeEnergy-single-beta"
 ];
 
+(* The thermodynamic metric that places CTL replicas is the Fisher information, which for an
+   exponential family in these natural parameters is the COVARIANCE of the conjugate observables.
+   It used to be assembled from the second moments alone -- E[O_i O_j], under a comment claiming
+   Cov -- with every entry passed through Max[0.0,...]. Both halves were wrong, and both are
+   invisible at one external field: the missing subtraction is then a smooth positive inflation,
+   and the clip never fires because a second moment E[O^2] cannot be negative.
+
+   The fixture is chosen so a single case exercises both. The two observables have nonzero means,
+   so the subtraction matters; they are anti-correlated, so the covariance is negative; and their
+   cross second moment is *also* negative, so the old clip zeroed it outright. Under the old
+   expression this returns {{5.5, 0.}, {0., 3.}} against a true {{5.25, -3.25}, {-3.25, 2.75}} --
+   the diagonal inflated by E[O]^2 and the off-diagonal destroyed, which is exactly the cross term
+   that makes one multi-field schedule better than one schedule per axis.
+
+   The oracle is the population covariance computed directly from the samples, so it shares no
+   code with the function under test. Rows 3 and 4 are the vacuity guards: the result must differ
+   from the second-moment matrix, and the off-diagonal must come back negative. *)
+VerificationTest[
+    Module[{a = {-2., -1., 1., 4.}, b = {3., 1., -1., -1.}, m1, m2, pop, oracle, f},
+        f = ECGrav`Private`CTLMetricFromMoments;
+        pop[u_, v_] := Mean[(u - Mean[u]) (v - Mean[v])];
+        m1 = {Mean[a], Mean[b]};
+        m2 = {{Mean[a^2], Mean[a b]}, {Mean[a b], Mean[b^2]}};
+        oracle = {{pop[a, a], pop[a, b]}, {pop[a, b], pop[b, b]}};
+        {Max[Abs[Flatten[f[1.0, m1, m2] - oracle]]] < 10.^-12,   (* is the covariance *)
+         Max[Abs[Flatten[f[2.0, m1, m2] - 4 oracle]]] < 10.^-12, (* scales as bt^2 *)
+         f[1.0, m1, m2] =!= m2,                                  (* not the second moment *)
+         Negative[f[1.0, m1, m2][[1, 2]]],                       (* off-diagonal keeps its sign *)
+         f[1.0, {1., 1.}, {{0.999, -0.5}, {-0.5, 2.}}],          (* diagonal floored, off-diag not *)
+         f[1.0, {Mean[a]}, {{Mean[a^2]}}]}],                     (* one field, unchanged *)
+    {True, True, True, True, {{0., -1.5}, {-1.5, 1.}}, {{5.25}}},
+    TestID -> "CTLMetricFromMoments-is-the-covariance"
+];
+
 (* ---------- Exact enumeration (deterministic) ---------- *)
 
 (* K4 and C6 are the two lowest levels; energies -12 and -6.

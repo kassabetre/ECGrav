@@ -27,6 +27,41 @@ semantic-ish; breaking changes are called out explicitly.
   needs a full schedule run (an MC bootstrap, 400 MBAR extrapolations, 40,000 kernel-density
   draws), and the comment now carried at each of the three sites is the guard against the inner
   `Sort` coming back.
+- **The CTL thermodynamic metric was built from second moments, not covariances.** `sigmaMat` was
+  assembled from `ExtrapolatedExpectationValue[... O_i*O_j ...]` — and that function is a plain
+  MBAR-reweighted expectation with no mean subtraction, despite the comment above `sigmaMat`
+  reading `S_{a,b}=b^2Cov(M^a,M^b)`. The metric that places replicas is the Fisher information,
+  which for an exponential family in these natural parameters is the covariance of the sufficient
+  statistics; `E[O_i O_j]` overstates it by `E[O_i]E[O_j]`.
+
+  With one external field the error is a smooth positive inflation of a 1×1 metric, so schedules
+  still came out plausible — which is why this survived. With several fields, or with a hamiltonian
+  written in homogeneous `c·O` form where one conjugate observable carries the whole energy, the
+  mean term dominates and replica placement stops tracking fluctuations at all. The first moments
+  are now interpolated over the same grid through the same MBAR call and subtracted.
+
+  **This changes the schedules single-field runs produce.** The metric feeds both the sampling
+  density (`rho = Sqrt[Det[sigmaMat]]^pSoft`) and the K-means distance function, so an inflated
+  1×1 metric placed replicas differently — the ordering was sane but the spacing was not the
+  constant-thermodynamic-length spacing it claimed to be. Any schedule generated before this fix
+  should be regenerated; schedules are inputs to a tempering run, not results, so nothing measured
+  becomes wrong, but the acceptance uniformity CTL exists to deliver was not being delivered.
+- **`Max[0.0, …]` zeroed the metric's off-diagonal entries.** The same expression floored *every*
+  entry at zero. That is correct for a variance and wrong for a covariance: two anti-correlated
+  observables have a legitimately negative cross term, and clipping it discarded precisely the
+  off-diagonal structure that makes one multi-field schedule better than one schedule per axis.
+  Only the diagonal is floored now — a negative variance is MBAR noise and zero is the right
+  floor — while off-diagonals keep their sign. Residual indefiniteness is absorbed downstream,
+  where `Det` and the quadratic form in `metricDistance` are both already floored at zero.
+
+  Never fired at one external field: a second moment `E[O^2]` cannot be negative.
+
+  Both fixes live in the new private `CTLMetricFromMoments`, called from all three multi-field
+  overloads. Unlike the ordering fix above this one is real arithmetic with a wrong answer to
+  catch, so it is extracted and tested — against a population covariance computed directly from
+  samples, on a fixture whose means are nonzero *and* whose cross second moment is negative, so a
+  single case exercises both defects. Cost: the metric interpolation now also builds `numVars`
+  first-moment interpolants alongside the `numVars(numVars+1)/2` second-moment ones.
 
 ## [1.10.0] - 2026-08-17
 
