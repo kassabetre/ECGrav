@@ -38,9 +38,15 @@ $$U(p,M,n) \;\le\; \min\bigl(\mathrm{VL}(p,M,n),\ \mathrm{FL}(p,M,n)\bigr).$$
 Note that $\mathrm{FL}$ can *exceed* $\mathrm{VL}$: at $(2,6,4)$ the only complex is all six
 edges of $K_4$, giving $\mathrm{VL}=1$, $\mathrm{FL}=30$, $U=1$. Per class the facet-labeled
 contribution is $M!/|H|$ with $H$ the **image** of $\mathrm{Aut}(S)$ in $\mathrm{Sym}(S)$ —
-not $M!/|\mathrm{Aut}(S)|$, which is only correct when that action is faithful. For $p \ge 3$
-a non-identity automorphism can fix every facet setwise, e.g. $(2\,3)$ acting on
-$\{1,2,3\},\{2,3,4\}$. The vertex-labeled contribution is $n!/|\mathrm{Aut}(S)|$, which *is*
+not $M!/|\mathrm{Aut}(S)|$, which is only correct when that action is faithful, and it often
+is not. The kernel is the set of vertex permutations fixing every facet **setwise**, and it is
+nontrivial already at $p = 2$: for $S = \{\{1,2\},\{3,4\}\}$ the kernel
+$\langle(1\,2),(3\,4)\rangle$ has order 4, so $|\mathrm{Aut}(S)| = 8$ while $|H| = 2$ — and
+$M!/|\mathrm{Aut}(S)| = 1/4$ is not even an integer. At $p = 2$ this forces a disconnected
+complex: if $\sigma$ swaps the ends $u,v$ of an edge and $uw$ is another edge at $u$, then
+$\sigma(uw) = \{v,\sigma(w)\} \neq \{u,w\}$, so $u$ and $v$ both have degree 1. From
+$p = 3$ the kernel survives connectivity: $(1\,2)$ fixes both facets of
+$\{1,2,3\},\{1,2,4\}$ setwise. The vertex-labeled contribution is $n!/|\mathrm{Aut}(S)|$, which *is*
 the plain stabiliser.
 
 ---
@@ -157,19 +163,19 @@ to $[z^3]$ by §2.6.)
 ## 4. Implementation map
 
 All in `Kernel/Subpackages/PureComplexes.wl`. Private helpers are named `NumULPC*`; the
-derivation above appears as the header comment at line 1915.
+derivation above appears as the header comment at line 1934.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 1972 | `NumULPCPolyMul[a,b,deg]` | product of two coefficient lists, truncated at `deg`, via `ListConvolve` |
-| 1977 | `NumULPCPowPoly[r,c,deg]` | $(1+z^r)^c$ truncated, stocking only multiples of $r$ |
-| 1986 | `NumULPCFixedSubsets[parts,e,p]` | $f(e)$ of §2.5; `parts` is `Tally[λ]`, i.e. `{length, multiplicity}` pairs |
-| 2001 | `NumULPCFixSets[parts,p,M]` | $|\mathrm{Fix}(\sigma)|$ by the Newton recurrence of §2.6 |
-| 2027 | `NumULPCA[p,M,n]` | $A(p,M,n)$: the cycle-type sum of §2.3. **Memoized** |
-| 2041 | `NumULPCCount[p,M,n]` | $A(n) - A(n-1)$ |
-| 2046 | `NumUnlabeledPureComplexes[p,M,n]` | guards, then `NumULPCCount` |
-| 2062 | `NumUnlabeledPureComplexes[p,M]` | summed over $n$ |
-| 2075 | catch-all | `::argerr` and `$Failed` |
+| 1991 | `NumULPCPolyMul[a,b,deg]` | product of two coefficient lists, truncated at `deg`, via `ListConvolve` |
+| 1996 | `NumULPCPowPoly[r,c,deg]` | $(1+z^r)^c$ truncated, stocking only multiples of $r$ |
+| 2005 | `NumULPCFixedSubsets[parts,e,p]` | $f(e)$ of §2.5; `parts` is `Tally[λ]`, i.e. `{length, multiplicity}` pairs |
+| 2020 | `NumULPCFixSets[parts,p,M]` | $|\mathrm{Fix}(\sigma)|$ by the Newton recurrence of §2.6 |
+| 2046 | `NumULPCA[p,M,n]` | $A(p,M,n)$: the cycle-type sum of §2.3. **Memoized** |
+| 2060 | `NumULPCCount[p,M,n]` | $A(n) - A(n-1)$ |
+| 2065 | `NumUnlabeledPureComplexes[p,M,n]` | guards, then `NumULPCCount` |
+| 2081 | `NumUnlabeledPureComplexes[p,M]` | summed over $n$ |
+| 2094 | catch-all | `::argerr` and `$Failed` |
 
 Two implementation choices that are exact, not heuristic:
 
@@ -181,7 +187,7 @@ Two implementation choices that are exact, not heuristic:
   beats enumerating every divisor of $L$ and filtering.
 
 `NumULPCA` is memoized for the session and released by the shared
-`ECGrav`Private`NumPCClearCache[]`, alongside the vertex-labeled row cache and the sampler
+``ECGrav`Private`NumPCClearCache[]``, alongside the vertex-labeled row cache and the sampler
 weight tables. Each entry is a single integer.
 
 ---

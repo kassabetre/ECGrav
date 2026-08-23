@@ -40,7 +40,7 @@ $[M]$** — one row per vertex, listing the facets it lies in — in which every
 exactly $p$ rows. The rows form a multiset because the vertices are unlabelled; "the $M$ facets
 are pairwise distinct" becomes "the $M$ columns are pairwise distinct", the **separating**
 condition. This is the form in which $s_F$ is derived (see the header comment at
-`PureComplexes.wl:1782`), and it is a complete invariant: two facet-labeled complexes are
+`PureComplexes.wl:1801`), and it is a complete invariant: two facet-labeled complexes are
 isomorphic iff their row multisets agree. That is what the test suite canonicalises with.
 
 ---
@@ -259,25 +259,25 @@ throw low p-values by chance; prefer legs 1 and 2.
 
 ## 10. Implementation map
 
-All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3785.
+All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3804.
 Private helpers are named `RandFLPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 3832 | `RandFLPCWeightCounts[ν]` | coefficients of $\prod_k (1+x^k)^{\nu_k}$ out to $x^p$; last entry is $N(\nu)$ (§4) |
-| 3848 | `RandFLPCCompletions[λ,M,j,ν]` | $C(\lambda,M,j,\nu)$, the inclusion–exclusion of §6 |
-| 3863 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $w(\lambda)$, with the types and their multiplicity vectors |
-| 3892, 3895 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 3899 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
-| 3921 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
-| 3972 | primary pattern | `[{p,M,n}, numSamples]` |
-| 4016 | overload | `[{p,M}, numSamples]` (§8) |
-| 4059, 4068 | overloads | single-sample forms |
+| 3853 | `RandFLPCWeightCounts[ν]` | coefficients of $\prod_k (1+x^k)^{\nu_k}$ out to $x^p$; last entry is $N(\nu)$ (§4) |
+| 3869 | `RandFLPCCompletions[λ,M,j,ν]` | $C(\lambda,M,j,\nu)$, the inclusion–exclusion of §6 |
+| 3884 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $w(\lambda)$, with the types and their multiplicity vectors |
+| 3913, 3916 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 3920 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
+| 3942 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
+| 3993 | primary pattern | `[{p,M,n}, numSamples]` |
+| 4037 | overload | `[{p,M}, numSamples]` (§8) |
+| 4080, 4089 | overloads | single-sample forms |
 
-The counter it sits on is `NumFacetLabeledPureComplexes` at line 1878, with its own derivation at
-line 1782 and helpers `NumFLPC*`.
+The counter it sits on is `NumFacetLabeledPureComplexes` at line 1897, with its own derivation at
+line 1801 and helpers `NumFLPC*`.
 
-All memo tables are released by the shared `ECGrav`Private`NumPCClearCache[]` — which must list
+All memo tables are released by the shared ``ECGrav`Private`NumPCClearCache[]`` — which must list
 every memoised helper, `RandFLPCCandTable` included.
 
 ---
@@ -307,7 +307,7 @@ regime any real use is in.
 
 **`$RandomFacetLabeledParallelThreshold = 2000`.** It was 100, which suited a draw costing 3–60 ms.
 What the parallel branch pays is fixed rather than per-sample — `DistributedContexts` ships the
-whole of `ECGrav`Private` , memo tables included, on every call — so cutting the per-draw cost by
+whole of `` ECGrav`Private` ``, memo tables included, on every call — so cutting the per-draw cost by
 20–100× moved the crossover out with it, and at 100 samples parallel had become a 3–16×
 *pessimisation*. Remeasured on 11 subkernels with kernels up and tables warm, the crossover runs
 200 at $\{2,3,4\}$, 300 at $\{2,4,6\}$, 800 at $\{3,6,12\}$, 1700 at $\{4,6,15\}$, 2800 at

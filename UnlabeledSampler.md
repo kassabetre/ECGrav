@@ -257,26 +257,26 @@ count against a function computed a wholly different way.
 
 ## 11. Implementation map
 
-All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3712.
+All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3484.
 Private helpers are named `RandULPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 3768 | `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 3772 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $\binom{n}{p}$ subsets are touched |
-| 3792 | `RandULPCNd[λ,p]` | $n_d$ by Möbius inversion off the counter's $f$, so reduced cycle types cost nothing |
-| 3809 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
-| 3822 | `RandULPCFixCov[λ,p,M]` | $\mathrm{Fix_{cov}}$ (§5) |
-| 3829 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
-| 3840 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
-| 3854 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
-| 3864 | `RandULPCComps[...]` | completion counts (§8) |
-| 3885 | `RandULPCDraw[λ,p,M,a]` | step 4 |
-| 3930 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
-| 3949 | primary pattern | `[{p,M,n}, numSamples]` |
-| 3973 | overload | `[{p,M}, numSamples]` |
+| 3540 | `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 3544 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $\binom{n}{p}$ subsets are touched |
+| 3564 | `RandULPCNd[λ,p]` | $n_d$ by Möbius inversion off the counter's $f$, so reduced cycle types cost nothing |
+| 3581 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
+| 3594 | `RandULPCFixCov[λ,p,M]` | $\mathrm{Fix_{cov}}$ (§5) |
+| 3601 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
+| 3612 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
+| 3626 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
+| 3636 | `RandULPCComps[...]` | completion counts (§8) |
+| 3657 | `RandULPCDraw[λ,p,M,a]` | step 4 |
+| 3702 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
+| 3721 | primary pattern | `[{p,M,n}, numSamples]` |
+| 3745 | overload | `[{p,M}, numSamples]` |
 
-All memo tables are released by the shared `ECGrav`Private`NumPCClearCache[]`.
+All memo tables are released by the shared ``ECGrav`Private`NumPCClearCache[]``.
 
 With the vertex count free, $n$ is drawn from `NumUnlabeledPureComplexes` directly. The previous
 implementation drew it from the **vertex-labeled** counts and let rejection repair the difference,
