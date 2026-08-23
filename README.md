@@ -30,6 +30,12 @@ their own specifications: **[FacetLabeledSampler.md](FacetLabeledSampler.md)**,
 **[UnlabeledSampler.md](UnlabeledSampler.md)**, and
 **[UnlabeledCount.md](UnlabeledCount.md)**.
 
+The schedule builder's cost is dominated by the MBAR reweighting it interpolates the thermodynamic
+metric from, and that cost grows as the square of the bootstrap table — a few seconds at one
+external field, hours at two. **[MBARWeights.md](MBARWeights.md)** specifies the rewrite that
+reduces every MBAR quantity to a ratio of one shared weight vector, with the algebra, the
+reference implementation, and the measurements.
+
 ---
 
 ## Requirements

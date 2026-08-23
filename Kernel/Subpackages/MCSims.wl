@@ -440,6 +440,113 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
+(*MBARWeightBasis*)
+
+
+(* Private helper *)
+(*The part of the MBAR reweighting that does not depend on the target field.
+
+	The log of the MBAR denominator of sample s at target x is
+
+		D_s(x) = Log[Sum_j n_j Exp[-F_j] Exp[beta (x - h_j).O_s]]
+		       = beta x.O_s + Log[Sum_j Exp[Log[n_j] - F_j - beta h_j.O_s]],
+
+	because beta x.O_s carries no j and so factors out of the sum. The second term -- the whole
+	sum over the K bootstrap field points, which is the only part quadratic in K -- is therefore
+	independent of x. It is built once here and reused at every target, which is what turns a
+	metric build that took hours at two tempered components into one that takes a fraction of a
+	second. Derivation, cost table and verification: MBARWeights.md.
+
+	The basis carries the observable matrix too, because the per-target step is exactly one
+	matrix-vector product against it.
+
+	Sample order is the key order of minusBetaF, and every vector handed to MBARWeightedMean must
+	be flattened the same way; Lookup[..., Key/@keys] is what pins that.
+
+	The field keys and the per-sample observables are both coerced to matrices. A single-field run
+	may key its association on bare reals rather than one-element lists, and the nested-Sum form
+	this replaces tolerated that through Listable broadcasting.
+
+	Cost: one S x K intermediate, S = total sample count, which is the memory high-water mark of a
+	schedule build (81 MB at K = 225, N = 200). It is transient -- only the length-S logBasis
+	survives -- so build it in row chunks if S*K ever outgrows the machine.*)
+MBARWeightBasis[betaFixed_?NumericQ,minusBetaF_Association,
+	conjugateExtFieldMeasurements_Association]:=
+Module[{keys=Keys[minusBetaF],obsMat,fieldMat,logCounts,expo},
+	fieldMat=N[keys];
+	If[!MatrixQ[fieldMat],fieldMat=Transpose[{fieldMat}]];
+	obsMat=N[Join@@Lookup[conjugateExtFieldMeasurements,Key/@keys]];
+	If[!MatrixQ[obsMat],obsMat=Transpose[{obsMat}]];
+	logCounts=Log[N[Length/@Lookup[conjugateExtFieldMeasurements,Key/@keys]]];
+
+	(*expo[[s,j]] = Log[n_j] - F_j - beta h_j.O_s, so the row-wise LogSumExp over j is the
+		x-independent term above. An empty bootstrap replica gives Log[0] = -Infinity in its own
+		column, which Clip sends to the floor and which therefore contributes nothing -- the same
+		thing the Sum over its zero samples used to do.*)
+	expo=ConstantArray[logCounts-N[Values[minusBetaF]],Length[obsMat]]
+			-betaFixed*(obsMat . Transpose[fieldMat]);
+
+	<|"beta"->N[betaFixed],"obs"->obsMat,
+		"logBasis"->With[{m=Max/@expo},
+			m+Log[Total[Exp[Clip[expo-m,{-700.,0.}]],{2}]]]|>
+];
+
+
+(* ::Item::Closed:: *)
+(*MBARWeights*)
+
+
+(* Private helper *)
+(*The MBAR weights at one target field, shifted by their own maximum.
+
+	Everything built from these is a RATIO -- (v.u)/Total[u] for an expectation value,
+	Total[u]^2/Total[u^2] for the effective sample size -- and a ratio is invariant under
+	u -> c u. So the shift costs nothing, and the free energy that used to normalise the weights
+	cancels outright and never has to be computed at all.
+
+	The shift is not optional. D_s spreads over hundreds as the target moves away from the sampled
+	fields, which is precisely what the interpolation box asks for, and the unshifted weights
+	overflow or underflow out there. After the shift every entry lies in (0,1]. The clip keeps the
+	small end off the subnormal boundary, where Exp both warns and costs a large constant factor.
+	Note the package's own LogSumExp shifts by the MEAN, which does not survive this spread.
+
+	Returns {u, shift}. Only NegativeBetaTimesFreeEnergy needs the shift, being the one caller that
+	wants an absolute value rather than a ratio.*)
+MBARWeights[basis_Association,targetExtField_List]:=
+With[{logU=-(basis["beta"]*(basis["obs"] . N[targetExtField])+basis["logBasis"])},
+	With[{shift=Max[logU]},
+		{Exp[Clip[logU-shift,{-700.,0.}]],shift}]
+];
+
+
+(* ::Item::Closed:: *)
+(*MBARWeightedMean, MBARMomentsAt, MBARESSAt*)
+
+
+(* Private helpers *)
+(*Reductions of one weight vector. Because u is the same for every observable at a given target,
+	the interpolation grids the CTL schedule builder used to fill separately -- numVars first
+	moments, numVars(numVars+1)/2 second moments and one effective sample size, six of them at two
+	tempered components -- collapse into a single pass.*)
+MBARWeightedMean[u_List,v_List]:=(v . u)/Total[u];
+
+(*All first and second moments plus the effective sample size at one target, from one u.
+	Transpose[om].u gives every E[O_i] in a single product, and Transpose[om].(om*u) every
+	E[O_i O_j]: om*u scales row s by u[[s]], because Times threads over the outer dimension.
+	Returns {mean vector, second-moment matrix, effective sample size}.*)
+MBARMomentsAt[basis_Association,targetExtField_List]:=
+Module[{u=First[MBARWeights[basis,targetExtField]],om=basis["obs"],tot},
+	tot=Total[u];
+	{(Transpose[om] . u)/tot,(Transpose[om] . (om*u))/tot,tot^2/Total[u^2]}
+];
+
+(*Effective sample size alone, for the density mask, which asks for it at many more points than
+	it asks for moments and should not pay for the numVars x numVars product.*)
+MBARESSAt[basis_Association,targetExtField_List]:=
+With[{u=First[MBARWeights[basis,targetExtField]]},Total[u]^2/Total[u^2]];
+
+
+(* ::Item::Closed:: *)
 (*NegativeBetaTimesFreeEnergy*)
 
 
@@ -494,22 +601,12 @@ computed at those points  e.g. <|-2.1 -> -20.3, 2.5 -> 34.2|>,
 Note, the external field values which are the keys for both associations have to be equal as sets! Also, the lengths of the lists of energy measurements have to be equal for all external field values. Finally, it is assumed that the input betaFixed is the inverse temperature that both minusBetaF and energyMeasurements are computed.
 *)
 
-With[{externalFieldValues=Keys[minusBetaF],
-	nValuesAssn=Length/@conjugateExtFieldMeasurements,
-	lognValuesAssn=Log[1.0*Length[#]]&/@conjugateExtFieldMeasurements},
-
-LogSumExp[
-	Flatten[
-		Table[
-			Table[
-				-LogSumExp[
-					Table[
-						lognValuesAssn[[Key[j]]]-minusBetaF[[Key[j]]]
-						+betaFixed*(targetExtField-j) . (conjugateExtFieldMeasurements[[Key[i],s]])
-					,{j,externalFieldValues}]]
-			,{s,1,nValuesAssn[[Key[i]]]}]
-		,{i,externalFieldValues}]]
-	]
+(*This is Log[Sum_s Exp[-D_s(x)]] over the MBAR weights -- see MBARWeightBasis. They come back
+	shifted by their own maximum, so the shift is added back here; this is the one caller that
+	wants an absolute value rather than a ratio, and the only reason MBARWeights returns it.*)
+With[{uw=MBARWeights[MBARWeightBasis[betaFixed,minusBetaF,conjugateExtFieldMeasurements],
+			targetExtField]},
+	Last[uw]+Log[Total[First[uw]]]
 ];
 
 (* Catch-all Pattern *)
@@ -565,22 +662,18 @@ external field parameter and E is the conjugate observable. It requires five inp
 5. measuredObservableValues - an association of the external field values J and the corresponding list of meaurements of the observable O measured at those external field values. e.g. <|0.1 -> {1.1,2.3,5.2}, 2.5 -> {-2.0,-4.3,-20.1}|>
 Note, the J values which are the keys for all the associations have to be equal as sets! Also, the lengths of the lists of values have to be equal for all J values,
 *)
-With[{extFieldVals=Keys[minusBetaF],
-	nValuesAssn=Length/@conjugateExtFieldMeasurements,
-	minusBetaTimesFreeEnergy=NegativeBetaTimesFreeEnergy[betaFixed,targetExtField,minusBetaF,conjugateExtFieldMeasurements]},
+(*A weighted mean of the observable under the MBAR weights, and nothing more.
 
-(*Print["betaFixed ",betaFixed," targetExtField ",targetExtField," minusBetaF ",minusBetaF];
-Print[" extFieldVals ",extFieldVals," obsLength ",obsLength, " minusBetaTimesFreeEnergy ",minusBetaTimesFreeEnergy];
-Print[" measuredObservableValues ",measuredObservableValues];*)
+	The free energy this used to compute -- through a full NegativeBetaTimesFreeEnergy call, itself
+	as expensive as the sum that followed it -- is only the normaliser of those weights, and it
+	divides straight back out of the ratio. So it is not computed. What is left is one dot product
+	against a vector the basis already holds. See MBARWeights.md section 3.1.
 
-(Exp[-minusBetaTimesFreeEnergy])*
-	Sum[
-		Sum[(measuredObservableValues[[Key[i],s]])/
-			(Sum[
-				nValuesAssn[[Key[j]]]*Exp[-minusBetaF[[Key[j]]]]*Exp[betaFixed*(targetExtField-j) . conjugateExtFieldMeasurements[[Key[i],s]]]
-			,{j,extFieldVals}])
-		,{s,1,nValuesAssn[[Key[i]]]}]
-	,{i,extFieldVals}]
+	The observable must be flattened in the key order of minusBetaF, which is the order
+	MBARWeightBasis stacked the samples in.*)
+With[{u=First[MBARWeights[MBARWeightBasis[betaFixed,minusBetaF,conjugateExtFieldMeasurements],
+			targetExtField]]},
+	MBARWeightedMean[u,N[Join@@Lookup[measuredObservableValues,Key/@Keys[minusBetaF]]]]
 ];
 
 (* Catch-all Pattern *)
@@ -610,39 +703,23 @@ $Failed);
 	more for a hamiltonian in homogeneous c.O form, where the reachable set is a fan through the
 	origin and most of its bounding box is empty.
 
-	Computed in log space with a maximum shift. The denominators are sums of exponentials whose
-	arguments spread as the target moves away from the sampled fields, which is precisely the
-	regime this function is asked about. The direct form does not fail there -- WL escapes to
-	arbitrary precision rather than overflowing -- but the escape is expensive: measured on a
-	60-sample fixture it runs 34x slower one field-width outside the sampled range, and on a
-	720-sample one it did not finish in ten minutes, while the log form is flat in the target.
-	Inside the sampled range the log form costs about 25% more, which is the trade. Note the
-	package's own LogSumExp shifts by the MEAN rather than the maximum, which does not survive
-	this spread; the shift here is local for that reason.*)
+	Computed in log space with a maximum shift, which MBARWeights now supplies. The denominators
+	are sums of exponentials whose arguments spread as the target moves away from the sampled
+	fields, which is precisely the regime this function is asked about. The direct form does not
+	fail there -- WL escapes to arbitrary precision rather than overflowing -- but the escape is
+	expensive: measured on a 60-sample fixture it runs 34x slower one field-width outside the
+	sampled range, and on a 720-sample one it did not finish in ten minutes, while the log form is
+	flat in the target.
+
+	A caller wanting the effective sample size at MANY targets should build the basis once with
+	MBARWeightBasis and call MBARESSAt instead of this: the basis is the expensive part and it does
+	not depend on the target. This entry point rebuilds it every call, which is right for a one-off
+	and wrong in a loop.*)
 MBAREffectiveSampleSize[betaFixed_Real,targetExtField_List,
 	minusBetaF_Association,conjugateExtFieldMeasurements_Association]:=
-Module[{extFieldVals=Keys[minusBetaF],nValuesAssn,logu,mx},
-	nValuesAssn=Length/@conjugateExtFieldMeasurements;
-
-	(*log of the unnormalised weight of every sample: minus the log of its MBAR denominator*)
-	logu=Flatten[Table[
-		Table[
-			-With[{terms=Table[
-					Log[N[nValuesAssn[[Key[j]]]]]-minusBetaF[[Key[j]]]
-						+betaFixed*(targetExtField-j) . conjugateExtFieldMeasurements[[Key[i],s]]
-				,{j,extFieldVals}]},
-				With[{m=Max[terms]},m+Log[Total[Exp[Clip[terms-m,{-700.,0.}]]]]]]
-		,{s,1,nValuesAssn[[Key[i]]]}]
-	,{i,extFieldVals}]];
-
-	(*Shifted differences are non-positive by construction, so the only exposure is at the bottom
-		of the range, where a term contributes nothing to its sum anyway. Clipped rather than left
-		to underflow: below the subnormal boundary Exp both warns and costs a large constant
-		factor, and this runs once per interpolation grid point.*)
-	mx=Max[logu];
-	Exp[2*(mx+Log[Total[Exp[Clip[logu-mx,{-700.,0.}]]]])
-		-(2*mx+Log[Total[Exp[Clip[2*(logu-mx),{-700.,0.}]]]])]
-];
+(*Total[u]^2/Total[u^2] over the MBAR weights. It is shift-invariant, so it reads straight off
+	the shifted vector MBARWeights returns.*)
+MBARESSAt[MBARWeightBasis[betaFixed,minusBetaF,conjugateExtFieldMeasurements],targetExtField];
 
 
 (* ::Item::Closed:: *)
@@ -6275,7 +6352,8 @@ Outputs a list with the following elements:,
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
 	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,essMinFraction=0.01,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
+	mbarBasis,gridSpec,metricGrid,
+	sigmaInterpolationAsn,meanInterpolationAsn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6305,9 +6383,33 @@ hMaxs=Max/@Transpose[Keys[minusbetaFAssn]];
 
 hVars=Array[h,numVars];
 
-(*Create interpolating functions from samples of MBAR data for spead*)
-PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points using MBAR for 
-	interpolation of thermodynamic metric"];
+(*Build the thermodynamic metric's interpolants from one pass over the grid.
+
+	Every quantity the metric needs at a field point -- each first moment, each second moment and
+	the effective sample size -- is a ratio of the SAME MBAR weight vector, and the expensive part
+	of that vector, the sum over the bootstrap field points, does not depend on the field point
+	being asked about at all. So the basis is built once and the grid is filled in ONE pass. This
+	used to be numVars(numVars+1)/2 + numVars + 1 separate passes -- six at two tempered
+	components -- each re-deriving the same denominators from scratch inside an interpreted Sum.
+	Derivation, cost table and verification: MBARWeights.md.
+
+	Serial by design. The pass is well under a second now, and shipping the sample matrix out to
+	the subkernels would cost more than it saves. It is also what used to leave the front end
+	sitting on an unchanging "Distributing definitions" panel for the length of the build, since
+	ParallelTable is coarse-grained and returns nothing until a whole chunk finishes.*)
+mbarBasis=MBARWeightBasis[bt,minusbetaFAssn,chartConjugateField];
+
+(*The grid is the bootstrap box widened by 20% each way but stepped at the UNwidened range over
+	numInterpolatingSamples, so it carries 1.4*numInterpolatingSamples+1 points per axis -- 29, not
+	20. The count is now reported from the iterator itself rather than as
+	numInterpolatingSamples^numVars, which understated it by a factor of 1.4^numVars.*)
+gridSpec=Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}];
+
+PrintTemporary[" Collecting ",Times@@(Length[Range@@Rest[#]]&/@gridSpec),
+	" sample points using MBAR for interpolation of thermodynamic metric"];
+
+metricGrid=gridSpec/.{y__}:>Flatten[Table[{hVars,MBARMomentsAt[mbarBasis,hVars]},y],numVars-1];
 
 
 (*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
@@ -6315,44 +6417,16 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 	legitimately negative.*)
 sigmaInterpolationAsn=<|
 	Table[
-		Table[
-			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-						(hMaxs-hMins)/numInterpolatingSamples}]
-				/.{y__}:>Join@@ParallelTable[
-					{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
-						chartConjugateField,chartConjugateField[[All,All,i]]
-						*chartConjugateField[[All,All,j]]]},y,
-						DistributedContexts->{$Context,"ECGrav`Private`"}])
-			,{i,1,j}]
+		Table[{i,j}->Interpolation[{#[[1]],#[[2,2,i,j]]}&/@metricGrid]
+		,{i,1,j}]
 	,{j,1,numVars}]|>;
 
 
-(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
-	consistent at the points where they are subtracted.*)
+(*First moments E[O_i], off the same weight vector as the second moments, so the two sets are
+	exactly consistent at the points where they are subtracted.*)
 meanInterpolationAsn=<|
-	Table[
-		i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-					(hMaxs-hMins)/numInterpolatingSamples}]
-			/.{y__}:>Join@@ParallelTable[
-				{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
-					chartConjugateField,chartConjugateField[[All,All,i]]]},y,
-					DistributedContexts->{$Context,"ECGrav`Private`"}])
+	Table[i->Interpolation[{#[[1]],#[[2,1,i]]}&/@metricGrid]
 	,{i,1,numVars}]|>;
-
-(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
-	metric at each point. The box the metric is interpolated over is the bounding box of the
-	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
-	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
-essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-			(hMaxs-hMins)/numInterpolatingSamples}]
-		/.{y__}:>Join@@ParallelTable[
-			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaFAssn,chartConjugateField]},y,
-			DistributedContexts->{$Context,"ECGrav`Private`"}]);
-
-
-sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
-meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
-essInterpolationFn=Interpolation[essInterpolationFn];
 
 (*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
 	fraction of the total so it scales with the run: a target sitting inside the sampled region
@@ -6380,7 +6454,27 @@ sigmaMat[x__?NumericQ]:=
 	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
 	-length. Weighting by the effective sample size instead would have tilted the schedule towards
 	well-sampled regions and stopped being CTL.*)
-rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+(*The effective sample size is evaluated EXACTLY here, not through an interpolant.
+
+	The cubic Interpolation this replaces was, as it happens, harmless: densityPoints below steps
+	by the same (hMaxs-hMins)/numInterpolatingSamples as the interpolation grid and merely starts
+	four steps inside it, so its points coincide with interpolation NODES to 9e-16 and rho only
+	ever asked the interpolant for values it stored exactly. Measured: 0 of 441 mask verdicts
+	differ, at every K tried. So this is not a bug fix.
+
+	It is worth doing anyway, because that correctness rests entirely on a coincidence between two
+	grid definitions written in different places, with nothing recording the dependency. Evaluated
+	anywhere OFF node -- which any change to either grid would cause -- the cubic disagrees with
+	exact ESS about the mask at about 6% of points, roughly half of them FALSE masks that punch
+	holes through the supported region, and it returns negative values at about 1%, which is
+	meaningless for a Kish count bounded below by 1. Lowering the interpolation order does not help
+	(229/4000 against the cubic's 246): the ESS surface spans two orders of magnitude across the
+	grid, so it is a resolution limit, not an interpolation-order one.
+
+	Exact costs 0.107 ms a call, and rho is asked for on the 21^numVars densityPoints grid, so the
+	whole mask is about 0.05 s. That only became affordable with MBARWeightBasis; before it a single
+	exact call was seconds, which is why the interpolant existed.*)
+rho[x__?NumericQ]:=If[MBARESSAt[mbarBasis,{x}]<essFloor,
 	0.0,
 	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
@@ -6400,8 +6494,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 
 densityPoints=
 	Thread[{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]
-		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
-							DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
+		/.{y__}:>Flatten[(Table[{hVars,rho@@hVars},y]),1];
 
 Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
@@ -6494,7 +6587,8 @@ Outputs a list with the following elements:,
 Module[
 {result,hist,minusbetaFAssn,numVars=Length[conjugateObs],hMins,hMaxs,
 	chartConjugateField,numInterpolatingSamples=20,pSoft=0.98,essMinFraction=0.01,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
+	mbarBasis,gridSpec,metricGrid,
+	sigmaInterpolationAsn,meanInterpolationAsn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,
 	samples,centers,edges,neighbors,numNeighbors,replicasDistMat,
 	replicaLabels},
 
@@ -6524,9 +6618,33 @@ hMaxs=Max/@Transpose[Keys[minusbetaFAssn]];
 
 hVars=Array[h,numVars];
 
-(*Create interpolating functions from samples of MBAR data for spead*)
-PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points using MBAR for 
-	interpolation of thermodynamic metric"];
+(*Build the thermodynamic metric's interpolants from one pass over the grid.
+
+	Every quantity the metric needs at a field point -- each first moment, each second moment and
+	the effective sample size -- is a ratio of the SAME MBAR weight vector, and the expensive part
+	of that vector, the sum over the bootstrap field points, does not depend on the field point
+	being asked about at all. So the basis is built once and the grid is filled in ONE pass. This
+	used to be numVars(numVars+1)/2 + numVars + 1 separate passes -- six at two tempered
+	components -- each re-deriving the same denominators from scratch inside an interpreted Sum.
+	Derivation, cost table and verification: MBARWeights.md.
+
+	Serial by design. The pass is well under a second now, and shipping the sample matrix out to
+	the subkernels would cost more than it saves. It is also what used to leave the front end
+	sitting on an unchanging "Distributing definitions" panel for the length of the build, since
+	ParallelTable is coarse-grained and returns nothing until a whole chunk finishes.*)
+mbarBasis=MBARWeightBasis[bt,minusbetaFAssn,chartConjugateField];
+
+(*The grid is the bootstrap box widened by 20% each way but stepped at the UNwidened range over
+	numInterpolatingSamples, so it carries 1.4*numInterpolatingSamples+1 points per axis -- 29, not
+	20. The count is now reported from the iterator itself rather than as
+	numInterpolatingSamples^numVars, which understated it by a factor of 1.4^numVars.*)
+gridSpec=Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}];
+
+PrintTemporary[" Collecting ",Times@@(Length[Range@@Rest[#]]&/@gridSpec),
+	" sample points using MBAR for interpolation of thermodynamic metric"];
+
+metricGrid=gridSpec/.{y__}:>Flatten[Table[{hVars,MBARMomentsAt[mbarBasis,hVars]},y],numVars-1];
 
 
 (*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
@@ -6534,44 +6652,16 @@ PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points us
 	legitimately negative.*)
 sigmaInterpolationAsn=<|
 	Table[
-		Table[
-			{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-						(hMaxs-hMins)/numInterpolatingSamples}]
-				/.{y__}:>Join@@ParallelTable[
-					{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
-						chartConjugateField,chartConjugateField[[All,All,i]]
-						*chartConjugateField[[All,All,j]]]},y,
-						DistributedContexts->{$Context,"ECGrav`Private`"}])
-			,{i,1,j}]
+		Table[{i,j}->Interpolation[{#[[1]],#[[2,2,i,j]]}&/@metricGrid]
+		,{i,1,j}]
 	,{j,1,numVars}]|>;
 
 
-(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
-	consistent at the points where they are subtracted.*)
+(*First moments E[O_i], off the same weight vector as the second moments, so the two sets are
+	exactly consistent at the points where they are subtracted.*)
 meanInterpolationAsn=<|
-	Table[
-		i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-					(hMaxs-hMins)/numInterpolatingSamples}]
-			/.{y__}:>Join@@ParallelTable[
-				{hVars,ExtrapolatedExpectationValue[bt,hVars,minusbetaFAssn,
-					chartConjugateField,chartConjugateField[[All,All,i]]]},y,
-					DistributedContexts->{$Context,"ECGrav`Private`"}])
+	Table[i->Interpolation[{#[[1]],#[[2,1,i]]}&/@metricGrid]
 	,{i,1,numVars}]|>;
-
-(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
-	metric at each point. The box the metric is interpolated over is the bounding box of the
-	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
-	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
-essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-			(hMaxs-hMins)/numInterpolatingSamples}]
-		/.{y__}:>Join@@ParallelTable[
-			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaFAssn,chartConjugateField]},y,
-			DistributedContexts->{$Context,"ECGrav`Private`"}]);
-
-
-sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
-meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
-essInterpolationFn=Interpolation[essInterpolationFn];
 
 (*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
 	fraction of the total so it scales with the run: a target sitting inside the sampled region
@@ -6599,7 +6689,27 @@ sigmaMat[x__?NumericQ]:=
 	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
 	-length. Weighting by the effective sample size instead would have tilted the schedule towards
 	well-sampled regions and stopped being CTL.*)
-rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+(*The effective sample size is evaluated EXACTLY here, not through an interpolant.
+
+	The cubic Interpolation this replaces was, as it happens, harmless: densityPoints below steps
+	by the same (hMaxs-hMins)/numInterpolatingSamples as the interpolation grid and merely starts
+	four steps inside it, so its points coincide with interpolation NODES to 9e-16 and rho only
+	ever asked the interpolant for values it stored exactly. Measured: 0 of 441 mask verdicts
+	differ, at every K tried. So this is not a bug fix.
+
+	It is worth doing anyway, because that correctness rests entirely on a coincidence between two
+	grid definitions written in different places, with nothing recording the dependency. Evaluated
+	anywhere OFF node -- which any change to either grid would cause -- the cubic disagrees with
+	exact ESS about the mask at about 6% of points, roughly half of them FALSE masks that punch
+	holes through the supported region, and it returns negative values at about 1%, which is
+	meaningless for a Kish count bounded below by 1. Lowering the interpolation order does not help
+	(229/4000 against the cubic's 246): the ESS surface spans two orders of magnitude across the
+	grid, so it is a resolution limit, not an interpolation-order one.
+
+	Exact costs 0.107 ms a call, and rho is asked for on the 21^numVars densityPoints grid, so the
+	whole mask is about 0.05 s. That only became affordable with MBARWeightBasis; before it a single
+	exact call was seconds, which is why the interpolant existed.*)
+rho[x__?NumericQ]:=If[MBARESSAt[mbarBasis,{x}]<essFloor,
 	0.0,
 	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
@@ -6619,8 +6729,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 
 densityPoints=
 	Thread[{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]
-		/.{y__}:>Flatten[(ParallelTable[{hVars,rho@@hVars},y,
-							DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
+		/.{y__}:>Flatten[(Table[{hVars,rho@@hVars},y]),1];
 
 Print[" rho = Sqrt[det[g]] plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
@@ -6707,7 +6816,8 @@ Outputs the external field schedule (a list containing the external field values
 	edge list for swaps, and an association matching external field values to edge labels).*)
 
 Module[{result,numVars=Length[hMins],numInterpolatingSamples=20,pSoft=0.96,essMinFraction=0.01,h,hVars,
-	sigmaInterpolationAsn,meanInterpolationAsn,essInterpolationFn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
+	mbarBasis,gridSpec,metricGrid,
+	sigmaInterpolationAsn,meanInterpolationAsn,essFloor,sigmaMat,metricDistance,rho,densityPoints,dist,samples,
 	centers,edges,swapGraph,neighbors,numNeighbors,replicasDistMat,replicaLabels},
 
 
@@ -6721,53 +6831,50 @@ PrintTemporary[" Running GraphCTLScheduler for multiple external fields with inp
 hVars=Array[h,numVars];
 
 
-(*Create interpolating functions from samples of MBAR data for spead*)
-PrintTemporary[" Collecting ",numInterpolatingSamples^numVars," sample points using MBAR for 
-	interpolation of Fisher matrix"];
+(*Build the thermodynamic metric's interpolants from one pass over the grid.
+
+	Every quantity the metric needs at a field point -- each first moment, each second moment and
+	the effective sample size -- is a ratio of the SAME MBAR weight vector, and the expensive part
+	of that vector, the sum over the bootstrap field points, does not depend on the field point
+	being asked about at all. So the basis is built once and the grid is filled in ONE pass. This
+	used to be numVars(numVars+1)/2 + numVars + 1 separate passes -- six at two tempered
+	components -- each re-deriving the same denominators from scratch inside an interpreted Sum.
+	Derivation, cost table and verification: MBARWeights.md.
+
+	Serial by design. The pass is well under a second now, and shipping the sample matrix out to
+	the subkernels would cost more than it saves. It is also what used to leave the front end
+	sitting on an unchanging "Distributing definitions" panel for the length of the build, since
+	ParallelTable is coarse-grained and returns nothing until a whole chunk finishes.*)
+mbarBasis=MBARWeightBasis[bt,minusbetaF,conjugateFieldMeasurements];
+
+(*The grid is the bootstrap box widened by 20% each way but stepped at the UNwidened range over
+	numInterpolatingSamples, so it carries 1.4*numInterpolatingSamples+1 points per axis -- 29, not
+	20. The count is now reported from the iterator itself rather than as
+	numInterpolatingSamples^numVars, which understated it by a factor of 1.4^numVars.*)
+gridSpec=Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
+			(hMaxs-hMins)/numInterpolatingSamples}];
+
+PrintTemporary[" Collecting ",Times@@(Length[Range@@Rest[#]]&/@gridSpec),
+	" sample points using MBAR for interpolation of Fisher matrix"];
+
+metricGrid=gridSpec/.{y__}:>Flatten[Table[{hVars,MBARMomentsAt[mbarBasis,hVars]},y],numVars-1];
 
 
 (*Second moments E[O_i O_j]. Deliberately NOT floored at zero: the covariance is formed from
 	these in CTLMetricFromMoments, and a cross moment between anti-correlated observables is
 	legitimately negative.*)
 sigmaInterpolationAsn=<|
-Table[
 	Table[
-		{i,j}->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
-			/.{y__}:>Join@@ParallelTable[
-					{hVars, ExtrapolatedExpectationValue[bt,hVars,
-							minusbetaF,conjugateFieldMeasurements,conjugateFieldMeasurements[[All,All,i]]
-							*conjugateFieldMeasurements[[All,All,j]]]},y,
-							DistributedContexts->{$Context,"ECGrav`Private`"}])
+		Table[{i,j}->Interpolation[{#[[1]],#[[2,2,i,j]]}&/@metricGrid]
 		,{i,1,j}]
-,{j,1,numVars}]|>;
+	,{j,1,numVars}]|>;
 
 
-(*First moments E[O_i], over the same grid and through the same MBAR call, so the two sets are
-	consistent at the points where they are subtracted.*)
+(*First moments E[O_i], off the same weight vector as the second moments, so the two sets are
+	exactly consistent at the points where they are subtracted.*)
 meanInterpolationAsn=<|
-Table[
-	i->(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),(hMaxs-hMins)/numInterpolatingSamples}]
-		/.{y__}:>Join@@ParallelTable[
-				{hVars, ExtrapolatedExpectationValue[bt,hVars,
-						minusbetaF,conjugateFieldMeasurements,
-						conjugateFieldMeasurements[[All,All,i]]]},y,
-						DistributedContexts->{$Context,"ECGrav`Private`"}])
-,{i,1,numVars}]|>;
-
-(*Effective sample size over the same grid: how much bootstrap data actually stands behind the
-	metric at each point. The box the metric is interpolated over is the bounding box of the
-	bootstrap field table, which is not the region the bootstrap run covered; masking the replica
-	density with this is what keeps replicas out of the parts of the box nothing was sampled in.*)
-essInterpolationFn=(Thread[{hVars,(hMins-0.2*Abs[hMaxs-hMins]),(hMaxs+0.2*Abs[hMaxs-hMins]),
-			(hMaxs-hMins)/numInterpolatingSamples}]
-		/.{y__}:>Join@@ParallelTable[
-			{hVars,MBAREffectiveSampleSize[bt,hVars,minusbetaF,conjugateFieldMeasurements]},y,
-			DistributedContexts->{$Context,"ECGrav`Private`"}]);
-
-
-sigmaInterpolationAsn=Interpolation/@sigmaInterpolationAsn;
-meanInterpolationAsn=Interpolation/@meanInterpolationAsn;
-essInterpolationFn=Interpolation[essInterpolationFn];
+	Table[i->Interpolation[{#[[1]],#[[2,1,i]]}&/@metricGrid]
+	,{i,1,numVars}]|>;
 
 (*A point backed by fewer than this many effective samples is not an estimate. Expressed as a
 	fraction of the total so it scales with the run: a target sitting inside the sampled region
@@ -6794,7 +6901,27 @@ sigmaMat[x__?NumericQ]:=
 	density stays exactly sqrt(det g)^pSoft, which is what makes the spacing constant-thermodynamic
 	-length. Weighting by the effective sample size instead would have tilted the schedule towards
 	well-sampled regions and stopped being CTL.*)
-rho[x__?NumericQ]:=If[essInterpolationFn[x]<essFloor,
+(*The effective sample size is evaluated EXACTLY here, not through an interpolant.
+
+	The cubic Interpolation this replaces was, as it happens, harmless: densityPoints below steps
+	by the same (hMaxs-hMins)/numInterpolatingSamples as the interpolation grid and merely starts
+	four steps inside it, so its points coincide with interpolation NODES to 9e-16 and rho only
+	ever asked the interpolant for values it stored exactly. Measured: 0 of 441 mask verdicts
+	differ, at every K tried. So this is not a bug fix.
+
+	It is worth doing anyway, because that correctness rests entirely on a coincidence between two
+	grid definitions written in different places, with nothing recording the dependency. Evaluated
+	anywhere OFF node -- which any change to either grid would cause -- the cubic disagrees with
+	exact ESS about the mask at about 6% of points, roughly half of them FALSE masks that punch
+	holes through the supported region, and it returns negative values at about 1%, which is
+	meaningless for a Kish count bounded below by 1. Lowering the interpolation order does not help
+	(229/4000 against the cubic's 246): the ESS surface spans two orders of magnitude across the
+	grid, so it is a resolution limit, not an interpolation-order one.
+
+	Exact costs 0.107 ms a call, and rho is asked for on the 21^numVars densityPoints grid, so the
+	whole mask is about 0.05 s. That only became affordable with MBARWeightBasis; before it a single
+	exact call was seconds, which is why the interpolant existed.*)
+rho[x__?NumericQ]:=If[MBARESSAt[mbarBasis,{x}]<essFloor,
 	0.0,
 	(Sqrt[Max[Det[sigmaMat[x]],0.0]])^(pSoft)];
 
@@ -6812,7 +6939,7 @@ PrintTemporary["Sampling thermodynamic density..."];
 
 densityPoints=Thread[
 	{hVars,hMins,hMaxs,(hMaxs-hMins)/20}]/.{y__}:>Flatten[
-		(ParallelTable[{hVars,rho@@hVars},y,DistributedContexts->{$Context,"ECGrav`Private`"}]),1];
+		(Table[{hVars,rho@@hVars},y]),1];
 
 Print[" rho = Sqrt[det[g]] Plot ",ListPlot3D[Flatten/@densityPoints,Mesh->All]];
 (*Print[" densityPoints ListPlot ",ListPointPlot3D[Flatten/@densityPoints]];*)
