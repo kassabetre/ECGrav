@@ -1,4 +1,8 @@
 .DS_Store
+
+# Rendered copies of the .md specifications; the .md files are the source of truth.
+*.pdf
+
 build/*
 !build/ECGrav-1.10.1.paclet
 .claude/settings.local.json
