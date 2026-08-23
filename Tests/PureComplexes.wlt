@@ -259,7 +259,7 @@ VerificationTest[
     TestID -> "NumFacetLabeledPureComplexes-stirling-identity"
 ];
 
-(* Cost is essentially independent of M, which enters only as an exponent; this 92-digit value
+(* Cost is essentially independent of M, which enters only as an exponent; this 93-digit value
    is the notebook's sF[3,10,50] and returns in milliseconds. *)
 VerificationTest[
     ECGrav`NumFacetLabeledPureComplexes[3, 50, 10],

@@ -26,9 +26,10 @@ ECGrav provides two complementary toolkits:
 For the mathematics of the model — the energy functionals, observables, and
 statistical mechanics, plus background on the emergent-gravity motivation — see
 **[Theory.md](Theory.md)**. The exact samplers and counters over pure complexes have
-their own specifications: **[FacetLabeledSampler.md](FacetLabeledSampler.md)**,
-**[UnlabeledSampler.md](UnlabeledSampler.md)**, and
-**[UnlabeledCount.md](UnlabeledCount.md)**.
+their own specifications: **[FacetLabeledCount.md](FacetLabeledCount.md)**,
+**[FacetLabeledSampler.md](FacetLabeledSampler.md)**,
+**[UnlabeledCount.md](UnlabeledCount.md)**, and
+**[UnlabeledSampler.md](UnlabeledSampler.md)**.
 
 Running parallel tempering over inverse temperature **and** an external field at the same time
 needs no new machinery — the shipped multi-field path does it once the hamiltonian is written in
