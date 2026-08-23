@@ -6,6 +6,65 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-08-22
+
+### Changed
+- **The CTL thermodynamic metric is rebuilt from one shared MBAR weight vector.** Building it was
+  the dominant cost of a multi-field `GraphCTLSchedule`, and it grew as the *square* of the
+  bootstrap table: a few seconds with one external field, over seven hours with two. It is now a
+  fraction of a second. Three reductions, all of the same observation — writing `D_s(x)` for the
+  log MBAR denominator of sample `s` at target field `x`, every one of
+  `NegativeBetaTimesFreeEnergy`, `ExtrapolatedExpectationValue` and `MBAREffectiveSampleSize` is
+  built from that one vector.
+
+  The free energy **cancels**: an expectation value is `(v.u)/Total[u]` with `u_s = Exp[-D_s]`, an
+  ordinary weighted mean, so the free energy was only ever the normaliser and divides back out. It
+  is no longer computed. The weight vector does not depend on which observable is averaged against
+  it, so the six interpolation grids at two tempered components collapse to **one pass**. And
+  `D_s(x) = beta x.O_s + Log[Sum_j Exp[Log[n_j] - F_j - beta h_j.O_s]]`, whose second term — the
+  only part quadratic in the bootstrap table — carries no `x` and is therefore hoisted out of the
+  grid entirely.
+
+  Measured against 1.10.1, same fixture, same code path, serial: 24.18 s -> 0.072 s at K=16,N=120;
+  767.50 s -> 1.215 s at K=100,N=100. **The schedules are unchanged**; this is an algebraic
+  identity, verified to 2e-14 against the form it replaces, on targets inside and far outside the
+  sampled box. Full derivation, cost tables and implementation map in `MBARWeights.md`.
+- **The MBAR weights are formed in log space with a maximum shift.** `ExtrapolatedExpectationValue`
+  divided by raw denominators and emitted `General::munfl` under extrapolation — which is the
+  regime the interpolation box is built for. Every output is a ratio of the weights, so they can be
+  rescaled freely.
+- **The metric grid is filled serially.** The pass is now sub-second, so distributing the sample
+  matrix to subkernels costs more than it saves. It was `ParallelTable`'s coarse-grained chunking
+  that left the front end sitting on an unchanging "Distributing definitions" panel for the length
+  of a build.
+- **The grid-size message reports the real count.** It claimed `numInterpolatingSamples^numVars`
+  = 400; the box is widened 20% each way at the unwidened step, so the grid is 29^numVars = 841.
+
+### Removed
+- **The effective-sample-size interpolant.** `rho` now evaluates the MBAR effective sample size
+  exactly, which costs 0.107 ms and only became affordable with the shared weight basis. **No
+  schedule changes** — `densityPoints` steps by the same increment as the interpolation grid and
+  starts four steps inside it, so its points coincided with interpolation *nodes* and the
+  interpolant was only ever asked for values it stored exactly (0 of 441 mask verdicts differ, at
+  every bootstrap size tried). It goes because that correctness rested on an unrecorded coincidence
+  between two grid definitions; evaluated off-node the interpolant disagrees about the mask at ~6%
+  of points and returns negative values, meaningless for a count bounded below by 1.
+
+### Documentation
+- **`MBARWeights.md`** — the algebra above, the reference implementation, the cost and verification
+  tables, and the implementation map.
+- **`HomogeneousHamiltonian.md`** — how to temper in inverse temperature *and* an external field at
+  once using only the shipped API, by writing the hamiltonian in homogeneous form so that beta
+  becomes one of the tempered couplings. Includes the units caveat, which is the part most easily
+  missed: recorded energies become `c.O = beta*H_phys`, meaningless to compare across replicas once
+  beta varies.
+- **`FacetLabeledCount.md`** — the specification of `NumFacetLabeledPureComplexes`, the last of the
+  four pure-complex counters and samplers without one. Every numeric claim in it was checked
+  against the shipped code.
+- The pure-complex specification line anchors are refreshed, and `UnlabeledCount.md` §2.1 now gives
+  a `p = 2` counterexample for the non-faithfulness of the `Aut` action, where the old text gave a
+  `p = 3` one next to a claim that the kernel appears only from `p >= 3`.
+
 ## [1.10.1] - 2026-08-19
 
 ### Tests
@@ -1024,7 +1083,10 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.9.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.0
+[1.10.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.10.1
+[1.10.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.10.0
 [1.9.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.9.1
 [1.9.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.9.0
 [1.8.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.8.1
