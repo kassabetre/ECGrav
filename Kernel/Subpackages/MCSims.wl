@@ -7917,8 +7917,19 @@ Module[{result,groundStates,histories,maxGStateCount=500,replicas,numRep,
 	minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In a
+	schedule-driven run the callbacks' parameters are the REPLICA LABEL, not hparams: the driver
+	applies the head to a replica's field label (Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]])
+	and hparams is empty, so probing with hparams would demand an arity the callback is not written
+	for and reject a perfectly good h[am_List,field_Real].
+
+	This is a THIRD calling convention, alongside hparams (the beta-tempering overloads) and the
+	field table (GraphMultiHistogram and GraphCTLSchedule). The 1.8.1 fix covered the other two and
+	missed this one, so the bug survived there. replicaSwapEdgesLabels[[2,1]] is the first replica's
+	label positionally, matching how the continue-from-replicas overloads read
+	inputReplicas[[1,"externalField"]].*)
+If[!(HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@replicaSwapEdgesLabels[[2,1]]]
+		&&DelHUsableQ[seedGraph,delH,Sequence@@replicaSwapEdgesLabels[[2,1]]]),Return[$Failed]];
 
 
 groundStates=<||>;
@@ -8216,8 +8227,18 @@ Module[{result,groundStates,histories,maxGStateCount=500,replicas,numRep,
 	minStates,candminE,measurements,numsweeps,Tempoutput,
 	ChooseRandomIndependentEdgeSet,Swap,printCase,repNumSweeps,chart},
 
-(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham.*)
-If[!HamiltonianUsableQ[seedGraph,hamiltonian,hparams],Return[$Failed]];
+(*Energy callbacks are checked once here, not mid-sweep; see ECGrav::badham. In a
+	schedule-driven run the callbacks' parameters are the REPLICA LABEL, not hparams: the driver
+	applies the head to a replica's field label (Apply[hamiltonian,replicaSwapEdgesLabels[[2,Key[i]]]])
+	and hparams is empty, so probing with hparams would demand an arity the callback is not written
+	for and reject a perfectly good h[am_List,field_Real].
+
+	This is a THIRD calling convention, alongside hparams (the beta-tempering overloads) and the
+	field table (GraphMultiHistogram and GraphCTLSchedule). The 1.8.1 fix covered the other two and
+	missed this one, so the bug survived there. replicaSwapEdgesLabels[[2,1]] is the first replica's
+	label positionally, matching how the continue-from-replicas overloads read
+	inputReplicas[[1,"externalField"]].*)
+If[!HamiltonianUsableQ[seedGraph,hamiltonian,Sequence@@replicaSwapEdgesLabels[[2,1]]],Return[$Failed]];
 
 
 groundStates=<||>;

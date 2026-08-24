@@ -788,6 +788,51 @@ VerificationTest[
     TestID -> "EnergyCallbackProbe-external-field-arity"
 ];
 
+(* Regression: the SAME arity bug survived 1.8.1 in the two schedule-driven
+   GraphParallelTempering overloads (MCSims.wl:7880 with delH, 8178 without).
+
+   Those drivers take the callback parameters from a replica's field LABEL --
+   Apply[hamiltonian, replicaSwapEdgesLabels[[2,Key[i]]]] -- which is a third calling
+   convention alongside hparams (beta tempering) and the field table (GraphMultiHistogram,
+   GraphCTLSchedule). 1.8.1 fixed the other two and left these probing hparams, which is
+   empty when the hamiltonian is passed as h[]. Feeding a schedule straight from
+   GraphCTLSchedule -- GraphParallelTempering[seed, bt, h[], dH[], sched[[2;;3]], ...] --
+   therefore returned $Failed with ECGrav::badham before doing any work.
+
+   Pinned at the CALL SITE, not at the probe, which is exactly what
+   EnergyCallbackProbe-external-field-arity above does NOT cover: that test proves the probe
+   behaves correctly given the right arguments, and this one proves the driver hands it the
+   right arguments. Stubbing the two probes lets the gate fail deliberately, so the driver
+   returns before equilibrating -- seconds instead of minutes. The assertion is that the
+   field value -0.5 reaches the probe at all; with the bug the probe sees only {graph, head}
+   and both entries come back False, so this cannot pass vacuously. *)
+VerificationTest[
+    Module[{hF, dHF, seed = Normal[AdjacencyMatrix[CompleteGraph[5]]], sched, withDelH, noDelH},
+        hF[a_List, f_Real] := ECGrav`HIsing[a, -1.0, 0.0] + f*Total[a, 2];
+        dHF[a_List, f_Real, i_Integer, j_Integer] := 1.0;
+        sched = {{1 \[UndirectedEdge] 2}, <|1 -> {-0.5}, 2 -> {0.5}|>};
+
+        (* ham -> True so delH is reached; delH -> False so the gate fails and the driver
+           returns immediately *)
+        withDelH = Reap[Block[{
+              ECGrav`Private`HamiltonianUsableQ = (Sow[{##}]; True) &,
+              ECGrav`Private`DelHUsableQ = (Sow[{##}]; False) &},
+            Quiet[ECGrav`GraphParallelTempering[seed, 1.0, hF[], dHF[], sched,
+              {ECGrav`EulerChi[#] &}, {ECGrav`EulerChi[#] &}, 1, 0, 1000.0]]]][[2]];
+
+        (* the no-delH overload probes only the hamiltonian, so that stub must fail the gate *)
+        noDelH = Reap[Block[{
+              ECGrav`Private`HamiltonianUsableQ = (Sow[{##}]; False) &},
+            Quiet[ECGrav`GraphParallelTempering[seed, 1.0, hF[], sched,
+              {ECGrav`EulerChi[#] &}, {ECGrav`EulerChi[#] &}, 1, 0, 1000.0]]]][[2]];
+
+        {MemberQ[Flatten[withDelH], -0.5],   (* hamiltonian probe got the label *)
+         Count[Flatten[withDelH], -0.5] >= 2, (* delH probe got it too          *)
+         MemberQ[Flatten[noDelH], -0.5]}],
+    {True, True, True},
+    TestID -> "EnergyCallbackProbe-schedule-driven-uses-replica-label"
+];
+
 
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
