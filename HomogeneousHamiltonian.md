@@ -225,7 +225,8 @@ The two runs accept and reject the same moves in the same order and end on the s
 
 **This is the one thing that is genuinely different, and it is easy to miss.** Everything the
 drivers record as an energy — `"energy"`, `minEnergy`, `minEstates`, `minEToBeat` — is now
-$c\cdot O = \beta H_{\text{phys}}$, not $H_{\text{phys}}$.
+$c\cdot O = \beta H_{\text{phys}}$, not $H_{\text{phys}}$. The same $\beta$ rides along in the free
+energy, where it is easier to miss because there it leaves the number itself untouched.
 
 Consequences:
 
@@ -235,7 +236,30 @@ Consequences:
    numerically much lower energy for the *same physical state*. Do not compare `minEnergy`
    between rungs, and do not compare it against physical reference values such as the
    ground-state energies used for validating manifold runs.
-3. **Chart column 5 becomes identically zero.** That column is
+3. **The free energy is the one quantity whose *value* does not change — which is exactly why it
+   is easy to misread.** `minusBetaF`, and everything `NegativeBetaTimesFreeEnergy` and
+   `ComputeMinusBetaTimesFreeEnergy` return, is $\log Z$; and
+
+   $$Z \;=\; \sum_s e^{-\beta H_{\text{phys}}(s)} \;=\; \sum_s e^{-1 \cdot c \cdot O(s)}$$
+
+   is literally the same sum in both parameterisations, because $c\cdot O$ has already absorbed
+   $\beta$ and `bt = 1` multiplies it by one. Structurally the same thing happens inside MBAR: the
+   reweighting exponent `betaFixed*(target - h_j).O` contracts to $\beta\,\Delta n_{t0}\,O_1$ along
+   a fixed-$\beta$ slice, since $c^* - c_j = (0,\ \beta\,\Delta n_{t0})$ there. Verified on
+   identical samples: the two forms agree to $3.6\times10^{-15}$ across six target fields, and
+   `ComputeMinusBetaTimesFreeEnergy` to $8.9\times10^{-16}$.
+
+   **The trap is the factor of $\beta$, not the number.** Because the driver is called with
+   `bt = 1`, reading the result as $-F$ yields $\beta F$. It is $-\beta F_{\text{phys}}$ with
+   $\beta = c_0$, so **divide by $c_0$**. At $\beta = 1.7$, $n_{t0} = 0.4$ the returned value is
+   $18.2714$, giving $F_{\text{phys}} = -18.2714/1.7 = -10.7479$; reading it as $-F$ would give
+   $-18.2714$.
+
+   Unlike an energy, this one **is** comparable across replicas once divided, because $\log Z$ is
+   parameterisation-independent. That is what makes moving $c_0$ — extrapolating in $\beta$ — a
+   meaningful thing to ask MBAR for at all, and it is the capability the fixed-$\beta$ path
+   structurally cannot offer.
+4. **Chart column 5 becomes identically zero.** That column is
    `energy - field.conjObs`, the field-independent part, and in homogeneous form there is no
    field-independent part. The reconstruction `E(g) = col5 + g*triangles` therefore degenerates.
 
@@ -273,6 +297,175 @@ which is $\beta$-independent and valid at *any* field value, not just the one sa
    acceptance between neighbours, which is necessary and not sufficient. What matters is whether
    configurations actually travel from the hot end to the cold end and back. A healthy swap rate
    with no round trips means the cold replica is still frozen.
+
+5. **Read continuous surfaces out of `hist`.** MBAR turns the bootstrap run into a smooth function
+   of $(\beta, n_{t0})$ for the free energy, the internal energy, or any observable measured along
+   the way. See §7.1–§7.4.
+
+### 7.1 Continuous surfaces in $(\beta, n_{t0})$
+
+`hist` is the second element of the `GraphCTLSchedule` return, and is itself a four-element list;
+the association you want is `hist[[2]]`, keyed by the field vector $c$. Its `"data"` rows are built
+by `Sow` at `MCSims.wl:4999` **without** `Flatten`, so a row has six entries, two of them sublists:
+
+| col | contents |
+| --- | --- |
+| 1 | sweep number |
+| 2 | the field vector $c$ — also the chart key |
+| 3 | energy, $= c\cdot O$ |
+| 4 | `Through[conjugateObs[…]]` — the $O$ vector |
+| 5 | `energy - field.conjObs` — identically zero in homogeneous form (§6) |
+| 6 | `Through[obs[…]]` — the observable list, in the order given to the driver |
+
+Everything below starts from these four lines:
+
+```wl
+h    = res[[2]];
+bt   = N@First[Values[h[[2, All, "beta"]]]];   (* 1.0 in homogeneous form *)
+mbf  = h[[2, All, "minusBetaF"]];              (* c -> Log[Z]             *)
+conj = h[[2, All, "data", All, 4]];            (* c -> list of O-vectors  *)
+```
+
+Column 4 always supplies the reweighting; only the *values being averaged* change between §7.2–7.4.
+Four rules apply to all of them.
+
+**Guard every plotting function with `?NumericQ`.** `ContourPlot` probes symbolically first, and
+`{b, b*nt}` still matches `targetExtField_List` with symbols in it — so MBAR builds the entire
+double sum symbolically. Measured at $K=16$, $N=150$: a `Plus` expression of **LeafCount 69 184 811**.
+With the guard the call simply stays unevaluated and the plotter moves on.
+
+**Keep `bt` Real.** The pattern is `betaFixed_Real`; an integer `1` falls through to the catch-all
+and returns `$Failed`.
+
+**Hoist the basis for anything dense.** The public entry points rebuild the MBAR basis on every
+call, which is the expensive part:
+
+```wl
+basis = ECGrav`Private`MBARWeightBasis[bt, mbf, conj];
+```
+
+Results are identical; measured per evaluation at $K = 16$: 0.53 ms → 0.097 ms for the free energy,
+2.96 ms → 0.31 ms for an observable. The gap widens with $K$, since the basis build is the
+$O(SK)$ part. Rebuild `basis` if `mbf` or `conj` change.
+
+**Flatten value vectors in the basis's key order** — `Join @@ Lookup[vals, Key /@ Keys[mbf]]`, never
+`Values[vals]`. The basis stacked its samples in `Keys[mbf]` order and the value vector must match
+row for row. A mismatch raises no error and simply returns a different number: on one fixture 40.275
+became 59.809. In practice the orders coincide, but any `KeySort`, `Select` or hand-rebuilt
+association between extraction and use breaks it silently.
+
+**Mask outside the sampled region.** In $(\beta, n_{t0})$ coordinates a `cTable[betas, nt0s]` is an
+`Outer`, so the bootstrap points form a **rectangle** — which is the reason to plot in these
+coordinates rather than in $c$, where the same set is a fan through the origin. Set the plot ranges
+to that rectangle, or mask:
+
+```wl
+floor = 0.5*Mean[Length /@ conj];
+masked[b_?NumericQ, nt_?NumericQ] :=
+  With[{u = First[ECGrav`Private`MBARWeights[basis, N[{b, b*nt}]]]},
+    If[Total[u]^2/Total[u^2] < floor, Indeterminate, (* the quantity *) ]]
+```
+
+`Indeterminate` leaves those regions blank rather than drawing invented contours. The floor here is
+half a replica's worth of samples rather than the schedule builder's `0.01*K*N`, which drifts with
+the size of the bootstrap table.
+
+### 7.2 Free energy
+
+```wl
+logZ[b_?NumericQ, nt_?NumericQ] :=
+  With[{uw = ECGrav`Private`MBARWeights[basis, N[{b, b*nt}]]},
+       Last[uw] + Log[Total[First[uw]]]]
+```
+
+or `NegativeBetaTimesFreeEnergy[bt, N[{b, b*nt}], mbf, conj]` through the public API — the two agree
+to 0. Per §6 item 3 this is $\log Z = -\beta F_{\text{phys}}$, so choose deliberately:
+
+```wl
+logZ[b, nt]        (* -beta F_phys — what the function returns *)
+-logZ[b, nt]/b     (* F_phys       — the physical free energy  *)
+-logZ[b, nt]       (* beta F_phys  — dimensionless             *)
+```
+
+Raw $\log Z$ grows fast enough in $\beta$ that its contours mostly show the $\beta$ direction;
+$F_{\text{phys}}$ or $\beta F$ usually reads better.
+
+### 7.3 Internal energy
+
+**The observable moves with the plot coordinate.** $H_{\text{phys}}(n_{t0}) = O_0 + n_{t0}O_1$, so
+there is no single energy list to reweight. Take both first moments at the target and combine:
+
+$$\langle E_{\text{phys}}\rangle(\beta, n_{t0}) \;=\; \langle O_0\rangle_c + n_{t0}\,\langle O_1\rangle_c,
+\qquad c = (\beta,\ \beta n_{t0})$$
+
+```wl
+moments[b_?NumericQ, nt_?NumericQ] := ECGrav`Private`MBARMomentsAt[basis, N[{b, b*nt}]];
+Ephys[b_?NumericQ, nt_?NumericQ]   := First[moments[b, nt]] . {1, nt};   (* <E_phys> *)
+Ehom[b_?NumericQ, nt_?NumericQ]    := b * Ephys[b, nt];                  (* <c.O>    *)
+```
+
+`MBARMomentsAt` returns `{meanVector, secondMomentMatrix, ESS}`, so both moments come from one
+weight vector. The public equivalent — note the trailing `+`, since a line beginning `+nt*…` parses
+as a new expression and silently yields only $\langle O_0\rangle$:
+
+```wl
+Ephys[b_?NumericQ, nt_?NumericQ] :=
+  ExtrapolatedExpectationValue[bt, N[{b, b*nt}], mbf, conj, conj[[All, All, 1]]] +
+  nt * ExtrapolatedExpectationValue[bt, N[{b, b*nt}], mbf, conj, conj[[All, All, 2]]];
+```
+
+**The trap.** Freezing the observable at the bootstrap $n_{t0}$ and reweighting it is correct only
+at that $n_{t0}$ — which is what makes a spot check pass:
+
+| $(\beta, n_{t0})$ | correct | frozen at $n_{t0}=0.4$ | exact |
+| --- | --- | --- | --- |
+| $(1.5, -1.0)$ | $-15.126$ | $+0.799$ | $-15.000$ |
+| $(1.5, 0.4)$ | $-9.956$ | $-9.956$ | $-9.960$ |
+| $(1.5, 1.1)$ | $-27.116$ | $-15.239$ | $-27.285$ |
+
+Chart column 5 is no use either — it is identically zero here (§6).
+
+**Free cross-check.** $\langle E_{\text{phys}}\rangle = -\partial \log Z/\partial\beta$ at fixed
+$n_{t0}$, the textbook identity. Central-differencing §7.2's surface reproduces this recipe to
+$10^{-11}$, which validates the coordinate change, the units and the extraction at once.
+
+**Heat capacity** comes from the same call, since the second moments are already there:
+
+```wl
+Cv[b_?NumericQ, nt_?NumericQ] := Module[{m = moments[b, nt], v = {1, nt}},
+  b^2 * (v . (m[[2]] - Outer[Times, m[[1]], m[[1]]]) . v)]   (* C/kB *)
+```
+
+### 7.4 Any observable from the `obs` list
+
+Simpler than the energy, because an entry of `obs` is a plain function of the graph and does not
+depend on $n_{t0}$. Take column 6 and index into the list — `1` for the first `obs` entry:
+
+```wl
+chi = h[[2, All, "data", All, 6, 1]];      (* e.g. obs = {EulerChi[#]&, ...} *)
+
+chiOf[b_?NumericQ, nt_?NumericQ] :=
+  ExtrapolatedExpectationValue[bt, N[{b, b*nt}], mbf, conj, chi]
+```
+
+MBAR reweighting is observable-agnostic: the conjugate observables set the weights, and any measured
+quantity can be averaged against them. With the basis hoisted:
+
+```wl
+chiFlat = N[Join @@ Lookup[chi, Key /@ Keys[mbf]]];
+chiFast[b_?NumericQ, nt_?NumericQ] := ECGrav`Private`MBARWeightedMean[
+  First[ECGrav`Private`MBARWeights[basis, N[{b, b*nt}]]], chiFlat]
+```
+
+Fluctuations follow by passing `chiFlat^2` as a second value vector against the same weights. Note
+this is **not** a susceptibility — an entry of `obs` is not conjugate to either field, so its
+variance does not enter the CTL metric and carries no fluctuation–response interpretation.
+
+> **A flat surface may be telling you something.** `EulerChi` is integer-valued and often barely
+> moves along a run. If it does not, the reweighted surface is flat because the *chain* did not
+> explore, not because the observable is genuinely constant — and that is the same condition that
+> raises `GraphComputeCorrelationTime::stuck`. Read the run's messages before interpreting a
+> featureless plot.
 
 ## 8. Practical limits
 
