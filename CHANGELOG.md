@@ -6,6 +6,40 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-08-23
+
+### Fixed
+- **`GraphParallelTempering` rejected correct hamiltonians when handed a schedule from
+  `GraphCTLSchedule`.** Its two schedule-driven overloads (`MCSims.wl:7880` with `delH`, `8178`
+  without) returned `$Failed` with `ECGrav::badham` before doing any work, so
+
+  ```wl
+  GraphParallelTempering[seed, bt, h[], dH[], sched[[2 ;; 3]], conjObs, obs, NN, unlabeled, minE]
+  ```
+
+  failed every time with the `h[am_List, f_Real]` form those drivers require.
+
+  This is the 1.8.1 bug in two sites that fix did not reach. These drivers take the callback
+  parameters from a replica's field **label** — `Apply[hamiltonian,
+  replicaSwapEdgesLabels[[2, Key[i]]]]` — which is a *third* calling convention alongside
+  `hparams` (beta tempering) and the field table (`GraphMultiHistogram`, `GraphCTLSchedule`).
+  1.8.1 fixed the other two. With the hamiltonian passed as `h[]`, `hparams` is empty, so the
+  probe evaluated `h[graph]`, which does not match `h[am_List, f_Real]` and comes back
+  unevaluated. Both gates now probe with `Sequence@@replicaSwapEdgesLabels[[2,1]]`, matching how
+  the continue-from-replicas overloads already read `inputReplicas[[1,"externalField"]]`.
+
+  All 24 gate sites were audited against how their own driver invokes the callbacks; exactly these
+  two disagreed.
+
+### Tests
+- **The callback gate is now pinned at the call site, not only at the probe.**
+  `EnergyCallbackProbe-external-field-arity` checks that the probe behaves correctly *given* the
+  right arguments — deliberately, since the drivers equilibrate before returning — and that is the
+  gap this bug fell through: nothing checked that a driver *hands* it the right arguments. The new
+  test stubs both probes so the gate fails on purpose and the driver returns before equilibrating,
+  then asserts the field value reached the probe. Against the unfixed code all three of its legs
+  return `False`.
+
 ## [1.11.0] - 2026-08-22
 
 ### Changed
@@ -1083,7 +1117,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.11.1...HEAD
+[1.11.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.1
 [1.11.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.0
 [1.10.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.10.1
 [1.10.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.10.0
