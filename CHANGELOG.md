@@ -6,6 +6,48 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-08-24
+
+### Changed
+- **The MBAR free-energy solve is rebuilt on one shared matrix.** `ComputeMinusBetaTimesFreeEnergy`
+  is the self-consistency iteration that *produces* the `minusBetaF` every other MBAR routine
+  consumes, and it was the most expensive thing left in the package: `O(K^3 N)` interpreted work per
+  iteration, iterated to convergence. 1.11.0 did not touch it.
+
+  Writing `A[[s,j]]` for the reduced potential of sample `s` at state `j`, each pass is
+  `L[s] = LogSumExp_j (logn_j - F_j - A[s,j])` then `F_k = LogSumExp_s (-L[s] - A[s,k])`. The term
+  carrying the target is `A[s,k]`, which has no `j` in it, so it factors out of the inner
+  `LogSumExp` and the outer loop over targets collapses into one column-wise reduction. `A` does not
+  depend on `F`, so it is built once and reused across every iteration. All three overloads now
+  build `A` and call a shared `MBARSolveFreeEnergies`.
+
+  Measured on a real 11-beta, 999-sample `GraphCTLSchedule` output: **218.2 s on eleven kernels
+  became 0.378 s on one.** The two external-field overloads agree to exactly `0.0` on the same
+  one-dimensional data written as scalars and as one-element vectors.
+- **The convergence test is replaced, and this changes results.** The old
+  `Sqrt[Sum[(1 - F_k/Fnew_k)^2]]` had three defects. Free energies are defined only up to an
+  additive constant, so dividing by `F_k` made the test depend on a gauge carrying no physical
+  meaning — on one converged fixture it read `2.4e-15` in the mean-zero gauge, `2.9e-16` shifted by
+  ten, and **`Indeterminate`** in the `F_1 = 0` gauge, where it divides by zero. It compared the
+  already mean-centred `F` against an uncentred `Fnew`, so a gauge shift leaked in. And it stopped
+  about **twelve times short** of the accuracy it appeared to promise.
+
+  It is now `Max[Abs[Fnew - Mean[Fnew] - F]]` — gauge-invariant, no division, like compared with
+  like — converged against a geometric extrapolation of the remaining error rather than the raw
+  step, so the tolerance means what it says: asked for `1e-8` it returns `9.8e-9` where the raw step
+  returns `1.2e-7`. The default tightens from `1e-5`/`1e-6` to **`1e-8`**, which the rewrite makes
+  free: `1e-6` costs 0.27 s and `1e-12` costs 0.56 s.
+
+  **Free energies therefore come out about four orders of magnitude more converged, and values
+  computed by earlier releases are off by ~1e-4.** See the release notes before upgrading.
+
+### Tests
+- The fast form is pinned against the **literal nested-sum definition**, written out independently
+  and iterated a fixed number of times rather than to a tolerance. Its first draft was vacuous — it
+  compared the two field overloads at `bt = 1`, where deleting the `bt` factor is the identity, and
+  the suite passed with that break in place. It now compares at `bt = 1.7` with explicit
+  `bt`-sensitivity legs.
+
 ## [1.11.1] - 2026-08-23
 
 ### Fixed
@@ -1117,7 +1159,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.11.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.0
 [1.11.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.1
 [1.11.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.0
 [1.10.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.10.1
