@@ -221,6 +221,75 @@ $Failed);
 
 
 (* ::Item::Closed:: *)
+(*MBARSolveFreeEnergies*)
+
+
+(* Private helper *)
+(*The MBAR/WHAM self-consistency solve, shared by all three ComputeMinusBetaTimesFreeEnergy
+	overloads. Takes the reduced-potential matrix A -- A[[s,j]] is the energy of sample s evaluated
+	at state j, i.e. beta_j*E_s for a beta ladder and bt*(h_j . O_s) for an external field -- and
+	the log sample counts, and returns {F, iterations, errorEstimate} with F mean-centred.
+
+	THE ITERATION. Each pass is
+
+		L[s] = LogSumExp_j (logn_j - F_j - A[s,j])
+		F_k  = LogSumExp_s (-L[s] - A[s,k])
+
+	and that second line is the whole point: the form this replaces recomputed the inner sum for
+	every target k, giving O(K^3 N) interpreted work per iteration. But the term that carries k is
+	beta_k*E_s = A[s,k], which has no j in it, so it factors straight out of the inner LogSumExp and
+	the outer loop over k collapses into one column-wise reduction. A itself does not depend on F,
+	so it is built once by the caller and reused for every iteration. Measured on a real 11-beta,
+	999-sample run: 218 s on eleven kernels became 0.26 s on one. Same algebra as MBARWeights.md.
+
+	THE CONVERGENCE TEST. The step is measured as Max[Abs[Fnew - F]] on the mean-centred iterate,
+	not as the old Sqrt[Sum[(1 - F_k/Fnew_k)^2]]. Three reasons, all measured:
+
+	  1. F is defined only up to an additive constant, so dividing by F_k makes the test depend on
+	     a gauge choice that carries no physical meaning. On one converged fixture the old test read
+	     2.4e-15 in the mean-zero gauge, 2.9e-16 shifted by ten, and Indeterminate in the F_1 = 0
+	     gauge, where it divides by zero. The step norm reads 1.6e-15 in all three.
+	  2. The old test compared the ALREADY mean-centred F against an UNcentred Fnew, so a gauge
+	     shift leaked into the measure.
+	  3. F is a log quantity, so an absolute change in F already IS the relative change in Z. There
+	     is nothing to normalise.
+
+	The returned error estimate is not the step but a geometric extrapolation of what is left. The
+	iteration contracts at a near-constant rate, so the remaining error is delta*r/(1-r) with
+	r the observed ratio of successive steps -- about 12*delta on the fixture above. Stopping on the
+	raw step therefore overshoots the requested accuracy by that factor; stopping on the estimate
+	delivers it. Asked for 1e-8, this returns 9.8e-9; the raw step returns 1.2e-7.*)
+MBARSolveFreeEnergies[A_?MatrixQ,logCounts_List,tol_?NumericQ,maxIter_Integer]:=
+Module[{S=Length[A],curFs,nextFs,L,delta,prevDelta=0.,ratio,errEst=Infinity,iterNum=0},
+	curFs=ConstantArray[1.0,Length[logCounts]];
+	While[errEst>tol&&iterNum<maxIter,
+		iterNum++;
+
+		(*L[s], the log MBAR denominator of sample s. Max-shifted per row: the arguments spread
+			widely across states and the unshifted sum overflows.*)
+		L=With[{t=ConstantArray[logCounts-curFs,S]-A},
+			With[{m=Max/@t},m+Log[Total[Exp[Clip[t-m,{-700.,0.}]],{2}]]]];
+
+		(*F_k, the collapsed k loop: one column-wise LogSumExp of -(A+L). A+L adds L[[s]] to row s
+			because Plus threads over the outer dimension.*)
+		nextFs=With[{t=Transpose[-(A+L)]},
+			With[{m=Max/@t},m+Log[Total[Exp[Clip[t-m,{-700.,0.}]],{2}]]]];
+		nextFs=nextFs-Mean[nextFs];
+
+		delta=Max[Abs[nextFs-curFs]];
+		ratio=If[prevDelta>0.,delta/prevDelta,1.];
+		errEst=If[0.<ratio<1.,delta*ratio/(1.-ratio),delta];
+		prevDelta=delta;
+		curFs=nextFs;
+
+		If[Mod[iterNum,500]==0,
+			PrintTemporary["iterNum ",iterNum," estimated error ",errEst]];
+	];
+	{curFs,iterNum,errEst}
+];
+
+
+(* ::Item::Closed:: *)
 (*ComputeMinusBetaTimesFreeEnergy*)
 
 
@@ -238,52 +307,14 @@ Inputs is:,
 Returns an association with the inverse temperatures (betas) as keys and 
 -(beta)(free energy) as the values.
 *)
-Module[{output,numTemps=Length[dat],betas=Flatten[Keys[dat]],
-ntab=Table[Length[dat[[Key[i]]]],{i,Keys[dat]}],logntab,curFs,nextFs,iterNum,del,deltab},
-logntab=Log[ntab*1.0];
+Module[{betas=Flatten[Keys[dat]],energies,logCounts,solved},
+	energies=N[Join@@Values[dat]];
+	logCounts=Log[N[Length/@Values[dat]]];
 
+	(*A[[s,j]] = beta_j * E_s. Built once; it does not depend on the free energies.*)
+	solved=MBARSolveFreeEnergies[Outer[Times,energies,betas],logCounts,10.^-8,30000];
 
-curFs=Table[1.0,{k,1,numTemps}];
-
-nextFs=curFs;
-
-
-iterNum=0;
-del=100.0;
-
-(* Collecting delta For diagnostics *)
-deltab=Reap[
-	While[del>10.0^(-5)&&iterNum<30000,
-	iterNum++;
-
-	nextFs=ParallelTable[
-		LogSumExp[
-			Flatten[
-				Table[
-					Table[
-					-LogSumExp[
-						Table[
-							logntab[[j]]-curFs[[j]]+(betas[[k]]-betas[[j]])*(dat[[Key[betas[[i]]],s]])
-						,{j,1,numTemps}]]
-					,{s,1,ntab[[i]]}]
-				,{i,1,numTemps}]]
-			]
-	,{k,1,numTemps},DistributedContexts->{$Context,"ECGrav`Private`"}];
-
-	del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTemps}]];
-
-
-	Sow[del];(* For diagnostics *)
-	If[Mod[iterNum,500]==0,PrintTemporary["iterNum ",iterNum, " del ",del]];
-	curFs=nextFs-(Mean[nextFs]);
-	];
-];
-
-
-output=<|Table[Keys[dat][[i]]->curFs[[i]],{i,1,Length[betas]}]|>;
-
-output
-
+	AssociationThread[Keys[dat]->First[solved]]
 ];
 
 
@@ -304,63 +335,14 @@ Returns an association with the external field values (J_i) as keys and
 -(betaFixed)(F[betaFixed,J_i] as the values.
 *)
 
-Module[{output,numTotSims=Length[dat],extFieldVals=Keys[dat],
-ntab=Table[Length[dat[i]],{i,Keys[dat]}],logntab,curFs,nextFs,iterNum,del,deltab},
-logntab=Log[ntab*1.0];
-(*curFs=Table[LogSumExp[-betas[[k]]*(dat[[Key[betas[[k]]]]])],{k,1,numTemps}];
-curFs=curFs-((Max[curFs]+Min[curFs])/2);*)
+Module[{extFieldVals=Keys[dat],conj,logCounts,solved},
+	conj=N[Join@@Values[dat]];
+	logCounts=Log[N[Length/@Values[dat]]];
 
+	(*A[[s,j]] = bt * h_j * O_s. Built once; it does not depend on the free energies.*)
+	solved=MBARSolveFreeEnergies[bt*Outer[Times,conj,extFieldVals],logCounts,10.^-8,30000];
 
-curFs=Table[1.0,{k,1,numTotSims}];
-
-nextFs=curFs;
-
-
-iterNum=0;
-del=200.0;
-
-(* Collecting delta For diagnostics *)
-deltab=Reap[
-	While[del>10.0^(-6)&&iterNum<30000,
-		iterNum++;
-
-		nextFs=ParallelTable[
-			LogSumExp[
-				Flatten[
-					Table[
-						Table[
-							-LogSumExp[
-								Table[
-									logntab[[j]]-curFs[[j]]+
-									bt*(extFieldVals[[k]]-extFieldVals[[j]])*(dat[[Key[extFieldVals[[i]]],s]])
-								,{j,1,numTotSims}]]
-						,{s,1,ntab[[i]]}]
-					,{i,1,numTotSims}]]
-			]
-		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`Private`"}];
-
-
-del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTotSims}]];
-
-(*If[Mod[iterNum,20]\[Equal]0,
-Print["iterNum ",iterNum, " del ",del];
-Print[" curFs ",curFs];
-Print[" nextFs ",nextFs];
-];*)
-
-
-Sow[del];(* For diagnostics *)
-	If[Mod[iterNum,500]==0,PrintTemporary["iterNum ",iterNum, " del ",del]];
-
-		curFs=nextFs-(Mean[nextFs]);
-	];
-];
-
-
-output=<|Table[extFieldVals[[i]]->curFs[[i]],{i,1,Length[extFieldVals]}]|>;
-
-output
-
+	AssociationThread[extFieldVals->First[solved]]
 ];
 
 
@@ -380,57 +362,15 @@ Returns an association with the external field values (J_i) as keys and
 -(betaFixed)(F[betaFixed,J_i] as the values.
 *)
 
-Module[{output,numTotSims=Length[dat],extFieldVals=Keys[dat],
-ntab=Table[Length[dat[i]],{i,Keys[dat]}],logntab,curFs,nextFs,iterNum,del,deltab},
-logntab=Log[ntab*1.0];
-(*curFs=Table[LogSumExp[-betas[[k]]*(dat[[Key[betas[[k]]]]])],{k,1,numTemps}];
-curFs=curFs-((Max[curFs]+Min[curFs])/2);*)
+Module[{extFieldVals=Keys[dat],conj,logCounts,solved},
+	conj=N[Join@@Values[dat]];
+	logCounts=Log[N[Length/@Values[dat]]];
 
+	(*A[[s,j]] = bt * (h_j . O_s), one matrix product. Built once; it does not depend on the free
+		energies. This is the same matrix MBARWeightBasis forms.*)
+	solved=MBARSolveFreeEnergies[bt*(conj . Transpose[N[extFieldVals]]),logCounts,10.^-8,30000];
 
-curFs=Table[1.0,{k,1,numTotSims}];
-
-nextFs=curFs;
-
-
-iterNum=0;
-del=200.0;
-
-(* Collecting delta For diagnostics *)
-deltab=Reap[
-	While[del>10.0^(-6)&&iterNum<30000,
-		iterNum++;
-
-		nextFs=ParallelTable[
-			LogSumExp[
-				Flatten[
-					Table[
-						Table[
-							-LogSumExp[
-								Table[
-									logntab[[j]]-curFs[[j]]+
-									bt*(extFieldVals[[k]]-extFieldVals[[j]]) . (dat[[Key[extFieldVals[[i]]],s]])
-								,{j,1,numTotSims}]]
-						,{s,1,ntab[[i]]}]
-					,{i,1,numTotSims}]]
-			]
-		,{k,1,numTotSims},DistributedContexts->{$Context,"ECGrav`Private`"}];
-
-
-del=Sqrt[Sum[(1.0-curFs[[k]]/nextFs[[k]])^2,{k,1,numTotSims}]];
-
-
-Sow[del];(* For diagnostics *)
-	If[Mod[iterNum,500]==0,PrintTemporary["iterNum ",iterNum, " del ",del]];
-
-		curFs=nextFs-(Mean[nextFs]);
-	];
-];
-
-
-output=<|Table[extFieldVals[[i]]->curFs[[i]],{i,1,Length[extFieldVals]}]|>;
-
-output
-
+	AssociationThread[extFieldVals->First[solved]]
 ];
 
 

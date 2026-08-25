@@ -833,6 +833,62 @@ VerificationTest[
     TestID -> "EnergyCallbackProbe-schedule-driven-uses-replica-label"
 ];
 
+(* ComputeMinusBetaTimesFreeEnergy: the MBAR/WHAM self-consistency solve, rewritten onto
+   MBARSolveFreeEnergies. The old form recomputed the inner sum for every target state, giving
+   O(K^3 N) interpreted work per iteration; the term carrying the target is beta_k*E_s, which has
+   no j in it, so it factors out of the inner LogSumExp and the outer loop collapses. On a real
+   11-beta, 999-sample run this took 218 s on eleven kernels and now takes 0.38 s on one.
+
+   Leg 1 pins the fast form against the LITERAL DEFINITION -- the nested sum written out
+   independently here, iterated a fixed number of times rather than to a tolerance -- so it tests
+   the algebra rather than a refactor of itself. Legs 2 and 3 are the same data expressed as
+   scalar keys and as one-element vector keys, which must give identical answers: that is what
+   would catch a wrong A in one overload but not the other -- but only away from bt = 1, where
+   dropping the factor is the identity and an earlier draft of this test passed with that exact
+   break. Legs 3 and 4 are the vacuity guards on bt itself. Leg 5 pins the mean-centred gauge.
+
+   The convergence test changed with this rewrite and deliberately so: the old
+   Sqrt[Sum[(1 - F_k/Fnew_k)^2]] divides by a quantity whose zero point is pure gauge, so it read
+   Indeterminate in the F_1 = 0 gauge on a converged fixture, and it stopped about 12x short of
+   the accuracy it appeared to promise. *)
+VerificationTest[
+    Module[{betas = {0.3, 0.9, 1.7}, dat, ref, plain, got2, got3, got2bt, got3bt, ctr},
+        SeedRandom[314];
+        dat = Association@Table[b -> RandomVariate[NormalDistribution[-2.0*b, 1.5], 40], {b, betas}];
+        (* the definition, written out, iterated a fixed 400 times *)
+        plain = Module[{K = 3, logn, F, nF, ntab},
+            ntab = Length /@ Values[dat]; logn = Log[1.0*ntab];
+            F = ConstantArray[1.0, K];
+            Do[nF = Table[
+                   ECGrav`LogSumExp[Flatten[Table[Table[
+                     -ECGrav`LogSumExp[Table[
+                        logn[[j]] - F[[j]] + (betas[[k]] - betas[[j]])*dat[[Key[betas[[i]]], s]],
+                        {j, K}]],
+                     {s, ntab[[i]]}], {i, K}]]], {k, K}];
+               F = nF - Mean[nF], {400}];
+            F];
+        ref = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[dat]];
+        (* Same 1-D data as scalar-keyed and as vector-keyed external fields, at bt != 1.
+           bt = 1 would make legs 2 and 4 vacuous: dropping the bt factor from one overload is
+           the identity there, and an earlier draft of this test passed with exactly that break. *)
+        SeedRandom[271];
+        Module[{hs = {-0.7, 0.1, 0.9}, o, vec},
+            o = Association@Table[h -> RandomVariate[NormalDistribution[-3.0*h, 2.0], 40], {h, hs}];
+            vec = Association@Table[{h} -> Transpose[{o[h]}], {h, hs}];
+            got2 = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[o, 1.7]];
+            got3 = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[vec, 1.7]];
+            got2bt = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[o, 1.0]];
+            got3bt = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[vec, 1.0]]];
+        ctr = Values[ECGrav`ComputeMinusBetaTimesFreeEnergy[dat]];
+        {Max[Abs[(ref - Mean[ref]) - (plain - Mean[plain])]] < 10.^-6,   (* 1: matches the definition   *)
+         Max[Abs[got2 - got3]] < 10.^-12,                                (* 2: the overloads agree      *)
+         Max[Abs[got2 - got2bt]] > 10.^-3,                               (* 3: scalar overload uses bt  *)
+         Max[Abs[got3 - got3bt]] > 10.^-3,                               (* 4: vector overload uses bt  *)
+         Abs[Mean[ctr]] < 10.^-12}],                                     (* 5: mean-centred gauge       *)
+    {True, True, True, True, True},
+    TestID -> "ComputeMinusBetaTimesFreeEnergy-matches-definition"
+];
+
 
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
