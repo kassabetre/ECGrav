@@ -6,6 +6,21 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-08-25
+
+### Added
+- **`ComputeMinusBetaTimesFreeEnergy` warns when the solve does not converge.** It returned
+  silently on hitting its 30000-iteration cap, so a caller held free energies worse than the
+  tolerance implied with nothing to say so, and everything reweighted from them — expectation
+  values, effective sample sizes, the thermodynamic metric a CTL schedule is built from — inherited
+  that quietly. 1.12.0 made the error estimate available but nothing looked at it.
+
+  `ComputeMinusBetaTimesFreeEnergy::noconv` reports the iteration count, the estimated error
+  remaining and the tolerance it was measured against, and names poor overlap between neighbouring
+  states as the usual cause — raising the cap is the wrong response to that. **The free energies
+  are still returned**: this is a warning about their quality, not a failure, and no signature or
+  return shape changed.
+
 ## [1.12.0] - 2026-08-24
 
 ### Changed
@@ -1159,7 +1174,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.12.1...HEAD
+[1.12.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.1
 [1.12.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.0
 [1.11.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.1
 [1.11.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.0
