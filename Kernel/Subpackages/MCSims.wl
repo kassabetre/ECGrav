@@ -285,6 +285,17 @@ Module[{S=Length[A],curFs,nextFs,L,delta,prevDelta=0.,ratio,errEst=Infinity,iter
 		If[Mod[iterNum,500]==0,
 			PrintTemporary["iterNum ",iterNum," estimated error ",errEst]];
 	];
+
+	(*Hitting the cap means the returned free energies are worse than the tolerance implies, and
+		every reweighted quantity downstream inherits that silently -- so say so. The message belongs
+		to ComputeMinusBetaTimesFreeEnergy rather than to this helper because that is the call the
+		user made; this exists only to serve its three overloads.*)
+	If[errEst>tol,
+		(*Both numbers are small reals, and a bare small real renders as a two-line superscript
+			once it is substituted into a message. InputForm keeps them on one line.*)
+		Message[ComputeMinusBetaTimesFreeEnergy::noconv,iterNum,
+			ToString[N[errEst],InputForm],ToString[N[tol],InputForm]]];
+
 	{curFs,iterNum,errEst}
 ];
 

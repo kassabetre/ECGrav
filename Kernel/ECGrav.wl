@@ -285,6 +285,18 @@ ComputeMinusBetaTimesFreeEnergy::argerr="Input has to be of the form
 	or 
 	ComputeMinusBetaTimesFreeEnergy[dat_Association, bt_Real]";
 
+(* Concatenated rather than written as one literal spanning several source lines: embedded
+	newlines and tabs make a message render as misaligned columns once the `n` slots are filled
+	in. Same reason as GraphEquilibriate::noconv. *)
+ComputeMinusBetaTimesFreeEnergy::noconv=
+	"The MBAR free-energy self-consistency solve did not converge within `1` iterations. The "<>
+	"estimated error remaining in the returned free energies is `2`, against a tolerance of "<>
+	"`3`. They are returned anyway and are the best available, but they are a lower-quality "<>
+	"estimate than the tolerance implies, and everything reweighted from them inherits that. "<>
+	"Poor overlap between neighbouring states is the usual cause -- the iteration converges "<>
+	"slowly when few samples carry weight at more than one state -- so check the effective "<>
+	"sample sizes before raising the iteration cap.";
+
 
 (* ::Item::Closed:: *)
 (*NegativeBetaTimesFreeEnergy*)

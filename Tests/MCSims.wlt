@@ -889,6 +889,35 @@ VerificationTest[
     TestID -> "ComputeMinusBetaTimesFreeEnergy-matches-definition"
 ];
 
+(* The MBAR solve used to return silently when it hit its iteration cap without converging, so a
+   caller got free energies worse than the tolerance implied with no indication -- and every
+   quantity reweighted from them inherited that quietly. It now warns.
+
+   Leg 1 is the warning firing on a deliberately starved budget. Leg 2 is the negative control and
+   the thing that keeps this honest: the same data with a real budget must be SILENT, so the test
+   fails if the condition is ever inverted or the threshold made vacuous. Leg 3 pins that the free
+   energies are still returned rather than swallowed -- this is a warning, not a failure. *)
+VerificationTest[
+    Module[{betas = {0.3, 0.9, 1.7}, dat, A, Ev, logn, res, warned, quiet},
+        SeedRandom[9];
+        dat = Association@Table[b -> RandomVariate[NormalDistribution[-2.0*b, 1.5], 40], {b, betas}];
+        Ev = N[Join @@ Values[dat]]; logn = Log[N[Length /@ Values[dat]]];
+        A = Outer[Times, Ev, betas];
+        warned = Quiet[
+            Check[res = ECGrav`Private`MBARSolveFreeEnergies[A, logn, 10.^-8, 5]; False,
+                  True, ECGrav`ComputeMinusBetaTimesFreeEnergy::noconv],
+            ECGrav`ComputeMinusBetaTimesFreeEnergy::noconv];
+        quiet = Quiet[
+            Check[ECGrav`Private`MBARSolveFreeEnergies[A, logn, 10.^-8, 30000]; True,
+                  False, ECGrav`ComputeMinusBetaTimesFreeEnergy::noconv],
+            ECGrav`ComputeMinusBetaTimesFreeEnergy::noconv];
+        {warned,                                                (* 1: warns when starved      *)
+         quiet,                                                 (* 2: silent when it converges *)
+         Length[res] === 3 && VectorQ[First[res], NumericQ]}],   (* 3: still returns the F      *)
+    {True, True, True},
+    TestID -> "MBARSolveFreeEnergies-warns-on-nonconvergence"
+];
+
 
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
