@@ -302,6 +302,12 @@ which is $\beta$-independent and valid at *any* field value, not just the one sa
    of $(\beta, n_{t0})$ for the free energy, the internal energy, or any observable measured along
    the way. See §7.1–§7.4.
 
+> §7.1–7.4 give one surface at one point, which is what you want when you are checking a number.
+> For a whole plotting grid, **`TemperingPlots.wls` is the batched form of everything below** —
+> every surface over the grid in one pass, 190x faster on a $12\times12$ grid and needing no
+> parallel kernels, with the units, the moving energy observable and the ESS mask already handled.
+> See **`TemperingPlots.md`**. Read this section first anyway: it is where the traps are explained.
+
 ### 7.1 Continuous surfaces in $(\beta, n_{t0})$
 
 `hist` is the second element of the `GraphCTLSchedule` return, and is itself a four-element list;
@@ -361,10 +367,14 @@ to that rectangle, or mask:
 
 ```wl
 floor = 0.5*Mean[Length /@ conj];
-masked[b_?NumericQ, nt_?NumericQ] :=
+masked[q_][b_?NumericQ, nt_?NumericQ] :=
   With[{u = First[ECGrav`Private`MBARWeights[basis, N[{b, b*nt}]]]},
-    If[Total[u]^2/Total[u^2] < floor, Indeterminate, (* the quantity *) ]]
+    If[Total[u]^2/Total[u^2] < floor, Indeterminate, q[b, nt]]]
 ```
+
+`q` is whichever surface below you are masking — `masked[logZ]`, `masked[Ephys]`. Both branches of
+the `If` must be filled: with the third argument left out, the sampled region returns `Null`, which
+is the one part of the plot you wanted.
 
 `Indeterminate` leaves those regions blank rather than drawing invented contours. The floor here is
 half a replica's worth of samples rather than the schedule builder's `0.01*K*N`, which drifts with
@@ -523,6 +533,7 @@ true value and the gap is a real bound.
 
 ## 11. See also
 
+- `TemperingPlots.md` — the batched plotting pipeline built on §7, and its `TemperingPlots.wls`.
 - `Theory.md` — the model, its observables and its energy functionals.
 - `CHANGELOG.md` 1.10.1 — the four schedule-builder fixes, with their failure modes.
 - `ReleaseNotes/v1.10.1.md` — the same, written for a reader upgrading.

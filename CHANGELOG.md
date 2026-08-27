@@ -6,6 +6,42 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Documentation
+- **`TemperingPlots.wls`** — a plotting pipeline for the returns of `GraphCTLSchedule` and
+  `GraphParallelTempering`, in context `` ECGravPlots` ``. `HomogeneousHamiltonian.md` §7.1–7.4 give
+  one surface at one point; a whole plotting grid built that way rebuilds the MBAR basis at every
+  point and re-walks all `S` samples once per observable per point.
+
+  Everything is computed in one batched pass instead. The MBAR weight of sample `s` at target `c` is
+  `Exp[-(beta c.O_s + logBasis_s)]` up to a per-target constant that cancels out of every ratio, so
+  for `T` targets the whole exponent is one `S x T` matrix product rather than `T` separate
+  `S`-vectors — and since MBAR reweighting is observable-agnostic, every surface is then one matrix
+  product against those same weights. Asking for fifty costs what asking for one costs.
+
+  Measured on a `K = 16`, `N = 800` run (`S = 12800`) over a 12x12 grid: the per-point method took
+  **15.3 s serial for 13 surfaces**; `MBARSurfaces` takes **0.076 s for all 52**, needing no parallel
+  kernels. All thirteen comparable surfaces agree with the old route to between `0` and `2.7e-11`
+  relative; `<E_phys> = -dLog[Z]/dbeta` reproduces to `1e-10` by central differencing.
+
+  Entry points: `CTLSurfaceData` / `TemperingSurfaceData`, `AddObservable`, `SurfaceGrid`,
+  `MBARSurfaces`, `BootstrapValues`, `SurfacePlots`, `SurfaceNames`, `SwapAcceptance`,
+  `MBARHelpersAvailableQ`. It requires 1.11.0 or later and says so: below that the private MBAR
+  helpers do not exist, and an undefined private symbol returns *unevaluated* rather than failing,
+  so every surface built on it silently produces nothing.
+
+- **`TemperingPlots.md`** — the pipeline documented: the four steps, the surface names, the cost
+  argument with its measurements, and the traps. Among them, the one that changes numbers already
+  plotted: in homogeneous `c.O` form chart column 3 is `beta*H_phys`, so `Mean` of it is
+  `beta <H_phys>` and `SpecificHeat[column3, 1, beta]` is `beta^2` times the real heat capacity —
+  per-replica plots built that way never matched the reweighted surfaces they were shown against.
+
+### Fixed
+- **`HomogeneousHamiltonian.md` §7.1's masking template was not usable as written.** Its `If` had no
+  third argument — the quantity being masked was left as a comment — so the sampled region, which is
+  the part of the plot you want, returned `Null`. It now takes the surface as an argument
+  (`masked[q]`), with a note that both branches must be filled.
+
+
 ## [1.12.1] - 2026-08-25
 
 ### Added
