@@ -6,6 +6,14 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Added
+- `WLSToNotebook.wls` — converts a `.wls` script to an evaluatable `.nb`
+  (`wolframscript -file WLSToNotebook.wls in.wls`). The front end already does this on File > Open
+  plus File > Save As; the kernel does not, because the `(* ::Section:: *)`-to-cell-style mapping
+  lives in the front end and `Import[file, "Notebook"]` on a `.wls` just returns the text. Input
+  cells are split only where brackets balance, so a blank line inside a `Module` does not cut an
+  expression in half, and they hold plain strings rather than boxes, so nothing is reformatted.
+
 ### Documentation
 - **`TemperingPlots.wls`** — a plotting pipeline for the returns of `GraphCTLSchedule` and
   `GraphParallelTempering`, in context `` ECGravPlots` ``. `HomogeneousHamiltonian.md` §7.1–7.4 give
