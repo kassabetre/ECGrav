@@ -126,6 +126,21 @@ semantic-ish; breaking changes are called out explicitly.
   range, where every overload must say `False`. Verified to fail on the third overload before the
   fix and pass after.
 
+- **`HomogeneousHamiltonian.md` §8 claimed the effective-sample-size mask keeps replicas inside the
+  reachable region, and it does not.** `GraphCTLSchedule`'s domain is the axis-aligned box
+  `hMins`..`hMaxs`, while in homogeneous `c.O` form the reachable set is the fan
+  `|c_1| <= c_0 nt0Max`. Measured on a `K = 16`, `N = 800` run covering `nt0` in `[-1, 1]`, handed
+  its own bounding box: **seven of sixteen replicas landed outside that range, out to
+  `|nt0| = 2.29`**. 90% of the box clears the builder's `0.01*K*N` floor while only 57% of it lies
+  inside the fan, and the effective sample size still clears that floor at `|nt0| = 2.82` — it
+  measures how concentrated the MBAR weights are, not how far the target is from the sampled set,
+  so tightening `essMinFraction` moves the boundary only to 2.53.
+
+  §8 now says so and gives the inscribed-box recipe that does work — bound `|c_1|` by
+  `bMin*nt0Max`, the fan's width at the cold end — which put all twelve replicas inside the fan
+  with effective sample sizes of 2744–3805. §9 no longer presents 1.10.1's defect D as a complete
+  fix. No code changed: the builder behaves as designed, and the design assumes a box-shaped domain.
+
 - **`HomogeneousHamiltonian.md` §7.1's masking template was not usable as written.** Its `If` had no
   third argument — the quantity being masked was left as a comment — so the sampled region, which is
   the part of the plot you want, returned `Null`. It now takes the surface as an argument

@@ -485,14 +485,50 @@ variance does not enter the CTL metric and carries no fluctuation–response int
   grid is $(1.4\,\texttt{numInterpolatingSamples}+1)^{\text{numVars}} = 29^{\text{numVars}}$ — the
   box is widened 20% each way at the unwidened step — which is a second reason not to reach for
   more.
-- **The interpolation domain is the bounding box of the bootstrap table, while the reachable set
-  is a fan.** The box corners correspond to low $\beta$ with large $|d|$ — parameters nothing was
-  sampled at. Since 1.10.1 the replica density is masked by the MBAR **effective sample size**, so
-  replicas are not placed there; but the interpolation grid is still spent on the whole box, so a
-  wide $\beta$ range wastes most of it.
-- **Narrow the $\beta$ window.** The fan's share of its bounding box shrinks as
-  $\beta_{\max}/\beta_{\min}$ shrinks. Two or three overlapping windows also improve MBAR overlap,
-  which is independently weakest at the cold end — precisely where the metric matters most.
+- **The schedule builder's domain is a box, while the reachable set is a fan — and the effective
+  sample size does not close the gap.** `GraphCTLSchedule` takes `hMins` and `hMaxs`, so its domain
+  is an axis-aligned rectangle in $c$; the reachable set is $|c_1| \le c_0\,n_{t0}^{\max}$, a fan
+  through the origin. The corners are low $\beta$ with large $|c_1|$ — that is, enormous $n_{t0}$,
+  sampled by nothing.
+
+  1.10.1 masked the replica density by the MBAR **effective sample size** to keep replicas out of
+  those corners, and **that is not sufficient here.** Measured on a $K=16$, $N=800$ homogeneous run
+  covering $\beta \in [0.5, 3]$, $n_{t0} \in [-1, 1]$, handed its own bounding box
+  $\{0.5, -3\}$–$\{3, 3\}$ and asked for 16 replicas: **seven landed outside the sampled
+  $n_{t0}$ range, out to $|n_{t0}| = 2.29$.** Across that box, 90% of points clear the builder's
+  floor of `0.01*K*N`, and 86% clear a floor three times stricter, while only **57%** of the box
+  lies inside the fan; the effective sample size still clears the builder's floor as far out as
+  $|n_{t0}| = 2.82$.
+
+  The reason is what the effective sample size measures: how concentrated the MBAR weights are, not
+  how far the target is from the sampled set. Extrapolate along a direction in which the observable
+  distribution is broad and it stays respectable while the estimate is pure extrapolation. So
+  tightening `essMinFraction` is not the fix — it moves the boundary from $|n_{t0}| = 2.82$ to
+  $2.53$.
+
+- **Pass an inscribed rectangle, not the bounding box.** The largest box inside the fan is bounded
+  by the *cold* end, where the fan is narrowest:
+
+  ```wl
+  bMin = 1.5; bMax = 3.0; nt0Max = 1.0;      (* nt0Max from the bootstrap table *)
+  hMins = {bMin, -bMin*nt0Max};
+  hMaxs = {bMax,  bMin*nt0Max};
+  sched = GraphCTLSchedule[1.0, hMins, hMaxs, mbf, conj, 12];
+  ```
+
+  On the same run this puts **all twelve replicas inside the fan**, $|n_{t0}| \le 0.68$, with
+  effective sample sizes of 2744–3805 throughout. Two consequences to plan around. The $n_{t0}$
+  coverage narrows as $\beta$ rises — the box reaches $\pm n_{t0}^{\max}$ at $\beta_{\min}$ but
+  only $\pm\beta_{\min} n_{t0}^{\max}/\beta_{\max}$ at $\beta_{\max}$. And the ladder comes out
+  **narrower than the box**, because the density concentrates where $\sqrt{\det g}$ is largest and
+  the $k$-means centres sit inside its mass: a $[1.5, 3.0]$ box gave centres spanning $1.71$–$2.62$.
+  Pad the box beyond the range you actually want covered.
+
+- **Narrow the $\beta$ window.** This is the same argument from the other side: the inscribed box's
+  $n_{t0}$ coverage at the hot end is $\beta_{\min}/\beta_{\max}$ of its coverage at the cold end,
+  so $[2, 3]$ holds $\pm 1$ down to $\pm 0.67$ where $[0.5, 3]$ collapses to $\pm 0.17$. Two or
+  three overlapping windows also improve MBAR overlap, which is independently weakest at the cold
+  end — precisely where the metric matters most.
 - **Cost — no longer a limit.** 1.10.1 took the metric from 3 interpolant grids to 6 at
   `numVars = 2` (`numVars` first moments, `numVars(numVars+1)/2` second moments, one effective
   sample size), each an $O(K^2N)$ pass in the bootstrap table size $K$ — 7.2 hours at $K = 100$.
@@ -514,6 +550,11 @@ so they had never been exercised before this recipe existed.
 
 B also affects single-field schedules, so **any schedule generated before 1.10.1 should be
 regenerated** regardless of whether you use this recipe.
+
+D is a partial fix, not a complete one. The effective-sample-size mask keeps replicas out of the
+*extreme* corners, but it is a weak proxy for the fan and leaves replicas well outside the sampled
+$n_{t0}$ range — measured in §8. Bound the domain yourself with the inscribed box there; do not rely
+on the mask alone.
 
 ## 10. What this does not fix
 
