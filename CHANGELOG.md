@@ -85,6 +85,19 @@ semantic-ish; breaking changes are called out explicitly.
   helpers do not exist, and an undefined private symbol returns *unevaluated* rather than failing,
   so every surface built on it silently produces nothing.
 
+- **`TemperingMixing.wls` and `TemperingMixing.md`** — how well a run's replicas mixed, which
+  `HomogeneousHamiltonian.md` §7 step 4 names as the question that matters and leaves open. Round
+  trips per configuration, the Katzgraber replica flow, occupancy, swap-graph connectivity and the
+  swap acceptance profile, from the return of `GraphParallelTempering` or `GraphCTLSchedule`.
+
+  The document is in two halves: the physics of why swap acceptance is necessary and not sufficient,
+  why the round-trip count rather than `numsweeps/corrT` sets the real sample size at the cold end,
+  and what a flat stretch in the flow means; then the implementation, which turns on the fact that
+  `histories` holds not a trajectory but **the ordered list of configuration tags that occupied each
+  slot**. Runs that predate the chart tag column are replayed from it exactly — admissible swap
+  events are provably slot-disjoint, so the replay is order-independent — and the two records
+  cross-validate on any run carrying both.
+
 - **`TemperingPlots.md`** — the pipeline documented: the four steps, the surface names, the cost
   argument with its measurements, and the traps. Among them, the one that changes numbers already
   plotted: in homogeneous `c.O` form chart column 3 is `beta*H_phys`, so `Mean` of it is
