@@ -682,6 +682,65 @@ VerificationTest[
     TestID -> "GraphParallelTempering-smoke-no-Part-take"
 ];
 
+(* The external-field chart carries a SEVENTH column: the tag of the configuration occupying
+   each slot at that sweep, read off histories[[i, "history", -1]] immediately after Swap[].
+
+   The invariant that makes it worth anything is that at every sweep the column, read across
+   slots, is a PERMUTATION of the schedule's field vectors -- swaps exchange configurations, so
+   none is ever lost or duplicated. That is asserted here sweep by sweep rather than by spot
+   check, because a stale or mis-timed read would still produce plausible-looking field vectors.
+
+   Swap[] exchanges a matching of non-intersecting edges, so a configuration moves at most once
+   per sweep and the column is a complete trajectory at sweep resolution; that is what lets
+   TemperingMixing read dwell times instead of replaying the histories. *)
+VerificationTest[
+    Block[{Print = Null &},
+    Module[{r, chart, labels, edges, o0, o1, hHom, col7},
+        o0 = 1.0*Total[#, 2]/2 &;
+        o1 = 1.0*Tr[MatrixPower[#, 3]]/6 &;
+        hHom[am_List, c0_Real, c1_Real] := c0*o0[am] + c1*o1[am];
+        labels = <|1 -> {0.3, 0.05}, 2 -> {0.55, 0.05}, 3 -> {0.8, 0.05}|>;
+        edges = {UndirectedEdge[1, 2], UndirectedEdge[2, 3]};
+        SeedRandom[612];
+        r = ECGrav`GraphParallelTempering[C6, 1.0, hHom[], {edges, labels},
+                {o0, o1}, {Total[#, 2]/2. &}, 12, 0, -100.0];
+        chart = r[[2]];
+        col7 = Transpose[Values[chart[[All, All, 7]]]];
+        {Length[First[First[Values[chart]]]],
+         Sort[Keys[chart]] === Sort[Values[labels]],
+         AllTrue[col7, Sort[#] === Sort[Values[labels]] &],
+         Length[col7]}]],
+    {7, True, True, 12},
+    TestID -> "GraphParallelTempering-chart-column7-is-a-permutation"
+];
+
+(* The beta-schedule chart is nested too, and for the same reason: {sweep, beta, energy,
+   {obs...}, tag}. It used to splice the observables into the row with Flatten, which put every
+   column after the third at a position depending on how many observables the caller passed --
+   so no fixed-position column could follow them, and this row could not carry a tag at all.
+
+   Energy stays at column 3 in both layouts, which is the only column the package itself reads
+   out of a beta chart (two SpecificHeat call sites and
+   ComputeMinusBetaTimesFreeEnergy[chart[[All, All, 3]]]), so the change is internal-consumer
+   clean; that is asserted here rather than assumed. *)
+VerificationTest[
+    Block[{Print = Null &},
+    Module[{r, chart, row},
+        SeedRandom[613];
+        r = ECGrav`GraphParallelTempering[C6, {0.1, 0.3, 0.6, 1.0}, h[-1.0, 0.0], dH[-1.0, 0.0],
+                {Total[#, 2]/2. &, 1.0*ECGrav`EulerChi[#] &}, 0, 20, 0, 0.0];
+        chart = r[[2]];
+        row = chart[[1, 1]];
+        {Length[row],
+         ListQ[row[[4]]], Length[row[[4]]],          (* the observables, nested not spliced *)
+         MemberQ[Keys[chart], row[[5]]],             (* the tag *)
+         AllTrue[Transpose[Values[chart[[All, All, 5]]]], Sort[#] === Sort[Keys[chart]] &],
+         VectorQ[chart[[1, All, 3]], NumericQ],      (* energy still at column 3 *)
+         AssociationQ[ECGrav`ComputeMinusBetaTimesFreeEnergy[chart[[All, All, 3]]]]}]],
+    {5, True, 2, True, True, True, True},
+    TestID -> "GraphParallelTempering-beta-chart-is-nested-with-a-tag"
+];
+
 (* GraphParallelTempering must return internally consistent output. Same reasoning as the
    GraphMultiHistogram invariants above: nothing can be pinned to a value, so assert the
    consistency any correct run has.

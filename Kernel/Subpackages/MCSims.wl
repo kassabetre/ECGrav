@@ -4298,7 +4298,15 @@ swap[numsweeps];
 
 If[Mod[numsweeps,1]==0,
 Table[
-bt=replicas[[Key[i],Key["beta"]]];Sow[Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
+	bt=replicas[[Key[i],Key["beta"]]];Sow[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]],histories[[Key[i],Key["history"],-1]]},bt]
 ,{i,numRep}];
 ];
 
@@ -4609,9 +4617,18 @@ swap[numsweeps];
 If[Mod[numsweeps,1]==0,
 	Table[
 	bt=replicas[[Key[i],Key["beta"]]];
+	(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
 	Sow[
-		Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],
-		Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+		{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],
+		Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]],
+		histories[[Key[i],Key["history"],-1]]},bt]
 	,{i,numRep}];
 ];
 
@@ -4952,12 +4969,19 @@ While[numsweeps<=NN,
 
 	If[Mod[numsweeps,1]==0,
 	Table[
-		Sow[{numsweeps,externalFieldTable[[i]],replicas[[Key[i],Key["state"],Key["energy"]]]
+		(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,externalFieldTable[[i]],replicas[[Key[i],Key["state"],Key["energy"]]]
 			,Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]]
 			,replicas[[Key[i],Key["state"],Key["energy"]]]
 				-(externalFieldTable[[i]] .
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]])
-			,Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+			,Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]
+			,histories[[Key[i],Key["history"],-1]]},i]
 	,{i,numRep}];
 	];
 
@@ -5307,12 +5331,19 @@ While[numsweeps<=NN,
 
 	If[Mod[numsweeps,1]==0,
 	Table[
-		Sow[{numsweeps,externalFieldTable[[i]],replicas[[Key[i],Key["state"],Key["energy"]]]
+		(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,externalFieldTable[[i]],replicas[[Key[i],Key["state"],Key["energy"]]]
 			,Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]]
 			,replicas[[Key[i],Key["state"],Key["energy"]]]
 				-(externalFieldTable[[i]] .
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]])
-			,Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+			,Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]
+			,histories[[Key[i],Key["history"],-1]]},i]
 	,{i,numRep}];
 	];
 
@@ -7205,8 +7236,17 @@ swap[numsweeps];
 If[Mod[numsweeps,1]==0,
 	Table[
 		bt=replicas[[Key[i],Key["beta"]]];
-		Sow[Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]]
-		,Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+		(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
+	Sow[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]]
+		,Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]
+		,histories[[Key[i],Key["history"],-1]]},bt]
 	,{i,numRep}];
 ];
 
@@ -7447,7 +7487,15 @@ measurements=Reap[
 
 	If[Mod[numsweeps,1]==0,
 		Table[
-			bt=replicas[[Key[i],Key["beta"]]];Sow[Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+			(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
+	bt=replicas[[Key[i],Key["beta"]]];Sow[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]],histories[[Key[i],Key["history"],-1]]},bt]
 		,{i,numRep}];
 	];
 
@@ -7628,7 +7676,15 @@ While[numsweeps<=NN,
 
 	If[Mod[numsweeps,1]==0,
 		Table[
-			bt=replicas[[Key[i],Key["beta"]]];Sow[Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+			(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
+	bt=replicas[[Key[i],Key["beta"]]];Sow[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]],Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]],histories[[Key[i],Key["history"],-1]]},bt]
 		,{i,numRep}];
 	];
 
@@ -7805,8 +7861,17 @@ swap[numsweeps];
 If[Mod[numsweeps,1]==0,
 	Table[
 		bt=replicas[[Key[i],Key["beta"]]];
-		Sow[Flatten[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]]
-			,Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]}],bt]
+		(*Not Flattened, and with a tag. Splicing the observables into the row made every column past
+	the third depend on how many observables the caller passed, so no column after them could have
+	a fixed position -- which is why this row could not carry the configuration tag the external-
+	field chart carries in its column 7. Nested, the layout is {sweep, beta, energy, {obs...}, tag},
+	and the tag is which configuration is at this slot now: histories holds it, Swap[] has already
+	run for this sweep, and it exchanges a matching of non-intersecting edges, so a configuration
+	moves at most once per sweep and column 5 is a complete trajectory at sweep resolution.
+	Nothing in the package reads a beta chart past column 3, so only external code is affected.*)
+	Sow[{numsweeps,bt,replicas[[Key[i],Key["state"],Key["energy"]]]
+			,Through[obs [replicas[[Key[i],Key["state"],Key["graph"]]]]]
+			,histories[[Key[i],Key["history"],-1]]},bt]
 	,{i,numRep}];
 ];
 
@@ -8087,13 +8152,20 @@ measurements=Reap[
 
 		If[Mod[numsweeps,1]==0,
 			Table[
-				Sow[{numsweeps,replicaSwapEdgesLabels[[2,Key[i]]],
+				(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,replicaSwapEdgesLabels[[2,Key[i]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]],
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]]
 						-replicaSwapEdgesLabels[[2,Key[i]]]
 							. Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
-					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
+					histories[[Key[i],Key["history"],-1]]},i]
 			,{i,numRep}];
 		];
 
@@ -8394,13 +8466,20 @@ measurements=Reap[
 
 		If[Mod[numsweeps,1]==0,
 			Table[
-				Sow[{numsweeps,replicaSwapEdgesLabels[[2,Key[i]]],
+				(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,replicaSwapEdgesLabels[[2,Key[i]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]],
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]]
 						-replicaSwapEdgesLabels[[2,Key[i]]]
 							. Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
-					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
+					histories[[Key[i],Key["history"],-1]]},i]
 			,{i,numRep}];
 		];
 
@@ -8649,13 +8728,20 @@ measurements=Reap[
 
 		If[Mod[numsweeps,1]==0,
 			Table[
-				Sow[{numsweeps,
+				(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,
 					replicaSwapEdgesLabels[[2,Key[i]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]],
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]]
 						-replicaSwapEdgesLabels[[2,Key[i]]] . Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
-					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
+					histories[[Key[i],Key["history"],-1]]},i]
 			,{i,numRep}];
 		];
 
@@ -8898,13 +8984,20 @@ measurements=Reap[
 
 		If[Mod[numsweeps,1]==0,
 			Table[
-				Sow[{numsweeps,
+				(*Column 7 is the TAG of the configuration occupying this slot -- the field of the slot it
+			started in, which is what histories tracks. Swap[] has already run for this sweep and it
+			exchanges a MATCHING of non-intersecting edges, so every configuration moves at most once
+			per sweep and this column is the complete trajectory at sweep resolution: dwell times,
+			time-weighted occupancy and replica flow, and round-trip times in sweeps all read straight
+			off it, with none of the replay TemperingMixing.md section 8 needs for older runs.*)
+			Sow[{numsweeps,
 					replicaSwapEdgesLabels[[2,Key[i]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]],
 					Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
 					replicas[[Key[i],Key["state"],Key["energy"]]]
 						-replicaSwapEdgesLabels[[2,Key[i]]] . Through[conjugateObs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
-					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]]},i]
+					Through[obs[replicas[[Key[i],Key["state"],Key["graph"]]]]],
+					histories[[Key[i],Key["history"],-1]]},i]
 			,{i,numRep}];
 		];
 

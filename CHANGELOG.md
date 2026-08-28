@@ -6,7 +6,55 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Changed
+- **The beta-schedule chart rows are no longer flattened, and carry a configuration tag.** The six
+  history-maintaining beta drivers -- `GraphMultiHistogram` and `GraphParallelTempering` in their
+  `btTable` and continue-from-replicas forms -- wrote `Sow[Flatten[{sweep, beta, energy, obs...}]]`,
+  splicing the observables into the row. The layout is now `{sweep, beta, energy, {obs...}, tag}`.
+
+  Splicing put every column after the third at a position depending on how many observables the
+  caller passed, so no fixed-position column could follow them -- which is why this row could not
+  carry the configuration tag the external-field chart carries. It carries one now, so round trips,
+  dwell times and the replica flow are available on beta runs exactly as on external-field ones.
+
+  `GraphMetropolis` is untouched: it runs a single chain with no replicas. So are the two
+  `betaLow`/`betaHigh` `GraphMultiHistogram` overloads, which maintain no histories and so have no
+  tag to record.
+
+  **Energy stays at column 3**, which is the only column the package itself reads out of a beta
+  chart -- two `SpecificHeat` call sites and `ComputeMinusBetaTimesFreeEnergy[chart[[All, All, 3]]]`
+  -- so nothing internal changes. External code reading observables as `chart[[…, 4 ;;]]` must
+  become `chart[[…, 4]]`. Asserted in `GraphParallelTempering-beta-chart-is-nested-with-a-tag`.
+
+  Not done, and deliberately: re-keying beta charts on one-element vectors to match the field
+  convention. It would relocate the polymorphism rather than remove it -- every run already on disk
+  stays keyed on Reals, so analysis code needs to handle both either way -- while touching four
+  sites of scalar key arithmetic in the reweighting core, where `(bf - {0.1})*E` yields a
+  one-element list that threads silently through `Exp`, `Sum` and `LogSumExp`. Normalising at the
+  analysis boundary is what `ComputeMinusBetaTimesFreeEnergy`'s `Flatten[Keys[dat]]` and
+  `MBARWeightBasis`'s matrix coercion already do.
+
 ### Added
+- **The external-field chart carries a seventh column: which configuration is at which slot.** It is
+  `histories[[Key[i], Key["history"], -1]]`, read immediately after `Swap[]`, in all six drivers
+  that write the six-column layout (`MCSims.wl:4955`, `5310`, `8090`, `8397`, `8652`, `8901`). The
+  beta-list drivers write a different, flattened row and are untouched.
+
+  The value was already being maintained; it simply was not recorded. `Swap[]` exchanges a matching
+  of non-intersecting edges, so a configuration moves at most once per sweep and the column is a
+  complete trajectory at sweep resolution. That yields what the histories cannot: **dwell times**,
+  and with them a residence-weighted occupancy and the replica flow in its proper time-weighted
+  form — the histories give the order of moves and are silent about duration.
+
+  The invariant is that at each sweep the column read across slots is a permutation of the
+  schedule's field vectors, asserted sweep by sweep in
+  `GraphParallelTempering-chart-column7-is-a-permutation`.
+
+  **Compatible.** Nothing asserts a row length and every consumer indexes columns 1-6 positionally,
+  so older runs keep working and `ComputeMinusBetaTimesFreeEnergy[chart[[All, All, 4]], bt]` is
+  unaffected. The cost is two reals per row, under 1% of a chart whose size is dominated by the
+  saved ground states.
+
 - `WLSToNotebook.wls` — converts a `.wls` script to an evaluatable `.nb`
   (`wolframscript -file WLSToNotebook.wls in.wls`). The front end already does this on File > Open
   plus File > Save As; the kernel does not, because the `(* ::Section:: *)`-to-cell-style mapping
