@@ -4,5 +4,5 @@
 *.pdf
 
 build/*
-!build/ECGrav-1.12.1.paclet
+!build/ECGrav-1.13.0.paclet
 .claude/settings.local.json

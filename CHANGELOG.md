@@ -6,6 +6,8 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-08-27
+
 ### Changed
 - **The beta-schedule chart rows are no longer flattened, and carry a configuration tag.** The six
   history-maintaining beta drivers -- `GraphMultiHistogram` and `GraphParallelTempering` in their
@@ -1315,7 +1317,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.12.1...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.13.0
 [1.12.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.1
 [1.12.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.0
 [1.11.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.11.1

@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.12.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.13.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.12.1. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.13.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -67,7 +67,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.12.1.paclet"];
+PacletInstall["/path/to/ECGrav-1.13.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -81,7 +81,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.12.1.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.13.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -181,9 +181,14 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.12.1). Earlier releases are preserved as git tags:
+current release (1.13.0). Earlier releases are preserved as git tags:
 
-- `v1.12.1` — current: the MBAR free-energy solve warns when it does not converge —
+- `v1.13.0` — current: a run records which configuration is at which slot at every sweep,
+  so round trips through the tempering ladder can be counted — with `TemperingMixing.wls`
+  to count them and `TemperingPlots.wls` to read continuous surfaces off the same run.
+  Beta-schedule chart rows are no longer flattened, so their observables move from
+  `chart[[…, 4 ;;]]` to `chart[[…, 4]]`; energy stays at column 3
+- `v1.12.1` — the MBAR free-energy solve warns when it does not converge —
   it used to return silently on hitting its iteration cap, leaving free energies worse
   than the tolerance implied with nothing to say so
 - `v1.12.0` — the MBAR free-energy solve is rebuilt on one shared matrix and
