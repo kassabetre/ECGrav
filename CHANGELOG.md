@@ -44,6 +44,27 @@ semantic-ish; breaking changes are called out explicitly.
   per-replica plots built that way never matched the reweighted surfaces they were shown against.
 
 ### Fixed
+- **`corrTMeasured` was never set by the one `GraphComputeCorrelationTime` overload every
+  external-field tempering run goes through.** The operator-list-with-`delH` form
+  (`MCSims.wl:3191`) initialised the key to `False` and then never assigned it: the line its
+  no-`delH` sibling carries — `data[[Key["corrTMeasured"]]] = AnyTrue[corrData[[All,
+  Key["measured"]]], TrueQ]` — was simply missing, with `corrData` already in hand two lines above.
+
+  `GraphParallelTempering` and `GraphCTLSchedule` both call that overload, so every replica of
+  every run with an external field came back saying its correlation time had never been
+  measured — sitting next to `corrTValues` holding integrals in the hundreds. The flag exists
+  precisely to separate a `corrT` of 2 that was computed from one that fell back to the floor, so
+  the failure was to report "no evidence" for runs that had plenty. No number changes; the flag
+  now tells the truth.
+
+  The existing `GraphComputeCorrelationTime-corrTMeasured` test appeared to cover this. It gives
+  each of the four overloads exactly one case, and this overload drew the all-frozen one, where
+  `False` is the right answer — so a flag hardwired to `False` agreed with it. The new
+  `GraphComputeCorrelationTime-corrTMeasured-every-overload` runs the same two situations through
+  all four: a normal run where every overload must say `True`, and `eqlT` 1, which leaves no lag
+  range, where every overload must say `False`. Verified to fail on the third overload before the
+  fix and pass after.
+
 - **`HomogeneousHamiltonian.md` §7.1's masking template was not usable as written.** Its `If` had no
   third argument — the quantity being masked was left as a comment — so the sampled region, which is
   the part of the plot you want, returned `Null`. It now takes the surface as an argument

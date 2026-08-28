@@ -589,6 +589,32 @@ VerificationTest[
     TestID -> "GraphComputeCorrelationTime-corrTMeasured"
 ];
 
+(* The same run through ALL FOUR overloads, which is what the test above only appears to do:
+   each of its four cases exercises a different overload, so every overload gets exactly one
+   verdict, and the operator-list-with-delH form drew the frozen case -- the one where the
+   right answer is False anyway. That overload set corrTMeasured nowhere at all: it initialised
+   the key to False and never assigned it, so it agreed with the test for the wrong reason
+   while reporting "never measured" for every external-field tempering run in the package, next
+   to corrTValues holding integrals in the hundreds.
+
+   The shape of the bug is the 1.8.1 one, and so is the shape of the fix: assert the behaviour
+   at every CALL SITE, not once on a representative. Two rows, because a flag that is hardwired
+   to either constant passes a one-row test -- eqlT 21 gives a normal run and all four must say
+   True; eqlT 1 gives numsweeps 5, no lag range, and all four must say False. *)
+VerificationTest[
+    Module[{ops = {Function[g, 1.0*Total[Flatten[g]]]}, four},
+        four[eq_] := (SeedRandom[611]; Quiet@Block[{Print = Null &},
+            {ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], eq, 0.0, 1, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], eq, 0.0, 1, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], dH[-1.0, 0.0], eq, 0.0, ops, 0],
+             ECGrav`GraphComputeCorrelationTime[C6, 0.2, h[-1.0, 0.0], eq, 0.0, ops, 0]}]);
+        {#[[2, "corrTMeasured"]] & /@ four[21],
+         #[[2, "corrTMeasured"]] & /@ four[1],
+         #[[2, "corrT"]] & /@ four[1]}],
+    {{True, True, True, True}, {False, False, False, False}, {2, 2, 2, 2}},
+    TestID -> "GraphComputeCorrelationTime-corrTMeasured-every-overload"
+];
+
 (* Both operator-list overloads emit the autocorrelation plot. The one without delH did not
    draw one at all before, which is why it is asserted separately from the plot test above. *)
 VerificationTest[

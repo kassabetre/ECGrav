@@ -3329,6 +3329,11 @@ numsweeps=Ceiling[Min[$ECGravCorrelationRunMultiplier*eqlT,$ECGravMaxCorrelation
 		
 		data[[Key["corrT"]]]=Max[corrTValues];
 
+		(*corrT is the max over the fluctuating observables, so it is measured as soon as any
+			one of them yielded an integral. The frozen ones keep the default of 2 in
+			corrTValues but never reach corrT.*)
+		data[[Key["corrTMeasured"]]]=AnyTrue[corrData[[All,Key["measured"]]],TrueQ];
+
 		(*A run this short may not resolve what it found: 20 correlation times is the usual
 			minimum, and the cap can bite before that. Said once, at the end, where corrT is known.*)
 		If[data[[Key["corrT"]]]>numsweeps/20,
