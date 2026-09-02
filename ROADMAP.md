@@ -204,8 +204,13 @@ code, not against notes.
       `GraphParallelTempering` run (11 rungs, 2000 sweeps). Read via `"source" -> "chart"`, tag
       column 5, occupancy in sweeps; the chart and replay paths agree exactly on walks, round trips
       and recovered swap graph, which is the first cross-validation of the two on real data.
-- [ ] **Run `TemperingSurfaceData` on a real `GraphParallelTempering` return.** It has only ever
-      been fed a `GraphCTLSchedule` chart reshaped into that layout.
+- [x] **Run the surface pipeline on a real `GraphParallelTempering` return** — done 2026-09-02 on a
+      beta-only run. It exposed that `TemperingPlots.wls` was external-field-shaped throughout;
+      `BetaSurfaceData` was added for the beta case.
+- [ ] **The companion scripts have no automated tests.** `TemperingPlots.wls` and
+      `TemperingMixing.wls` are verified by hand against real runs and documented, but they live
+      outside the paclet so the `.wlt` suite does not touch them. Either have the suite `Get` them
+      or accept that they are checked only when someone runs them.
 
 ### Diagnosed on real runs, never acted on
 

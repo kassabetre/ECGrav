@@ -68,6 +68,37 @@ data = TemperingSurfaceData[res, "ObservableNames" -> {...}];
 Its chart has the same six columns but carries no free energies, so they are solved with
 `ComputeMinusBetaTimesFreeEnergy` — sub-second since 1.12.0.
 
+### 2.1 Beta-only runs
+
+A beta ladder does not look like an external-field run — its chart column 4 is the *observable
+list*, not the conjugate observables, and it has no residual column — so reading it with
+`TemperingSurfaceData` is silently wrong. Use:
+
+```wl
+data = BetaSurfaceData[res, "ObservableNames" -> {...}];
+```
+
+Everything downstream is unchanged, because beta tempering **is** the one-component homogeneous
+form: the field is $c = \{\beta\}$, the conjugate observable is the energy, $\beta_{\text{fixed}} = 1$,
+and so $c\cdot O = \beta E$. `BetaSurfaceData` performs exactly that mapping, and the surfaces are
+then functions of $\beta$ alone — pass targets as `{{beta}}`.
+
+Three details it handles that are easy to get wrong by hand.
+
+**Both row layouts.** Since 1.13.0 a beta row is `{sweep, beta, E, {obs…}, tag}`; before that the
+observables were spliced in, giving `{sweep, beta, E, obs…}`. Both are read.
+
+**Observables that cannot be averaged are dropped, with a message naming their positions.** An
+`obs` entry returning a graph is the usual cause — it makes the chart enormous and there is nothing
+to average. Judged on the first row of *every* replica, so a column that is a graph in one and a
+number in another cannot slip through.
+
+**The free energies are always re-solved**, never taken from the run, because a run made before
+1.12.0 stored under-converged ones (§8). On a $K = 11$, $N = 2000$ run the whole call takes 0.54 s.
+
+Verified on both layouts: on a 1.13.0 run the solved `minusBetaF` matched a separately computed one
+to exactly `0.`, and $\langle E\rangle = -\partial\log Z/\partial\beta$ reproduces to $10^{-10}$.
+
 ## 3. What comes out
 
 `MBARSurfaces` returns an association of names to value lists, one value per grid point, in the

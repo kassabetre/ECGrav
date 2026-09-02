@@ -6,6 +6,26 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Added
+- **`BetaSurfaceData` in `TemperingPlots.wls`** — the entry point for a beta-only tempering run.
+  The file was external-field-shaped throughout: it reads conjugate observables from chart column 4
+  and the observable list from column 6, and a beta chart has the observable list at column 4 and no
+  conjugate column at all, so `TemperingSurfaceData` on one is silently wrong rather than an error.
+
+  Nothing downstream needed changing, because beta tempering **is** the one-component homogeneous
+  form — the field is `c = {beta}`, the conjugate observable is the energy, `betaFixed = 1`, so
+  `c.O = beta E`. `BetaSurfaceData` performs that mapping and hands back the same bundle every other
+  entry point returns.
+
+  It reads both row layouts (`{sweep, beta, E, {obs...}, tag}` since 1.13.0, spliced before it),
+  drops observable columns that are neither numeric nor boolean with a message naming their
+  positions — an `obs` entry returning a graph is the usual cause — and always re-solves the free
+  energies rather than trusting a run made before 1.12.0.
+
+  Verified on both layouts: on a `K = 11`, `N = 2000` run the solved `minusBetaF` matched a
+  separately computed one to exactly `0.`, the heat-capacity peak reproduced a hand-built reshape to
+  the digit, and `<E> = -dLog[Z]/dbeta` agrees to `1e-10`.
+
 ### Fixed
 - **`TemperingMixing.wls` refused a run return with anything appended to it.** `MixingData`
   required a driver return to be exactly four elements. The beta drivers do not return the free

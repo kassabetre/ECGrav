@@ -55,6 +55,13 @@ association every other function here takes.  res may be the {schedule, hist} pa
 Option \"ObservableNames\" names the entries of chart column 6, in the order the obs list was \
 given to the driver.";
 
+BetaSurfaceData::usage =
+"BetaSurfaceData[res] bundles a BETA-tempering run -- GraphParallelTempering or \
+GraphMultiHistogram over a beta ladder -- into the same association the external-field entry \
+points return, so every surface here works on it.  Beta tempering is the one-component \
+homogeneous form, c = {beta} and O = {energy}, and this does that mapping.  Non-numeric \
+observable columns are dropped with a message; \"ObservableNames\" names the ones that survive.";
+
 TemperingSurfaceData::usage =
 "TemperingSurfaceData[res] does the same for the return of GraphParallelTempering, whose chart \
 carries no free energies; they are solved with ComputeMinusBetaTimesFreeEnergy.";
@@ -225,6 +232,73 @@ Module[{chart, bt, mbf, wrapped},
 			"data" -> chart[[Key[k]]]|>,
 		{k, Keys[chart]}];
 	buildData[wrapped, bt, OptionValue["ObservableNames"]]
+];
+
+(*Beta tempering IS the one-component homogeneous form: the field is c = {beta}, the conjugate
+	observable is the energy, and betaFixed = 1, so c.O = beta E.  Everything in this file then
+	applies unchanged -- but the beta chart does not LOOK like the external-field one, and reading
+	it as if it did is silently wrong: its column 4 is the observable list, not the conjugate
+	observables, and it has no residual column at all.
+
+	Two row layouts occur.  Since 1.13.0 a beta row is {sweep, beta, E, {obs...}, tag}; before that
+	the observables were spliced in, giving {sweep, beta, E, obs...}.  Both are read.
+
+	The chart is re-keyed on {beta}, a one-element vector rather than the bare Real the drivers use,
+	because the coordinate helpers here take lists -- FieldToPhysical[c_List] does not match a Real.
+
+	The free energies are always re-solved rather than taken from the run, because a run made before
+	1.12.0 stored under-converged ones (HomogeneousHamiltonian.md, and CHANGELOG 1.12.0). It costs
+	well under a second.*)
+
+BetaSurfaceData::badres =
+"Expected a beta-tempering return: the {schedule, hist} pair, or a driver return whose second \
+element is the chart.";
+BetaSurfaceData::dropped =
+"Dropped `1` observable column(s) that are neither numeric nor True/False -- positions `2`. An \
+observable returning a graph is the usual cause; it cannot be averaged.";
+BetaSurfaceData::noobs = "No usable observable columns remain.";
+
+Options[BetaSurfaceData] = {"ObservableNames" -> Automatic};
+
+BetaSurfaceData[res_List, OptionsPattern[]] :=
+Module[{h, chart, rows, keys, first, nested, obsOf, probe, nObs, keep, drop, names, given,
+		reshaped},
+
+	h = Which[
+		Length[res] === 2 && ListQ[res[[2]]] && Length[res[[2]]] >= 4, res[[2]],
+		Length[res] >= 2 && AssociationQ[res[[2]]], res,
+		True, $Failed];
+	If[h === $Failed, Message[BetaSurfaceData::badres]; Return[$Failed]];
+	If[!checkHelpers[], Return[$Failed]];
+
+	chart = h[[2]];
+	rows = If[AssociationQ[First[Values[chart]]], chart[[All, "data"]], chart];
+	keys = Keys[rows];
+	first = First[First[Values[rows]]];
+
+	(*Nested since 1.13.0, spliced before it.*)
+	nested = ListQ[first[[4]]];
+	obsOf[row_] := If[nested, row[[4]], row[[4 ;;]]];
+	nObs = Length[obsOf[first]];
+
+	(*Keep only what can be averaged, judged on the first row of every replica so a column that is
+		a graph in one replica and a number in another cannot slip through.*)
+	probe = Transpose[obsOf[First[#]] & /@ Values[rows]];
+	keep = Select[Range[nObs], AllTrue[probe[[#]], NumericQ[#] || BooleanQ[#] &] &];
+	drop = Complement[Range[nObs], keep];
+	If[drop =!= {}, Message[BetaSurfaceData::dropped, Length[drop], drop]];
+	If[keep === {}, Message[BetaSurfaceData::noobs]; Return[$Failed]];
+
+	given = OptionValue["ObservableNames"];
+	names = If[ListQ[given] && Length[given] === nObs, given[[keep]], given];
+
+	reshaped = Association @ Table[
+		With[{b = N[If[ListQ[k], First[k], k]]},
+			{b} -> (With[{row = #}, {row[[1]], {b}, b*row[[3]], {N[row[[3]]]}, 0.,
+				obsOf[row][[keep]]}] & /@ rows[[Key[k]]])],
+		{k, keys}];
+
+	TemperingSurfaceData[{<||>, reshaped, <||>, <||>}, "ObservableNames" -> names]
 ];
 
 (* ::Section:: *)
