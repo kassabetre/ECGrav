@@ -195,13 +195,15 @@ code, not against notes.
 
 ### Would bite new work
 
-- [ ] **Confirm the installed paclet is 1.13.0.** It was 1.10.1 on 2026-08-25. Below 1.11.0 the
-      private MBAR helpers do not exist, and an undefined private symbol returns *unevaluated*
-      rather than failing, so anything built on them silently produces nothing.
-- [ ] **Exercise the chart tag column on a real run.** 1.13.0 records which configuration is at
-      which slot every sweep, but every run on disk predates it, so `TemperingMixing` still takes
-      the replay path everywhere. Dwell times, residence-weighted occupancy and the time-weighted
-      replica flow have only been seen on synthetic runs.
+- [x] **Confirm the installed paclet is 1.13.0** — done 2026-09-02: installed, loads as 1.13.0,
+      and `ECGrav\`Private\`MBARWeightBasis` is present. (Kept as a record because it was 1.10.1
+      on 2026-08-25, and below 1.11.0 the private MBAR helpers do not exist while an undefined
+      private symbol returns *unevaluated* rather than failing — so anything built on them
+      silently produces nothing. Check this first whenever something does nothing quietly.)
+- [x] **Exercise the chart tag column on a real run** — done 2026-09-02 on a beta-only
+      `GraphParallelTempering` run (11 rungs, 2000 sweeps). Read via `"source" -> "chart"`, tag
+      column 5, occupancy in sweeps; the chart and replay paths agree exactly on walks, round trips
+      and recovered swap graph, which is the first cross-validation of the two on real data.
 - [ ] **Run `TemperingSurfaceData` on a real `GraphParallelTempering` return.** It has only ever
       been fed a `GraphCTLSchedule` chart reshaped into that layout.
 

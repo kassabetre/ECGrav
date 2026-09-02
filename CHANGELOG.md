@@ -6,6 +6,22 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Fixed
+- **`TemperingMixing.wls` refused a run return with anything appended to it.** `MixingData`
+  required a driver return to be exactly four elements. The beta drivers do not return the free
+  energies, so appending a hand-computed `minusBetaF` as a fifth element is a reasonable thing to
+  do to one — and made the run unreadable.
+
+  Detection is now positional rather than length-exact: the chart, the replicas and the histories
+  are at 2, 3 and 4, and trailing elements are ignored. What makes reading by position safe is a
+  check that element 4 really is the histories (`KeyExistsQ[…, "history"]`) rather than something
+  else that happens to be an association.
+
+  Verified across all four real run shapes on hand — the two-element `GraphCTLSchedule` wrapper for
+  both a beta and an external-field run, a four-element `GraphParallelTempering` return, and the
+  five-element case — with the three previously-measured round-trip counts unchanged.
+
+
 ## [1.13.0] - 2026-08-27
 
 ### Changed

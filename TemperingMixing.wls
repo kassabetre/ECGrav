@@ -73,9 +73,14 @@ TrajectoryPlot::usage =
 
 Begin["`Private`"];
 
+(*Positional, not length-exact. A driver return keeps the chart, the replicas and the histories at
+	2, 3 and 4, and appending something of your own to it -- a hand-computed minusBetaF, say, which
+	the beta drivers do not return -- is a normal thing to do and should not stop it being read. The
+	check that element 4 really is the histories is what makes reading by position safe.*)
 histOf[res_List] := Which[
-	Length[res] === 2 && ListQ[res[[2]]] && Length[res[[2]]] === 4, res[[2]],
-	Length[res] === 4 && AssociationQ[res[[2]]], res,
+	Length[res] === 2 && ListQ[res[[2]]] && Length[res[[2]]] >= 4, res[[2]],
+	Length[res] >= 4 && AssociationQ[res[[2]]] && AssociationQ[res[[3]]] &&
+		AssociationQ[res[[4]]] && KeyExistsQ[First[Values[res[[4]]]], "history"], res,
 	True, $Failed];
 
 MixingData::badres = "Expected the 4-element return of GraphParallelTempering or GraphCTLSchedule.";
