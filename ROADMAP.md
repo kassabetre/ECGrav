@@ -39,7 +39,8 @@ _Status snapshot: 2026-07-28 — Phase 2 (documentation) complete; **Phase 3 (qu
       a short quickstart, current status and limitations
 - [x] `.gitattributes` marking `*.paclet` (and other binaries) as binary
 - [x] `CHANGELOG.md` starting at 1.2.0
-- [ ] `CITATION.cff` — deferred until there is a paper (software-only cite optional)
+- [x] `CITATION.cff` — added (software-only citation metadata; enables GitHub's
+      "Cite this repository", and the project is registered with Zenodo for a DOI)
 
 ## Phase 2 — Documentation completeness ✅ (done)
 
@@ -133,10 +134,18 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 - [x] Resolve or document known bugs (see below) — all three fixed at the source and
       regression-tested ✅
-- [ ] Expand test coverage beyond the current ~40 / 116 symbols; gaps include
-      parallel tempering, simulated annealing, gradient descent, the random-complex
-      generators, and the free-energy extrapolation family
-- [ ] Add CI (GitHub Actions) running the `.wlt` suite via Wolfram Engine on push/PR
+- [ ] Expand test coverage — **roughly 74 of 117 public symbols** are exercised as of
+      1.13.0 (counted by qualified `ECGrav\`` references in the suite, so approximate).
+      The MCMC family, the correlation-time family and the MBAR reweighting path are now
+      well covered. Remaining gaps, in rough order of how much they matter:
+      **`H2dCombManifold` / `delH2dCombManifold`** — the hamiltonian the research actually
+      runs on, and untested; `ErrorBootstrap`; `SpectralDim` and `HausdorffDim`; the
+      automorphism-order family; the exhaustive complex generators; `GraphCEITempSchedule`.
+      `GraphCTLSchedule` is exercised only indirectly and never end to end (it is expensive)
+- [x] Add CI (GitHub Actions) running the `.wlt` suite via Wolfram Engine on push/PR —
+      `.github/workflows/tests.yml`, green on `e656bc7` (1.13.0). **Known flake:** the
+      *Activate the free Wolfram Engine* step failed once on 2026-08-28 and passed on
+      re-run, so a red CI is worth reading before assuming a regression
 - [x] Address the ~119 `ReturnAmbiguous` warnings (bare `Return` inside `If`/`With`) —
       done: all ~120 (116 in `PureComplexes.wl`, 4 in `MCSims.wl`) converted to explicit
       tagged `Catch`/`Throw` (7 whole-body `If[c,Return,Return]` predicates simplified to
@@ -171,9 +180,75 @@ plot) both build cleanly and cross-link (guide → tutorial, README → tutorial
 
 ## Phase 5 — Scientific documentation (optional, high value for research code)
 
-- [ ] Background/theory note (the physics and mathematics of the model)
+- [~] Background/theory note — `Theory.md` covers the model, its observables with exact
+      definitions, the hamiltonians and the statistical mechanics. **Sections 5–6, the
+      physics background, are still an outline.** Also written since: `Theory.md` aside,
+      `HomogeneousHamiltonian.md`, `MBARWeights.md`, `TemperingPlots.md`,
+      `TemperingMixing.md` and the four pure-complex counter/sampler specifications
 - [ ] Example-notebook gallery
 - [ ] Links to associated paper(s) once available
+
+## Phase 6 — Loose ends from the tempering/plotting cycle (as of 1.13.0)
+
+Surveyed 2026-09-02, before starting the next expansion. Each item was checked against the
+code, not against notes.
+
+### Would bite new work
+
+- [ ] **Confirm the installed paclet is 1.13.0.** It was 1.10.1 on 2026-08-25. Below 1.11.0 the
+      private MBAR helpers do not exist, and an undefined private symbol returns *unevaluated*
+      rather than failing, so anything built on them silently produces nothing.
+- [ ] **Exercise the chart tag column on a real run.** 1.13.0 records which configuration is at
+      which slot every sweep, but every run on disk predates it, so `TemperingMixing` still takes
+      the replay path everywhere. Dwell times, residence-weighted occupancy and the time-weighted
+      replica flow have only been seen on synthetic runs.
+- [ ] **Run `TemperingSurfaceData` on a real `GraphParallelTempering` return.** It has only ever
+      been fed a `GraphCTLSchedule` chart reshaped into that layout.
+
+### Diagnosed on real runs, never acted on
+
+- [ ] **The field CTL bootstrap's swap graph is disconnected** — 3 components of sizes {8, 4, 4},
+      so round trips are impossible by construction and its zero count means a severed ladder,
+      not slow sampling.
+- [ ] **That run's schedule put 7 of 16 replicas outside the sampled fan**, |nt0| out to 2.29,
+      because it was built over the full bounding box. `HomogeneousHamiltonian.md` §8 has the
+      inscribed-box recipe; the schedule was never rebuilt with it.
+- [ ] **The beta CTL bootstrap has a 42x acceptance spread** and a bottleneck at the hot end
+      (beta = 0.1 accepting 2%). The CTL schedule that run *produced* packs rungs exactly there
+      and has never been run.
+- [ ] Field PT acceptance spread is 3.8x — better, still not flat.
+
+### Built but not landed
+
+- [ ] **`FanSchedule.wls`** — a constant-thermodynamic-length schedule over the (beta, nt0)
+      trapezoid rather than an axis-aligned box in c, which is what `GraphCTLSchedule` takes.
+      Verified on the schedule-building half only; the `GraphParallelTempering` leg is untested.
+      Lives *outside* the repo in `Paclet/`, with `PlottingPipelineExample.wls`/`.nb`.
+- [ ] **The staged beta-extension plan** (reaching beta = 6 in overlapping windows, sizing each
+      step with the hold-out check) — designed in detail, never executed.
+
+### Known gaps in the new tooling
+
+- [ ] **Per-edge swap acceptance is not recorded.** `swapAccept`/`swapTry` are per replica, so a
+      single bad edge shows only as depressed acceptance at both of its ends.
+- [ ] **No replica-flow diagnostic for a ladder that is not a chain.** The Katzgraber `f` assumes
+      a linear ladder, so it is not interpretable on a two-dimensional schedule.
+- [ ] Dwell times cannot be retrofitted onto runs recorded before 1.13.0. Re-run, or do without.
+
+### Carried over, worth re-checking before relying on either
+
+- [ ] The **frozen-chain corrT guards**: an observable-fluctuation filter is in the code (the
+      `informative` table), but whether the numeric-type check and the change-count guard
+      specifically were built is unverified.
+- [ ] The **adaptive correlation-run-length rehaul**, parked since 1.10.0.
+- [ ] The `O(n^2)` correlation-time cost and hang risk in the complex-space MCMC generators.
+
+### Documentation debt
+
+- [ ] 116 reference pages carry `XXXX` placeholders in their Tech Notes / Guides / Links
+      sections — a deliberate Phase 2 decision, still outstanding.
+- [ ] `FacetLabeledCountExamples.md` is untracked and has been since before this cycle: commit
+      it or delete it.
 
 ---
 
