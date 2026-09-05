@@ -36,14 +36,29 @@ Print["ECGrav repo root: ", root];
    which a fresh container must fetch from the Wolfram Cloud every time -- there is no
    cached copy in the image. LaunchKernels is checked because TestPrelude calls it and
    LowEnergyStates divides by $KernelCount. *)
-Print["Wolfram version  : ", $Version];
-Print["ProcessorCount   : ", $ProcessorCount];
+(* GitHub Actions workflow commands. Job logs need push access to read through the API,
+   but ANNOTATIONS are readable unauthenticated, so the failure summary is emitted as
+   ::error:: lines too. That is the difference between diagnosing a red build and asking
+   someone to paste the log. Newlines must be percent-encoded, and the "%" itself first.
+   GitHub renders at most ten annotations per level per step, hence the cap below. *)
+inActions = Environment["GITHUB_ACTIONS"] === "true";
+ghEnc[t_String] := StringReplace[t, {"%" -> "%25", "\r" -> "%0D", "\n" -> "%0A"}];
+ghCmd[kind_String, msg_String] := If[inActions, Print["::" <> kind <> "::" <> ghEnc[msg]]];
+
+pre = {};
+addPre[label_String, value_] := (
+    Print[StringPadRight[label, 17], ": ", value];
+    AppendTo[pre, label <> "=" <> ToString[value]]);
+addPre["Wolfram version", $Version];
+addPre["ProcessorCount", $ProcessorCount];
 Module[{k = Quiet[LaunchKernels[]]},
-    Print["LaunchKernels    : ", Length[If[ListQ[k], k, {}]], " kernels, $KernelCount = ", $KernelCount]];
+    addPre["LaunchKernels", ToString[Length[If[ListQ[k], k, {}]]] <>
+        " kernels, $KernelCount=" <> ToString[$KernelCount]]];
 Module[{t, r},
     {t, r} = AbsoluteTiming[Quiet[Check[ResourceFunction["BettiNumbers"][{{1, 2}, {2, 3}}], $Failed]]];
-    Print["BettiNumbers     : ", If[r === $Failed, "UNAVAILABLE (network/resource fetch failed)",
+    addPre["BettiNumbers", If[r === $Failed, "UNAVAILABLE (network/resource fetch failed)",
         ToString[r] <> " in " <> ToString[Round[t, 0.01]] <> "s"]]];
+ghCmd["notice", "preflight: " <> StringRiffle[pre, " | "]];
 
 testFiles = Sort@FileNames["*.wlt", FileNameJoin[{root, "Tests"}]];
 Print["Test files: ", FileNameTake /@ testFiles];
@@ -87,7 +102,19 @@ Module[{failed, shown, cap = 25},
                 Print["      messages : ", clip[t["ActualMessages"]]]]],
             {f, shown}];
         If[Length[failed] > cap,
-            Print["  ... and ", Length[failed] - cap, " more, not shown"]]]];
+            Print["  ... and ", Length[failed] - cap, " more, not shown"]];
+
+        (* Same information as annotations, which are publicly readable. One summary
+           naming every failing test, then a few with detail, staying under the
+           ten-per-step render limit. *)
+        ghCmd["error", "FAILING (" <> ToString[Length[failed]] <> "): " <>
+            StringRiffle[ToString[#["test"]["TestID"]] & /@ failed, ", "]];
+        Do[Module[{t = f["test"]},
+            ghCmd["error", f["file"] <> "  " <> ToString[t["TestID"]] <> "  (" <> ToString[t["Outcome"]] <> ")" <>
+                "\nexpected: " <> clip[t["ExpectedOutput"]] <>
+                "\nactual  : " <> clip[t["ActualOutput"]] <>
+                If[t["ActualMessages"] =!= {}, "\nmessages: " <> clip[t["ActualMessages"]], ""]]],
+            {f, Take[failed, UpTo[8]]}]]];
 
 Print[""];
 If[outcomes =!= {} && AllTrue[outcomes, # === "Success" &],
