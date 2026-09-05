@@ -86,29 +86,63 @@ Counting tableaux directly over $n$ rows is hopeless; everything below is the Bu
 
 ## 3. Derivation
 
-### 3.1 Covering, removed and restored
+### 3.1 Two conditions, four families, and the padding bijection
 
-Drop the "no empty row" condition first. Let
+Two **independent** binary conditions are in play, and keeping them apart is the whole of this
+subsection. On the columns: **separating** (pairwise distinct) or arbitrary. On the rows:
+**covering** (no empty row) or empty rows allowed — call the latter **padded**. That gives four
+families, and the derivation touches all four:
 
-$$A(p,M,n) \;=\; \#\{\text{multisets of exactly } n \text{ subsets of } [M],\ \text{every label in exactly } p \text{ of them}\},$$
+| | separating columns | arbitrary columns |
+| --- | --- | --- |
+| **covering rows** | $s_F(p,M,n)$ — the object being counted | $B(p,M,n)$ — §3.5, §10 |
+| **padded rows** | $A(p,M,n)$ — what (3.1) differences | $\tilde B(p,M,n)$ — what the Burnside sum produces |
 
-empty rows allowed. Padding a covering tableau on $k \le n$ rows with $n-k$ empty rows is a
-bijection onto the tableaux counted by $A$, so $A(n) = \sum_{k \le n} s_F(k)$ and
+Formally, $A(p,M,n)$ is the number of multisets of exactly $n$ subsets of $[M]$, **empty subsets
+allowed**, in which every label lies in exactly $p$ of them and **no two labels occupy the same
+set of rows**; $\tilde B(p,M,n)$ is the same count without that last clause.
 
-$$s_F(p,M,n) \;=\; A(p,M,n) - A(p,M,n-1). \tag{3.1}$$
+**Padding lemma.** Adding empty rows does not touch the columns. An empty row contributes a $0$ to
+every column, so it can neither merge two distinct columns nor separate two equal ones. Padding a
+covering tableau on $k \le n$ rows with $n-k$ empty rows is therefore a bijection onto the padded
+tableaux on $n$ rows having exactly $k$ nonempty rows — **within either column class, separately**.
+Summing over $k$ and differencing,
 
-This is the same device `UnlabeledCount.md` §2.2 uses. Doing it this way rather than imposing
-covering inside the sum is what keeps the summand a plain product; the price is two cycle-type
-sums instead of one (§8 shows they collapse to one in closed form).
+$$A(n) \;=\; \sum_{k \le n} s_F(k), \qquad s_F(p,M,n) \;=\; A(p,M,n) - A(p,M,n-1), \tag{3.1}$$
+
+and identically $\tilde B(n) = \sum_{k \le n} B(k)$ with $B(n) = \tilde B(n) - \tilde B(n-1)$.
+
+> **The column classes must not be mixed, and the risk is real.** The Burnside average of
+> §3.2–§3.3 naturally produces $\tilde B$, not $A$; $A$ is reached from it only by the
+> substitution of §3.5. Differencing $\tilde B$ instead yields $B$ — the covering count *with
+> repeated columns allowed* — which is not $s_F$: at $(2,3,3)$ it gives $4$ against $s_F = 1$, at
+> $(3,3,4)$ it gives $4$ against $1$, and at $(3,3,6)$ it gives $13$ against $10$. It is $A$ that
+> (3.1) differences, and the shipped `NumFLPCCount` accordingly passes the falling-factorial
+> weight (§5).
+
+This is the same padding device `UnlabeledCount.md` §2.2 uses, but **that derivation cannot go
+wrong in this particular way and this one can**. There the objects are *sets* of $M$ distinct
+$p$-subsets, so facet-distinctness is inherent in the object and its $A$ is "the same count with
+covering not required" — one facet class throughout, nothing to mismatch. Here the facets are an
+ordered tuple and distinctness has to be *imposed*, by the falling-factorial substitution of §3.5;
+that substitution is what creates the second column class, and with it the opportunity to
+difference the wrong family.
+
+Doing covering by differencing rather than imposing it inside the sum is what keeps the summand a
+plain product; the price is two cycle-type sums instead of one (§8 shows they collapse to one in
+closed form).
 
 ### 3.2 Burnside over the $n$ row slots
 
 $S_n$ permutes the $n$ row slots, and the multisets are its orbits, so
 
-$$A(p,M,n) \;=\; \frac{1}{n!}\sum_{\sigma \in S_n} |\mathrm{Fix}(\sigma)| \;=\; \frac{1}{n!}\sum_{\lambda \vdash n} \frac{n!}{z_\lambda}\,|\mathrm{Fix}(\lambda)|. \tag{3.2}$$
+$$\tilde B(p,M,n) \;=\; \frac{1}{n!}\sum_{\sigma \in S_n} |\mathrm{Fix}(\sigma)| \;=\; \frac{1}{n!}\sum_{\lambda \vdash n} \frac{n!}{z_\lambda}\,|\mathrm{Fix}(\lambda)|. \tag{3.2}$$
 
 A tuple fixed by $\sigma$ is **constant on each cycle**, so choosing one amounts to choosing a
-subset of $[M]$ per cycle.
+subset of $[M]$ per cycle. Note the left-hand side: the Burnside average imposes no condition on
+the columns, so what (3.2)–(3.3) compute is $\tilde B$. The separating family $A$ that (3.1)
+needs comes from it by the single substitution of §3.5, and everything between here and there is
+stated for $\tilde B$.
 
 ### 3.3 The labels decouple
 
@@ -162,17 +196,25 @@ $\sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)$; the two agree through $
 
 ### 3.5 Separating is one substitution
 
-Everything so far counts tableaux with **arbitrary** columns. Writing $B(p,M,n)$ for that count,
-(3.2)–(3.3) give $B$ with the weight $N^M$. The tableaux with pairwise **distinct** columns are
-obtained by replacing that weight with the falling factorial:
+Everything so far counts tableaux with **arbitrary** columns: (3.2)–(3.3) with the weight $N^M$
+give $\tilde B(p,M,n)$, the padded arbitrary-column family of §3.1. The padded **separating**
+family $A$ — the one (3.1) needs — is obtained by replacing that weight with the falling
+factorial:
 
 $$N^M \;\longrightarrow\; N^{(M)} \;=\; N(N-1)\cdots(N-M+1). \tag{3.5}$$
 
 The reason is the standard identity $x^M = \sum_k S(M,k)\, x^{(k)}$ [2]: merging equal columns of
 a tableau partitions the $M$ labels into $k$ blocks and leaves a separating tableau with $k$
-columns, so
+columns. Merging columns neither creates nor destroys an empty row, so the correspondence holds
+inside each **row** class separately:
 
-$$B(p,M,n) \;=\; \sum_{k} S(M,k)\, s_F(p,k,n). \tag{3.6}$$
+$$B(p,M,n) \;=\; \sum_{k} S(M,k)\, s_F(p,k,n), \qquad
+\tilde B(p,M,n) \;=\; \sum_{k} S(M,k)\, A(p,k,n). \tag{3.6}$$
+
+Both hold, and the **row condition must match across the equation**. The first is the form the
+suite checks (§10, leg 3), whose brute force enumerates covering tableaux with repeated columns
+allowed. Pairing $\tilde B$ with $s_F$ is the mismatch to avoid: at $(2,3,5)$, $\tilde B = 15$
+while $\sum_k S(3,k)\,s_F(2,k,5) = 3$.
 
 Substituting (3.5) cycle type by cycle type **is** the Stirling inversion of (3.6) — and unlike
 performing that inversion afterwards, it has **no cancellation**: every summand stays
@@ -180,15 +222,17 @@ non-negative, because $N^{(M)} \ge 0$ for integer $N \ge 0$ and $N^{(M)} = 0$ ex
 $N < M$, which is the honest statement that a block collection offering fewer than $M$ admissible
 facets can supply no separating tableau at all.
 
-`NumFLPCTSum` takes the weight as a parameter `wf` for this reason; passing `#^M &` returns $B$
-and passing `FactorialPower[#, M] &` returns the separating count. The shipped code always
+`NumFLPCTSum` takes the weight as a parameter `wf` for this reason; passing `#^M &` returns
+$\tilde B$ and passing `FactorialPower[#, M] &` returns $A$. The shipped code always
 passes the latter, but the hook is what makes (3.6) directly testable (§10).
 
 ---
 
 ## 4. Worked example: $s_F(2,3,5) = 3$
 
-Three labelled edges on five unlabelled vertices. By (3.1) this needs $A(5)$ and $A(4)$.
+Three labelled edges on five unlabelled vertices. By (3.1) this needs $A(5)$ and $A(4)$ — the
+**padded separating** family, so the weight column below is the falling factorial $N^{(3)}$ and
+not $N^3$.
 
 $A(2,3,5)$, over all seven cycle types of $S_5$:
 
@@ -234,7 +278,7 @@ derivation above appears as the header comment at line 1801.
 | --- | --- | --- |
 | 1834 | `NumFLPCLongCycleTable[p,smax]` | $g(0..s_{\max})$, permutations with every cycle $> p$ (§3.4) |
 | 1853 | `NumFLPCNCoeff[mvec,jvecs]` | $N(\lambda,p)$ of (3.3), expanded over the partitions of $p$ |
-| 1859 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | $n!\,A(n)$: the cycle-type sum, `wf` selecting $N^M$ or $N^{(M)}$ |
+| 1859 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | the cycle-type sum: $n!\,A(n)$ with `wf` $= N^{(M)}$, or $n!\,\tilde B(n)$ with `wf` $= N^M$ (§3.1) |
 | 1884 | `NumFLPCCount[p,M,n]` | $\bigl(T(n) - n\,T(n-1)\bigr)/n!$, the differencing (3.1) |
 | 1897 | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
 | 1913 | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count |
@@ -348,7 +392,8 @@ including out-of-range zeros. It is the cleanest statement of why §3.4 cannot b
 Let $h_u = \sum_{\lambda \vdash u,\ \text{parts} \le p} N(\lambda,p)^{(M)}/z_\lambda$ and
 $H(z) = \sum_{u \ge 0} h_u z^u$ — the short-cycle part alone. With
 $G(z) = \sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)$ the long-cycle EGF, §3.4 says
-$A(n) = [z^n]\,H(z)G(z)$. Since $\exp\bigl(\sum_{k \ge 1} z^k/k\bigr) = 1/(1-z)$, the differencing
+$A(n) = [z^n]\,H(z)G(z)$ — note $h_u$ is built from $N^{(M)}$, so this is the padded separating
+family of §3.1. Since $\exp\bigl(\sum_{k \ge 1} z^k/k\bigr) = 1/(1-z)$, the differencing
 (3.1) contributes the factor $(1-z)$ and the two collapse:
 
 $$s_F(p,M,n) \;=\; [z^n]\; H(z)\,\exp\!\Bigl(-\sum_{k=1}^{p} \frac{z^k}{k}\Bigr). \tag{8.1}$$
@@ -397,8 +442,9 @@ Five independent legs, in `Tests/PureComplexes.wlt` lines 224–293 unless noted
    covering $[n]$, canonicalised over the $n!$ relabellings, on five parameter sets.
    `NumFacetLabeledPureComplexes-brute-force`. This tests the *description*, not the derivation.
 3. **Against the derivation itself, via (3.6).** $B(p,M,n) = \sum_k S(M,k)\,s_F(p,k,n)$ checked
-   against independently brute-forced counts of **all** $(p,M,n)$ tableaux — separating or not —
-   on four parameter sets. `NumFacetLabeledPureComplexes-stirling-identity`. This is the strongest
+   against independently brute-forced counts of all **covering** $(p,M,n)$ tableaux — separating or
+   not — on four parameter sets. Covering on both sides is what makes the identity true; the brute
+   force enforces it by drawing rows from `Rest[Subsets[Range[M]]]`, which omits the empty row. `NumFacetLabeledPureComplexes-stirling-identity`. This is the strongest
    leg: it exercises §3.5, the one step where a plausible-looking wrong answer is easiest to
    produce, rather than only the endpoints.
 4. **Against the automorphism decomposition of §1.1.** $s_F = \sum_{\text{classes}} M!/|H|$ with
