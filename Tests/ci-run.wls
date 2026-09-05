@@ -54,10 +54,13 @@ addPre["ProcessorCount", $ProcessorCount];
 Module[{k = Quiet[LaunchKernels[]]},
     addPre["LaunchKernels", ToString[Length[If[ListQ[k], k, {}]]] <>
         " kernels, $KernelCount=" <> ToString[$KernelCount]]];
-Module[{t, r},
-    {t, r} = AbsoluteTiming[Quiet[Check[ResourceFunction["BettiNumbers"][{{1, 2}, {2, 3}}], $Failed]]];
-    addPre["BettiNumbers", If[r === $Failed, "UNAVAILABLE (network/resource fetch failed)",
-        ToString[r] <> " in " <> ToString[Round[t, 0.01]] <> "s"]]];
+(* No network probe any more. Until 1.14.1 CountHoles wrapped
+   ResourceFunction["BettiNumbers"], the package's only network dependency, and this
+   preflight probed it -- which is how the 15 red CountHoles tests of 2026-09-05 were
+   diagnosed from the annotations alone. Betti numbers are now computed locally, so
+   there is nothing left here that needs the Wolfram Cloud. If that ever changes, probe
+   it here again: a red build whose cause is the box should say so in its own log. *)
+addPre["Network needed", "no (Betti numbers computed locally since 1.14.1)"];
 ghCmd["notice", "preflight: " <> StringRiffle[pre, " | "]];
 
 testFiles = Sort@FileNames["*.wlt", FileNameJoin[{root, "Tests"}]];

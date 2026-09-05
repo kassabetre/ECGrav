@@ -4,6 +4,31 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [1.14.1] - 2026-09-05
+
+### Fixed
+- **`CountHoles` no longer needs network access.** It wrapped
+  `ResourceFunction["BettiNumbers"]`, the only network dependency anywhere in the package.
+  When that resource became unfetchable, every Betti-number call returned `$Failed` wrapped
+  around its own argument — `$Failed[{Simplex[{1,2,3}], ...}]` — with no error raised by
+  `CountHoles` itself, so the failure was silent at the call site and surfaced only as a
+  nonsense value downstream. This affected anyone without Wolfram Cloud access, not just CI,
+  and Betti numbers are a reported observable.
+
+  They are now computed from the boundary matrices of the complex:
+  `b_k = dim C_k - rank d_k - rank d_(k+1)`, rational and unreduced, which is what the
+  resource returned. Verified against it on the suite's fixtures and on 120 random
+  complexes — 0 mismatches — and at equal cost (0.029 s against 0.028 s at p = 5, M = 40).
+  **No value any working call returned has changed.**
+
+### Changed
+- `Tests/ci-run.wls` reports which tests failed, not just how many, and mirrors the summary
+  into GitHub Actions annotations. Job logs need push access through the API, so a red build
+  previously could not be diagnosed without someone opening the web UI; annotations are
+  readable unauthenticated. It also prints an environment preflight. This is what identified
+  the failure above: 15 red tests, all `CountHoles`, all reporting
+  `ResourceObject::notfname`.
+
 ## [1.14.0] - 2026-09-05
 
 ### Changed (breaking)

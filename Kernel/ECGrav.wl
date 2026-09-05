@@ -2142,7 +2142,10 @@ CountHoles::usage = "CountHoles[c] gives the whole Betti vector {b_0, b_1, ...} 
 	and so returned b_(k-1) -- CountHoles[c, 1] gave the component count, not the loop count --
 	which contradicted this usage message. Any saved analysis that calls the two-argument form is
 	off by one index and should be re-run. The one-argument form is unchanged.
-	Uses Mathematica's built in ResourceFunction[``BettiNumbers``].";
+	Betti numbers are rational and unreduced, computed from the boundary matrices of the
+	complex. Before 1.14.1 this called ResourceFunction[``BettiNumbers``], which made it the
+	only function in the package needing network access; it returned the same values, but
+	failed outright wherever the Wolfram Cloud was unreachable.";
 
 (* :Error Messages: *)
 
