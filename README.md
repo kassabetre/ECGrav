@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.13.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.14.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.13.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.14.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -67,7 +67,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.13.0.paclet"];
+PacletInstall["/path/to/ECGrav-1.14.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -81,7 +81,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.13.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.14.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -181,9 +181,15 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.13.0). Earlier releases are preserved as git tags:
+current release (1.14.0). Earlier releases are preserved as git tags:
 
-- `v1.13.0` — current: a run records which configuration is at which slot at every sweep,
+- `v1.14.0` — current: two observables that were silently wrong when misused are guarded at
+  the source. `CountHoles[c, k]` now returns the k-th Betti number `b_k` rather than `b_{k-1}`,
+  so `CountHoles[c, 1]` is the loop count and no longer the component count — **re-run any saved
+  analysis that calls the two-argument form**; and `FractionInLargestComponent` no longer accepts
+  a facet list, which it used to read as an adjacency matrix whenever it happened to be square.
+  Also 31 new tests, `EnsembleWeights.md`, and `md2pdf.py`
+- `v1.13.0` — a run records which configuration is at which slot at every sweep,
   so round trips through the tempering ladder can be counted — with `TemperingMixing.wls`
   to count them and `TemperingPlots.wls` to read continuous surfaces off the same run.
   Beta-schedule chart rows are no longer flattened, so their observables move from

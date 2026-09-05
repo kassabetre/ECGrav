@@ -4,7 +4,7 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
-## [Unreleased]
+## [1.14.0] - 2026-09-05
 
 ### Changed (breaking)
 - **`CountHoles[c, k]` now returns the k-th Betti number `b_k`, not `b_{k-1}`.** The two-argument
