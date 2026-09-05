@@ -109,8 +109,14 @@ blocks of size $k$,
 
 $$N(\nu) \;=\; [x^p] \prod_{k \ge 1} (1 + x^k)^{\nu_k},$$
 
-the number of sub-multisets of the block sizes summing to $p$ — a truncated cycle-index-style
-generating function [5,6]. `RandFLPCWeightCounts` builds the whole coefficient list out to $x^p$
+counting the sub-collections of **blocks** whose sizes total $p$ — a truncated cycle-index-style
+generating function [5,6]. Blocks of equal size are distinguishable, which is what the exponents
+$\nu_k$ supply: expanded, $N(\nu) = \sum_{\omega} \prod_k \binom{\nu_k}{\omega_k}$ over
+$\omega$ with $\sum_k k\,\omega_k = p$. It is *not* the number of sub-multisets of the block
+*sizes*: for $\nu = (3,1)$ — three blocks of size 1 and one of size 2 — only two size-multisets
+total $p = 2$, namely $\{2\}$ and $\{1,1\}$, while $N = 4$, because the three unit blocks offer
+$\binom{3}{2} = 3$ distinct pairs. `FacetLabeledCount.md` §3.3 states the same count for the same
+reason. `RandFLPCWeightCounts` builds the whole coefficient list out to $x^p$
 by truncated convolution, so the degree-$n$ polynomial is never formed.
 
 ---
