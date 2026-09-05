@@ -170,28 +170,107 @@ stated for $\tilde B$.
 
 ### 3.3 The labels decouple
 
-Write $R_c \subseteq [M]$ for the subset attached to cycle $c$. Label $i$ occupies exactly the
-rows of those cycles $c$ with $i \in R_c$, so the condition "label $i$ lies in exactly $p$ rows"
-reads
+**A fixed tuple is a choice of one subset per cycle.** $\sigma$ fixes $(R_1,\dots,R_n)$ exactly
+when $R_{\sigma(j)} = R_j$, that is, when the tuple is constant on each cycle of $\sigma$. So the
+$n$ row slots collapse to the $\ell(\lambda)$ cycles, and a fixed tuple is precisely a choice of
+one subset $R_c \subseteq [M]$ for each cycle $c$.
+
+Row $j$ then contains label $i$ iff $i \in R_{c(j)}$, and all $|c|$ rows of a cycle carry the same
+subset, so label $i$ occupies $\sum_{c\,:\,i \in R_c}|c|$ rows in total. The condition "label $i$
+lies in exactly $p$ rows" reads
 
 $$\sum_{c\,:\,i \in R_c} |c| \;=\; p,$$
 
-**separately for each label**. The labels therefore impose no joint constraint, and
+**separately for each label**, and
 
-$$|\mathrm{Fix}(\lambda)| \;=\; N(\lambda,p)^M, \qquad N(\lambda,p) \;=\; [x^p] \prod_{k \ge 1} (1 + x^k)^{m_k}, \tag{3.3}$$
+$$|\mathrm{Fix}(\lambda)| \;=\; N(\lambda,p)^M, \qquad N(\lambda,p) \;=\; [x^p] \prod_{k \ge 1} (1 + x^k)^{m_k}. \tag{3.3}$$
 
-$N(\lambda,p)$ being the number of sub-multisets of the cycle lengths summing to $p$ — each cycle
-of length $k$ contributes a factor $(1+x^k)$, taken or not. This is a truncated cycle-index-style
-generating function, the same one the sampler calls $N(\nu)$.
+#### Why it is a power, and what would destroy it
 
-**The decoupling is the step that makes the count tractable**, and it is worth saying why it is
-not obvious: the rows are shared between labels, so a joint condition would have been the
-default. It survives only because the constraint is stated per label and the $R_c$ are recovered
-from the per-label choices without interference.
+The step that turns a shared constraint into a product is a **transpose**. Specifying the family
+$\{R_c\}_c$ is the same data as specifying, for each label $i$, the set
+
+$$S_i \;=\; \{\,c \;:\; i \in R_c\,\}$$
+
+of cycles that contain it — the same cycle-by-label incidence read the other way round. Under that
+reading the constraints are $\sum_{c \in S_i}|c| = p$, **one per label, with nothing linking
+different labels**. Each of the $M$ labels therefore chooses independently from the same menu of
+admissible $S$, and the count is that menu's size raised to the $M$.
+
+This is worth pausing on, because it is fragile and it is not the default: the rows are shared
+between labels, so a joint condition is what one would expect. It survives only because **nothing
+constrains the $R_c$ themselves** — no cap on $|R_c|$, and, decisively, no requirement that a row
+be nonempty.
+
+> **Covering would destroy the decoupling.** A row is empty exactly when *no label* chose its
+> cycle, which is a condition across all $M$ labels at once. Imposing covering here would couple
+> them and the product would collapse. **This is the real reason §3.1 removes covering first**, and
+> why the price of two cycle-type sums is worth paying: the differencing is not a convenience, it
+> is what makes (3.3) a power at all.
+
+#### What $N(\lambda,p)$ counts
+
+For a single label, choose a sub-collection of the **cycles** whose lengths total $p$. Each cycle
+is either taken or not, and one of length $k$ contributes $x^k$ when taken; with $m_k$ cycles of
+length $k$ that is a factor $(1+x^k)^{m_k}$, and $[x^p]$ selects total length exactly $p$.
+Equivalently, expanded over the partitions $\nu \vdash p$,
+
+$$N(\lambda,p) \;=\; \sum_{\nu \,:\, \sum_k k\,\nu_k = p}\ \prod_k \binom{m_k}{\nu_k},$$
+
+which is the form `NumFLPCNCoeff` evaluates. It is a truncated cycle-index-style generating
+function, the same one the sampler calls $N(\nu)$.
+
+> **It counts sub-collections of cycles, not sub-multisets of cycle lengths.** Cycles of equal
+> length are distinguishable, which is exactly what the $\binom{m_k}{\nu_k}$ record. For
+> $\lambda = \{2,1,1,1\}$ and $p = 2$ there are only two sub-multisets of *lengths* summing to 2,
+> namely $\{2\}$ and $\{1,1\}$ — but $N = 4$, because the three 1-cycles offer $\binom{3}{2} = 3$
+> distinct pairs. (Earlier revisions of this section described it the wrong way; the generating
+> function and the code were always right.)
+
+#### Examples
+
+Taking $p = 2$, as in §4:
+
+| $\lambda$ | generating function | $[x^2]$ | directly |
+| --- | --- | --- | --- |
+| $\{2,1,1,1\}$ | $(1+x)^3(1+x^2)$ | **4** | the 2-cycle, or two of the three 1-cycles: $1 + \binom{3}{2}$ |
+| $\{1^5\}$ | $(1+x)^5$ | **10** | any two of the five 1-cycles: $\binom{5}{2}$ |
+| $\{2,2,1\}$ | $(1+x)(1+x^2)^2$ | **2** | either 2-cycle; two 1-cycles are unavailable, there is one |
+| $\{3,1,1\}$ | $(1+x)^2(1+x^3)$ | **1** | the two 1-cycles; the 3-cycle overshoots |
+| $\{3,2\}$ | $(1+x^2)(1+x^3)$ | **1** | the 2-cycle |
+| $\{4,1\}$ | $(1+x)(1+x^4)$ | **0** | nothing sums to 2 |
+
+**A fixed tuple in full.** Take $n = 5$, $p = 2$, $M = 3$ and $\sigma = (1\,2)$, so the cycles are
+$c_1 = \{1,2\}$ of length 2 and $c_2 = \{3\}$, $c_3 = \{4\}$, $c_4 = \{5\}$. The menu has the
+$N = 4$ entries $\{c_1\}, \{c_2,c_3\}, \{c_2,c_4\}, \{c_3,c_4\}$. Let label 1 choose $\{c_1\}$,
+label 2 choose $\{c_2,c_3\}$ and label 3 choose $\{c_3,c_4\}$. Transposing gives
+$R_{c_1} = \{1\}$, $R_{c_2} = \{2\}$, $R_{c_3} = \{2,3\}$, $R_{c_4} = \{3\}$, so
+
+$$(R_1,\dots,R_5) \;=\; \bigl(\{1\},\ \{1\},\ \{2\},\ \{2,3\},\ \{3\}\bigr),$$
+
+constant on $c_1$ as required, with each label occupying exactly two rows. Read as a complex — row
+$j$ lists the facets containing vertex $j$ — this is $F_1 = \{1,2\}$, $F_2 = \{3,4\}$,
+$F_3 = \{4,5\}$: three edges on five vertices, fixed by the swap of vertices 1 and 2. All three
+labels choose independently, so this cycle type contributes $4^3 = 64$ fixed tuples.
+
+#### A consequence worth carrying to §3.5
+
+Two columns of a fixed tuple coincide exactly when two labels chose the **same** menu entry, since
+$S_i$ determines the set of rows label $i$ occupies. So, on $\sigma$-fixed tuples,
+
+$$\text{separating} \iff \text{the } M \text{ labels pick pairwise \emph{distinct} menu entries},$$
+
+which is $N(N-1)\cdots(N-M+1) = N^{(M)}$. That is why the substitution of §3.5 is **exact cycle
+type by cycle type**, not a global identity that happens to come out right.
+
+**Verified by brute force** — enumerating every $\sigma$-fixed tuple and comparing, for
+$\lambda = \{2,1,1,1\}$ at $p=2, M=3$: $|\mathrm{Fix}| = 64 = 4^3$ and $24 = 4\cdot3\cdot2$
+separating; for $\{1^5\}$: $1000 = 10^3$ and $720 = 10\cdot9\cdot8$; for $\{2,2,1\}$: $8 = 2^3$
+and $0 = 2\cdot1\cdot0$. These are the $N$ and $N^{(3)}$ columns of §4's tables.
 
 ### 3.4 Long cycles enter in bulk — they are not excluded
 
-Since every part is positive, a cycle of length $k > p$ lies in no sub-multiset summing to $p$.
+Since every part is positive, a cycle of length $k > p$ lies in no sub-collection summing to $p$.
 Hence $N(\lambda,p)$ depends only on $m_1,\dots,m_p$.
 
 **It does not follow that such cycle types contribute nothing.** They contribute whatever the
@@ -226,6 +305,12 @@ family $A$ — the one (3.1) needs — is obtained by replacing that weight with
 factorial:
 
 $$N^M \;\longrightarrow\; N^{(M)} \;=\; N(N-1)\cdots(N-M+1). \tag{3.5}$$
+
+§3.3 already shows why this is the right weight and not merely a convenient one: on the fixed
+tuples of a single cycle type, two columns coincide exactly when two labels chose the same
+admissible $S$, so separating means the $M$ labels pick pairwise **distinct** menu entries, which
+is $N^{(M)}$ on the nose. The substitution is therefore exact cycle type by cycle type. The
+identity below is the same fact stated globally.
 
 The reason is the standard identity $x^M = \sum_k S(M,k)\, x^{(k)}$ [2]: merging equal columns of
 a tableau partitions the $M$ labels into $k$ blocks and leaves a separating tableau with $k$
