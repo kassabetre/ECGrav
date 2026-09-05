@@ -152,7 +152,8 @@ vertex counts. So the `[p, M]` counter overloads and the `{p, M}` sampler overlo
 API, and **n itself becomes the first random variable**, not a parameter. The paper covers the
 counts, the exact samplers and the MC samplers, then the distributions of: number of vertices,
 number of connected components, Betti numbers, and automorphism group order — compared across the
-three labelings.
+three labelings. **Dimension is not among them**: P1 does not explore Hausdorff or spectral
+dimension (decided 2026-09-04).
 
 ### A-theory. The three ensembles are related exactly — *this is a result, not a measurement*
 
@@ -190,8 +191,10 @@ p = 4, 0.84 at p = 3, and only 0.30 at p = 2. *Convergence is dramatically slowe
 for higher-dimensional complexes.* The M = 1 and M = 2 columns are exactly 1 and 1/2 for every p,
 which is provable by hand (any two distinct p-subsets admit a swap), so the framework self-checks.
 
-- [ ] Write this up as `EnsembleWeights.md` — it reframes P1's central claim from an empirical
-      observation into a theorem plus an exactly computed rate.
+- [x] **Written up as `EnsembleWeights.md`** (2026-09-04) — the orbit-counting lemma, the two
+      exact identities, the total-variation formula, both measured tables, the verification, and the
+      KS methodology. It reframes P1's central claim from an empirical observation into a theorem
+      plus an exactly computed rate.
 - [ ] Extend the table to larger M and to p = 5, and find where each purity crosses, say, 0.99.
 
 ### A-stats. Kolmogorov-type testing — **one trap to avoid**
@@ -254,18 +257,28 @@ wrong number, all found by writing these tests, all live in a P1 sweep:
 3. **`FacetAdjacencyMatrix` is not an adjacency matrix** (§A1 trap box below) — facet sizes on the
    diagonal, intersection sizes off it.
 
-- [ ] **Guard (1) and (2) at the source.** Both are one-line pattern guards: reject a facet list in
-      `FractionInLargestComponent` via the existing `PureComplexQ` convention, and either fix
-      `CountHoles`'s indexing or fix its usage message. Deferred as a behaviour change rather than
-      a test addition — decide before P1's figures, since the tests currently pin the *actual*
-      convention so a change to either code or message is caught.
+- [x] **Guarded at the source, 2026-09-04.** A private `adjacencyMatrixQ` (square, symmetric, zero
+      diagonal) now gates the `_List` overloads of `FractionInLargestComponent` and
+      `FractionInLargestKPathComponent`, which report `::notadj` and name `GraphFromCliques` in the
+      message instead of silently reading a facet list as a weighted adjacency matrix.
+      `CountHoles[c, k]` now returns **b_k**, with `k` the topological dimension counted from 0, as
+      its usage message always claimed; out-of-range `k` reports `::badk` rather than leaking an
+      unevaluated `Part`. **This is a breaking change** — the two-argument form previously returned
+      b_{k-1}, so any saved analysis calling it is off by one index and must be re-run. The
+      one-argument form is unchanged. Suite 238 green (`PureComplexes` 180, `MCSims` 58).
+      A pre-existing test, `FractionInLargestComponent-fst1`, had been passing *by coincidence*:
+      `fst1` is 3x3, so the facet list was read as a weighted adjacency matrix that happened also to
+      be connected, giving the right answer for the wrong reason. It now goes through the
+      1-skeleton.
 - [ ] Raise `FVector`, `RmsPurity`, `AvgKDim` above a single test each (not P1 headline
       statistics, so lower priority than the four above).
-- [ ] **`SpectralDim` at a fixed step s is a LOCAL probe, not an asymptotic dimension.** On a cycle
-      it returns 1.2983… identically for n = 20, 60 and 150 — a 6-step walk cannot see global
-      structure. That is correct behaviour, but it means P1 must report the step s alongside any
-      dimension and must not call the result "the spectral dimension". Decide the s convention in
-      A2.
+- [x] **Dimension probes are OUT of P1's scope** (decided 2026-09-04): the paper does not explore
+      Hausdorff or spectral dimension, so no `s` convention is needed and `SpectralDim` /
+      `HausdorffDim` are no longer on P1's critical path. Recorded for whenever they return: at a
+      fixed step `s` **`SpectralDim` is a LOCAL probe, not an asymptotic dimension** — on a cycle it
+      returns 1.2983… identically at n = 20, 60 and 150, because a 6-step walk cannot see global
+      structure. Two invariance tests are in the suite; the `FacetAdjacencyMatrix` trap below stays
+      recorded for the same reason.
 - [ ] **Resolve the dimension-function input question — and mind the trap below.**
       `SpectralDim[Amat, s]` and `HausdorffDim[Amat, Dmat, s]` accept only an adjacency matrix or a
       `Graph`; verified 2026-09-04 that there is **no complex-accepting overload**. So for d ≥ 2
