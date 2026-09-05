@@ -257,6 +257,27 @@ code, not against notes.
 - [ ] `FacetLabeledCountExamples.md` is untracked and has been since before this cycle: commit
       it or delete it.
 
+
+## Phase 7 — Expansion arc (planned 2026-09-04)
+
+The next arc is planned in detail in **`ExpansionRoadmap.md`**, which supersedes this file for
+everything after 1.13.0. In brief, two papers drive four tracks:
+
+- **P1** (draft ~3 weeks) — a probability paper on random pure complexes at fixed facet count:
+  typical topology and connectivity as *M* grows, under vertex-, facet- and unlabeled equivalence,
+  for dimensions d = 1…4. The counters and samplers are ready; **the observables they feed are not**
+  (`SpectralDim`, `HausdorffDim`, `ConnectedComplexComponents`, `KpathConnectedComponents`,
+  `FractionInLargestKPathComponent`, `PureComplexAutomorphismGroupOrder` are all at zero tests).
+- **P2** (draft ~2 months) — a physics paper on emergent combinatorial manifolds from
+  `H2dCombManifold` with source terms coupling to Euler characteristic, triangle count and boundary
+  edges; phase map and continuum limit by finite-size scaling. Keeps the graph state space.
+- **Wang–Landau** — flat-histogram sampling to settle whether the manifold-emergence transition is
+  first or second order.
+- **Quantum multigraphs** — the D > 2, k > 2 expansion of arXiv:2509.08296, of which the shipped
+  package is already the D = 2, k = 2 corner. Follows both papers.
+
+Several Phase 6 items above are prerequisites and are cross-referenced by name in that document.
+
 ---
 
 ## Known issues / bugs
