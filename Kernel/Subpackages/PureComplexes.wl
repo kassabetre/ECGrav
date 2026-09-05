@@ -719,6 +719,17 @@ $Failed);
 (*FractionInLargestComponent*)
 
 
+(* Private helper. An adjacency matrix is square, symmetric and has a zero diagonal.
+   The test matters because a pure complex's facet list is a rectangular array, and it
+   is *square* whenever the facet count equals the purity (M = p) -- which any sweep over
+   M reaches. Without this check AdjacencyGraph accepts such a list as a weighted
+   adjacency matrix and every connectivity answer downstream is silently wrong:
+   FractionInLargestComponent[{{1,2,3},{4,5,6},{7,8,9}}] returned 1 for three disjoint
+   triangles, where the answer is 1/3. Non-square facet lists already failed loudly. *)
+adjacencyMatrixQ[m_]:=MatrixQ[m,NumericQ]&&SquareMatrixQ[m]&&
+	SymmetricMatrixQ[m]&&AllTrue[Diagonal[m],PossibleZeroQ];
+
+
 (* Primary Pattern *)
 FractionInLargestComponent[g_Graph]:=
 (*
@@ -730,7 +741,11 @@ largestComponentLength/numV
 ];
 
 (* Overload Pattern *)
-FractionInLargestComponent[amat_List]:=FractionInLargestComponent[AdjacencyGraph[amat]];
+FractionInLargestComponent[amat_List]:=
+If[adjacencyMatrixQ[amat],
+	FractionInLargestComponent[AdjacencyGraph[amat]],
+	(Message[FractionInLargestComponent::notadj];$Failed)
+];
 
 (* Catch-all Pattern *)
 FractionInLargestComponent[args___]:=(Message[FractionInLargestComponent::argerr, args];
@@ -757,10 +772,18 @@ FractionInLargestKPathComponent[g,k-1], "ECGravReturn$19"]
 ];
 
 (* Overload Pattern *)
-FractionInLargestKPathComponent[amat_List,k_Integer]:=FractionInLargestKPathComponent[AdjacencyGraph[amat],k];
+FractionInLargestKPathComponent[amat_List,k_Integer]:=
+If[adjacencyMatrixQ[amat],
+	FractionInLargestKPathComponent[AdjacencyGraph[amat],k],
+	(Message[FractionInLargestKPathComponent::notadj];$Failed)
+];
 
 (* Overload Pattern *)
-FractionInLargestKPathComponent[amat_List]:=FractionInLargestKPathComponent[AdjacencyGraph[amat]];
+FractionInLargestKPathComponent[amat_List]:=
+If[adjacencyMatrixQ[amat],
+	FractionInLargestKPathComponent[AdjacencyGraph[amat]],
+	(Message[FractionInLargestKPathComponent::notadj];$Failed)
+];
 
 (* Catch-all Pattern *)
 FractionInLargestKPathComponent[args___]:=(Message[FractionInLargestKPathComponent::argerr, args];
@@ -1479,12 +1502,26 @@ $Failed);
 (*CountHoles*)
 
 
+(* Private helper. Selects b_k from a Betti vector {b_0, b_1, ...}, with k the
+   TOPOLOGICAL DIMENSION of the hole rather than a 1-based position in the list.
+   Until 2026-09-04 the two-argument CountHoles indexed the vector directly, so it
+   returned b_{k-1}: CountHoles[c,1] gave the number of connected components while
+   its usage message promised "the number of k-holes". Both readings produce small
+   plausible integers, so the mismatch could not show up as an obvious failure.
+   Out of range it also leaked an unevaluated Part expression; now it reports. *)
+bettiAt[b_List,k_Integer]:=
+If[0<=k<=Length[b]-1,
+	b[[k+1]],
+	(Message[CountHoles::badk,k,Length[b]-1];$Failed)
+];
+
+
 (* Primary Pattern *)
 CountHoles[g_Graph,k_Integer]:=
-(*Gives the number of k-holes, i.e., the kth Betti number of a graph. 
+(*Gives the number of k-holes, i.e., the kth Betti number b_k of a graph.
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@FindClique[g,Infinity,All]},
-ResourceFunction["BettiNumbers"][simplices][[k]]
+bettiAt[ResourceFunction["BettiNumbers"][simplices],k]
 ];
 
 (* Overload Pattern *)
@@ -1497,10 +1534,10 @@ ResourceFunction["BettiNumbers"][simplices]
 
 (* Overload Pattern *)
 CountHoles[maxClqLst_List,k_Integer]:=
-(*Gives the number of k-holes, i.e., the kth Betti number of a simplicial complex. 
+(*Gives the number of k-holes, i.e., the kth Betti number b_k of a simplicial complex.
 Uses Mathematica's built in ResourceFunction["BettiNumbers"]*)
 With[{simplices=Simplex/@maxClqLst},
-ResourceFunction["BettiNumbers"][simplices][[k]]
+bettiAt[ResourceFunction["BettiNumbers"][simplices],k]
 ];
 
 (* Overload Pattern *)

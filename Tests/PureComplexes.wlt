@@ -468,7 +468,13 @@ VerificationTest[ECGrav`SimplicialComplexAutomorphismGroupOrder[fst2], 24, TestI
 (* ---------- Purity / connectivity observables ---------- *)
 
 VerificationTest[ECGrav`RmsPurity[fst1], 0, TestID -> "RmsPurity-pure-is-0"];
-VerificationTest[ECGrav`FractionInLargestComponent[fst1], 1, TestID -> "FractionInLargestComponent-fst1"];
+(* fst1 is connected -- {2,4,7} shares vertex 2 with {1,2,3} and vertex 4 with
+   {4,5,6} -- so all 7 vertices lie in one component. This test used to pass the
+   facet list directly and got 1 by coincidence: fst1 is 3x3, so it was read as a
+   weighted adjacency matrix that happened also to be connected. It now goes
+   through the 1-skeleton, which is what the quantity is defined on. *)
+VerificationTest[ECGrav`FractionInLargestComponent[ECGrav`GraphFromCliques[fst1]], 1,
+    TestID -> "FractionInLargestComponent-fst1"];
 VerificationTest[ECGrav`FacetDeg[fst1, 2], 2, TestID -> "FacetDeg-fst1"];
 VerificationTest[ECGrav`HyperDeg[fst1, {2, 4}], 1, TestID -> "HyperDeg-fst1-edge"];
 VerificationTest[ECGrav`Branchedness[octaG], 0, TestID -> "Branchedness-octahedron-graph"];
@@ -1547,12 +1553,14 @@ VerificationTest[
 (* ==================================================================== *)
 
 (* ---------- Betti numbers ---------- *)
-(* NOTE ON INDEXING: CountHoles[c] returns the whole vector {b0, b1, ...}.
-   The two-argument CountHoles[c, k] is BettiNumbers[c][[k]], i.e. b_{k-1},
-   NOT b_k -- so CountHoles[c, 1] is the component count, not the loop count.
-   The usage message calls it "the number of k-holes, i.e. the k-th Betti
-   number", which disagrees. These tests pin the ACTUAL convention so that a
-   change to either the code or the message is caught. *)
+(* INDEXING: CountHoles[c] returns the whole vector {b0, b1, ...}; the
+   two-argument CountHoles[c, k] returns b_k, with k the topological dimension
+   of the hole counted from 0. Guarded at the source on 2026-09-04: before then
+   the two-argument form indexed the vector directly and returned b_{k-1}, so
+   CountHoles[c, 1] gave the component count while the usage message promised
+   the loop count, and an out-of-range k leaked an unevaluated Part expression.
+   Both readings yield small plausible integers, which is why it could not
+   surface as an obvious failure. *)
 
 VerificationTest[ECGrav`CountHoles[tetrahedron], {1, 0, 1}, TestID -> "CountHoles-tetrahedron-S2"];
 VerificationTest[ECGrav`CountHoles[torus],       {1, 2, 1}, TestID -> "CountHoles-torus"];
@@ -1560,9 +1568,25 @@ VerificationTest[ECGrav`CountHoles[kleinbottle], {1, 1, 0}, TestID -> "CountHole
 VerificationTest[ECGrav`CountHoles[{{1, 2, 3}, {4, 5, 6}}], {2, 0, 0}, TestID -> "CountHoles-two-disjoint-triangles"];
 VerificationTest[ECGrav`CountHoles[{{1, 2}, {1, 3}, {2, 3}}], {1, 1}, TestID -> "CountHoles-1complex-circle"];
 
-VerificationTest[ECGrav`CountHoles[tetrahedron, 1], 1, TestID -> "CountHoles-2arg-is-b0-not-b1"];
-VerificationTest[ECGrav`CountHoles[tetrahedron, 3], 1, TestID -> "CountHoles-2arg-index-3-is-b2"];
-VerificationTest[ECGrav`CountHoles[{{1, 2}, {1, 3}, {2, 3}}, 2], 1, TestID -> "CountHoles-2arg-circle-b1"];
+(* The tetrahedron boundary is a 2-sphere: b = (1, 0, 1). *)
+VerificationTest[ECGrav`CountHoles[tetrahedron, 0], 1, TestID -> "CountHoles-2arg-b0-components"];
+VerificationTest[ECGrav`CountHoles[tetrahedron, 1], 0, TestID -> "CountHoles-2arg-b1-no-loops"];
+VerificationTest[ECGrav`CountHoles[tetrahedron, 2], 1, TestID -> "CountHoles-2arg-b2-one-void"];
+(* The 1-complex circle has one component and one independent loop. *)
+VerificationTest[ECGrav`CountHoles[{{1, 2}, {1, 3}, {2, 3}}, 1], 1, TestID -> "CountHoles-2arg-circle-b1"];
+VerificationTest[ECGrav`CountHoles[{{1, 2, 3}, {4, 5, 6}}, 0], 2, TestID -> "CountHoles-2arg-two-components"];
+
+(* Out of range reports rather than leaking an unevaluated Part expression. *)
+VerificationTest[ECGrav`CountHoles[tetrahedron, 3], $Failed,
+    {ECGrav`CountHoles::badk}, TestID -> "CountHoles-2arg-out-of-range-reports"];
+VerificationTest[ECGrav`CountHoles[tetrahedron, -1], $Failed,
+    {ECGrav`CountHoles::badk}, TestID -> "CountHoles-2arg-negative-index-reports"];
+
+(* CountHoles[c, k] must agree with the k-th entry of the whole vector. *)
+VerificationTest[
+    With[{b = ECGrav`CountHoles[torus]},
+        Table[ECGrav`CountHoles[torus, k], {k, 0, Length[b] - 1}] === b],
+    True, TestID -> "CountHoles-2arg-agrees-with-vector"];
 
 (* Relabelling the vertices cannot change any topological invariant. *)
 VerificationTest[
@@ -1633,9 +1657,22 @@ VerificationTest[Sort[Sort /@ ECGrav`KpathConnectedComponents[{{1, 2, 3}, {4, 5,
 
 (* FractionInLargestComponent takes a GRAPH or an adjacency matrix -- never a
    facet list. Three disjoint triangles have 3 of 9 vertices in the largest
-   component. Passing the facet list directly is silently wrong whenever it is
-   square (M = p), which a sweep over M always reaches, so these tests go
-   through GraphFromCliques deliberately. See ExpansionRoadmap.md A1. *)
+   component. Until the guard added on 2026-09-04, passing the facet list
+   directly returned 1 whenever the list was square (M = p), which a sweep over
+   M always reaches: AdjacencyGraph read it as a weighted adjacency matrix.
+   It now reports ::notadj. Correct usage goes through GraphFromCliques. *)
+
+VerificationTest[ECGrav`FractionInLargestComponent[{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}], $Failed,
+    {ECGrav`FractionInLargestComponent::notadj},
+    TestID -> "FractionInLargestComponent-rejects-square-facet-list"];
+VerificationTest[ECGrav`FractionInLargestKPathComponent[{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}, 1], $Failed,
+    {ECGrav`FractionInLargestKPathComponent::notadj},
+    TestID -> "FractionInLargestKPathComponent-rejects-square-facet-list"];
+
+(* A genuine adjacency matrix still works: two disjoint edges on four vertices. *)
+VerificationTest[
+    ECGrav`FractionInLargestComponent[{{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}}],
+    1/2, TestID -> "FractionInLargestComponent-accepts-real-adjacency-matrix"];
 VerificationTest[
     ECGrav`FractionInLargestComponent[ECGrav`GraphFromCliques[{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}]],
     1/3, TestID -> "FractionInLargestComponent-three-disjoint-triangles"];

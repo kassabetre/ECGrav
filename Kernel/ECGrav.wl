@@ -1799,8 +1799,14 @@ FractionInLargestComponent::usage="FractionInLargestComponent[g_Graph],
 
 (* :Error Messages: *)
 
-FractionInLargestComponent::argerr="Input must be of the form 
+FractionInLargestComponent::argerr="Input must be of the form
 	FractionInLargestComponent[g_Graph] or FractionInLargestComponent[Amat_List].";
+
+FractionInLargestComponent::notadj="The list given is not an adjacency matrix: it must be square,
+	symmetric, and have a zero diagonal. A list of facets is not accepted here. A facet list is
+	square whenever the facet count equals the purity, in which case it would otherwise be read
+	silently as a weighted adjacency matrix and give a wrong answer. Convert the complex first
+	with GraphFromCliques.";
 
 
 (* ::Item::Closed:: *)
@@ -1819,11 +1825,15 @@ FractionInLargestKPathComponent::usage="FractionInLargestKPathComponent[g_Graph,
 
 (* :Error Messages: *)
 
-FractionInLargestKPathComponent::argerr="Input must be of the form 
-	FractionInLargestKPathComponent[facetsLst_List,k_Integer], 
-	FractionInLargestKPathComponent[g_Graph,k_Integer], 
-	FractionInLargestKPathComponent[facetsLst_List], or 
+FractionInLargestKPathComponent::argerr="Input must be of the form
+	FractionInLargestKPathComponent[Amat_List,k_Integer],
+	FractionInLargestKPathComponent[g_Graph,k_Integer],
+	FractionInLargestKPathComponent[Amat_List], or
 	FractionInLargestKPathComponent[g_Graph].";
+
+FractionInLargestKPathComponent::notadj="The list given is not an adjacency matrix: it must be
+	square, symmetric, and have a zero diagonal. A list of facets is not accepted here -- convert
+	the complex first with GraphFromCliques.";
 
 
 (* ::Item::Closed:: *)
@@ -2121,14 +2131,27 @@ CombinatorialBoundary::notmanifold="Attempting to find the combinatorial boundar
 
 (* :Usage Messages: *)
 
-CountHoles::usage = "CountHoles[g_Graph,k_Integer] gives the number of k-holes,
-	i.e., the k-th Betti number of a graph. Uses Mathematica's built in 
-	ResourceFunction[``BettiNumbers``]";
+CountHoles::usage = "CountHoles[c] gives the whole Betti vector {b_0, b_1, ...} of the complex c,
+	given either as a list of its facets or as a graph (in which case the clique complex is used);
+	overload CountHoles[c, k] gives the single Betti number b_k.
+	k is the TOPOLOGICAL DIMENSION of the hole and is counted from 0: CountHoles[c, 0] is the
+	number of connected components, CountHoles[c, 1] the number of independent loops, and
+	CountHoles[c, 2] the number of enclosed voids. So the boundary of a tetrahedron, a 2-sphere,
+	has CountHoles[c] == {1, 0, 1}, CountHoles[c, 0] == 1 and CountHoles[c, 2] == 1.
+	NOTE (changed 2026-09-04): the two-argument form previously indexed the Betti vector directly
+	and so returned b_(k-1) -- CountHoles[c, 1] gave the component count, not the loop count --
+	which contradicted this usage message. Any saved analysis that calls the two-argument form is
+	off by one index and should be re-run. The one-argument form is unchanged.
+	Uses Mathematica's built in ResourceFunction[``BettiNumbers``].";
 
 (* :Error Messages: *)
 
-CountHoles::argerr="A list of lists or graph is expected at position 1 and 
+CountHoles::argerr="A list of lists or graph is expected at position 1 and
 	an optional integer at position 2.";
+
+CountHoles::badk="The Betti index `1` is out of range: the highest index for this complex is `2`.
+	The index is the dimension of the hole and is counted from 0, so index 0 is the number of
+	connected components. Call CountHoles with one argument to get the whole Betti vector.";
 
 
 (* ::Item::Closed:: *)

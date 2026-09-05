@@ -6,7 +6,64 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+### Changed (breaking)
+- **`CountHoles[c, k]` now returns the k-th Betti number `b_k`, not `b_{k-1}`.** The two-argument
+  form was `BettiNumbers[c][[k]]`, indexing a vector that starts at `b_0`, so it returned the Betti
+  number one below the one requested: `CountHoles[c, 1]` gave the number of connected components
+  while the usage message promised "the number of k-holes, i.e. the k-th Betti number". Both
+  readings produce small plausible integers, which is why the mismatch could not surface as an
+  obvious failure — a figure labelled `b_1` would have been plotting `b_0`.
+
+  `k` is now the topological dimension of the hole, counted from 0: `CountHoles[c, 0]` is the
+  component count, `CountHoles[c, 1]` the number of independent loops, `CountHoles[c, 2]` the number
+  of enclosed voids. The boundary of a tetrahedron gives `{1, 0, 1}`, `CountHoles[c, 0] == 1` and
+  `CountHoles[c, 2] == 1`.
+
+  **Any saved analysis that calls the two-argument form is off by one index and should be re-run.**
+  The one-argument `CountHoles[c]`, which returns the whole Betti vector, is unchanged and is the
+  safer call.
+
+  An out-of-range `k` now reports `CountHoles::badk` instead of leaking an unevaluated `Part`
+  expression with a `Part::partw`; a negative `k` is rejected rather than silently indexing from
+  the end.
+
+### Fixed
+- **`FractionInLargestComponent` and `FractionInLargestKPathComponent` silently misread a facet
+  list as an adjacency matrix.** Both take a graph or an adjacency matrix, and both reached
+  `AdjacencyGraph` with no validation. A pure complex's facet list is a rectangular array, and it is
+  *square* whenever the facet count equals the purity (`M = p`) — which any sweep over `M` reaches —
+  so it was accepted as a weighted adjacency matrix and every connectivity answer downstream was
+  wrong with no message. `FractionInLargestComponent[{{1,2,3},{4,5,6},{7,8,9}}]` returned `1` for
+  three disjoint triangles, where the answer is `1/3`. Non-square facet lists already failed loudly;
+  only the `M = p` case was silent.
+
+  A private `adjacencyMatrixQ` (square, symmetric, zero diagonal) now gates both `_List` overloads,
+  which report `::notadj` and name `GraphFromCliques` as the conversion to use. Genuine adjacency
+  matrices are unaffected.
+
+  This also caught a pre-existing test that had been passing for the wrong reason:
+  `FractionInLargestComponent-fst1` expected `1` and got it, because `fst1` is 3x3 and the facet
+  list happened to read as a connected weighted adjacency matrix. It now goes through the
+  1-skeleton.
+
+- `FractionInLargestKPathComponent::argerr` advertised `facetsLst_List` argument forms that the
+  function has never accepted; corrected to `Amat_List`.
+
 ### Added
+- **31 tests for the observables the combinatorics paper measures.** `Tests/PureComplexes.wlt` goes
+  141 -> 180 (suite 199 -> 238, all green). `SpectralDim`, `HausdorffDim`,
+  `ConnectedComplexComponents`, `KpathConnectedComponents`, `FractionInLargestKPathComponent` and
+  `PureComplexAutomorphismGroupOrder` were all at zero tests while being exactly what P1 reports.
+  Expected values are known mathematics — `S_4` on the tetrahedron boundary, the octahedral group's
+  48, `b = (1,2,1)` on the torus, `b = (1,1,0)` on the Klein bottle — rather than recorded
+  behaviour. The two defects above were found by writing them.
+
+- **`EnsembleWeights.md`** — the exact relation between the vertex-labeled, facet-labeled and
+  unlabeled ensembles of pure complexes at fixed facet count. Each isomorphism class contributes
+  `n!/|Aut|` vertex-labeled objects and `M!/|Aut_F|` facet-labeled ones, giving
+  `NumFacetLabeled(p,M) / (M! NumUnlabeled(p,M)) = E_U[1/|Aut_F|]` — a convergence rate computable
+  from two counter calls with no Monte Carlo, validated against 2000 draws (0.5236 sampled, 0.5308
+  exact at `p = 3, M = 5`).
 - **`BetaSurfaceData` in `TemperingPlots.wls`** — the entry point for a beta-only tempering run.
   The file was external-field-shaped throughout: it reads conjugate observables from chart column 4
   and the observable list from column 6, and a beta chart has the observable list at column 4 and no
