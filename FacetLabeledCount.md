@@ -134,13 +134,37 @@ closed form).
 
 ### 3.2 Burnside over the $n$ row slots
 
-$S_n$ permutes the $n$ row slots, and the multisets are its orbits, so
+The tableaux of §3.1 are **multisets** of rows — the vertices are unlabelled, so nothing
+distinguishes one row slot from another. Burnside needs a set carrying a genuine group action, and
+on the multisets themselves $S_n$ would act **trivially**: reordering the elements of a multiset
+returns the same multiset, every orbit is a singleton, and the average would degenerate to the
+tautology "the number of multisets is the number of multisets".
+
+So put the labels back on first. Let
+
+$$\tilde X \;=\; \bigl\{(R_1,\dots,R_n) \;:\; R_j \subseteq [M],\ \ \#\{\,j : i \in R_j\,\} = p \ \text{ for every } i \in [M]\bigr\}$$
+
+be the set of **ordered** $n$-tuples of rows meeting the label condition — the same tableaux, but
+with the $n$ row slots temporarily numbered $1,\dots,n$ — and let $S_n$ act by permuting those
+positions,
+
+$$\sigma\cdot(R_1,\dots,R_n) \;=\; (R_{\sigma^{-1}(1)},\dots,R_{\sigma^{-1}(n)}).$$
+
+**This action is not trivial**, and $\tilde X$, not the set of multisets, is what Burnside is
+applied to. Two tuples lie in the same orbit exactly when one is a rearrangement of the other,
+which is exactly when they carry the same multiset of rows. So the orbits of $S_n$ on $\tilde X$
+correspond one-to-one with the tableaux counted by $\tilde B$, the label condition being
+$S_n$-invariant, and counting the latter means counting the former:
 
 $$\tilde B(p,M,n) \;=\; \frac{1}{n!}\sum_{\sigma \in S_n} |\mathrm{Fix}(\sigma)| \;=\; \frac{1}{n!}\sum_{\lambda \vdash n} \frac{n!}{z_\lambda}\,|\mathrm{Fix}(\lambda)|. \tag{3.2}$$
 
-A tuple fixed by $\sigma$ is **constant on each cycle**, so choosing one amounts to choosing a
-subset of $[M]$ per cycle. Note the left-hand side: the Burnside average imposes no condition on
-the columns, so what (3.2)–(3.3) compute is $\tilde B$. The separating family $A$ that (3.1)
+A tuple in $\tilde X$ fixed by $\sigma$ is **constant on each cycle** of $\sigma$, so choosing one
+amounts to choosing a subset of $[M]$ per cycle — which is what §3.3 counts.
+
+Labelling and then averaging the labelling away is the same move the object itself is built on:
+§1 defines $s_F$ as $|X/S_n|$, an orbit count on labelled tuples, for exactly the same reason.
+Note also the left-hand side: the Burnside average imposes no condition on the columns, so what
+(3.2)–(3.3) compute is $\tilde B$. The separating family $A$ that (3.1)
 needs comes from it by the single substitution of §3.5, and everything between here and there is
 stated for $\tilde B$.
 
