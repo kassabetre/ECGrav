@@ -1537,3 +1537,131 @@ VerificationTest[
     {True, True},
     TestID -> "RandomPureSimplicialComplexMCMC-free-vertex-delegates"
 ];
+
+(* ==================================================================== *)
+(* P1 statistics: vertex count, connectivity, Betti numbers, |Aut|.     *)
+(* Added 2026-09-04 for the combinatorics paper (ExpansionRoadmap.md    *)
+(* Track A1). Before this block, every function below was at zero or    *)
+(* one test, while being exactly what the paper measures.               *)
+(* All expected values are known mathematics, not recorded behaviour.   *)
+(* ==================================================================== *)
+
+(* ---------- Betti numbers ---------- *)
+(* NOTE ON INDEXING: CountHoles[c] returns the whole vector {b0, b1, ...}.
+   The two-argument CountHoles[c, k] is BettiNumbers[c][[k]], i.e. b_{k-1},
+   NOT b_k -- so CountHoles[c, 1] is the component count, not the loop count.
+   The usage message calls it "the number of k-holes, i.e. the k-th Betti
+   number", which disagrees. These tests pin the ACTUAL convention so that a
+   change to either the code or the message is caught. *)
+
+VerificationTest[ECGrav`CountHoles[tetrahedron], {1, 0, 1}, TestID -> "CountHoles-tetrahedron-S2"];
+VerificationTest[ECGrav`CountHoles[torus],       {1, 2, 1}, TestID -> "CountHoles-torus"];
+VerificationTest[ECGrav`CountHoles[kleinbottle], {1, 1, 0}, TestID -> "CountHoles-kleinbottle-rational"];
+VerificationTest[ECGrav`CountHoles[{{1, 2, 3}, {4, 5, 6}}], {2, 0, 0}, TestID -> "CountHoles-two-disjoint-triangles"];
+VerificationTest[ECGrav`CountHoles[{{1, 2}, {1, 3}, {2, 3}}], {1, 1}, TestID -> "CountHoles-1complex-circle"];
+
+VerificationTest[ECGrav`CountHoles[tetrahedron, 1], 1, TestID -> "CountHoles-2arg-is-b0-not-b1"];
+VerificationTest[ECGrav`CountHoles[tetrahedron, 3], 1, TestID -> "CountHoles-2arg-index-3-is-b2"];
+VerificationTest[ECGrav`CountHoles[{{1, 2}, {1, 3}, {2, 3}}, 2], 1, TestID -> "CountHoles-2arg-circle-b1"];
+
+(* Relabelling the vertices cannot change any topological invariant. *)
+VerificationTest[
+    With[{perm = {4, 1, 3, 2}},
+        ECGrav`CountHoles[Map[perm[[#]] &, tetrahedron, {2}]] === ECGrav`CountHoles[tetrahedron]],
+    True, TestID -> "CountHoles-relabelling-invariant"];
+
+(* ---------- Automorphism group orders ---------- *)
+(* Known groups: S_4 on the tetrahedron boundary (24); the full octahedral
+   group (48); S_3 on a single triangle (6); two disjoint triangles admit
+   3! * 3! within the facets and a swap between them (72). *)
+
+VerificationTest[ECGrav`PureComplexAutomorphismGroupOrder[tetrahedron], 24, TestID -> "vAut-tetrahedron-S4"];
+VerificationTest[ECGrav`PureComplexAutomorphismGroupOrder[octahedron],  48, TestID -> "vAut-octahedron"];
+VerificationTest[ECGrav`PureComplexAutomorphismGroupOrder[torus],      192, TestID -> "vAut-torus"];
+VerificationTest[ECGrav`PureComplexAutomorphismGroupOrder[{{1, 2, 3}}], 6, TestID -> "vAut-single-triangle-S3"];
+VerificationTest[ECGrav`PureComplexAutomorphismGroupOrder[{{1, 2, 3}, {4, 5, 6}}], 72,
+    TestID -> "vAut-two-disjoint-triangles"];
+
+(* The facet automorphism group is the image of the vertex automorphism group
+   acting on facets. One facet cannot be permuted; two can be swapped; on the
+   tetrahedron each facet omits one vertex, so the action is faithful (24). *)
+VerificationTest[ECGrav`PureComplexFacetAutomorphismGroupOrder[{{1, 2, 3}}], 1,
+    TestID -> "fAut-single-facet-trivial"];
+VerificationTest[ECGrav`PureComplexFacetAutomorphismGroupOrder[{{1, 2, 3}, {4, 5, 6}}], 2,
+    TestID -> "fAut-two-facets-swap"];
+VerificationTest[ECGrav`PureComplexFacetAutomorphismGroupOrder[tetrahedron], 24,
+    TestID -> "fAut-tetrahedron-faithful-on-facets"];
+
+VerificationTest[
+    With[{perm = {4, 1, 3, 2}},
+        ECGrav`PureComplexAutomorphismGroupOrder[Map[perm[[#]] &, tetrahedron, {2}]] ===
+            ECGrav`PureComplexAutomorphismGroupOrder[tetrahedron]],
+    True, TestID -> "vAut-relabelling-invariant"];
+
+(* ---------- The three ensembles are related exactly ---------- *)
+(* Each isomorphism class C contributes M!/|Aut_F(C)| facet-labelled objects,
+   so NumFacetLabeled[p,M] / (M! NumUnlabeled[p,M]) = E_U[1/|Aut_F|].
+   At M = 1 the facet group is trivial, giving exactly 1. At M = 2 any two
+   distinct p-subsets admit a swap, so |Aut_F| = 2 and the ratio is exactly
+   1/2. These hold for every purity and tie the three counters together. *)
+
+VerificationTest[
+    Table[ECGrav`NumFacetLabeledPureComplexes[p, 1] ==
+          1! ECGrav`NumUnlabeledPureComplexes[p, 1], {p, 2, 5}],
+    {True, True, True, True}, TestID -> "ensemble-ratio-M1-is-one"];
+
+VerificationTest[
+    Table[2 ECGrav`NumFacetLabeledPureComplexes[p, 2] ==
+          2! ECGrav`NumUnlabeledPureComplexes[p, 2], {p, 2, 5}],
+    {True, True, True, True}, TestID -> "ensemble-ratio-M2-is-one-half"];
+
+(* ---------- Connectivity ---------- *)
+
+VerificationTest[Length[ECGrav`ConnectedComplexComponents[tetrahedron]], 1,
+    TestID -> "ConnectedComplexComponents-tetrahedron-connected"];
+VerificationTest[Length[ECGrav`ConnectedComplexComponents[{{1, 2, 3}, {4, 5, 6}}]], 2,
+    TestID -> "ConnectedComplexComponents-two-disjoint"];
+VerificationTest[Length[ECGrav`ConnectedComplexComponents[{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}]], 3,
+    TestID -> "ConnectedComplexComponents-three-disjoint"];
+VerificationTest[Length[ECGrav`ConnectedComplexComponents[{{1, 2, 3}, {3, 4, 5}}]], 1,
+    TestID -> "ConnectedComplexComponents-sharing-one-vertex"];
+
+VerificationTest[Sort[Sort /@ ECGrav`KpathConnectedComponents[tetrahedron, 1]], {{1, 2, 3, 4}},
+    TestID -> "KpathConnectedComponents-tetrahedron-one-component"];
+VerificationTest[Sort[Sort /@ ECGrav`KpathConnectedComponents[{{1, 2, 3}, {4, 5, 6}}, 1]],
+    {{1, 2, 3}, {4, 5, 6}}, TestID -> "KpathConnectedComponents-two-disjoint"];
+
+(* FractionInLargestComponent takes a GRAPH or an adjacency matrix -- never a
+   facet list. Three disjoint triangles have 3 of 9 vertices in the largest
+   component. Passing the facet list directly is silently wrong whenever it is
+   square (M = p), which a sweep over M always reaches, so these tests go
+   through GraphFromCliques deliberately. See ExpansionRoadmap.md A1. *)
+VerificationTest[
+    ECGrav`FractionInLargestComponent[ECGrav`GraphFromCliques[{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}]],
+    1/3, TestID -> "FractionInLargestComponent-three-disjoint-triangles"];
+VerificationTest[
+    ECGrav`FractionInLargestComponent[ECGrav`GraphFromCliques[tetrahedron]],
+    1, TestID -> "FractionInLargestComponent-tetrahedron-connected"];
+(* {1,2,3} and {4,5,6,7,8}: vertex 6 is shared by the last two facets, so there
+   are 8 vertices in total and the largest component holds 5 of them. *)
+VerificationTest[
+    ECGrav`FractionInLargestComponent[ECGrav`GraphFromCliques[{{1, 2, 3}, {4, 5, 6}, {6, 7, 8}}]],
+    5/8, TestID -> "FractionInLargestComponent-one-big-one-small"];
+
+(* ---------- Dimension probes ---------- *)
+(* SpectralDim at a fixed step s is a LOCAL probe, not an asymptotic
+   dimension: on a cycle it returns the same value for n = 20, 60 and 150,
+   because a 6-step walk cannot see the global structure. So it is tested for
+   the invariances it must satisfy, not against an asymptotic value. *)
+
+VerificationTest[
+    With[{a = Normal@AdjacencyMatrix[CycleGraph[20]], b = Normal@AdjacencyMatrix[CycleGraph[60]]},
+        ECGrav`SpectralDim[a, 6] == ECGrav`SpectralDim[b, 6]],
+    True, TestID -> "SpectralDim-cycle-is-local-at-fixed-step"];
+
+VerificationTest[
+    With[{g = ECGrav`GraphFromCliques[octahedron], perm = {3, 1, 6, 2, 5, 4}},
+        ECGrav`SpectralDim[Normal@AdjacencyMatrix[g], 4] ==
+        ECGrav`SpectralDim[
+            Normal@AdjacencyMatrix[ECGrav`GraphFromCliques[Map[perm[[#]] &, octahedron, {2}]]], 4]],
+    True, TestID -> "SpectralDim-relabelling-invariant"];
