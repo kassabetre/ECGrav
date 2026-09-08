@@ -76,6 +76,19 @@ Do[Print["  ", FileNameTake[testFiles[[i]]], ": ",
     {i, Length[testFiles]}];
 Print["Test outcomes: ", Tally[outcomes]];
 
+(* Second annotation, carrying the counts. The preflight above is emitted before the
+   suite runs, so on a red build it says what the box looked like but not what the
+   suite did; and the log itself needs push access to read. This makes the totals
+   visible in the annotations, which anyone can read. *)
+ghCmd["notice", "results: " <>
+    StringRiffle[Table[FileNameTake[testFiles[[i]]] <> " " <>
+        ToString[Length[Values[reports[[i]]["TestResults"]]]] <> " (" <>
+        ToString[Count[Through[Values[reports[[i]]["TestResults"]]["Outcome"]], "Success"]] <>
+        " passed)", {i, Length[testFiles]}], " | "] <>
+    " | total " <> ToString[Length[outcomes]] <> ", " <>
+    ToString[Count[outcomes, "Success"]] <> " passed, " <>
+    ToString[Count[outcomes, Except["Success"]]] <> " not"];
+
 (* Name every failing test. Tally alone says "8 failures" and never which, which makes a
    red log almost as uninformative as no log. Details are capped so that a wholesale
    breakage cannot bury the summary. *)
