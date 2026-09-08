@@ -518,7 +518,7 @@ two cycle-type sums of `NumFLPCCount` with one and give the whole row $n = 0..N$
 
 ---
 
-## 9. What is *not* available: a recurrence
+## 9. Recurrences: what is and is not available
 
 The vertex-labeled count has a genuine two-index deletion recurrence. **The facet-labeled and
 unlabeled counts do not, and the reason is structural**: on isomorphism classes the deletion fibre
@@ -537,6 +537,117 @@ One recurrence does exist a level down, though the facet-labeled case does not n
 identity applied to $\log \prod_d (1+z^d)^{n_d}$ turns the coefficient extraction inside a single
 cycle type into $m\,c(m) = \sum_k l(k)\,c(m-k)$. That is what carries the unlabeled count's
 $O(M^2)$; here the per-type work is $P(p)$ binomial products and there is nothing to accelerate.
+
+### 9.1 A constant-coefficient recurrence in $M$ — and why it is not an algorithm
+
+(3.2) and (3.3) already give a closed form that is an **exponential sum in $M$**:
+
+$$\tilde B(p,M,n) \;=\; \sum_{\lambda \vdash n} \frac{N(\lambda,p)^M}{z_\lambda},
+\qquad B(p,M,n) \;=\; \tilde B(p,M,n) - \tilde B(p,M,n-1).$$
+
+A finite sum of $M$-th powers satisfies a linear recurrence with **constant** coefficients whose
+characteristic roots are the bases. Let $R$ be the distinct nonzero values of $N(\lambda,p)$ over
+$\lambda \vdash n$ *and* $\lambda \vdash n-1$, and write $\prod_{N \in R}(x - N) = \sum_j c_j x^j$.
+Then for every $M \ge 1$,
+
+$$\sum_{j=0}^{|R|} c_j\, B(p,M+j,n) \;=\; 0.$$
+
+| $p$ | $n$ | roots $R$ | order |
+| --- | --- | --- | --- |
+| 2 | 4 | $\{1,2,3,6\}$ | 4 |
+| 2 | 6 | $\{1,2,3,4,7,10,15\}$ | 7 |
+| 3 | 5 | $\{1,2,4,10\}$ | 4 |
+| 3 | 6 | $\{1,2,4,8,10,20\}$ | 6 |
+
+**It does not pass to $s_F$.** Feeding $s_F$ the same recurrence leaves large nonzero residuals —
+at $p=2$, $n=6$: $\{24863,\,319407,\,1198102,\,767830\}$. The reason is structural: $s_F$ has the
+same closed form with the falling factorial in place of the power,
+
+$$s_F(p,M,n) \;=\; \sum_{\lambda \vdash n}\frac{N(\lambda,p)^{(M)}}{z_\lambda}
+\;-\; \sum_{\lambda \vdash n-1}\frac{N(\lambda,p)^{(M)}}{z_\lambda},$$
+
+and constant-coefficient recurrences are *exactly* the exponential sums. $N^{(M)}$ is not one. It
+is P-recursive — $N^{(M+1)} = (N-M)\,N^{(M)}$, first order with a polynomial coefficient — so
+$s_F$ is a sum of P-recursive sequences in $M$, which is the weaker statement.
+
+**And it is not an algorithm.** The coefficients $c_j$ are elementary symmetric functions of the
+roots, so knowing them means computing $N(\lambda,p)$ for every cycle type of $S_n$ and $S_{n-1}$
+— exactly the work `NumFLPCTSum` already does, after which $\tilde B$ can be evaluated at any $M$
+directly from the exponential sum. The order also grows with $n$. At fixed $n$ the sequence is
+finite in any case: $s_F(p,M,n) = 0$ once $M > \binom{n}{p}$, and indeed
+$\max_\lambda N(\lambda,p) = N(1^n,p) = \binom{n}{p}$, attained at the identity.
+
+### 9.2 A dynamic programme on content vectors — Burnside-free
+
+The recurrence of §9.1 is the wrong kind: it is read off the answer. A genuine recurrence for $B$
+does exist, it never mentions cycle types, and it generalises the count to arbitrary content.
+
+Let $B_m(n; r_1,\dots,r_m)$ be the number of incidence tableaux on labels $[m]$ with $n$ rows in
+which label $i$ appears exactly $r_i$ times, so that $B(p,M,n) = B_M(n; p,\dots,p)$. Peel off the
+last label. Every row containing $m$ has the form $R \cup \{m\}$ with $R \subseteq [m-1]$; let
+$a_R$ count the rows of that shape, so $\sum_R a_R = r_m$, and write
+$\rho_i(a) = \sum_{R \ni i} a_R$ for the occurrences of label $i$ consumed by those rows. The rows
+*not* containing $m$ are then a tableau on $[m-1]$ with $n - r_m$ rows and the residual content,
+and the split is a bijection because a row is sorted by whether it contains $m$. Hence
+
+$$B_m(n; r_1,\dots,r_m) \;=\;
+\sum_{\substack{a_R \ge 0\ (R \subseteq [m-1])\\ \sum_R a_R = r_m}}
+B_{m-1}\bigl(n - r_m;\ r_1 - \rho_1(a),\ \dots,\ r_{m-1} - \rho_{m-1}(a)\bigr),$$
+
+terms with a negative residual being zero, and specialising to $r_1 = \dots = r_M = p$ gives $B$.
+
+> **The base case is the whole covering/padded distinction.** $B_0(n;()) = [\,n = 0\,]$ gives the
+> **covering** family $B$: with no labels every row would be empty, so only $n = 0$ survives.
+> Replacing it by $\tilde B_0(n;()) = 1$ for all $n$ gives the **padded** family $\tilde B$, whose
+> rows may be empty. Nothing else in the recurrence changes. Given that §3.1 exists because those
+> two axes were once conflated, this line is worth stating rather than leaving implicit.
+> Equivalently, for one label $B_1(n;r) = [\,n = r\,]$.
+
+**Verified** against the shipped counter on 48 parameter sets across $p \in \{2,3\}$,
+$M \le 4$, $n \le 6$ — zero mismatches, on values up to $B(3,4,6) = 221$.
+
+**It yields a Burnside-free route to $s_F$.** Inverting the first form of (3.6),
+
+$$s_F(p,M,n) \;=\; \sum_k s(M,k)\, B(p,k,n)$$
+
+with $s(M,k)$ the signed Stirling numbers of the first kind. Composed with the recurrence above
+this computes the facet-labeled count without ever forming a cycle type — verified to agree with
+`NumFacetLabeledPureComplexes` on twelve parameter sets, up to $s_F(3,5,7) = 6561$. **This is the
+only route to $s_F$ recorded here that does not pass through Burnside**, and as an independent
+derivation it is a stronger check on the shipped algorithm than any of §10's legs.
+
+#### Cost, measured
+
+| $p$ | $M$ | $n$ | DP + Stirling | shipped |
+| --- | --- | --- | --- | --- |
+| 2 | 3 | 5 | 0.004 s | 0.0004 s |
+| 2 | 5 | 7 | 0.040 s | 0.0005 s |
+| 3 | 5 | 5 | 0.098 s | 0.0005 s |
+| 3 | 5 | 7 | 0.248 s | 0.0008 s |
+
+As written it is 10–500× slower and diverging in $M$, where the shipped cost is nearly flat in
+$M$. Two things are responsible: the state space is $(p+1)^m$ content vectors, and the transition
+sums over $(a_R)$ across **all $2^{m-1}$ subsets** — compositions of $r_m$ into $2^{m-1}$ parts,
+$\binom{r_m + 2^{m-1} - 1}{r_m}$ of them, doubly exponential in $m$.
+
+#### Two reductions, and what is still open
+
+- **Label symmetry.** $B_m(n;r)$ is symmetric in $r$ — permuting label names is a bijection on
+  tableaux. Verified over all permutations of five content vectors, no asymmetric case. States
+  therefore collapse to sorted $r$, i.e. $\binom{m+p}{p}$ of them, polynomial in $m$ at fixed $p$.
+- **The subset sum is a convolution.** The summand depends on $a$ only through $\rho$, so grouping
+  by the induced profile gives
+
+  $$B_m(n;r) \;=\; \sum_{\rho} \tilde B_{m-1}(r_m;\rho)\; B_{m-1}\bigl(n - r_m;\ r_{<m} - \rho\bigr),$$
+
+  with $\tilde B$ the padded variant — the same recurrence under the other base case. Verified on
+  42 parameter sets, zero mismatches. This removes the $2^{m-1}$ blow-up entirely.
+
+**Open: whether the two compose.** The convolution is componentwise in $\rho$, so storing states
+on sorted classes needs alignment bookkeeping — a symmetric-function product rather than a free
+win. Whether the combination beats the shipped cost of $P(n)$ cycle types at $P(p)$ work each is
+unmeasured, and it would matter most at large $n$, where the partition count is what hurts.
+
 
 ---
 
