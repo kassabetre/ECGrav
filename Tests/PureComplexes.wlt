@@ -1702,3 +1702,71 @@ VerificationTest[
         ECGrav`SpectralDim[
             Normal@AdjacencyMatrix[ECGrav`GraphFromCliques[Map[perm[[#]] &, octahedron, {2}]]], 4]],
     True, TestID -> "SpectralDim-relabelling-invariant"];
+
+(* ---------- Facet-labeled count: the M-vectorised path (1.14.2) ---------- *)
+(* The cycle-type sum depends on M only through the falling factorial, so the
+   {N, weight} table is built once per (p,n) and memoised, and a list of facet
+   orders is one pass over it. These pin that the fast path agrees with the
+   scalar form everywhere, including the degenerate corners, since the whole
+   point is that nothing observable changes. *)
+
+VerificationTest[
+    Table[ECGrav`NumFacetLabeledPureComplexes[p, Range[0, 8], n] ===
+          Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {M, 0, 8}],
+        {p, 1, 4}, {n, 0, 12}] // Flatten // Union,
+    {True},
+    TestID -> "NumFacetLabeledPureComplexes-list-matches-scalar"];
+
+(* M < 0, M = 0 off the empty complex, and M beyond Binomial[n,p] all vanish;
+   the middle entry is the only live one. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes[3, {-1, 0, 4, 100}, 5],
+    {0, 0, 43, 0},
+    TestID -> "NumFacetLabeledPureComplexes-list-degenerate"];
+
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes[3, {1, 2, 3}, -1],
+    {0, 0, 0},
+    TestID -> "NumFacetLabeledPureComplexes-list-negative-n"];
+
+(* A non-integer entry is an argument error, not a silent 0. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes[3, {1, 2.5}, 5],
+    $Failed,
+    {ECGrav`NumFacetLabeledPureComplexes::argerr},
+    TestID -> "NumFacetLabeledPureComplexes-list-noninteger-reports"];
+
+(* The memo must be transparent: clearing it cannot change any value. *)
+VerificationTest[
+    Module[{warm, cold},
+        warm = ECGrav`NumFacetLabeledPureComplexes[4, Range[1, 6], 14];
+        ECGrav`Private`NumPCClearCache[];
+        cold = ECGrav`NumFacetLabeledPureComplexes[4, Range[1, 6], 14];
+        warm === cold],
+    True,
+    TestID -> "NumFacetLabeledPureComplexes-memo-transparent"];
+
+(* NumPCClearCache must actually reach the new table, or the memo leaks. *)
+VerificationTest[
+    Module[{n0},
+        ECGrav`Private`NumPCClearCache[];
+        ECGrav`NumFacetLabeledPureComplexes[4, 7, 20];
+        n0 = Length[DownValues[ECGrav`Private`NumFLPCWeightTable]];
+        ECGrav`Private`NumPCClearCache[];
+        {n0 > Length[DownValues[ECGrav`Private`NumFLPCWeightTable]],
+         Length[DownValues[ECGrav`Private`NumFLPCWeightTable]] >= 1}],
+    {True, True},
+    TestID -> "NumFacetLabeledPureComplexes-memo-is-cleared"];
+
+(* Merging equal N is exact, not an approximation: the table's weighted falling
+   factorials must reproduce n! A(n) term for term. *)
+VerificationTest[
+    Table[Module[{tab = ECGrav`Private`NumFLPCWeightTable[p, n], gg, fac, jvecs},
+        gg = ECGrav`Private`NumFLPCLongCycleTable[p, n];
+        fac = Table[k!, {k, 0, n}];
+        jvecs = Table[Count[nu, k], {nu, IntegerPartitions[p]}, {k, 1, p}];
+        ECGrav`Private`NumFLPCTFromTable[tab, 4] ===
+            ECGrav`Private`NumFLPCTSum[p, n, FactorialPower[#, 4] &, gg, fac, jvecs]],
+        {p, 2, 4}, {n, 2, 10}] // Flatten // Union,
+    {True},
+    TestID -> "NumFLPCWeightTable-reproduces-the-cycle-type-sum"];

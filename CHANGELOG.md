@@ -4,6 +4,44 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [1.14.2] - 2026-09-08
+
+### Changed
+- **Sweeping the facet order is 12–27× faster, and no value changes.** The cycle-type sum behind
+  `NumFacetLabeledPureComplexes` depends on `M` only through a falling factorial: the cycle types,
+  their `N` values and their weights do not. Those are now collected once per `(p, n)` into a
+  `{N, weight}` table, memoised, and shared across every facet order — where each call previously
+  rebuilt the long-cycle table, the factorials and the partition data from scratch. Equal `N` are
+  merged as the table is built, since different multiplicity vectors often reach the same `N`,
+  shrinking the sum a further 1.5× at p=2, 2.3× at p=3 and 2.9× at p=4.
+
+  Over `M = 1…60`: 0.252 s → 0.020 s at (2,30), 1.181 s → 0.059 s at (3,30), 3.939 s → 0.145 s at
+  (4,30). A repeated scalar call at the same `(p, n)` goes 0.0397 s → 0.00068 s.
+
+  Verified elementwise against the previous computation path — reconstructed from `NumFLPCTSum` so
+  the comparison is genuinely before-versus-after — on 468 scalar parameter sets across
+  `p = 1…4`, `M = 0…8`, `n = 0…12`, zero mismatches, degenerate corners and the 93-digit
+  `NumFacetLabeledPureComplexes[3, 50, 10]` included.
+
+  The memo is released by `ECGrav\`Private\`NumPCClearCache[]`, which now lists
+  `NumFLPCWeightTable`. `FacetLabeledCount.md` §5 previously recorded that nothing here was
+  memoised; that is no longer true and the section says so.
+
+### Added
+- **`NumFacetLabeledPureComplexes[p, Mlist, n]`** — the count for a list of facet orders at one
+  vertex count, elementwise identical to mapping the three-argument form over `Mlist`, with the
+  guards applied per entry. It is *not* faster than the memoised scalar form, being the same
+  machinery, but it states the intent and does not depend on the memo surviving a cache clear.
+- Seven tests covering the vectorised path, the degenerate corners, that clearing the memo cannot
+  change a value, that `NumPCClearCache[]` actually reaches the new table, and that merging equal
+  `N` reproduces `NumFLPCTSum` term for term. Suite 238 → 245.
+
+### Documentation
+- `FacetLabeledCount.md` §9 retitled and extended with the two recurrences that do exist for the
+  non-separating count `B` — a constant-coefficient one in `M` read off the closed form, and a
+  dynamic programme on content vectors that never forms a cycle type and, composed with the
+  Stirling inversion of (3.6), computes `s_F` with no Burnside average anywhere.
+
 ## [1.14.1] - 2026-09-05
 
 ### Fixed

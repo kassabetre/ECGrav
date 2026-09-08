@@ -387,11 +387,14 @@ derivation above appears as the header comment at line 1801.
 | --- | --- | --- |
 | 1834 | `NumFLPCLongCycleTable[p,smax]` | $g(0..s_{\max})$, permutations with every cycle $> p$ (§3.4) |
 | 1853 | `NumFLPCNCoeff[mvec,jvecs]` | $N(\lambda,p)$ of (3.3), expanded over the partitions of $p$ |
-| 1859 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | the cycle-type sum: $n!\,A(n)$ with `wf` $= N^{(M)}$, or $n!\,\tilde B(n)$ with `wf` $= N^M$ (§3.1) |
-| 1884 | `NumFLPCCount[p,M,n]` | $\bigl(T(n) - n\,T(n-1)\bigr)/n!$, the differencing (3.1) |
-| 1897 | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
-| 1913 | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count |
-| 1926 | catch-all | `::argerr` and `$Failed` |
+| 1859 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | the cycle-type sum: $n!\,A(n)$ with `wf` $= N^{(M)}$, or $n!\,\tilde B(n)$ with `wf` $= N^M$ (§3.1). Kept as the reference form; the shipped path now goes through the table below |
+| — | `NumFLPCWeightTable[p,n]` | the $\{N,\text{weight}\}$ pairs of that sum with equal $N$ merged. **Memoized**, cleared by `NumPCClearCache[]` |
+| — | `NumFLPCTFromTable[tab,M]` | $n!\,A(n)$ for one $M$, one pass over the table |
+| — | `NumFLPCCount[p,M,n]` | $\bigl(T(n) - n\,T(n-1)\bigr)/n!$, the differencing (3.1) |
+| — | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
+| — | `NumFacetLabeledPureComplexes[p,Mlist,n]` | the same for a list of facet orders, guards applied per entry |
+| — | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count |
+| — | catch-all | `::argerr` and `$Failed` |
 
 Three implementation details worth naming:
 
@@ -403,11 +406,14 @@ Three implementation details worth naming:
 - **The differencing is done on $T = n!A$, not on $A$.** `NumFLPCCount` returns
   $(T(n) - n\,T(n-1))/n!$, keeping the arithmetic in integers throughout; $T(n-1) = (n-1)!A(n-1)$,
   so the factor $n$ rescales it. Nothing rational is ever formed.
-- **Nothing here is memoized.** Unlike `NumULPCA`, which caches per $(p,M,n)$, the `NumFLPC*`
-  helpers hold no `DownValues` between calls, and `NumPCClearCache[]` correctly does not list
-  them. A repeated call repeats the work. At the measured costs (§7) that is a defensible
-  trade — a call is milliseconds and the natural callers ask once — but it is a choice, not an
-  oversight, and it differs from every other counter in the file.
+- **The $(N,\text{weight})$ table is memoized per $(p,n)$** (since 1.14.1's successor; before that
+  nothing here was cached and a repeated call repeated the work). Everything the cycle-type sum
+  computes is independent of $M$ except the falling factorial, so the table serves every facet
+  order at that vertex count, and equal $N$ are merged when it is built — different multiplicity
+  vectors often reach the same $N$, which shrinks the sum by 1.5× at $p=2$, 2.3× at $p=3$ and
+  2.9× at $p=4$. `NumPCClearCache[]` lists `NumFLPCWeightTable` and releases it. The natural
+  caller does *not* ask once: Track A of `ExpansionRoadmap.md` sweeps $M$ at fixed $(p,n)$, and
+  that is what this is for (§7).
 
 ---
 
@@ -475,6 +481,21 @@ does cost is $n$, and then $p$:
 | $\{3,12,30\}$ | 1041 | 0.0239 | 9 |
 | $\{3,20,40\}$ | 2282 | 0.0528 | 30 |
 | $\{4,10,30\}$ | 2724 | 0.0769 | 12 |
+
+**Sweeping $M$ at fixed $(p,n)$** is the access pattern that motivated the memoized table of §5,
+and it is where the cost above is misleading: the figures are per call, and before the table each
+call rebuilt $g$, the factorials and `jvecs` from scratch. Over $M = 1\ldots60$:
+
+| $\{p,n\}$ | before | after | |
+| --- | --- | --- | --- |
+| $\{2,30\}$ | 0.252 s | 0.020 s | 12.6× |
+| $\{3,30\}$ | 1.181 s | 0.059 s | 20× |
+| $\{4,30\}$ | 3.939 s | 0.145 s | 27× |
+
+A repeated scalar call at the same $(p,n)$ goes from 0.0397 s to 0.00068 s, a factor of 59. The
+list form `NumFacetLabeledPureComplexes[p, Mlist, n]` is **not faster than the memoized scalar
+form** — it is the same machinery — but it states the intent and does not depend on the memo
+surviving a `NumPCClearCache[]`.
 | $\{5,10,30\}$ | 5326 | 0.1897 | 20 |
 | $\{6,8,30\}$ | 8547 | 0.4187 | 15 |
 | $\{3,100,12\}$ | 102 | 0.0027 | 214 |

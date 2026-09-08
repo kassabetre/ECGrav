@@ -2255,6 +2255,12 @@ Equivalently the number of separating (p, n, M) incidence tableaux -- multisets 
 subsets of [M] in which every label occurs in exactly p of them and no two labels occupy the
 same set of rows.
 NumFacetLabeledPureComplexes[p_Integer, M_Integer] sums that over the vertex count.
+NumFacetLabeledPureComplexes[p_Integer, Mlist_List, n_Integer] gives the count for each facet
+order in Mlist at one vertex count, elementwise identical to mapping the three-argument form
+over Mlist. Prefer it when sweeping M: the cycle-type sum depends on M only through a falling
+factorial, so the rest is computed once and reused. That table is also memoised per (p, n) and
+released by ECGrav`Private`NumPCClearCache[], so a sweep through the scalar form is equally fast
+once the first call has paid for it.
 It is zero unless p <= n <= p M and Binomial[n, p] >= M.
 See NumVertexLabeledPureComplexes for the count with the vertices labelled instead, and
 NumUnlabeledPureComplexes for the count with neither labelled.";
