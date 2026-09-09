@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.14.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.15.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.14.2. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.15.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -67,7 +67,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.14.2.paclet"];
+PacletInstall["/path/to/ECGrav-1.15.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -81,7 +81,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.14.2.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.15.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -181,9 +181,14 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.14.2). Earlier releases are preserved as git tags:
+current release (1.15.0). Earlier releases are preserved as git tags:
 
-- `v1.14.2` — current: sweeping the facet order is 12-27x faster. The cycle-type sum behind
+- `v1.15.0` — current: `ConstrainedProbConjugateField` gains a beta-only form, giving the
+  density of the energy `P(beta, E)` from a beta-only parallel tempering run. Beta tempering is
+  the one-component homogeneous form of the existing external-field pattern, so it is the same
+  estimator reached through a new mapping. Returns a distribution per target beta, one shared
+  plot range, and the MBAR effective sample size at each. Purely additive
+- `v1.14.2` — sweeping the facet order is 12-27x faster. The cycle-type sum behind
   `NumFacetLabeledPureComplexes` depends on the facet order only through a falling factorial, so
   the rest is now built once per (purity, vertex count), memoised, and shared across every M —
   with equal terms merged, which shrinks the sum a further 1.5-2.9x. Adds a list form
