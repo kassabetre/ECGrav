@@ -4,7 +4,7 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
-## [Unreleased]
+## [1.16.0] - 2026-09-09
 
 ### Added
 - **`ConstrainedProbConjugateField`'s beta-only form gains `"Bandwidth"`, `"Form" -> "PMF"`, and a

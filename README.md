@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.16.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -20,7 +20,7 @@ ECGrav provides two complementary toolkits:
   configurations, and extract thermodynamic observables via Metropolis MC,
   parallel tempering, multi-histogram reweighting, and exact enumeration.
 
-> **Status:** 1.15.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.16.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -67,7 +67,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.15.0.paclet"];
+PacletInstall["/path/to/ECGrav-1.16.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -81,7 +81,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.15.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.16.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -181,9 +181,14 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.15.0). Earlier releases are preserved as git tags:
+current release (1.16.0). Earlier releases are preserved as git tags:
 
-- `v1.15.0` — current: `ConstrainedProbConjugateField` gains a beta-only form, giving the
+- `v1.16.0` — current: the beta-only energy density gains `"Bandwidth"`, a `::lowbandwidth`
+  warning and `"Form" -> "PMF"`. The energy of a graph Hamiltonian is lattice-valued, and the
+  automatic kernel bandwidth falls below the level spacing as the target beta gets colder — which
+  draws one bump per energy level instead of a curve. The warning says so, the option overrides it,
+  and the PMF form returns the exact per-level probabilities instead. Purely additive
+- `v1.15.0` — `ConstrainedProbConjugateField` gains a beta-only form, giving the
   density of the energy `P(beta, E)` from a beta-only parallel tempering run. Beta tempering is
   the one-component homogeneous form of the existing external-field pattern, so it is the same
   estimator reached through a new mapping. Returns a distribution per target beta, one shared

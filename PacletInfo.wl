@@ -3,7 +3,7 @@
 PacletObject[
     <|
         "Name" -> "ECGrav",
-        "Version" -> "1.15.0",
+        "Version" -> "1.16.0",
         "WolframVersion" -> "15.0+",
         "Extensions" ->
             {
