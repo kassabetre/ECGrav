@@ -277,6 +277,16 @@ OccupancyMatrix[mix_Association] :=
 
 OccupancyKind[mix_Association] := If[mix["perSweep"] === None, "arrivals", "sweeps"];
 
+(*Per-SLOT quantities reported hot to cold.  A slot IS a rung -- its beta never changes, only the
+	configuration sitting in it does -- so anything the replicas record per slot belongs in rung
+	order next to flowByRung.  Left in slot order the report carried two orderings at once and
+	invited reading corrT[[k]] against flowByRung[[k]] for a different rung; they coincide only when
+	the caller happened to pass an ascending btTable.
+	repField gives Missing["NotAvailable"] when a driver records the field for no replica at all --
+	the beta-schedule path omits corrTValues and eqlT -- so this has to pass a non-list through.*)
+byRung[v_List, o_List] := v[[o]];
+byRung[v_, _] := v;
+
 MixingReport[mix_Association] :=
 Module[{rt = RoundTrips[mix], f = ReplicaFlow[mix], m = OccupancyMatrix[mix], o = mix["order"],
 		rate, occFrac, comps},
@@ -309,8 +319,11 @@ Module[{rt = RoundTrips[mix], f = ReplicaFlow[mix], m = OccupancyMatrix[mix], o 
 		decreases and answers False for every healthy ladder.*)
 	  "flowIsMonotone" -> OrderedQ[f[[o]]],
 	  "replayComplete" -> mix["complete"],
-	  "corrT" -> mix["corrT"],
-	  "corrTMeasured" -> mix["corrTMeasured"]|>
+	  (*Renamed, not just reordered: a key still called "corrT" holding something other than the
+		run's own slot order is the same trap one level down.  mix["corrT"] keeps the slot order,
+		matching mix["slots"], mix["betas"] and mix["swapAccept"].*)
+	  "corrTByRung" -> byRung[mix["corrT"], o],
+	  "corrTMeasuredByRung" -> byRung[mix["corrTMeasured"], o]|>
 ];
 
 (* ::Section:: *)
@@ -337,8 +350,19 @@ Module[{o = mix["order"], rt = RoundTrips[mix], f = ReplicaFlow[mix], m = Occupa
 	|>
 ];
 
+TrajectoryPlot::badconf =
+"There is no configuration `1` in this run, which has `2`.  Configurations are numbered 1 to `2`, \
+one per rung; this is not a vertex count or a beta value.";
+
 TrajectoryPlot[mix_Association, j_Integer] :=
 Module[{o = mix["order"], rank, chartMode = mix["perSweep"] =!= None, series},
+	(*Checked here because out of range fails a long way downstream and names nothing useful.
+		perSweep[[j]] raises Part::partw and stays UNEVALUATED, so rank /@ it maps over that held
+		expression's parts -- the index j among them -- and rank[j] is Missing[KeyAbsent, j], which
+		then surfaces as Part::pkspec1 and ListLinePlot::lpn from a call three lines below, with no
+		mention of the argument that was wrong.*)
+	If[!(1 <= j <= mix["n"]),
+		Message[TrajectoryPlot::badconf, j, mix["n"]]; Return[$Failed]];
 	rank = AssociationThread[o -> Range[mix["n"]]];
 	series = If[chartMode, mix["perSweep"][[j]], mix["trajectories"][[j]]];
 	ListLinePlot[rank /@ series,

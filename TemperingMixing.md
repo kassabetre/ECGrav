@@ -127,7 +127,12 @@ The two diagnostics answer different questions and a run needs both to be health
 consecutive measurements at a rung are not the same configuration twice, round trips say the
 configurations at the cold rung came from more than one basin.
 
-`MixingReport` carries `corrT` and `corrTMeasured` through so the two can be read together.
+`MixingReport` carries these through as `corrTByRung` and `corrTMeasuredByRung`, ordered
+hot→cold like `flowByRung`, so the two can be read against each other index by index. The
+replicas record them per *slot*, and a slot is a rung — its beta never changes, only the
+configuration in it does — so the reorder is a relabelling, not a reinterpretation. The two
+orderings coincide whenever the caller passed an ascending `btTable`, which is why reading
+the slot-ordered vector against `flowByRung` looks right until it silently isn't.
 
 > **`corrTMeasured` before the current build.** The overload of `GraphComputeCorrelationTime` that
 > every external-field tempering run goes through never assigned the flag — it initialised it to
@@ -310,11 +315,14 @@ $(0.898, -2.22)$.
 | `OccupancyMatrix[mix]` | `m[[rung, configuration]]`, arrivals |
 | `MixingReport[mix]` | the summary table above |
 | `MixingPlots[mix]` | `"RoundTrips"`, `"Acceptance"`, `"Flow"`, `"Occupancy"`, `"Trajectory"` |
-| `TrajectoryPlot[mix, j]` | configuration `j`'s rung against swap number |
+| `TrajectoryPlot[mix, j]` | configuration `j`'s rung against swap number; `j` runs 1 to `mix["n"]`, one per rung — out of range gives `TrajectoryPlot::badconf` and `$Failed` |
 
 `MixingData` returns, among others: `"trajectories"` (per configuration, the rungs it occupied in
 order), `"order"` (rungs sorted hot→cold), `"betas"`, `"nt0"`, `"swapGraph"`, `"acceptedSwaps"`,
-`"sweeps"`, `"complete"`, and the `corrT` fields passed through from `replicas`.
+`"sweeps"`, `"complete"`, and the `corrT` fields passed through from `replicas`. Everything in
+`MixingData` stays in the chart's key (slot) order, including `"corrT"`, `"betas"` and
+`"swapAccept"`, so those stay index-aligned with each other; `"order"` is what maps them to
+rungs, and only `MixingReport` applies it.
 
 ### 11. What this does not do
 
