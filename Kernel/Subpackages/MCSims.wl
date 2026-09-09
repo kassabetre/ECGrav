@@ -796,8 +796,10 @@ result
 
 (* Overload pattern for a beta-only run *)
 
+Options[ConstrainedProbConjugateField]={"Bandwidth"->Automatic,"Form"->"Density"};
+
 ConstrainedProbConjugateField[targetBetas_List/;VectorQ[targetBetas,NumericQ]
-	,minusBetaF_Association,energyMeasurements_Association]:=
+	,minusBetaF_Association,energyMeasurements_Association,OptionsPattern[]]:=
 
 (*************************************)
 (***  Last updated on: 09/09/2026  ***)
@@ -825,6 +827,18 @@ Inputs are:,
 Returns {distributions, min, max, ess}: a SmoothKernelDistribution per target beta, one shared
 plot range, and the MBAR effective sample size per target.
 
+Options:
+  "Bandwidth" -> Automatic | any bandwidth SmoothKernelDistribution accepts.  Automatic leaves
+      the choice to SmoothKernelDistribution, which applies Silverman's rule to the WEIGHTED
+      sample.  That rule knows nothing about a lattice, and the weighted spread collapses as the
+      target beta gets colder, so the automatic bandwidth can fall below the spacing between
+      attainable energies -- at which point the estimate draws one kernel per energy level
+      instead of a curve.  ::lowbandwidth says so when it happens.
+  "Form" -> "Density" | "PMF".  "PMF" skips the kernel estimate entirely and returns, per target,
+      a sorted Association <|E -> p|> of the EXACT reweighted probability of each attained
+      energy.  For a lattice-valued energy that is the true object and the density is only a way
+      of drawing it; no bandwidth is involved and none is warned about.
+
 Two departures from the primary pattern above, both deliberate.
 
   It is built on MBARWeightBasis rather than on that pattern's nested Sum.  The MBAR denominator
@@ -838,7 +852,11 @@ Two departures from the primary pattern above, both deliberate.
   Measured on a real run with energies in {-60., -2.}: min 0.48, max -0.096, so min > max.  This
   pads by a fraction of the SPAN instead, which is sign-agnostic.*)
 
-Module[{keys=Keys[minusBetaF],probe,width,basis,allE,u,lo,hi,span,dists,esss},
+Module[{keys=Keys[minusBetaF],probe,width,basis,allE,u,lo,hi,span,dists,esss,
+		bw=OptionValue["Bandwidth"],form=OptionValue["Form"],levels,spacing,worst},
+
+	If[!MatchQ[form,"Density"|"PMF"],
+		Message[ConstrainedProbConjugateField::form,form];Return[$Failed]];
 
 	(*Lookup on a key that is not there yields Missing, which Join and N carry silently into a
 		symbolic obs matrix -- and a symbolic matrix reaches Dot, does not evaluate, and comes back
@@ -881,13 +899,38 @@ Module[{keys=Keys[minusBetaF],probe,width,basis,allE,u,lo,hi,span,dists,esss},
 		Message[ConstrainedProbConjugateField::degenerate,lo];Return[$Failed]];
 	lo=lo-0.2*span; hi=hi+0.2*span;
 
+	(*Spacing between ATTAINABLE energies.  For a lattice-valued energy this is the level gap; for
+		a genuinely continuous observable the closest pair of many thousands of samples is minute,
+		so the ratio tested below is huge and the warning cannot misfire.  Float noise between two
+		values meant to be equal shrinks it and SUPPRESSES the warning -- a false negative, which
+		is the safe direction.*)
+	levels=Union[allE];
+	spacing=If[Length[levels]>1,Min[Differences[levels]],span];
+
 	dists=ConstantArray[Null,Length[targetBetas]];
 	esss=ConstantArray[0.,Length[targetBetas]];
+	worst=Infinity;
 	Do[
 		u=First[MBARWeights[basis,{N[targetBetas[[t]]]}]];
 		esss[[t]]=Total[u]^2/Total[u^2];
-		dists[[t]]=SmoothKernelDistribution[WeightedData[allE,u]]
+		dists[[t]]=If[form==="PMF",
+			(*Exact, and no bandwidth anywhere in it: the weight of every sample sharing an energy,
+				normalised.  Merge is what collapses the duplicates.*)
+			KeySort[Merge[Thread[allE->u/Total[u]],Total]],
+			With[{d=If[bw===Automatic,
+					SmoothKernelDistribution[WeightedData[allE,u]],
+					SmoothKernelDistribution[WeightedData[allE,u],bw]]},
+				(*The chosen bandwidth is the third parameter of the DataDistribution.  Read it
+					back rather than recomputing Silverman's rule here, so the test is against what
+					was actually used.*)
+				worst=Min[worst,Quiet[d[[2,3]]]/.Except[_?NumericQ]->Infinity];
+				d]]
 	,{t,Length[targetBetas]}];
+
+	(*Warned ONCE for the whole call, naming the narrowest bandwidth used.  A sweep over sixty
+		betas that warned per target would emit sixty copies and then be cut off by General::stop.*)
+	If[form==="Density"&&NumericQ[worst]&&worst<spacing,
+		Message[ConstrainedProbConjugateField::lowbandwidth,worst,spacing]];
 
 	{dists,lo,hi,esss}
 ];
@@ -897,8 +940,8 @@ Module[{keys=Keys[minusBetaF],probe,width,basis,allE,u,lo,hi,span,dists,esss},
 (*Same return shape, unwrapped: {distribution, min, max, ess}.  Delegating rather than duplicating
 	keeps the two forms elementwise identical by construction, which is what the test asserts.*)
 ConstrainedProbConjugateField[targetBeta_?NumericQ
-	,minusBetaF_Association,energyMeasurements_Association]:=
-With[{r=ConstrainedProbConjugateField[{targetBeta},minusBetaF,energyMeasurements]},
+	,minusBetaF_Association,energyMeasurements_Association,opts:OptionsPattern[]]:=
+With[{r=ConstrainedProbConjugateField[{targetBeta},minusBetaF,energyMeasurements,opts]},
 	If[r===$Failed,$Failed,{First[r[[1]]],r[[2]],r[[3]],First[r[[4]]]}]
 ];
 

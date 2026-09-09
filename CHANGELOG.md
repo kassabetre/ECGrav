@@ -4,6 +4,50 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [Unreleased]
+
+### Added
+- **`ConstrainedProbConjugateField`'s beta-only form gains `"Bandwidth"`, `"Form" -> "PMF"`, and a
+  low-bandwidth warning.** All three exist because the energy of a graph Hamiltonian is
+  **lattice-valued**.
+
+  A kernel density estimate places a bump of width `h` on every sample. Whether the result reads
+  as a curve or as a comb is decided by `h` against the spacing `D` between attainable energies:
+  below the spacing the bumps stop overlapping and the estimate resolves individual levels.
+  `SmoothKernelDistribution` picks `h` by Silverman's rule on the weighted sample, which has no
+  notion of a lattice — and the weighted spread collapses as the target beta gets colder, so the
+  automatic choice walks below the spacing exactly where the physics is most interesting.
+  Measured at `D = 1`: `h/D` is 4.2 at beta 0.15, 1.5 at 0.35, and 0.5 from 0.6 downwards.
+  Counting local maxima over a fixed window: `h=0.5` gives 12 bumps, `h=1.0` gives 5, `h=1.5`
+  gives 1, `h=2.0` none.
+
+  This is **not** fixed by rescaling the observable — Silverman's rule is scale-invariant, so `h`,
+  the weighted sigma and `D` all shrink together and `h/D` is unchanged. What matters is how many
+  lattice levels the reweighted distribution spans, a property of the target.
+
+  - `"Bandwidth" -> Automatic` (default, unchanged behaviour) or anything
+    `SmoothKernelDistribution` accepts. Between `D` and `2D` is usually right.
+  - `ConstrainedProbConjugateField::lowbandwidth` reports the bandwidth actually used and the
+    spacing, **once per call**, naming the narrowest bandwidth in the sweep — a sweep over sixty
+    betas would otherwise emit sixty copies and be cut off by `General::stop`. The spacing is the
+    smallest positive gap between distinct sample values, so on a genuinely continuous observable
+    it is minute and the warning cannot misfire; float noise shrinks it and suppresses the warning,
+    a false negative, which is the safe direction.
+  - `"Form" -> "PMF"` skips the kernel estimate and returns, per target beta, a sorted
+    `Association <|E -> p|>` of the exact reweighted probability of each attained energy. For a
+    lattice-valued energy that is the true object and the density only a way of drawing it. The
+    other three return values are unchanged.
+
+  Purely additive: the default path is untouched and no numbers change. One test, suite
+  247 -> 248 green. Verified that the warning fires at a cold target and is **silent** at a hot one
+  (so a warning hardwired either way fails), that `"Bandwidth"` reaches the estimator
+  behaviourally — a wider kernel gives strictly fewer local maxima — and that the PMF sums to 1,
+  carries one atom per attained level, and reproduces the MBAR weighted mean to `1e-9`. Each of the
+  four behaviours was confirmed by reverting it separately; forcing the warning on also breaks the
+  other two tests, which are silence checks by construction.
+
+  `ConjugateFieldDensity.md` gains §5 on the bandwidth and the lattice.
+
 ## [1.15.0] - 2026-09-09
 
 ### Added

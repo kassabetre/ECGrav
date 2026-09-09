@@ -1112,6 +1112,75 @@ VerificationTest[
 ];
 
 
+(* The three options that exist because the energy is LATTICE-valued.
+
+   A kernel density estimate places a bump of width h on every sample. Whether the result is a
+   curve or a comb is decided by h against the spacing between attainable energies: below the
+   spacing the bumps stop overlapping and the estimate resolves individual levels. Silverman's
+   rule, which SmoothKernelDistribution applies to the weighted sample, has no notion of a lattice
+   and scales h with the weighted spread -- and that spread collapses as the target beta gets
+   colder, so the automatic choice walks below the spacing exactly where the physics is most
+   interesting.
+
+   Leg 1 is the warning firing at a cold target. Leg 2 is the negative control that keeps it
+   honest: at a hot target, where the distribution spans many levels, the same call must be
+   SILENT, so a warning hardwired to fire would fail here. Leg 3 asserts "Bandwidth" actually
+   reaches the estimator, behaviourally rather than by reading DataDistribution's internals --
+   a wider kernel must produce strictly fewer local maxima. Legs 4-6 are the exact PMF, which for
+   a lattice-valued energy is the true object and the density only a way of drawing it: it must
+   sum to one, carry one atom per attained energy, and reproduce the MBAR weighted mean exactly,
+   since it is the same weights merged rather than smoothed. *)
+VerificationTest[
+    Module[{betas = {0.2, 0.6, 1.4}, en, mbf, allE, spacing, cold = 0.9, hot = 0.15,
+            warmCold, warmHot, bwSilent, maxima, mNarrow, mWide, pmf, w, basis, bad, sc},
+        SeedRandom[404];
+        en = Association@Table[b -> N@RandomInteger[{-40, -5}, 80], {b, betas}];
+        mbf = ECGrav`ComputeMinusBetaTimesFreeEnergy[en];
+        allE = Join @@ Lookup[en, Key /@ Keys[mbf]];
+        spacing = Min[Differences[Union[allE]]];
+
+        warmCold = Quiet[Check[
+            ECGrav`ConstrainedProbConjugateField[cold, mbf, en]; False, True,
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth],
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth];
+        warmHot = Quiet[Check[
+            ECGrav`ConstrainedProbConjugateField[hot, mbf, en]; False, True,
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth],
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth];
+        bwSilent = Quiet[Check[
+            ECGrav`ConstrainedProbConjugateField[cold, mbf, en,
+                "Bandwidth" -> 3.0*spacing]; False, True,
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth],
+            ECGrav`ConstrainedProbConjugateField::lowbandwidth];
+
+        maxima[d_] := With[{ys = PDF[d, Range[-45., 0., 0.1]]},
+            Length[Select[Range[2, Length[ys] - 1],
+                ys[[#]] > ys[[# - 1]] && ys[[#]] > ys[[# + 1]] &]]];
+        mNarrow = maxima[First@Quiet@ECGrav`ConstrainedProbConjugateField[cold, mbf, en,
+                        "Bandwidth" -> 0.3*spacing]];
+        mWide = maxima[First@Quiet@ECGrav`ConstrainedProbConjugateField[cold, mbf, en,
+                        "Bandwidth" -> 4.0*spacing]];
+
+        pmf = First@ECGrav`ConstrainedProbConjugateField[0.4, mbf, en, "Form" -> "PMF"];
+        basis = ECGrav`Private`MBARWeightBasis[1.0, mbf, en];
+        w = First[ECGrav`Private`MBARWeights[basis, {0.4}]];
+        bad = Quiet@ECGrav`ConstrainedProbConjugateField[0.4, mbf, en, "Form" -> "Histogram"];
+        (* options must survive the scalar -> list delegation *)
+        sc = First@ECGrav`ConstrainedProbConjugateField[0.4, mbf, en, "Form" -> "PMF"];
+
+        {warmCold,                                                  (* 1: warns when h < spacing *)
+         !warmHot,                                                  (* 2: silent when h > spacing*)
+         !bwSilent && mWide < mNarrow,                              (* 3: "Bandwidth" reaches it *)
+         Abs[Total[pmf] - 1.] < 10.^-12,                            (* 4: PMF normalised         *)
+         Length[pmf] === Length[Union[allE]],                       (* 5: one atom per level     *)
+         Abs[Total[KeyValueMap[#1*#2 &, pmf]] - (w . allE)/Total[w]] < 10.^-9,
+                                                                    (* 6: exact, same weights    *)
+         bad === $Failed && AssociationQ[sc]}],                     (* 7: bad Form; opts delegate*)
+    {True, True, True, True, True, True, True},
+    TestID -> "ConstrainedProbConjugateField-bandwidth-warning-and-PMF"
+];
+
+
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
    guard (Max[$KernelCount, 1]) is exercised. Without the fix this failed with

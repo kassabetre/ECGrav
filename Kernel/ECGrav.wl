@@ -469,6 +469,19 @@ Inputs are:,
 beta, one shared plot range, and the MBAR effective sample size per target. The single-beta form
 returns the same four with the distribution and the ESS unwrapped. A low ESS means the target
 beta is far from the sampled ladder and the density there is extrapolation.
+
+Options:
+\[IndentingNewLine]\"Bandwidth\" -> Automatic (default) or any bandwidth SmoothKernelDistribution
+	accepts. Automatic applies Silverman's rule to the weighted sample; that rule knows nothing
+	about a lattice, and since the weighted spread narrows as the target beta gets colder the
+	automatic choice can fall below the spacing between attainable energies, at which point the
+	density draws one kernel per energy level instead of a curve.
+	ConstrainedProbConjugateField::lowbandwidth reports that when it happens.
+\[IndentingNewLine]\"Form\" -> \"Density\" (default) or \"PMF\". \"PMF\" skips the kernel
+	estimate and returns, per target beta, a sorted Association <|E -> p|> of the exact reweighted
+	probability of each attained energy. For a lattice-valued energy that is the true object and
+	the density only a way of drawing it; no bandwidth is used and none is warned about. The other
+	three return values are unchanged.
 ";
 
 (* :Error Mesages: *)
@@ -486,6 +499,10 @@ ConstrainedProbConjugateField::notbeta="The beta-only form expects the scalar en
 ConstrainedProbConjugateField::nosamples="The energy measurements are all empty, so there is nothing to build a density from.";
 
 ConstrainedProbConjugateField::degenerate="Every measured energy equals `1`, which is a point mass rather than a density; SmoothKernelDistribution cannot estimate a bandwidth from it.";
+
+ConstrainedProbConjugateField::lowbandwidth="The kernel bandwidth `1` is below `2`, the spacing between attainable energies, so the density resolves individual energy levels instead of smoothing across them. Set \"Bandwidth\" -> `2` or larger, or use \"Form\" -> \"PMF\" for the exact per-level probabilities.";
+
+ConstrainedProbConjugateField::form="\"Form\" must be \"Density\" or \"PMF\", not `1`.";
 
 
 (* ::Chapter:: *)

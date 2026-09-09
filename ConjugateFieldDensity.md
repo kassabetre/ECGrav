@@ -102,7 +102,56 @@ which is sign-agnostic. The range does not depend on the target, so the list for
 range shared by every $\beta_T$ — which is what makes a stack of densities, or a `DensityPlot` of
 $P(E;\beta)$, coherent.
 
-## 5. What is refused
+## 5. The bandwidth, and the energy lattice
+
+A kernel density estimate places a bump of width $h$ — the **bandwidth** — on every sample and
+adds them up, each scaled by its weight. Whether the result reads as a curve or as a comb is
+decided by $h$ against $\Delta$, the spacing between *attainable* energies:
+
+$$h \gtrsim \Delta \;\Rightarrow\; \text{adjacent bumps overlap and merge};\qquad
+h \ll \Delta \;\Rightarrow\; \text{one separated bump per occupied level}.$$
+
+The energy of a graph Hamiltonian is lattice-valued, so $\Delta$ is finite and this is a live
+concern rather than a technicality. `SmoothKernelDistribution` chooses $h$ by Silverman's rule
+applied to the weighted sample, roughly $h \approx 1.06\,\sigma_w\,\mathrm{ESS}^{-1/5}$. That rule
+was derived for continuous data and has no notion of a lattice — and $\sigma_w$ **collapses as the
+target gets colder**, because the reweighted energy distribution narrows onto fewer levels.
+Measured on a run with $\Delta = 1$:
+
+| $\beta_T$ | ESS | levels carrying $>0.1\%$ | $\sigma_w/\Delta$ | $h$ | $h/\Delta$ |
+| --- | --- | --- | --- | --- | --- |
+| 0.05 | 151 | 71 | 19.8 | 3.57 | 3.6 |
+| 0.15 | 271 | 72 | 23.1 | 4.24 | 4.2 |
+| 0.35 | 1247 | 7 | 7.9 | 1.46 | 1.5 |
+| 0.6 | 2254 | 2 | 1.83 | 0.50 | **0.5** |
+| 1.0 | 2168 | 1 | 0.17 | 0.50 | **0.5** |
+
+Counting local maxima over a fixed window shows the same thing directly: $h=0.5$ gives 12 bumps,
+$h=1.0$ gives 5, $h=1.5$ gives 1, $h=2.0$ gives none.
+
+**Note this is not fixed by rescaling the observable.** Silverman's rule is scale-invariant: divide
+the energy by any constant and $h$, $\sigma_w$ and $\Delta$ all shrink together, leaving $h/\Delta$
+exactly where it was. What matters is how many lattice levels the *reweighted* distribution spans,
+which is a property of the target, not of the units.
+
+Hence the two options and the warning:
+
+- `"Bandwidth"` overrides the automatic choice. A value between $\Delta$ and $2\Delta$ is usually
+  right: wide enough to bridge adjacent levels, narrow enough to keep genuine structure. Beyond a
+  few $\Delta$ real features start being washed out.
+- `ConstrainedProbConjugateField::lowbandwidth` fires when the bandwidth actually used falls below
+  $\Delta$, reporting both numbers. It is raised **once per call**, naming the narrowest bandwidth
+  in the sweep, because a sweep over sixty betas would otherwise emit sixty copies and then be cut
+  off by `General::stop`.
+- `"Form" -> "PMF"` sidesteps the question: for a lattice-valued energy the exact per-level
+  probabilities are the true object, and the density is only a way of drawing them.
+
+$\Delta$ is measured as the smallest positive gap between distinct sample values. For a genuinely
+continuous observable the closest pair out of thousands of samples is minute, so $h/\Delta$ is
+enormous and the warning cannot misfire. Floating-point noise between two values meant to be equal
+shrinks $\Delta$ and *suppresses* the warning — a false negative, which is the safe direction.
+
+## 6. What is refused
 
 Each of these otherwise fails far downstream, as a symbolic expression or an error at plot time
 rather than at the call.
@@ -113,13 +162,14 @@ rather than at the call.
 | measurements carry more than one component | `::notbeta` | the target $\{\beta_T\}$ is then the wrong width, `Dot` does not evaluate, and every density is a symbolic expression holding the whole sample matrix |
 | every measurement list empty | `::nosamples` | there is nothing to estimate, and `MinMax[{}]` fails |
 | every energy identical | `::degenerate` | a point mass, not a density: `SmoothKernelDistribution` returns a `DataDistribution` that looks fine and raises `InverseFourier::fftl` the first time `PDF` is asked for a value |
+| `"Form"` is neither `"Density"` nor `"PMF"` | `::form` | an unrecognised form would otherwise be silently treated as a density |
 
 **The component check must run before `MBARWeightBasis`, not after.** That helper forms
 $O\cdot h^{\mathsf T}$ itself, so a wrong width raises `Dot::dotsh` inside it and hands back a
 symbolic basis — at which point the width can no longer be read off it. The test asserts that
 `Dot::dotsh` does not escape.
 
-## 6. Reading the ESS
+## 7. Reading the ESS
 
 The list form returns $\mathrm{ESS}(\beta_T)$ per target. It is the number of independent samples
 the reweighting has left at that $\beta$, and it falls away quickly outside the sampled ladder: a
@@ -132,7 +182,7 @@ roughly that factor. And the ESS says nothing about whether the states *overlap 
 region*: a target between two well-sampled rungs can carry a healthy ESS while the tail of the
 density it is asked about is supported by very few samples.
 
-## 7. Getting the inputs from a run
+## 8. Getting the inputs from a run
 
 Energy is chart column 3 in both the pre- and post-1.13.0 beta layouts — it is the only column the
 package itself reads out of a beta chart — so for a run `res`:
@@ -147,7 +197,7 @@ This is what the beta drivers do internally. Run unpacking is deliberately not d
 function: `MCSims.wl` takes prepared associations throughout, and unpacking a driver return lives
 in the `.wls` layer with `BetaSurfaceData` and `MixingData`.
 
-## 8. Verification
+## 9. Verification
 
 | check | result |
 | --- | --- |
@@ -158,12 +208,18 @@ in the `.wls` layer with `BetaSurfaceData` and `MixingData`.
 | returned range is ordered and contains the data; PDF integrates over it | $1.0000000000000009$ |
 | list form against mapping the scalar form | ESS and range identical, PDF difference `0.` |
 | ESS inside the ladder exceeds ESS far outside it | asserted, so the ESS cannot be a constant |
+| `::lowbandwidth` fires at a cold target and is **silent** at a hot one | both asserted, so a warning hardwired either way fails |
+| `"Bandwidth"` reaches the estimator | asserted behaviourally: a wider kernel gives strictly fewer local maxima |
+| PMF sums to 1, carries one atom per attained level, and reproduces the MBAR weighted mean | $<10^{-12}$, exact count, $<10^{-9}$ |
 
-Both tests were confirmed by reverting each fix separately: moving the component check after the
+Three tests in all. Each behaviour was confirmed by reverting it separately: moving the component check after the
 basis build, and restoring the four-argument range heuristic, each independently fails
-`ConstrainedProbConjugateField-beta-form-range-and-guards`.
+`ConstrainedProbConjugateField-beta-form-range-and-guards`; and disabling the warning, forcing it
+to fire unconditionally, ignoring `"Bandwidth"`, or leaving the PMF unnormalised each
+independently fails `ConstrainedProbConjugateField-bandwidth-warning-and-PMF`. Forcing the warning
+on also breaks the other two tests, which are silence checks by construction.
 
-## 9. API
+## 10. API
 
 ```wl
 (* external-field form: the density of the conjugate field at a target field, fixed beta *)
@@ -171,10 +227,23 @@ ConstrainedProbConjugateField[betaFixed, targetExtField, minusBetaF, measurement
     ==> {distribution(s), min, max}
 
 (* beta-only form: the density of the ENERGY at a target inverse temperature *)
-ConstrainedProbConjugateField[targetBetas_List, minusBetaF, energyMeasurements]
+ConstrainedProbConjugateField[targetBetas_List, minusBetaF, energyMeasurements, opts]
     ==> {distributions, min, max, ess}
-ConstrainedProbConjugateField[targetBeta_?NumericQ, minusBetaF, energyMeasurements]
+ConstrainedProbConjugateField[targetBeta_?NumericQ, minusBetaF, energyMeasurements, opts]
     ==> {distribution, min, max, ess}
+
+    "Bandwidth" -> Automatic (default) | anything SmoothKernelDistribution accepts
+    "Form"      -> "Density" (default) | "PMF"
+```
+
+Under `"Form" -> "PMF"` the first return value is a sorted `Association` `<|E -> p|>` per target
+instead of a distribution — the exact reweighted probability of each attained energy. The other
+three values are unchanged, and the scalar form unwraps as before. Plot it as atoms, not as a
+curve:
+
+```wl
+{pmf, lo, hi, ess} = ConstrainedProbConjugateField[4.0, mbf, en, "Form" -> "PMF"];
+ListPlot[Normal[pmf], Filling -> Axis, PlotRange -> All]
 ```
 
 The external-field form's `min` and `max` are vectors, one entry per component of the conjugate
@@ -186,15 +255,16 @@ The beta form's keys are bare inverse temperatures and its values are flat energ
 a beta chart already has, and the shape `ComputeMinusBetaTimesFreeEnergy` and
 `NegativeBetaTimesFreeEnergy` already take. Its argument order matches the latter.
 
-## 10. What this does not do
+## 11. What this does not do
 
 - **It does not check that the target is inside the sampled range.** It returns the ESS and leaves
   the judgement to the caller; there is no mask and no warning.
 - **It does not decorrelate.** Samples are taken as given, so a chart written every sweep is used
-  every sweep, and §6 applies.
-- **It does not estimate a bandwidth of its own.** `SmoothKernelDistribution`'s default rule sees
-  the weights, but a strongly peaked weight vector leaves it choosing a bandwidth from an effective
-  sample much smaller than $S$.
+  every sweep, and §7 applies.
+- **It does not choose a bandwidth for you beyond what `SmoothKernelDistribution` does.** §5 is the
+  whole of what it offers: a warning when the automatic choice falls below the lattice spacing, an
+  override, and an exact discrete alternative. It does not silently substitute a lattice-aware
+  rule, because that would change results for every existing caller.
 - **The external-field form is untouched**, including its range heuristic. §4 is the reason the
   beta form does not delegate to it; whether that heuristic should itself be fixed is a separate
   question, and fixing it would change the plot ranges of existing external-field callers.
