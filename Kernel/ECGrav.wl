@@ -446,13 +446,46 @@ Inputs are:,
 \[IndentingNewLine]Note, the J values which are the keys for all the associations have to be equal as 
 sets! Also, the lengths of the lists of values have to be equal for all J values,\[IndentingNewLine]
 Returns a list containing a SmoothKernelDistribution of the conjugate field (together with plot ranges), which can be plotted.
+
+ConstrainedProbConjugateField[targetBetas_List, minusBetaF_Association, energyMeasurements_Association]
+ConstrainedProbConjugateField[targetBeta_?NumericQ, minusBetaF_Association, energyMeasurements_Association]
+	Computes the probability density of the ENERGY at a target inverse temperature,
+	P(beta,E), from a beta-only parallel tempering run.
+
+Beta tempering is the one-component homogeneous form of the above: writing H = c.O with
+c = {beta} and O = {E}, the Boltzmann exponent beta*E is the c.O the external-field form
+reweights on, so this is the same estimator with betaFixed = 1, the rung betas in place of
+the external fields and the energy in place of the conjugate field.
+
+Inputs are:,
+1. targetBetas - a list of inverse temperatures at which the density is wanted, or a single
+	number,\[IndentingNewLine]2. minusBetaF - an association of inverse temperature and the
+	corresponding -beta*free energy, as returned by ComputeMinusBetaTimesFreeEnergy,
+\[IndentingNewLine]3. energyMeasurements - an association of inverse temperature and the list of
+	energies measured at that beta.
+\[IndentingNewLine]For a run res, both come from chart column 3:
+	en = res[[2]][[All,All,3]]; mbf = ComputeMinusBetaTimesFreeEnergy[en];
+\[IndentingNewLine]Returns {distributions, min, max, ess} -- a SmoothKernelDistribution per target
+beta, one shared plot range, and the MBAR effective sample size per target. The single-beta form
+returns the same four with the distribution and the ESS unwrapped. A low ESS means the target
+beta is far from the sampled ladder and the density there is extrapolation.
 ";
 
 (* :Error Mesages: *)
 
 ConstrainedProbConjugateField::argerr="Input has to be of the form 
 	ConstrainedProbConjugateField[betaFixed_Real,targetExtField_List,
-	minusBetaF_Association,conjugateExtFieldMeasurements_Association] ";
+	minusBetaF_Association,conjugateExtFieldMeasurements_Association] for an external-field run, or
+	ConstrainedProbConjugateField[targetBetas,minusBetaF_Association,energyMeasurements_Association]
+	for a beta-only run, where targetBetas is a number or a list of numbers ";
+
+ConstrainedProbConjugateField::keys="minusBetaF and the energy measurements must have the same inverse temperatures as keys; `1` appear in one but not the other.";
+
+ConstrainedProbConjugateField::notbeta="The beta-only form expects the scalar energy as the conjugate variable, but the measurements carry `1` components per sample. Use the four-argument form ConstrainedProbConjugateField[betaFixed, targetExtField, minusBetaF, measurements] for a multi-component conjugate field.";
+
+ConstrainedProbConjugateField::nosamples="The energy measurements are all empty, so there is nothing to build a density from.";
+
+ConstrainedProbConjugateField::degenerate="Every measured energy equals `1`, which is a point mass rather than a density; SmoothKernelDistribution cannot estimate a bandwidth from it.";
 
 
 (* ::Chapter:: *)

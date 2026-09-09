@@ -794,6 +794,114 @@ result
 
 ];
 
+(* Overload pattern for a beta-only run *)
+
+ConstrainedProbConjugateField[targetBetas_List/;VectorQ[targetBetas,NumericQ]
+	,minusBetaF_Association,energyMeasurements_Association]:=
+
+(*************************************)
+(***  Last updated on: 09/09/2026  ***)
+(*************************************)
+
+(*The density of the ENERGY at a target inverse temperature, from a beta-only parallel
+tempering run.  P(beta,E).
+
+Beta tempering is the one-component homogeneous form of the primary pattern above.  Writing the
+hamiltonian as H = c.O with c = {beta} and O = {E}, the Boltzmann exponent beta*E is exactly the
+c.O the external-field form reweights on, so this is the same estimator with betaFixed = 1, the
+rung betas playing the role of the external fields and the energy playing the role of the
+conjugate field.  Nothing new is computed; only the mapping is new.
+
+Inputs are:,
+1. targetBetas - a list of inverse temperatures at which the density is wanted (a bare number is
+   accepted too, by the overload below),
+2. minusBetaF_Association - inverse temperatures as keys, -beta*freeEnergy at that beta as values,
+   as returned by ComputeMinusBetaTimesFreeEnergy[energyMeasurements],
+3. energyMeasurements_Association - inverse temperatures as keys, the list of energies measured at
+   that beta as values.  For a run res, both come from chart column 3:
+       en  = res[[2]][[All,All,3]];
+       mbf = ComputeMinusBetaTimesFreeEnergy[en];
+
+Returns {distributions, min, max, ess}: a SmoothKernelDistribution per target beta, one shared
+plot range, and the MBAR effective sample size per target.
+
+Two departures from the primary pattern above, both deliberate.
+
+  It is built on MBARWeightBasis rather than on that pattern's nested Sum.  The MBAR denominator
+  LogSumExp_j[Log[n_j] - F_j - beta_j E_s] carries no target, so it is formed once and reused at
+  every beta while only the numerator -betaTarget*E_s moves.  A sweep over betas is the whole
+  point of this overload, and that is precisely the reuse MBARWeights.md was written for.
+
+  It does NOT reuse that pattern's plot range.  0.8*Min and 1.2*Max widen an interval only when
+  the data is positive; energies are negative, so they SHRINK it, and the two sign-fixing passes
+  that follow -- the second reading the min the first has already overwritten -- then invert it.
+  Measured on a real run with energies in {-60., -2.}: min 0.48, max -0.096, so min > max.  This
+  pads by a fraction of the SPAN instead, which is sign-agnostic.*)
+
+Module[{keys=Keys[minusBetaF],probe,width,basis,allE,u,lo,hi,span,dists,esss},
+
+	(*Lookup on a key that is not there yields Missing, which Join and N carry silently into a
+		symbolic obs matrix -- and a symbolic matrix reaches Dot, does not evaluate, and comes back
+		as a blob rather than an error.  Checked here, where the two associations can still be
+		named.*)
+	If[Sort[keys]=!=Sort[Keys[energyMeasurements]],
+		Message[ConstrainedProbConjugateField::keys,
+			Complement[Union[keys,Keys[energyMeasurements]],
+				Intersection[keys,Keys[energyMeasurements]]]];
+		Return[$Failed]];
+
+	(*An empty replica is allowed -- MBARWeightBasis gives its column Log[0] and it contributes
+		nothing -- so probe the first NON-empty list for the component count.  All empty means
+		there is nothing to build a density from and MinMax below would fail on {}.*)
+	probe=SelectFirst[Values[energyMeasurements],Length[#]>0&,None];
+	If[probe===None,Message[ConstrainedProbConjugateField::nosamples];Return[$Failed]];
+
+	(*A beta run's conjugate variable is the SCALAR energy, and this has to be settled before the
+		basis is built, not after: MBARWeightBasis itself forms obs.Transpose[fields], so several
+		components raise Dot::dotsh in there and hand back a symbolic basis, at which point the
+		width can no longer be read off it.*)
+	width=If[ListQ[First[probe]],Length[First[probe]],1];
+	If[width=!=1,
+		Message[ConstrainedProbConjugateField::notbeta,width];Return[$Failed]];
+
+	basis=MBARWeightBasis[1.0,minusBetaF,energyMeasurements];
+
+	(*Read the energies back OUT of the basis.  MBARWeightBasis stacks samples in the key order of
+		minusBetaF, not of the measurements, so Join@@Values[energyMeasurements] is aligned with
+		the weights only when the two associations happen to be ordered alike.  This cannot drift.*)
+	allE=Flatten[basis["obs"]];
+
+	{lo,hi}=MinMax[allE];
+	span=hi-lo;
+	(*Every energy identical -- a run frozen at every rung -- is a point mass, not a density, and
+		SmoothKernelDistribution cannot estimate a bandwidth from it: it returns a DataDistribution
+		that looks fine and then raises InverseFourier::fftl the first time PDF is asked for a
+		value.  Refuse here rather than hand back something whose failure surfaces at plot time.*)
+	If[span<=0.,
+		Message[ConstrainedProbConjugateField::degenerate,lo];Return[$Failed]];
+	lo=lo-0.2*span; hi=hi+0.2*span;
+
+	dists=ConstantArray[Null,Length[targetBetas]];
+	esss=ConstantArray[0.,Length[targetBetas]];
+	Do[
+		u=First[MBARWeights[basis,{N[targetBetas[[t]]]}]];
+		esss[[t]]=Total[u]^2/Total[u^2];
+		dists[[t]]=SmoothKernelDistribution[WeightedData[allE,u]]
+	,{t,Length[targetBetas]}];
+
+	{dists,lo,hi,esss}
+];
+
+(* Overload pattern for a beta-only run at a single beta *)
+
+(*Same return shape, unwrapped: {distribution, min, max, ess}.  Delegating rather than duplicating
+	keeps the two forms elementwise identical by construction, which is what the test asserts.*)
+ConstrainedProbConjugateField[targetBeta_?NumericQ
+	,minusBetaF_Association,energyMeasurements_Association]:=
+With[{r=ConstrainedProbConjugateField[{targetBeta},minusBetaF,energyMeasurements]},
+	If[r===$Failed,$Failed,{First[r[[1]]],r[[2]],r[[3]],First[r[[4]]]}]
+];
+
 (* Catch-all Pattern *)
 ConstrainedProbConjugateField[args___]:=(Message[ConstrainedProbConjugateField::argerr, args];
 $Failed);

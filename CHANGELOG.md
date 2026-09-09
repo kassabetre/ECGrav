@@ -4,6 +4,58 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [Unreleased]
+
+### Added
+- **`ConstrainedProbConjugateField` now has a beta-only form, giving the density of the energy
+  `P(beta, E)` from a beta-only parallel tempering run.**
+
+  ```wl
+  ConstrainedProbConjugateField[targetBetas_List,      minusBetaF, energyMeasurements]
+  ConstrainedProbConjugateField[targetBeta_?NumericQ,  minusBetaF, energyMeasurements]
+  ```
+
+  Beta tempering is the one-component homogeneous form of the existing external-field pattern:
+  writing `H = c.O` with `c = {beta}` and `O = {E}`, the Boltzmann exponent `beta E` is exactly the
+  `c.O` that form reweights on. So this is the same estimator with `betaFixed = 1`, the rung betas
+  in place of the external fields and the energy in place of the conjugate field — the mapping is
+  new, the mathematics is not. Keys are bare inverse temperatures and values are flat energy lists,
+  the shape a beta chart already has; the argument order matches `NegativeBetaTimesFreeEnergy`.
+
+  Returns `{distributions, min, max, ess}` — a `SmoothKernelDistribution` per target beta, one
+  plot range shared across targets, and the MBAR effective sample size at each. The single-beta
+  form returns the same four with the distribution and the ESS unwrapped.
+
+  Built on `MBARWeightBasis`/`MBARWeights` rather than on the four-argument pattern's nested `Sum`.
+  The MBAR denominator carries no target, so it is formed once and reused at every beta while only
+  the numerator moves — which is what makes a sweep over beta, the reason the overload exists,
+  cheap. The helpers needed no adaptation: they already coerce bare-real keys and scalar
+  measurements.
+
+  It deliberately does **not** reuse the four-argument form's plot range. That range is
+  `0.8*Min` / `1.2*Max` followed by two sign-fixing passes whose second reads the minimum the first
+  has already overwritten, which widens an interval only for positive data. Energies are negative,
+  so it shrinks and then inverts: on a real run with energies in `{-60., -2.}` it yields
+  `min 0.48, max -0.096`. The beta form pads by a fraction of the span instead. The external-field
+  form is untouched.
+
+  Refuses, rather than failing downstream as a symbolic blob or an error at plot time: mismatched
+  keys (`::keys`), measurements with more than one component (`::notbeta`), all-empty measurements
+  (`::nosamples`), and a constant energy, which is a point mass `SmoothKernelDistribution` cannot
+  estimate a bandwidth from (`::degenerate`). The component check runs *before* `MBARWeightBasis`,
+  because that helper forms `obs.Transpose[fields]` itself and a wrong width there yields a
+  symbolic basis rather than an error.
+
+  Verified pointwise against the four-argument form on the same data expressed both ways
+  (`<1e-12`, and `0.` between the means on one fixture); weights against the old nested-`Sum`
+  formula to `2.6e-18`; `<E>` against `-d(-betaF)/dbeta` differenced from
+  `NegativeBetaTimesFreeEnergy` to `4.4e-7`; reweighting to a sampled rung reproduces its sample
+  mean; the returned range is ordered, contains the data, and the PDF integrates over it to
+  `1.0000000000000009`; the list form is identical to mapping the scalar form. Two tests, suite
+  245 -> 247 green, each fix confirmed by reverting it separately.
+
+  Specification: `ConjugateFieldDensity.md`.
+
 ## [1.14.2] - 2026-09-08
 
 ### Changed

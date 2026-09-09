@@ -1004,6 +1004,114 @@ VerificationTest[
 ];
 
 
+(* ConstrainedProbConjugateField's beta-only overload is the SAME estimator as the four-argument
+   external-field form, reached through the one-component homogeneous mapping: H = c.O with
+   c = {beta} and O = {E}, so betaFixed = 1, the rung betas stand in for the external fields and
+   the energy stands in for the conjugate field.
+
+   Leg 1 is the identity that matters and the reason the overload is allowed to exist. The same
+   data is expressed both ways -- flat energies keyed on bare betas, and one-element vectors keyed
+   on one-element lists -- and handed the SAME free energies, so nothing but the code path differs.
+   The densities must agree pointwise, not merely in the mean.
+
+   Leg 2 is thermodynamic: the reweighted <E> must equal -d(-betaF)/dbeta, differenced from
+   NegativeBetaTimesFreeEnergy, which is an independent route through the same free energies.
+
+   Leg 3 pins the list form to the scalar form, which is what lets the two share one plot range.
+
+   Leg 4 is the non-vacuous check on the ESS: reweighting to a beta inside the sampled ladder must
+   retain more effective samples than reweighting far outside it. Without this the ESS could be a
+   constant and legs 1-3 would not notice. *)
+VerificationTest[
+    Module[{betas = {0.2, 0.6, 1.1}, bT = 0.4, eps = 10.^-4, en, mbf, mbfL, vecMeas,
+            old4, new3, xs, basis, u, wmean, fd, lst, sca, essIn, essOut},
+        SeedRandom[41];
+        en = Association@Table[b -> RandomVariate[NormalDistribution[-8.0*b, 1.5], 60], {b, betas}];
+        mbf = ECGrav`ComputeMinusBetaTimesFreeEnergy[en];
+        mbfL = KeyMap[List, mbf];
+        vecMeas = Association@Table[{b} -> Transpose[{en[b]}], {b, betas}];
+
+        old4 = ECGrav`ConstrainedProbConjugateField[1.0, {bT}, mbfL, vecMeas];
+        new3 = ECGrav`ConstrainedProbConjugateField[bT, mbf, en];
+        xs = Range[-12., -1., 0.5];
+
+        basis = ECGrav`Private`MBARWeightBasis[1.0, mbf, en];
+        u = First[ECGrav`Private`MBARWeights[basis, {bT}]];
+        wmean = ECGrav`Private`MBARWeightedMean[u, Join @@ Lookup[en, Key /@ Keys[mbf]]];
+        fd = -(ECGrav`NegativeBetaTimesFreeEnergy[bT + eps, mbf, en]
+               - ECGrav`NegativeBetaTimesFreeEnergy[bT - eps, mbf, en])/(2 eps);
+
+        lst = ECGrav`ConstrainedProbConjugateField[{0.3, 0.9}, mbf, en];
+        sca = ECGrav`ConstrainedProbConjugateField[#, mbf, en] & /@ {0.3, 0.9};
+
+        essIn = Last[ECGrav`ConstrainedProbConjugateField[0.6, mbf, en]];
+        essOut = Last[ECGrav`ConstrainedProbConjugateField[6.0, mbf, en]];
+
+        {Max[Abs[PDF[old4[[1]], #] - PDF[new3[[1]], #]] & /@ xs] < 10.^-12,  (* 1: same estimator *)
+         Abs[wmean - fd] < 10.^-5,                                          (* 2: <E> = -dlogZ/db *)
+         lst[[4]] === sca[[All, 4]] &&
+           {lst[[2]], lst[[3]]} === {sca[[1, 2]], sca[[1, 3]]} &&
+           Max[Abs[Table[PDF[lst[[1, k]], -5.] - PDF[sca[[k, 1]], -5.], {k, 2}]]] < 10.^-12,
+                                                                            (* 3: list == scalar  *)
+         1. <= essOut < essIn <= 180.}],                                    (* 4: ESS is real     *)
+    {True, True, True, True},
+    TestID -> "ConstrainedProbConjugateField-beta-form-is-the-same-estimator"
+];
+
+(* The beta overload does NOT delegate to the four-argument form, and these are the reasons.
+
+   Leg 1: energies are NEGATIVE, and that form's plot range is 0.8*Min / 1.2*Max followed by two
+   sign-fixing passes whose second reads the min the first has already overwritten. On negative
+   data 0.8*Min shrinks rather than widens and the result comes back inverted -- measured on a real
+   run with energies in {-60., -2.}: min 0.48, max -0.096. The overload pads by a fraction of the
+   SPAN instead, so the range must be ordered AND must contain the data it describes.
+
+   Legs 2-5 are the refusals. Leg 3 additionally asserts that Dot::dotsh does NOT escape: the
+   component-count check has to run BEFORE MBARWeightBasis, because that helper forms
+   obs.Transpose[fields] itself and a wrong width there yields a symbolic basis rather than an
+   error -- the same silent-blob failure mode a symbolic MBAR grid produces. Leg 5 is the point
+   mass: SmoothKernelDistribution returns a DataDistribution that looks fine and then raises
+   InverseFourier::fftl the first time PDF is asked for a value, so it is refused up front. *)
+VerificationTest[
+    Module[{betas = {0.2, 0.6, 1.1}, en, mbf, r, lo, hi, allE, m1, m2, dotsh, m3, m4, flat, fm},
+        SeedRandom[42];
+        en = Association@Table[b -> RandomVariate[NormalDistribution[-8.0*b, 1.5], 60], {b, betas}];
+        mbf = ECGrav`ComputeMinusBetaTimesFreeEnergy[en];
+        allE = Join @@ Values[en];
+
+        r = ECGrav`ConstrainedProbConjugateField[0.4, mbf, en];
+        {lo, hi} = {r[[2]], r[[3]]};
+
+        m1 = Quiet[Check[ECGrav`ConstrainedProbConjugateField[0.4, KeyDrop[mbf, 0.6], en]; False,
+                    True, ECGrav`ConstrainedProbConjugateField::keys],
+                ECGrav`ConstrainedProbConjugateField::keys];
+        m2 = Quiet[Check[ECGrav`ConstrainedProbConjugateField[0.4, mbf,
+                        Map[{#, 2. #} & /@ # &, en]]; False,
+                    True, ECGrav`ConstrainedProbConjugateField::notbeta],
+                ECGrav`ConstrainedProbConjugateField::notbeta];
+        dotsh = Quiet[Check[ECGrav`ConstrainedProbConjugateField[0.4, mbf,
+                        Map[{#, 2. #} & /@ # &, en]]; False, True, Dot::dotsh],
+                {Dot::dotsh, ECGrav`ConstrainedProbConjugateField::notbeta}];
+        m3 = Quiet[Check[ECGrav`ConstrainedProbConjugateField[0.4, <|0.1 -> 0., 0.3 -> 0.|>,
+                        <|0.1 -> {}, 0.3 -> {}|>]; False,
+                    True, ECGrav`ConstrainedProbConjugateField::nosamples],
+                ECGrav`ConstrainedProbConjugateField::nosamples];
+        flat = AssociationMap[ConstantArray[-12., 40] &, {0.2, 0.5}];
+        fm = ECGrav`ComputeMinusBetaTimesFreeEnergy[flat];
+        m4 = Quiet[Check[ECGrav`ConstrainedProbConjugateField[0.3, fm, flat]; False,
+                    True, ECGrav`ConstrainedProbConjugateField::degenerate],
+                ECGrav`ConstrainedProbConjugateField::degenerate];
+
+        {lo < Min[allE] && Max[allE] < hi,                       (* 1: range ordered and containing *)
+         m1,                                                     (* 2: key mismatch refused         *)
+         m2 && !dotsh,                                           (* 3: width refused BEFORE the Dot *)
+         m3,                                                     (* 4: all-empty refused            *)
+         m4}],                                                   (* 5: point mass refused           *)
+    {True, True, True, True, True},
+    TestID -> "ConstrainedProbConjugateField-beta-form-range-and-guards"
+];
+
+
 (* ---------- Bug #3 regression: LowEnergyStates with no parallel kernels ----------
    MUST BE LAST: CloseKernels[] forces $KernelCount == 0 so the divide-by-zero
    guard (Max[$KernelCount, 1]) is exercised. Without the fix this failed with
