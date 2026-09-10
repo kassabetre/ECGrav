@@ -619,13 +619,24 @@ terms with a negative residual being zero, and specialising to $r_1 = \dots = r_
 
 > **The base case is the whole covering/padded distinction.** $B_0(n;()) = [\,n = 0\,]$ gives the
 > **covering** family $B$: with no labels every row would be empty, so only $n = 0$ survives.
-> Replacing it by $\tilde B_0(n;()) = 1$ for all $n$ gives the **padded** family $\tilde B$, whose
-> rows may be empty. Nothing else in the recurrence changes. Given that §3.1 exists because those
-> two axes were once conflated, this line is worth stating rather than leaving implicit.
-> Equivalently, for one label $B_1(n;r) = [\,n = r\,]$.
+> Replacing it by $\tilde B_0(n;()) = 1$ for every $n \ge 0$ gives the **padded** family
+> $\tilde B$, whose rows may be empty. Nothing else in the recurrence changes. Given that §3.1
+> exists because those two axes were once conflated, this line is worth stating rather than leaving
+> implicit. Equivalently, for one label $B_1(n;r) = [\,n = r\,]$.
+>
+> **The $n \ge 0$ is load-bearing and its omission is silent.** $\tilde B_0(n;()) = 1$ written for
+> *all* $n$ lets a negative residual row count return $1$ instead of $0$, and the recursion then
+> quietly stops enforcing the row count from below: what it computes is the saturated
+> $\sum_{k} B(k)$ rather than $\sum_{k \le n} B(k)$. It is invisible from $s_F$, because the
+> covering base $[\,n=0\,]$ is already zero at negative $n$ and the shipped route never touches
+> $\tilde B$ — so the error surfaces only once $\tilde B$ is used in its own right, as the
+> convolution below uses it. Caught by brute force against the definition: at $p=2$, $m=2$,
+> $\tilde B$ must run $1, 2, 3$ over $n = 2,3,4$ and the unguarded form returns $3, 3, 3$.
 
-**Verified** against the shipped counter on 48 parameter sets across $p \in \{2,3\}$,
-$M \le 4$, $n \le 6$ — zero mismatches, on values up to $B(3,4,6) = 221$.
+**Verified** against the shipped counter, through (3.6), on 48 parameter sets across
+$p \in \{2,3\}$, $M \le 4$, $n \le 6$ — zero mismatches, on values up to $B(3,4,6) = 221$.
+Re-run 2026-09-10: reproduces exactly, and extends to 120 sets across $p \le 4$, $M \le 5$,
+$n \le 8$, still zero, to $B(4,5,8) = 47986$.
 
 **It yields a Burnside-free route to $s_F$.** Inverting the first form of (3.6),
 
@@ -633,7 +644,8 @@ $$s_F(p,M,n) \;=\; \sum_k s(M,k)\, B(p,k,n)$$
 
 with $s(M,k)$ the signed Stirling numbers of the first kind. Composed with the recurrence above
 this computes the facet-labeled count without ever forming a cycle type — verified to agree with
-`NumFacetLabeledPureComplexes` on twelve parameter sets, up to $s_F(3,5,7) = 6561$. **This is the
+`NumFacetLabeledPureComplexes` on twelve parameter sets, up to $s_F(3,5,7) = 6561$; re-run
+2026-09-10 over 80 sets ($p \in \{2,3\}$, $M \le 5$, $n \le 7$), zero mismatches, same maximum. **This is the
 only route to $s_F$ recorded here that does not pass through Burnside**, and as an independent
 derivation it is a stronger check on the shipped algorithm than any of §10's legs.
 
@@ -649,7 +661,38 @@ derivation it is a stronger check on the shipped algorithm than any of §10's le
 As written it is 10–500× slower and diverging in $M$, where the shipped cost is nearly flat in
 $M$. Two things are responsible: the state space is $(p+1)^m$ content vectors, and the transition
 sums over $(a_R)$ across **all $2^{m-1}$ subsets** — compositions of $r_m$ into $2^{m-1}$ parts,
-$\binom{r_m + 2^{m-1} - 1}{r_m}$ of them, doubly exponential in $m$.
+$\binom{r_m + 2^{m-1} - 1}{r_m}$ of them.
+
+> **Both factors are singly exponential in $m$, not doubly** — an earlier revision of this section
+> said doubly, and the correction is what makes the reductions below worth attempting rather than
+> hopeless. Specialising to $r_1 = \dots = r_M = p$ fixes $r_m = p$, so the binomial is a degree-$p$
+> polynomial in $2^{m-1}$:
+>
+> $$\binom{p + 2^{m-1} - 1}{p} \;=\; \Theta\!\left(\frac{2^{p(m-1)}}{p!}\right),$$
+>
+> singly exponential with base $2^p$. Measured over $m = 1\dots12$: successive ratios climb to
+> $2^p$ from below — $3.99$, $7.95$, $15.81$ at $m = 10$ for $p = 2,3,4$ — and
+> $\Delta \log_2(\text{count})$ converges to exactly $p$. The doubly exponential signature,
+> constant $\Delta\log_2\log_2$, is absent: that quantity decays toward zero here, while the
+> control $(p+1)^{2^{m-1}}$ holds it at exactly $1$.
+>
+> The reason is **sparsity**. With $\sum_R a_R = p$ at most $p$ of the $2^{m-1}$ parts are nonzero,
+> so a transition picks a multiset of $p$ subsets out of the $2^{m-1}$ available rather than filling
+> $2^{m-1}$ bins; the number of bins therefore enters polynomially, with degree $p$, however many
+> there are. Drop that constraint — let each subset take a count in $0..p$ independently — and one
+> does get the doubly exponential $(p+1)^{2^{m-1}}$, which is the likely origin of the error.
+> Total naive cost is states × transitions $= O\bigl(((p+1)2^p)^m\bigr)$, base $32$ at $p = 3$:
+> brutal, but singly exponential. **The base is what that bound gets right; the constant is not.**
+> It charges every state the top level's out-degree, while most states sit at levels $m < M$ where
+> $2^{m-1}$ is smaller and many have $r_m < p$. Instrumented at $(3,6,8)$: $2558$ states against
+> the $(p+1)^M = 4096$ estimate, tight — but $300873$ transitions against the product's
+> $1.07 \times 10^9$, loose by $3600\times$, the average out-degree being $118$ where a top-level
+> state has $5984$. Successive ratios of the measured transition total do climb toward the
+> predicted base — $6.2, 7.5, 9.2$ at $p = 2$ heading to $12$, and $11.4, 15.9, 21.5$ at $p = 3$
+> heading to $32$ — so what is established here is the growth rate, not the constant. Even the
+> least charitable reading — the unmemoised
+> recursion tree, multiplying transition counts down the levels — gives $2^{\Theta(pm^2)}$,
+> super-exponential and still not doubly.
 
 #### Two reductions, and what is still open
 
@@ -661,13 +704,54 @@ $\binom{r_m + 2^{m-1} - 1}{r_m}$ of them, doubly exponential in $m$.
 
   $$B_m(n;r) \;=\; \sum_{\rho} \tilde B_{m-1}(r_m;\rho)\; B_{m-1}\bigl(n - r_m;\ r_{<m} - \rho\bigr),$$
 
-  with $\tilde B$ the padded variant — the same recurrence under the other base case. Verified on
-  42 parameter sets, zero mismatches. This removes the $2^{m-1}$ blow-up entirely.
+  with $\tilde B$ the padded variant — the same recurrence under the other base case.
+
+  **Re-verified from scratch rather than trusted**: the original 42-parameter-set check predates
+  the $n \ge 0$ correction to the padded base case above, and $\tilde B$ is exactly what that
+  correction moves, so the figure it produced described a $\tilde B$ that was wrong. The
+  replacement is 80 sets ($p \in \{2,3\}$, $M \le 5$, $n \le 7$) against the naive form in both
+  families, plus 36 sets against brute-force enumeration of the definition — all four of
+  $B$ and $\tilde B$, naive and convolved — and 80 sets of $s_F$ by both routes against the
+  shipped counter. Zero mismatches throughout.
+
+  This removes the $2^{m-1}$ **subsets** from the enumeration,
+  replacing the $\binom{p + 2^{m-1} - 1}{p}$ compositions with the $(p+1)^{m-1}$ profiles $\rho$
+  — but not the exponential in $m$: the base drops from $2^p$ to $p+1$, by a margin that itself
+  grows with $m$.
+
+  | $p$ | $m$ | compositions | profiles | ratio |
+  | --- | --- | --- | --- | --- |
+  | 2 | 6 | 528 | 243 | 2.2× |
+  | 2 | 10 | 131328 | 19683 | 6.7× |
+  | 3 | 6 | 5984 | 1024 | 5.8× |
+  | 3 | 10 | 22500864 | 262144 | 86× |
+  | 4 | 6 | 52360 | 3125 | 17× |
+  | 4 | 10 | 2896986240 | 1953125 | 1483× |
+
+  Measured on a fresh re-implementation of both forms, cold cache, verified against brute-force
+  enumeration of the definition (so the naive column is not the same code as the table above and
+  its figures differ from it):
+
+  | $\{p,M,n\}$ | naive DP | convolution DP | shipped |
+  | --- | --- | --- | --- |
+  | $\{2,3,5\}$ | 0.0048 s | 0.0005 s | 0.0004 s |
+  | $\{2,5,7\}$ | 0.064 s | 0.0061 s | 0.0006 s |
+  | $\{3,5,5\}$ | 0.462 s | 0.021 s | 0.0005 s |
+  | $\{3,5,7\}$ | 0.443 s | 0.022 s | 0.0008 s |
+  | $\{3,6,8\}$ | 17.99 s | 0.140 s | 0.0011 s |
+
+  10.5× at $M = 3$ rising to 129× at $M = 6$: the widening is the base change from $2^p$ to
+  $p+1$, not a constant factor. It does not close the gap to the shipped counter, which is still
+  129× ahead of the convolution at the last row.
 
 **Open: whether the two compose.** The convolution is componentwise in $\rho$, so storing states
 on sorted classes needs alignment bookkeeping — a symmetric-function product rather than a free
-win. Whether the combination beats the shipped cost of $P(n)$ cycle types at $P(p)$ work each is
-unmeasured, and it would matter most at large $n$, where the partition count is what hurts.
+win. The corrected classes sharpen what is at stake: label symmetry alone makes the state count
+$\binom{m+p}{p}$, polynomial, and the convolution alone makes the transition $(p+1)^{m-1}$, still
+exponential — so the question is whether composing them reaches a polynomial total in $m$, or
+whether the alignment cost puts the exponential back. Whether the combination beats the shipped
+cost of $P(n)$ cycle types at $P(p)$ work each is unmeasured, and it would matter most at large
+$n$, where the partition count is what hurts.
 
 
 ---
