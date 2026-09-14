@@ -45,15 +45,35 @@ isomorphic iff their row multisets agree. That is what the test suite canonicali
 
 ---
 
-## 2. Why the vertex-labeled sampler cannot be ported
+## 2. Why the shipped sampler is not a port of the vertex-labeled one
 
 `RandomVertexLabeledPureSimplicialComplex` reads its weights straight off the counting recursion,
 because with labelled vertices "how many complexes put $k$ new vertices in the next facet" is a
 plain product of binomials, and the count decomposes facet by facet.
 
-Nothing like that exists here. With the vertices unlabelled, $s_F$ is a **Burnside average over
-cycle types**, not a sequential decomposition — there is no recursion to walk facet by facet, and
-looking for one is wasted effort.
+Nothing like that was available when this sampler was written. With the vertices unlabelled, $s_F$
+is a **Burnside average over cycle types**, and the pair-sampling scheme of §3 is what replaced the
+missing recursion.
+
+> **Earlier revisions said no such recursion exists and that looking for one was wasted effort.
+> That was too strong, and it is now false.** `FacetLabeledCount.md` §9.3 gives a genuine
+> facet-by-facet recursion: it carries a **partition** of the vertex count — the multiset of
+> type multiplicities — and never forms a cycle type. The obstruction the old wording described is
+> real only for a recursion in $(p,M,n)$ alone; carrying that partition removes it, exactly as
+> `FacetLabeledCount.md` §9 now says for the counting side.
+>
+> **And it does drive an exact sampler.** Built and verified 2026-09-14: uniform over isomorphism
+> classes on eight parameter sets, every class hit, $\chi^2$ p-values 0.09–0.53, class sets
+> identical to this sampler's. The decomposition is positive because the subtraction in (9.3)
+> removes $M-j$ *concrete* forbidden branches that all land on the same child state, so branch
+> probabilities exist; the DP table stays indexed by the partition while the concrete complex rides
+> alongside to say which all-or-nothing branches are the already-placed facets.
+>
+> **It is not currently a replacement**, on speed: measured 0.94× at $(2,3,4)$ but 8× at
+> $(3,6,12)$, 19× at $(4,6,15)$ and 47× at $(3,8,16)$, widening with $p$ and $M$. What it offers is
+> **independence**. `FacetLabeledCount.md` §12 notes that this sampler's strongest leg uses the
+> shipped counter as its right-hand side, so an error there would be masked rather than caught; a
+> sampler that is Burnside-free on both sides is the first that could disagree.
 
 The older `RandomFacetLabeledPureSimplicialComplex` (no `Uniform` in the name) does exactly that
 anyway, by iterative vertex addition off a shrinking pool. It is **not uniform**, which its

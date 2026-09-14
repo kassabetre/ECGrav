@@ -327,6 +327,68 @@ Three of these are independent of the derivation rather than of its endpoints:
    for $n = 0..13$, matched by $\sum_M U(2,M,n)$. The suite checks to $n = 7$; the full 14
    terms were confirmed during the recurrence work.
 
+### 8.1 A second oracle: the joint canonical form
+
+The objects are $X/(S_n \times S_M)$ — tuples of facets modulo relabelling the vertices *and*
+relabelling the facets — and that double quotient can be taken in either order. The brute-force
+oracle above takes it as $(X/S_M)/S_n$: it forms *sets* of facets, which has already forgotten the
+facet order, then groups those under $S_n$. The oracle here takes the other order,
+$(X/S_n)/S_M$: start from the **facet-labeled** classes, which are $X/S_n$ and are exactly the
+incidence tableaux of `FacetLabeledCount.md` §2, then quotient those by $S_M$.
+
+**The construction.** A facet-labeled class is a multiset of rows, each row the set of facets
+containing one vertex. A facet relabelling $\tau \in S_M$ acts *inside* the rows,
+$R \mapsto \tau(R) = \{\tau(x) : x \in R\}$. Order the rows of a tableau by decreasing size, then
+lexicographically within each size block — ties can only arise between identical rows, so this is a
+total order — and define
+
+$$\mathrm{canon}(S) \;=\; \min_{\tau \in S_M}\ \bigl(\text{rows of } \tau\!\cdot\!S,\ \text{size-then-lex sorted}\bigr),$$
+
+the minimum being lexicographic on the resulting tableaux. Ranging over the whole orbit is what
+makes the result independent of the representative. Then
+
+$$U(p,M,n) \;=\; \#\{\,\mathrm{canon}(S) \;:\; S \text{ a facet-labeled class}\,\}.$$
+
+**What it adds over leg 1.** Not a new enumeration — it is still bounded by the number of objects.
+What it removes is *arithmetic*: leg 1 recovers the three counts through $n!/|\mathrm{Stab}|$ and
+$M!/|H|$ and has to guard that orbit $\times$ stabiliser $= n!$, whereas this computes no
+automorphism group, no stabiliser and no index. It counts distinct values of a canonical form. The
+two failure modes are disjoint, and it exercises $s_F$ and $U$ against each other through the
+tableau picture rather than through orbit–stabiliser bookkeeping.
+
+**Worked example.** At $p=2$, $M=4$, $n=5$, take the tableau
+$\{1,2\},\{1,3\},\{2,4\},\{3\},\{4\}$ — facets $\{v_1v_2, v_1v_3, v_2v_4, v_3v_5\}$, the path
+$v_4 v_2 v_1 v_3 v_5$. Applying $\tau = (1{\to}2,2{\to}3,3{\to}4,4{\to}1)$ sends the rows to
+$\{2,3\},\{2,4\},\{1,3\},\{4\},\{1\}$: the same path with its edges renamed. All $4! = 24$
+relabellings collapse to $24/2 = 12$ distinct facet-labeled classes — the $2$ being $|H|$, the
+image of the path's flip in $\mathrm{Sym}(S)$, as in §1 — and all 12 share the canonical form
+$\{1,2\},\{1,3\},\{2,4\},\{3\},\{4\}$. Grouping all $29$ facet-labeled classes at $(2,4,5)$ this way
+leaves exactly $4$, which is $U(2,4,5)$.
+
+> **Sorting the rows and then discarding the facet labels does not work, and the wrong answer is
+> plausible.** It is tempting to canonicalise the rows once and then read off the *set* of column
+> occupation vectors, on the grounds that forgetting which column is which is what unlabelling the
+> facets means. But the row order is computed lexicographically **from the facet numbers**, so it is
+> not $\tau$-equivariant: relabelling the facets reorders the rows and permutes every column
+> vector's coordinates. The result is a quotient by no group at all, and it lands strictly between
+> the two counts — at $(2,4,5)$ it gives $10$ against $U = 4$ and $s_F = 29$, at $(3,4,5)$ it gives
+> $11$ against $5$ and $43$. It both merges genuinely distinct facet-labeled classes and splits a
+> single unlabeled one: at $(2,4,5)$ the classes
+> $\{1,2\},\{1,3\},\{2,3\},\{4\},\{4\}$ and $\{1,2\},\{1,4\},\{2,4\},\{3\},\{3\}$ share a column set,
+> while one unlabeled class with 12 facet-labelings produces 5 different ones. The minimisation over
+> $\tau$ is not a convenience; it is what makes the construction a quotient.
+
+**Verified** on 17 parameter sets across $p \in \{1,2,3,4\}$, $M \le 6$, $n \le 7$ — zero
+mismatches, on values to $U(4,4,7) = 29$ from $s_F = 342$, and $U(2,6,6) = 15$ from $s_F = 3850$.
+
+**Cost, and the range it is usable in.** The work is (number of facet-labeled classes) $\times\ M!$,
+so it is enumeration-bound twice over: $0.013$ s at $(3,4,5)$, $0.115$ s at $(4,4,7)$, $0.405$ s at
+$(2,5,6)$, but $32$ s at $(2,6,6)$ where $s_F = 3850$ and $M! = 720$. The $M!$ factor can be cut by
+refining the facets on cheap invariants before branching — the standard canonical-augmentation
+move — but the $s_F$ factor cannot: this is an oracle for small parameters, not a counting method.
+§6's Burnside sum returns a 105-digit $U(5,50,16)$ from 231 cycle types in $0.16$ s, and no
+canonical form competes with that, because Burnside never touches an object.
+
 Additionally, the Newton rewrite was differentially tested against the Möbius route it
 replaced: **61,172 helper-level comparisons** across $p = 1..4$, $M = 0..40$ and every cycle
 type of $n = 0..13$, zero mismatches. Since `NumULPCFixSets` is reached only from `NumULPCA`,
