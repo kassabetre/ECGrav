@@ -33,9 +33,15 @@ with exit 0 and is wrong:
      With maths vaulted first that "$" pairs with the next real "$" in the same
      paragraph and swallows everything between into math mode -- italic and
      unspaced, across whole paragraphs.  So code spans are vaulted BEFORE maths.
-  5. INDENTED BLOCKQUOTES.  ">" anchored at column 0 misses a quote set under a
-     list item; it falls through to the paragraph path and prints its ">"
-     markers literally.  Matched on the stripped line instead.
+  5. BLOCKQUOTES.  Two of them.  ">" anchored at column 0 missed a quote set
+     under a list item, which fell through to the paragraph path and printed its
+     ">" markers literally; that is fixed, by matching the stripped line.  What
+     is NOT fixed: a quote's lines are joined into ONE paragraph, so any block
+     structure inside it is flattened.  A markdown table in a blockquote comes
+     out as inline text with its pipes literal.  Display maths survives, because
+     it is vaulted before the line loop ever runs, which makes the failure look
+     arbitrary.  Put tables at top level; a bold lead-in paragraph reads much the
+     same as a callout and renders.
 
 So: never trust the exit code.  --check greps the extracted text for escaping
 leakage and confirms every heading and equation tag survived -- but none of

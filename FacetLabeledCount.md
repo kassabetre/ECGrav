@@ -175,7 +175,33 @@ $S_n$-invariant, and counting the latter means counting the former:
 $$\tilde B(p,M,n) \;=\; \frac{1}{n!}\sum_{\sigma \in S_n} |\mathrm{Fix}(\sigma)| \;=\; \frac{1}{n!}\sum_{\lambda \vdash n} \frac{n!}{z_\lambda}\,|\mathrm{Fix}(\lambda)|. \tag{3.2}$$
 
 A tuple in $\tilde X$ fixed by $\sigma$ is **constant on each cycle** of $\sigma$, so choosing one
-amounts to choosing a subset of $[M]$ per cycle — which is what §3.3 counts.
+amounts to choosing a subset of $[M]$ per cycle — which is what §3.3 counts. $|\mathrm{Fix}(\lambda)|$
+is written as a function of the cycle type alone because every $\sigma$ of that type gives the same
+count, not because $\lambda$ describes the tuples.
+
+**What $|\mathrm{Fix}(\lambda)|$ is not.** It is tempting to read it as "tuples whose repeated rows
+fall into blocks of sizes $\lambda$". It is not that. "Constant on each cycle" is a **refinement**
+condition — the cycle partition of $\sigma$ must refine the tuple's equal-row partition — and it puts
+no condition whatever on *different* cycles, which are free to carry the same subset. The two
+readings disagree in both directions at $p=2$, $M=3$, $n=4$, where $|\tilde X| = 216$:
+
+| $\lambda$ | $(4)$ | $(3,1)$ | $(2,2)$ | $(2,1,1)$ | $(1^4)$ |
+| --- | --- | --- | --- | --- | --- |
+| $\vert\mathrm{Fix}(\lambda)\vert$ | 0 | 0 | 8 | 8 | **216** |
+| tuples whose equal-row type *is* $\lambda$ | 0 | 0 | 24 | 0 | 192 |
+
+The identity is the clearest case: it fixes **everything**, so $|\mathrm{Fix}(1^n)| = |\tilde X|$,
+while the other reading would exclude the 24 tuples that have a repeated row. At $(2,1,1)$ the
+mismatch reverses — $|\mathrm{Fix}| = 8$ against *no* tuple of that equal-row type, since with
+$p=2$, $M=3$ exactly one repeated pair is impossible. Note also that the second row **partitions**
+$\tilde X$ (it sums to 216), whereas $|\mathrm{Fix}|$ over-counts wildly — which is what the $1/n!$
+in (3.2) is there to undo.
+
+**The refinement reading is load-bearing, not pedantry.** It is exactly the freedom for two cycles
+to take the same subset that makes the per-cycle choices independent in §3.3 and turns
+$|\mathrm{Fix}(\lambda)|$ into the *power* $N(\lambda,p)^M$. Requiring distinctness across cycles
+would couple them and collapse the product, the same way §3.3 notes that requiring rows to be
+nonempty would.
 
 Labelling and then averaging the labelling away is the same move the object itself is built on:
 §1 defines $s_F$ as $|X/S_n|$, an orbit count on labelled tuples, for exactly the same reason.
