@@ -150,6 +150,22 @@ positions,
 
 $$\sigma\cdot(R_1,\dots,R_n) \;=\; (R_{\sigma^{-1}(1)},\dots,R_{\sigma^{-1}(n)}).$$
 
+> **Why the inverse, and why it costs nothing.** It is what makes this a *left* action:
+> $(\sigma\cdot(\tau\cdot R))_j = R_{\tau^{-1}(\sigma^{-1}(j))} = R_{(\sigma\tau)^{-1}(j)}$, so
+> $\sigma\cdot(\tau\cdot R) = (\sigma\tau)\cdot R$. Writing $R_{\sigma(j)}$ instead gives
+> $\sigma*(\tau*R) = (\tau\sigma)*R$ — the factors reverse, which is an anti-homomorphism, and the
+> sentence above would then be claiming something false of it. The inverse is also the convention
+> that reads as a push-forward, "the row in slot $i$ moves to slot $\sigma(i)$", which is what makes
+> this the *same* $\sigma$ that relabels vertices in §1 rather than its inverse.
+>
+> **Nothing downstream depends on the choice**, and not merely up to a relabelling of the sum: the
+> two conventions have the *same fixed-point set* for every $\sigma$. Fixed under the inverse form
+> means $R$ is constant on the cycles of $\sigma^{-1}$, fixed under the other means constant on the
+> cycles of $\sigma$ — and $\sigma$ and $\sigma^{-1}$ have the same cycles, traversed the other way.
+> Both are the condition §3.3 uses. Checked at $M=2$, $n=4$: $|\mathrm{Fix}(\sigma)|$ agrees for
+> every one of the $24$ permutations individually, and both averages give the $35$ orbits that
+> $\binom{4+4-1}{4}$ predicts.
+
 **This action is not trivial**, and $\tilde X$, not the set of multisets, is what Burnside is
 applied to. Two tuples lie in the same orbit exactly when one is a rearrangement of the other,
 which is exactly when they carry the same multiset of rows. So the orbits of $S_n$ on $\tilde X$
