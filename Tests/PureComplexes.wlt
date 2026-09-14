@@ -327,6 +327,54 @@ VerificationTest[
     TestID -> "NumUnlabeledPureComplexes-brute-force"
 ];
 
+(* The second oracle of UnlabeledCount.md section 8.1, and the sibling of the one above. The
+   objects are X/(S_n x S_M) and that double quotient can be taken in either order: the brute
+   force above takes it as (X/S_M)/S_n, forming SETS of facets and then canonicalising over the
+   n! vertex relabellings, while this takes (X/S_n)/S_M. Each set is turned into its incidence
+   tableau -- one row per vertex, listing the facets containing it -- which is already S_n-
+   invariant because the rows are a multiset, so the only quotient left is S_M acting INSIDE the
+   rows. Minimise the size-then-lex sorted tableau over all tau in S_M and count distinct values.
+   Different group, and no orbit-stabiliser arithmetic at all: no automorphism group, no |Stab|,
+   no |H|, no index, where the brute force above needs n! canonicalisations and the known-values
+   table behind it needs n!/|Stab| and M!/|H|. *)
+VerificationTest[
+    Module[{oracle},
+        oracle = Function[{p, M, n},
+            Module[{subs = Subsets[Range[n], {p}], sets, taus, rows, canon},
+                sets = Select[Subsets[subs, {M}], Union @@ # === Range[n] &];
+                taus = Permutations[Range[M]];
+                rows = Function[s, Table[Select[Range[M], MemberQ[s[[#]], v] &], {v, n}]];
+                canon = Function[s, First[Sort[Table[
+                    SortBy[Sort /@ (rows[s] /. Thread[Range[M] -> tau]), {-Length[#] &, # &}],
+                    {tau, taus}]]]];
+                Length[Union[canon /@ sets]]]];
+        (oracle @@@ #) === (ECGrav`NumUnlabeledPureComplexes @@@ #) &@
+            {{2, 3, 4}, {2, 4, 5}, {3, 3, 5}, {3, 4, 5}, {3, 3, 6}, {4, 3, 6}, {1, 3, 3}}],
+    True,
+    TestID -> "NumUnlabeledPureComplexes-joint-canonical-form"
+];
+
+(* Negative control for the test above: the minimisation over S_M is load-bearing, not a
+   flourish. Sorting the rows once and reading off the result without ranging over tau looks
+   like a canonical form and is not one -- the row order is computed lexicographically FROM the
+   facet numbers, so it is not tau-equivariant, and relabelling the facets reorders the rows.
+   The identity-only variant must therefore OVERCOUNT: 4 against U=2 at (2,3,4), 25 against 4 at
+   (2,4,5), 34 against 5 at (3,4,5). Pinning that keeps anyone from "simplifying" the oracle
+   into the broken form and still seeing it pass. See the callout in section 8.1. *)
+VerificationTest[
+    Module[{noTau},
+        noTau = Function[{p, M, n},
+            Module[{subs = Subsets[Range[n], {p}], sets, rows},
+                sets = Select[Subsets[subs, {M}], Union @@ # === Range[n] &];
+                rows = Function[s, Table[Select[Range[M], MemberQ[s[[#]], v] &], {v, n}]];
+                Length[Union[Function[s,
+                    SortBy[rows[s], {-Length[#] &, # &}]] /@ sets]]]];
+        {noTau @@@ #, ECGrav`NumUnlabeledPureComplexes @@@ #} &@
+            {{2, 3, 4}, {2, 4, 5}, {3, 4, 5}}],
+    {{4, 25, 34}, {2, 4, 5}},
+    TestID -> "NumUnlabeledPureComplexes-joint-canonical-form-tau-needed"
+];
+
 (* The derivation, not just its endpoints. Burnside over S_n says the class count is the average
    over sigma of the number of sigma-invariant covering M-sets; here those fixed sets are counted
    by explicit enumeration instead of through the orbit polynomial Product (1+z^d)^n_d and the
