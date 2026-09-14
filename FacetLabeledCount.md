@@ -548,6 +548,11 @@ so the deletion argument has nothing uniform to count. A *calibrated* ansatz sea
 this — the same search recovers the vertex-labeled recurrence exactly when pointed at it, so a
 null result is informative rather than a failure of the search.
 
+**Read that as a statement about $(p,M,n)$ alone.** It says no recurrence closes in those three
+indices; it does **not** say deletion is unavailable. §9.3 gives a deletion recursion that works,
+by carrying a partition alongside them — a state rich enough to determine the very orbit count the
+paragraph above calls non-uniform.
+
 **Do not over-read the growth argument.** $\log T(n) = \Theta(n^2)$ rules out P-recursiveness in
 $n$ alone, but the vertex-labeled count has the same growth *and* a perfectly good two-index
 recurrence, so that argument excludes pure-$n$ recurrences only. It is not evidence against a
@@ -645,9 +650,10 @@ $$s_F(p,M,n) \;=\; \sum_k s(M,k)\, B(p,k,n)$$
 with $s(M,k)$ the signed Stirling numbers of the first kind. Composed with the recurrence above
 this computes the facet-labeled count without ever forming a cycle type — verified to agree with
 `NumFacetLabeledPureComplexes` on twelve parameter sets, up to $s_F(3,5,7) = 6561$; re-run
-2026-09-10 over 80 sets ($p \in \{2,3\}$, $M \le 5$, $n \le 7$), zero mismatches, same maximum. **This is the
-only route to $s_F$ recorded here that does not pass through Burnside**, and as an independent
-derivation it is a stronger check on the shipped algorithm than any of §10's legs.
+2026-09-10 over 80 sets ($p \in \{2,3\}$, $M \le 5$, $n \le 7$), zero mismatches, same maximum. As an independent
+derivation it is a stronger check on the shipped algorithm than any of §10's legs. **It was the
+first Burnside-free route recorded here and is no longer the only one** — §9.3 gives a second, on
+a different state and much faster; where both apply they agree.
 
 #### Cost, measured
 
@@ -752,6 +758,230 @@ exponential — so the question is whether composing them reaches a polynomial t
 whether the alignment cost puts the exponential back. Whether the combination beats the shipped
 cost of $P(n)$ cycle types at $P(p)$ work each is unmeasured, and it would matter most at large
 $n$, where the partition count is what hurts.
+
+
+### 9.3 A deletion recursion on partition states — Burnside-free, and linear in $M$
+
+§9.2's DP peels *labels* and carries a content vector. This one places *facets* in order and carries
+a **partition**. It is the second Burnside-free route, it is much the faster of the two, and unlike
+either it is linear in $M$. Contributed 2026-09-14; the derivation below is reconstructed and
+verified, not taken on trust.
+
+It also sharpens §9's opening. The obstruction there — the deletion fibre is the number of
+$\mathrm{Aut}(K)$-orbits on candidate facets and varies from class to class — is a statement about
+recurrences in $(p,M,n)$ **alone**. It is not an obstruction once the recursion carries a state
+rich enough to determine that orbit count, and §9.3.2 says exactly which state does.
+
+#### 9.3.1 The new-vertex profile
+
+Order the facets and record how many vertices each one introduces that no earlier facet had:
+
+$$n_i \;=\; \bigl|F_i \setminus (F_1 \cup \dots \cup F_{i-1})\bigr|.$$
+
+Every isomorphism class has exactly one profile $(n_1,\dots,n_M)$, so the profiles **partition** the
+classes and $s_F = \sum_c W(c)$ with $W(c)$ the number of classes carrying profile $c$. Three
+conditions cut the candidates down:
+
+1. $n_1 = p$ — facet 1 is entirely new;
+2. $n_k \le p$ — a facet cannot introduce more than its own size;
+3. $\binom{S_i}{p} \ge i$ with $S_i = \sum_{j \le i} n_j$ — after $i$ facets the pool must be able to
+   supply $i$ *distinct* $p$-subsets.
+
+Write $C(p,M,n)$ for the survivors. At $(p,M,n) = (3,4,5)$ there are three, and their weights sum
+to the right answer:
+
+| $c$ | $W(c)$ |
+| --- | --- |
+| $(3,1,0,1)$ | 6 |
+| $(3,1,1,0)$ | 22 |
+| $(3,2,0,0)$ | 15 |
+| **total** | **43** $= s_F(3,4,5)$ |
+
+Condition 3 is doing real work here and is exactly tight: the three profiles it rejects —
+$(3,0,2,0)$, $(3,0,1,1)$, $(3,0,0,2)$ — all have $\binom{3}{p} = 1 < 2$ at $i=2$, and direct
+enumeration confirms each supports **zero** classes. It rejects nothing that contributes.
+
+#### 9.3.2 The state is a partition, and why that suffices
+
+After $i$ facets, give each vertex its **type**, the set of facets containing it — the row of the
+incidence tableau of §2. Two vertices of the same type are interchangeable, and
+$\mathrm{Aut}(F_1,\dots,F_i)$ is precisely the group permuting vertices within types. So:
+
+> **Orbits of $k$-subsets under $\mathrm{Aut}$ are sub-multisets of the type multiset.** Distinct
+> orbits give non-isomorphic extensions, because an isomorphism of facet-*labelled* tuples must fix
+> each $F_j$ setwise and is therefore an automorphism of the earlier structure.
+
+That is what licenses throwing the type *identities* away and keeping only the multiset of type
+**multiplicities** — a partition $\lambda$ of $S_i$. Choosing which old vertices the next facet
+reuses is choosing a sub-multiset, and both the number of choices and the resulting partition depend
+on $\lambda$ alone:
+
+$$\bigl|MS_k(\lambda)\bigr| \;=\; [x^k] \prod_i \bigl(1 + x + \dots + x^{\lambda_i}\bigr).$$
+
+| $\lambda$ | $\vert MS_2\vert$ | $\vert MS_3\vert$ |
+| --- | --- | --- |
+| $(3)$ | 1 | 1 |
+| $(2,2,1)$ | 5 | 5 |
+| $(2,1,1,1)$ | 7 | 7 |
+| $(1^5)$ | 10 | 10 |
+| $(3,2,1)$ | 5 | 6 |
+
+Having chosen a sub-multiset, each partially-taken type **splits** into its taken and untaken halves
+— they are no longer interchangeable, one being in the new facet — and the $n_i$ new vertices enter
+as a fresh part. Fully-taken and untaken types do not split. That is the whole state transition.
+
+#### 9.3.3 Distinctness, and why multiplicities survive it
+
+Facet $i$ must differ from $F_1,\dots,F_{i-1}$. When $n_i > 0$ it contains a brand-new vertex and
+cannot coincide with any of them, so nothing is needed. When $n_i = 0$ the correction is exactly
+$i-1$: each $F_j$ is an available sub-multiset of size $p$, and $F_j \neq F_{j'}$ forces their
+profiles apart, since $F_j$ takes all of every type containing $j$ and none of the rest.
+
+That last sentence is also the reason the partition state survives a correction that seems to need
+type identities:
+
+> **The forbidden branches are all-or-nothing.** $F_j$ consumes entire types, so nothing splits and
+> the resulting partition is **unchanged**. Multiplicities cannot say *which* $i-1$ branches are
+> forbidden — and do not have to, because all $i-1$ land on the same state $\lambda$. The correction
+> collapses to a single term, $-(i-1)\,W(\lambda;\,\cdot)$.
+
+#### 9.3.4 Worked example: $W(3,2,0,0) = 15$
+
+Profile $c = (3,2,0,0)$ at $p=3$, $M=4$. Partitions written with multiplicities descending.
+
+**Stage 2** ($n_2 = 2$). State $(3)$. Facet 2 reuses $p - n_2 = 1$ old vertex; $|MS_1((3))| = 1$.
+That type splits $1 + 2$, and the two new vertices join as a part: state $(2,2,1)$, five vertices
+$= S_2$. In types: $\{1\}^2,\ \{2\}^2,\ \{1,2\}^1$.
+
+**Stage 3** ($n_3 = 0$). Facet 3 is three old vertices; $|MS_3((2,2,1))| = 5$. Writing profiles in
+the coordinates $(\{1\}, \{2\}, \{1,2\})$:
+
+| profile | grows to | |
+| --- | --- | --- |
+| $(2,1,0)$ | $(2,1,1,1)$ | |
+| $(1,2,0)$ | $(2,1,1,1)$ | |
+| $(1,1,1)$ | $(1^5)$ | |
+| $(2,0,1)$ | $(2,2,1)$ | **$= F_1$, forbidden** |
+| $(0,2,1)$ | $(2,2,1)$ | **$= F_2$, forbidden** |
+
+Both forbidden branches are all-or-nothing and leave the state at $(2,2,1)$, exactly as §9.3.3 says.
+Three branches survive.
+
+**Stage 4** ($n_4 = 0$). Count the leaves, less $M - 1 = 3$:
+
+$$W(3,2,0,0) \;=\; \underbrace{(7-3)}_{(2,1,1,1)} + \underbrace{(7-3)}_{(2,1,1,1)} + \underbrace{(10-3)}_{(1^5)} \;=\; 4+4+7 \;=\; 15. $$
+
+#### 9.3.5 Folding the profile away
+
+Enumerating $C(p,M,n)$ and running a tree per profile duplicates work — profiles sharing a suffix
+share every subtree below it. Memoising on $(\lambda, \text{remaining tail})$ recovers that, and is
+worth 3.3–16×. But once the memo is keyed on the tail, the enumeration is doing nothing the memo is
+not, so fold the choice of $n_i$ **into** the recursion and drop $C(p,M,n)$ entirely. With $j$
+facets still to place,
+
+$$V(\lambda, j) \;=\; \sum_{t=0}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)}
+V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr)\ -\ (M-j)\,V(\lambda,\ j-1), \tag{9.3}$$
+
+the subtraction applying to the $t = 0$ term only, with base $V(\lambda, 0) = [\,|\lambda| = n\,]$
+and
+
+$$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr).$$
+
+Here $t$ is the new-vertex count of the facet being placed, $r = n - |\lambda|$ is the budget left,
+$\mathrm{grow}$ splits the partially-taken parts and appends $t$, and $M - j = i - 1$ is the number
+of facets already down. Two things are worth pulling out:
+
+- **The budget is not a free coordinate.** $r = n - |\lambda|$ is forced, so the state is
+  $(\lambda, j)$ — two coordinates, not three.
+- **Condition 3 becomes unnecessary.** It cannot over-subtract: the $M-j$ earlier facets are always
+  distinct available orbits, so the bracket never goes negative, and infeasible profiles contribute
+  zero on their own.
+
+#### 9.3.6 Where it meets the Burnside derivation
+
+Split the $t = 0$ term by whether the choice splits a type. The non-splitting choices are the
+all-or-nothing ones — sub-collections of *parts* summing to $p$ — and that count is
+
+$$A(\lambda) \;=\; [x^p]\prod_k (1+x^k)^{m_k} \;=\; N(\lambda, p),$$
+
+the very quantity (3.3) is built on, here with $\lambda$ a partition of the vertex count rather than
+a cycle type. Verified identical on every $\lambda$ tested. So (9.3)'s $t=0$ term reads
+
+$$\sum_{a\ \text{splitting}} V\bigl(\mathrm{grow}(a),\, j-1\bigr) \;+\; \bigl(N(\lambda,p) - (M-j)\bigr)\,V(\lambda,\, j-1),$$
+
+and $N(\lambda,p) - (M-j)$ is "how many all-or-nothing extensions are genuinely new facets". The two
+routes meet at $N(\lambda,p)$ from opposite directions: §3.5 raises it to a falling factorial
+$N^{(M)}$ in one stroke, and (9.3) decrements it one facet at a time. That is also the cleanest
+statement of why the shipped counter is flat in $M$ and this is not — it never iterates over facets
+at all.
+
+#### 9.3.7 Cost
+
+**The reachable $\lambda$ are partitions of integers $\le n$, a set that does not depend on $M$.**
+Hence the state count grows linearly in $M$, and so does the method. At $(p,n) = (3,9)$:
+
+| $M$ | 4 | 8 | 12 | 16 | 20 |
+| --- | --- | --- | --- | --- | --- |
+| states | 20 | 146 | 274 | 402 | 530 |
+| states / $M$ | 5.0 | 18.3 | 22.8 | 25.1 | 26.5 |
+
+Measured, same $(p,n)$, seconds:
+
+| $M$ | 4 | 6 | 8 | 10 | 12 |
+| --- | --- | --- | --- | --- | --- |
+| per-profile | 0.0015 | 0.100 | 0.849 | 3.640 | 10.759 |
+| shared-tail | 0.0013 | 0.023 | 0.090 | 0.266 | 0.651 |
+| **folded (9.3)** | 0.0036 | 0.018 | 0.031 | 0.043 | **0.055** |
+| shipped | 0.0014 | 0.0014 | 0.0014 | 0.0014 | 0.0014 |
+
+195× over the per-profile form and 11.8× over shared-tail at $M = 12$, the folded cost rising about
+$0.006$ s per extra facet while the others multiply. Against the other routes:
+
+| $\{p,M,n\}$ | §9.2 naive DP | §9.2 convolution | **(9.3) folded** | shipped |
+| --- | --- | --- | --- | --- |
+| $\{2,5,7\}$ | 0.067 s | 0.0062 s | 0.0021 s | 0.00055 s |
+| $\{3,5,5\}$ | 0.460 s | 0.0209 s | 0.0012 s | 0.00048 s |
+| $\{3,5,7\}$ | 0.443 s | 0.0218 s | 0.0040 s | 0.00082 s |
+| $\{3,6,8\}$ | 17.77 s | 0.142 s | 0.0104 s | 0.00108 s |
+
+**323× faster than §9.2's DP at $(3,6,8)$**, and linear where that one is exponential.
+
+In $n$ the state count *saturates* rather than tracking $P(n)$ — 65, 97, 119, 124, 125 for
+$n = 8\dots16$ at $(p,M) = (3,6)$, against $\sum_{k \le n} P(k) = 67, 139, 272, 508, 915$ — because a
+partition needs enough facets to be reachable, so $M$ caps it. The corollary is that the folded form
+is **not** uniformly best: at $\{3,6,12\}$, small $M$ against large $n$, shared-tail wins
+($0.040$ s against $0.064$ s). Use (9.3) when $M$ is the large parameter.
+
+It does not threaten the shipped counter in the regime that counter is built for — sweeping $M$ at
+fixed $(p,n)$, where shipped is flat and this is linear, 20–40× behind. Its value is as the fast
+independent check §9.2 wanted to be.
+
+#### 9.3.8 Four ways to get it wrong
+
+All four were live in the first draft of the method, and none is caught by $s_F$ coming out right on
+a single small case.
+
+1. **Pad by $n_i$, not $n_{i+1}$.** The new vertices belong to the facet being placed. Padding one
+   step late silently loses vertices — at $c = (3,2,0,0)$ it leaves 3 where $S_2 = 5$ — and every
+   later stage is then built on a short state. Invisible whenever $n_i = n_{i+1}$, which is why a
+   profile like $(3,1,1,0)$ hides it.
+2. **Subtract $i-1$, not $i$.** There are $i-1$ earlier facets at stage $i$, and $M-1$ at the last.
+3. **Drop the forbidden branches; do not subtract from each surviving term.** Subtracting $i-1$ from
+   every term of the sum gives $\sum_{s} W(s) - (i-1)|MS|$, which at stage 3 of $W(3,2,0,0)$ is
+   $19 - 15 = 4$ against the true $15$. The two coincide only at the leaves, where $W \equiv 1$ —
+   which is why a terminal-only statement of the rule looks right.
+4. **The all-or-nothing branches are the forbidden ones.** Not merely equinumerous with them: it is
+   because they leave $\lambda$ fixed that the correction can be written without type identities at
+   all (§9.3.3).
+
+#### Verification
+
+Against `NumFacetLabeledPureComplexes` on **180 parameter sets** across $p \le 4$, $M \le 6$,
+$n \le 10$ — zero mismatches, to $s_F(4,6,10) = 20612880$ — for all three forms (per-profile,
+shared-tail, folded). Plus the degenerate inputs of §6, and all 21 rows of §11's reference table.
+The per-profile $W(c)$ were checked individually at $(3,4,5)$ against direct enumeration of the
+isomorphism classes, which is what fixed $W(3,1,1,0) = 22$ and confirmed condition 3 rejects only
+empty profiles.
 
 
 ---
