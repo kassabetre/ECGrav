@@ -35,13 +35,14 @@ with exit 0 and is wrong:
      unspaced, across whole paragraphs.  So code spans are vaulted BEFORE maths.
   5. BLOCKQUOTES.  Two of them.  ">" anchored at column 0 missed a quote set
      under a list item, which fell through to the paragraph path and printed its
-     ">" markers literally; that is fixed, by matching the stripped line.  What
-     is NOT fixed: a quote's lines are joined into ONE paragraph, so any block
-     structure inside it is flattened.  A markdown table in a blockquote comes
-     out as inline text with its pipes literal.  Display maths survives, because
-     it is vaulted before the line loop ever runs, which makes the failure look
-     arbitrary.  Put tables at top level; a bold lead-in paragraph reads much the
-     same as a callout and renders.
+     ">" markers literally.  And a quote's lines were joined into ONE paragraph,
+     which flattened any block structure inside it: a markdown table came out as
+     inline text with its pipes literal, a bulleted list as a run-on sentence,
+     and two paragraphs as one -- all at 0 overfull and exit 0.  Display maths
+     escaped only because it is vaulted before the block pass runs, which made
+     the failure look arbitrary.  Both are fixed: ">" is matched on the stripped
+     line, and the block pass is a function that the quote branch RECURSES into,
+     so a quote may hold anything a document may.
 
 So: never trust the exit code.  --check greps the extracted text for escaping
 leakage and confirms every heading and equation tag survived -- but none of
@@ -255,88 +256,96 @@ def convert(md, title):
         return v.put("\n\\begin{%s}\n%s\n\\end{%s}\n" % (env, body, env))
     md = re.sub(r"\$\$(.*?)\$\$", disp, md, flags=re.S)
 
-    out, lines, i = [], md.split("\n"), 0
-    while i < len(lines):
-        ln = lines[i]
-        if not ln.strip():
-            out.append("")
-            i += 1
-            continue
-        if re.match(r"^\s*(---+|\*\*\*+|___+)\s*$", ln):
-            out.append(r"\vspace{2mm}\hrule\vspace{2mm}")
-            i += 1
-            continue
-        m = re.match(r"^(#{1,6})\s+(.*)$", ln)
-        if m:
-            lvl, txt = len(m.group(1)), inline(m.group(2), v)
-            if lvl == 1:
-                pass                                    # H1 is the title
-            else:
-                cmd = {2: r"\section*{%s}", 3: r"\subsection*{%s}"}.get(
-                    lvl, r"\subsubsection*{%s}")
-                out.append(cmd % txt)
-            i += 1
-            continue
-        if ln.lstrip().startswith("|"):
-            j = i
-            while j < len(lines) and lines[j].lstrip().startswith("|"):
-                j += 1
-            if j - i >= 2:
-                out += table(lines[i:j], v)
-            i = j
-            continue
-        # Indented quotes count: ">" was anchored at column 0, so a quote set
-        # under a list item fell through to the paragraph path and printed its
-        # ">" markers literally (trap 4).  It still closes the surrounding list
-        # rather than nesting inside it, which is a layout wart, not leakage.
-        if ln.lstrip().startswith(">"):
-            j = i
-            while j < len(lines) and lines[j].lstrip().startswith(">"):
-                j += 1
-            body = " ".join(re.sub(r"^\s*>\s?", "", l).strip() for l in lines[i:j])
-            out += [r"\begin{quote}\itshape", inline(body, v), r"\end{quote}"]
-            i = j
-            continue
-        m = re.match(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$", ln)
-        if m:
-            env = "itemize" if m.group(2) in "-*+" else "enumerate"
-            out.append(r"\begin{%s}" % env)
-            j = i
-            while j < len(lines):
-                mm = re.match(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$", lines[j])
-                if mm:
-                    txt = mm.group(3)
-                    box = re.match(r"^\[([ xX])\]\s*(.*)$", txt)
-                    prefix = ""
-                    if box:
-                        prefix = (r"$\checkmark$~" if box.group(1).lower() == "x"
-                                  else r"$\square$~")
-                        txt = box.group(2)
-                    j += 1
-                    while (j < len(lines) and lines[j].strip()
-                           and lines[j].startswith((" ", "\t"))
-                           and not re.match(r"^\s*([-*+]|\d+[.)])\s+", lines[j])
-                           and not lines[j].lstrip().startswith(("|", ">", "#"))):
-                        txt += " " + lines[j].strip()
-                        j += 1
-                    out.append(r"\item " + v.put(prefix) + inline(txt, v))
-                elif (not lines[j].strip() and j + 1 < len(lines)
-                      and re.match(r"^\s*([-*+]|\d+[.)])\s+", lines[j + 1])):
-                    j += 1
+    # The block pass is a function so a blockquote can RECURSE into it.  Joining
+    # a quote's lines into one paragraph flattened any block structure inside it:
+    # a markdown table came out as inline text with literal pipes, at 0 overfull
+    # and exit 0 (trap 5).  Display maths escaped only because it is vaulted
+    # before this ever runs, which made the failure look arbitrary.
+    def blocks(lines):
+        out, i = [], 0
+        while i < len(lines):
+            ln = lines[i]
+            if not ln.strip():
+                out.append("")
+                i += 1
+                continue
+            if re.match(r"^\s*(---+|\*\*\*+|___+)\s*$", ln):
+                out.append(r"\vspace{2mm}\hrule\vspace{2mm}")
+                i += 1
+                continue
+            m = re.match(r"^(#{1,6})\s+(.*)$", ln)
+            if m:
+                lvl, txt = len(m.group(1)), inline(m.group(2), v)
+                if lvl == 1:
+                    pass                                    # H1 is the title
                 else:
-                    break
-            out.append(r"\end{%s}" % env)
-            i = j
-            continue
-        para = [ln]
-        i += 1
-        while (i < len(lines) and lines[i].strip()
-               and not re.match(r"^(#|>|\s*(---+|\*\*\*+)\s*$|\s*([-*+]|\d+[.)])\s)", lines[i])
-               and not lines[i].lstrip().startswith("|")):
-            para.append(lines[i])
+                    cmd = {2: r"\section*{%s}", 3: r"\subsection*{%s}"}.get(
+                        lvl, r"\subsubsection*{%s}")
+                    out.append(cmd % txt)
+                i += 1
+                continue
+            if ln.lstrip().startswith("|"):
+                j = i
+                while j < len(lines) and lines[j].lstrip().startswith("|"):
+                    j += 1
+                if j - i >= 2:
+                    out += table(lines[i:j], v)
+                i = j
+                continue
+            # Indented quotes count: ">" was anchored at column 0, so a quote set
+            # under a list item fell through to the paragraph path and printed its
+            # ">" markers literally (trap 4).  It still closes the surrounding list
+            # rather than nesting inside it, which is a layout wart, not leakage.
+            if ln.lstrip().startswith(">"):
+                j = i
+                while j < len(lines) and lines[j].lstrip().startswith(">"):
+                    j += 1
+                inner = [re.sub(r"^\s*>\s?", "", l) for l in lines[i:j]]
+                out += ([r"\begin{quote}\itshape"] + blocks(inner) + [r"\end{quote}"])
+                i = j
+                continue
+            m = re.match(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$", ln)
+            if m:
+                env = "itemize" if m.group(2) in "-*+" else "enumerate"
+                out.append(r"\begin{%s}" % env)
+                j = i
+                while j < len(lines):
+                    mm = re.match(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$", lines[j])
+                    if mm:
+                        txt = mm.group(3)
+                        box = re.match(r"^\[([ xX])\]\s*(.*)$", txt)
+                        prefix = ""
+                        if box:
+                            prefix = (r"$\checkmark$~" if box.group(1).lower() == "x"
+                                      else r"$\square$~")
+                            txt = box.group(2)
+                        j += 1
+                        while (j < len(lines) and lines[j].strip()
+                               and lines[j].startswith((" ", "\t"))
+                               and not re.match(r"^\s*([-*+]|\d+[.)])\s+", lines[j])
+                               and not lines[j].lstrip().startswith(("|", ">", "#"))):
+                            txt += " " + lines[j].strip()
+                            j += 1
+                        out.append(r"\item " + v.put(prefix) + inline(txt, v))
+                    elif (not lines[j].strip() and j + 1 < len(lines)
+                          and re.match(r"^\s*([-*+]|\d+[.)])\s+", lines[j + 1])):
+                        j += 1
+                    else:
+                        break
+                out.append(r"\end{%s}" % env)
+                i = j
+                continue
+            para = [ln]
             i += 1
-        out.append(inline(" ".join(para), v))
+            while (i < len(lines) and lines[i].strip()
+                   and not re.match(r"^(#|>|\s*(---+|\*\*\*+)\s*$|\s*([-*+]|\d+[.)])\s)", lines[i])
+                   and not lines[i].lstrip().startswith("|")):
+                para.append(lines[i])
+                i += 1
+            out.append(inline(" ".join(para), v))
+        return out
 
+    out = blocks(md.split("\n"))
     return PREAMBLE % title + v.restore("\n".join(out)) + "\n\\end{document}\n"
 
 
