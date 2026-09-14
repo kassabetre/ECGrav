@@ -12,10 +12,10 @@ text back out of the PDF for the verification pass.
 
 Handles exactly what these documents use: ATX headings, $$..$$ display maths with
 \\tag, $..$ inline maths, pipe tables, blockquotes, bullet/numbered/checkbox
-lists, fenced code, thematic breaks, links, **bold**, *em*, `code`.
+lists, fenced code, thematic breaks, links, **bold**, *em*, `code` and ``co`de``.
 
-Two traps this is built around, both of which produce a PDF that compiles with
-exit 0 and is wrong:
+Five traps this is built around, every one of which produces a PDF that compiles
+with exit 0 and is wrong:
 
   1. ESCAPING ORDER.  Escape the ASCII LaTeX specials FIRST, then map non-ASCII
      to LaTeX commands.  Doing it the other way round re-escapes the backslashes
@@ -24,9 +24,28 @@ exit 0 and is wrong:
   2. PIPES INSIDE CODE SPANS.  A table cell like `1 / |Aut|` contains a pipe, so
      the row must have its code spans stashed away BEFORE it is split on "|",
      or the table silently gains phantom columns.
+  3. BACKTICKS INSIDE CODE SPANS.  A Wolfram context is spelled ``a`b`c`` or
+     `a\\`b\\`c`, and a lone single-backtick rule can parse neither: it pairs the
+     INNER separators, eats them, and strands one backtick, which T1 then sets
+     as a left quote.  "ECGrav`Private`Foo" silently becomes "'ECGravPrivateFoo".
+     Hence the double-backtick pass, the \\` unescaping, and "`" in SPECIAL.
+  4. "$" INSIDE A CODE SPAN.  Wolfram globals are `$Failed`, `$KernelCount`.
+     With maths vaulted first that "$" pairs with the next real "$" in the same
+     paragraph and swallows everything between into math mode -- italic and
+     unspaced, across whole paragraphs.  So code spans are vaulted BEFORE maths.
+  5. INDENTED BLOCKQUOTES.  ">" anchored at column 0 misses a quote set under a
+     list item; it falls through to the paragraph path and prints its ">"
+     markers literally.  Matched on the stripped line instead.
 
 So: never trust the exit code.  --check greps the extracted text for escaping
-leakage and confirms every heading and equation tag survived.
+leakage and confirms every heading and equation tag survived -- but none of
+traps 3-5 is caught by any automated pass, so a maths- or code-heavy page still
+wants an eyeball.  Rasterise one with:
+
+    gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r105 -dFirstPage=N -dLastPage=N \\
+       -sOutputFile=p.png doc.pdf
+
+(there is no poppler here, so pdftoppm and anything built on it is unavailable).
 """
 import hashlib
 import os
@@ -42,7 +61,10 @@ GS = "/usr/local/bin/gs"
 # LaTeX specials, escaped before any non-ASCII mapping runs (see trap 1).
 SPECIAL = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$",
            "#": r"\#", "_": r"\_", "{": r"\{", "}": r"\}",
-           "~": r"\textasciitilde{}", "^": r"\textasciicircum{}"}
+           "~": r"\textasciitilde{}", "^": r"\textasciicircum{}",
+           # A bare ` is the T1 left quote, so a Wolfram context prints as
+           # 'ECGravPrivate' with the separators silently gone (trap 4).
+           "`": r"\textasciigrave{}"}
 
 # Non-ASCII -> LaTeX, for prose.  Every character occurring in the repo's specs.
 UNI = {
@@ -137,9 +159,23 @@ def breakable(s):
 
 def inline(s, v):
     """Inline markup -> LaTeX.  Maths and code are vaulted before escaping."""
+    # CODE BEFORE MATHS.  A Wolfram global is spelled `$Failed`, and with maths
+    # vaulted first that "$" pairs with the next real "$" in the paragraph and
+    # swallows everything between into math mode -- italic, unspaced, and
+    # compiling perfectly (trap 5).  Vaulting code spans first makes the "$"
+    # unreachable.  Safe because a backtick never occurs inside real maths here.
+    # Double-backtick FIRST: a Wolfram context has to be written ``a`b`c`` or
+    # `a\`b\`c`, and the single-backtick rule below cannot see either -- it
+    # pairs the inner separators instead, eats them, and strands one backtick
+    # as a stray quote, all while compiling cleanly (trap 4).  CommonMark
+    # strips one leading and trailing space, which is what .strip() is for.
+    s = re.sub(r"``(.+?)``",
+               lambda m: v.put(r"\texttt{" + breakable(esc(m.group(1).strip())) + "}"), s)
+    s = re.sub(r"`((?:\\`|[^`])+)`",
+               lambda m: v.put(r"\texttt{"
+                               + breakable(esc(m.group(1).replace(chr(92) + "`", "`")))
+                               + "}"), s)
     s = re.sub(r"\$([^$\n]+)\$", lambda m: v.put("$" + m.group(1) + "$"), s)
-    s = re.sub(r"`([^`]+)`",
-               lambda m: v.put(r"\texttt{" + breakable(esc(m.group(1))) + "}"), s)
     def link(m):
         text, url = m.group(1), m.group(2)
         if url.startswith(("http://", "https://")):
@@ -161,9 +197,13 @@ def split_cells(row, v):
     text: a vaulted token is invisible to inline(), so stashing "`x`" here
     means nothing ever converts it and the cell renders with literal
     backticks around unescaped source."""
+    row = re.sub(r"``(.+?)``",
+                 lambda m: v.put(r"\texttt{" + breakable(esc(m.group(1).strip())) + "}"), row)
     return [c.strip() for c in
-            re.sub(r"`([^`]+)`",
-                   lambda m: v.put(r"\texttt{" + breakable(esc(m.group(1))) + "}"),
+            re.sub(r"`((?:\\`|[^`])+)`",
+                   lambda m: v.put(r"\texttt{"
+                                   + breakable(esc(m.group(1).replace(chr(92) + "`", "`")))
+                                   + "}"),
                    row).strip().strip("|").split("|")]
 
 
@@ -239,11 +279,15 @@ def convert(md, title):
                 out += table(lines[i:j], v)
             i = j
             continue
-        if ln.startswith(">"):
+        # Indented quotes count: ">" was anchored at column 0, so a quote set
+        # under a list item fell through to the paragraph path and printed its
+        # ">" markers literally (trap 4).  It still closes the surrounding list
+        # rather than nesting inside it, which is a layout wart, not leakage.
+        if ln.lstrip().startswith(">"):
             j = i
-            while j < len(lines) and lines[j].startswith(">"):
+            while j < len(lines) and lines[j].lstrip().startswith(">"):
                 j += 1
-            body = " ".join(re.sub(r"^>\s?", "", l).strip() for l in lines[i:j])
+            body = " ".join(re.sub(r"^\s*>\s?", "", l).strip() for l in lines[i:j])
             out += [r"\begin{quote}\itshape", inline(body, v), r"\end{quote}"]
             i = j
             continue
