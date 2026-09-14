@@ -411,9 +411,26 @@ Three implementation details worth naming:
   computes is independent of $M$ except the falling factorial, so the table serves every facet
   order at that vertex count, and equal $N$ are merged when it is built — different multiplicity
   vectors often reach the same $N$, which shrinks the sum by 1.5× at $p=2$, 2.3× at $p=3$ and
-  2.9× at $p=4$. `NumPCClearCache[]` lists `NumFLPCWeightTable` and releases it. The natural
+  2.9× at $p=4$. `NumPCClearCache[]` lists `NumFLPCWeightTable` and releases it.
+
+  The natural
   caller does *not* ask once: Track A of `ExpansionRoadmap.md` sweeps $M$ at fixed $(p,n)$, and
   that is what this is for (§7).
+
+
+**The clearing call is private, and getting the context wrong fails silently.**
+
+```wolfram
+ECGrav`Private`NumPCClearCache[]   (* works: returns the bytes reclaimed *)
+ECGrav`NumPCClearCache[]           (* undefined: returns unevaluated, no message *)
+```
+
+An undefined symbol in Wolfram evaluates to itself, with no message, so the second form is a no-op
+that looks exactly like success. The memo then survives and every timing taken after it is warm.
+This corrupted a first pass at §9.3.8's Map 2: the shipped column read tens of microseconds instead
+of milliseconds, and carried a spurious discontinuity precisely where the sweep first reached an
+$n$ that no earlier row had already cached. The working call returns a byte count — **check for a
+number, not for silence.**
 
 ---
 
@@ -950,13 +967,82 @@ In $n$ the state count *saturates* rather than tracking $P(n)$ — 65, 97, 119, 
 $n = 8\dots16$ at $(p,M) = (3,6)$, against $\sum_{k \le n} P(k) = 67, 139, 272, 508, 915$ — because a
 partition needs enough facets to be reachable, so $M$ caps it. The corollary is that the folded form
 is **not** uniformly best: at $\{3,6,12\}$, small $M$ against large $n$, shared-tail wins
-($0.040$ s against $0.064$ s). Use (9.3) when $M$ is the large parameter.
+($0.040$ s against $0.064$ s). §9.3.8 maps that boundary.
 
 It does not threaten the shipped counter in the regime that counter is built for — sweeping $M$ at
 fixed $(p,n)$, where shipped is flat and this is linear, 20–40× behind. Its value is as the fast
 independent check §9.2 wanted to be.
 
-#### 9.3.8 Four ways to get it wrong
+#### 9.3.8 Two crossover maps
+
+Neither of the two fast forms dominates, and neither does the shipped counter uniformly. Both
+boundaries were measured rather than reasoned, on a cold cache throughout (see the caution in §5
+about which symbol actually clears it).
+
+**Map 1: folded against shared-tail.** Entries are the ratio (folded / shared-tail); below $1$ the
+folded form wins. A dot marks an infeasible $(M,n)$.
+
+$p = 2$:
+
+| $M \backslash n$ | 6 | 8 | 10 | 12 | 14 | 16 | 18 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | 0.09 | . | . | . | . | . | . |
+| 4 | 1.25 | 3.29 | . | . | . | . | . |
+| 5 | 0.82 | 1.65 | 3.57 | . | . | . | . |
+| 6 | 0.58 | 0.82 | 1.69 | 2.55 | . | . | . |
+| 7 | 0.47 | 0.48 | 0.85 | 1.46 | 1.33 | . | . |
+| 8 | 0.38 | 0.28 | 0.40 | 0.73 | 0.89 | 0.60 | . |
+| 9 | 0.32 | 0.17 | 0.20 | 0.35 | 0.56 | 0.49 | 0.29 |
+| 10 | 0.27 | 0.12 | 0.10 | 0.13 | 0.29 | 0.33 | 0.27 |
+
+$p = 3$:
+
+| $M \backslash n$ | 6 | 8 | 10 | 12 | 14 | 16 | 18 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | 1.23 | 2.38 | . | . | . | . | . |
+| 4 | 1.17 | 1.97 | 4.79 | 11.07 | . | . | . |
+| 5 | 0.91 | 1.10 | 1.94 | 4.50 | 14.61 | . | . |
+| 6 | 0.81 | 0.73 | 0.93 | 1.61 | 3.58 | 9.90 | 13.26 |
+| 7 | 0.68 | 0.52 | 0.55 | 0.77 | 1.30 | 2.57 | 5.91 |
+| 8 | 0.61 | 0.38 | 0.33 | 0.40 | 0.63 | 1.10 | 1.96 |
+| 9 | 0.58 | 0.28 | 0.20 | 0.20 | 0.29 | 0.53 | 0.98 |
+| 10 | 0.53 | 0.22 | 0.12 | 0.11 | 0.13 | 0.22 | 0.47 |
+
+The boundary is close to linear and **nearly independent of $p$**: folded wins above roughly
+
+$$M^\ast \;\approx\; \tfrac{n}{2} + 2,$$
+
+and the useful way to read that is against the feasibility floor $M \ge n/p$. At $p = 2$ the floor
+*is* $n/2$, so the shared-tail region is a sliver one or two facets wide and folded wins almost
+everywhere. At $p = 3$ the floor drops to $n/3$ while the boundary stays near $n/2$, opening a real
+band — every $M$ from $6$ to $8$ at $n = 18$ — where shared-tail is the right choice. Higher $p$
+widens that band further. Deep in the folded region the margin is large: $8\times$ at $(2,10,10)$,
+$9\times$ at $(3,10,12)$.
+
+**Map 2: folded against shipped, in $n$ at fixed $M$.** $p = 3$, ratio folded / shipped, cold:
+
+| $n$ | 5 | 7 | 9 | 11 | 13 | 15 | 17 | 19 | 21 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| $M = 6$ | 2.3 | 6.6 | 13.8 | 21.6 | **26.8** | 24.3 | 18.9 | . | . |
+| $M = 8$ | 3.2 | 10.8 | 22.0 | 42.4 | 74.0 | 141.4 | 235.3 | **274.4** | 251.6 |
+
+**There is essentially no crossover.** The shipped counter wins across the whole feasible range; the
+single exception found is the degenerate corner $(3,4,4)$, ratio $0.5$. What the map does show is
+that the ratio is **not monotone** — it rises, peaks, and falls, the peak sitting near
+$n \approx 0.7\,pM$ to $0.8\,pM$ ($n = 8$ of $12$ at $M = 4$, $13$ of $18$ at $M = 6$, $19$ of $24$
+at $M = 8$).
+
+The decline past the peak is §9.3.7's saturation seen from the other side: the folded state count
+stops growing once $M$ caps the reachable partitions, while the shipped cost keeps climbing with the
+multiplicity-vector count. So the gap narrows as $n \to pM$ — but within $n \le pM$ it never closes,
+and the honest summary is that this route is a fast independent check, not a replacement.
+
+Two cautions on reading these numbers. The shipped column is a **cold** single call, which is the
+fair comparison for one evaluation but not the access pattern §7 is built for; warm, its memoised
+table answers in $10$–$30\,\mu$s and the ratios above multiply by roughly $40\times$. And the
+folded form was measured with its own memo dropped between points, so neither side is being flattered.
+
+#### 9.3.9 Four ways to get it wrong
 
 All four were live in the first draft of the method, and none is caught by $s_F$ coming out right on
 a single small case.
