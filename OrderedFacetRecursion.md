@@ -53,9 +53,27 @@ $v \in V_i$ its **type**
 
 $$\mathrm{ty}(v) \;=\; \{\, j \le i \;:\; v \in F_j \,\} \;\subseteq\; [i],$$
 
-the set of facets containing it. Types are nonempty on $V_i$ by construction. Grouping $V_i$ by type
-partitions it into **type classes**, and the multiset of their sizes is a partition of $|V_i|$; call
-it $\lambda(F_1,\dots,F_i)$.
+a **subset of $[i]$**, not a number. Types are nonempty on $V_i$ by construction.
+
+Two different partitions now appear, and keeping them apart matters. Grouping $V_i$ by type — two
+vertices in the same block exactly when they have the *same* type, so the blocks are the fibres of
+the map $v \mapsto \mathrm{ty}(v)$ — gives a **set partition of $V_i$**, whose blocks we call the
+**type classes**. Recording only the *sizes* of those blocks gives an **integer partition of
+$|V_i|$**, written $\lambda(F_1,\dots,F_i)$. The set partition is the structure; the integer
+partition is the state the recursion carries.
+
+*Example.* Take $p = 3$ and $(F_1,F_2) = (\{1,2,3\},\{1,2,4\})$, so $V_2 = \{1,2,3,4\}$. Then
+$\mathrm{ty}(1) = \mathrm{ty}(2) = \{1,2\}$, $\mathrm{ty}(3) = \{1\}$ and
+$\mathrm{ty}(4) = \{2\}$, so the set partition is
+
+$$V_2 \;=\; \underbrace{\{1,2\}}_{\text{type }\{1,2\}} \ \sqcup\ \underbrace{\{3\}}_{\text{type }\{1\}} \ \sqcup\ \underbrace{\{4\}}_{\text{type }\{2\}},$$
+
+three blocks, and $\lambda(F_1,F_2) = (2,1,1)$, an integer partition of $4$.
+
+What $\lambda$ discards is which class is which. For $(F_1,F_2) = (\{1,2,3\},\{1,4,5\})$ the
+classes are $\{1\}$ of type $\{1,2\}$, $\{2,3\}$ of type $\{1\}$ and $\{4,5\}$ of type
+$\{2\}$, giving $\lambda = (2,2,1)$ — two classes of equal size lying in different facets, which
+$\lambda$ cannot tell apart. Proposition 1 is exactly the statement that it need not.
 
 Listing the types of all vertices, as a multiset, is the **incidence tableau**: one row per vertex,
 each row a subset of $[i]$. It is a complete isomorphism invariant — two configurations are
