@@ -1,0 +1,361 @@
+# Counting facet-labeled pure complexes by an ordered deletion recursion
+
+> **What this is.** A self-contained derivation of a recursion that counts facet-labeled pure
+> simplicial complexes by placing their facets in order, carrying an integer partition as its state.
+> It is written for **P1** and assumes nothing from the package specifications; the same material
+> appears as §9.3 of `FacetLabeledCount.md`, which states it against that document's notation.
+>
+> Two properties make it worth reporting rather than merely implementing. It is **linear in the
+> facet order $M$**, where the natural dynamic programme over label content is exponential in $M$.
+> And it **never forms a cycle type**, so it is independent of the Burnside/cycle-index route by
+> which this count is normally obtained — which makes it usable as a check on that route rather
+> than a restatement of it.
+
+---
+
+## 1. The object, and notation
+
+Throughout, $p \ge 1$ is the **purity** (every facet has exactly $p$ vertices), $M \ge 0$ the
+**facet order** (the number of facets), and $n \ge 0$ the **vertex count**. Write
+$[n] = \{1,\dots,n\}$, let $S_n$ be the symmetric group on $[n]$, and for a partition $\lambda$ let
+$m_k(\lambda)$ be its number of parts equal to $k$ and $|\lambda|$ the sum of its parts. We write
+partitions as weakly decreasing tuples, $(2,2,1)$, with $(1^5)$ abbreviating $(1,1,1,1,1)$.
+
+Let
+
+$$X \;=\; \bigl\{(F_1,\dots,F_M) \;:\; F_i \subseteq [n],\ |F_i| = p,\ F_i \neq F_j \text{ for } i \neq j,\ \textstyle\bigcup_i F_i = [n]\bigr\}$$
+
+be the set of ordered $M$-tuples of pairwise **distinct** $p$-subsets of $[n]$ whose union is all of
+$[n]$. The group $S_n$ acts on $X$ by relabelling vertices, $\sigma\cdot(F_1,\dots,F_M) =
+(\sigma F_1,\dots,\sigma F_M)$. A **facet-labeled pure complex** is an orbit of this action: the
+facets carry the labels $1,\dots,M$, the vertices carry none. Write
+
+$$s_F(p,M,n) \;=\; |X / S_n|$$
+
+for the number of such orbits. Two conventions are worth stating once. *Distinct* is a condition on
+the facets as sets, so $X$ excludes repeats; and *covering* means no vertex of $[n]$ is isolated, so
+$n$ is the number of vertices actually used.
+
+An **isomorphism** of facet-labeled complexes is a vertex bijection $\phi$ with
+$\phi(F_i) = F_i'$ for **each** $i$ — the labels are matched, not permuted. This is the notion of
+sameness used throughout; permuting the facet labels as well gives the fully unlabeled count, which
+is a different and harder problem not treated here.
+
+---
+
+## 2. Incidence tableaux, types, and the state
+
+### 2.1 Types
+
+Fix a partial configuration $(F_1,\dots,F_i)$ — a tuple of $i$ distinct $p$-subsets, not yet
+required to cover — and let $V_i = F_1 \cup \dots \cup F_i$ be the vertices used so far. Give each
+$v \in V_i$ its **type**
+
+$$\mathrm{ty}(v) \;=\; \{\, j \le i \;:\; v \in F_j \,\} \;\subseteq\; [i],$$
+
+the set of facets containing it. Types are nonempty on $V_i$ by construction. Grouping $V_i$ by type
+partitions it into **type classes**, and the multiset of their sizes is a partition of $|V_i|$; call
+it $\lambda(F_1,\dots,F_i)$.
+
+Listing the types of all vertices, as a multiset, is the **incidence tableau**: one row per vertex,
+each row a subset of $[i]$. It is a complete isomorphism invariant — two configurations are
+isomorphic exactly when their row multisets agree — since an isomorphism is precisely a bijection
+matching rows.
+
+### 2.2 The automorphism group, and why the partition is enough
+
+Write $\mathrm{Aut}(F_1,\dots,F_i) = \{\sigma \in \mathrm{Sym}(V_i) : \sigma(F_j) = F_j \text{ for
+all } j \le i\}$.
+
+**Proposition 1.** *Let $T_1,\dots,T_s$ be the type classes of $(F_1,\dots,F_i)$. Then*
+
+1. $\mathrm{Aut}(F_1,\dots,F_i) \;=\; \mathrm{Sym}(T_1) \times \dots \times \mathrm{Sym}(T_s)$,
+   *the permutations preserving each type class setwise;*
+2. *the orbits of $\mathrm{Aut}$ on $k$-element subsets of $V_i$ are in bijection with the vectors*
+   $$MS_k(\lambda) \;=\; \bigl\{\, a = (a_1,\dots,a_s) \;:\; 0 \le a_u \le |T_u|,\ \textstyle\sum_u a_u = k \,\bigr\},$$
+   *the correspondence sending $S$ to $a_u = |S \cap T_u|$;*
+3. *two extensions of $(F_1,\dots,F_i)$ by one further facet are isomorphic as facet-labeled
+   $(i{+}1)$-tuples if and only if they have the same $a$ and reuse the same number of new vertices.*
+
+*Proof.* (1) $\sigma$ fixes every $F_j$ setwise iff for every $v$ and every $j$, $v \in F_j
+\Leftrightarrow \sigma(v) \in F_j$, i.e. iff $\mathrm{ty}(\sigma(v)) = \mathrm{ty}(v)$ for all $v$ —
+which is exactly preservation of the type classes. (2) Immediate from (1): a product of symmetric
+groups acting on subsets has orbits classified by the intersection sizes, and every vector $a$ in
+range is realised. (3) Let $F_{i+1} = S \sqcup N$ with $S = F_{i+1} \cap V_i$ and $N$ the new
+vertices, and similarly $F_{i+1}' = S' \sqcup N'$. Any isomorphism $\phi$ of the $(i{+}1)$-tuples
+maps $F_j \to F_j$ for $j \le i$, hence maps $V_i$ onto itself, so $\phi|_{V_i} \in \mathrm{Aut}$;
+and $\phi(S) = S'$, so $S$ and $S'$ lie in one $\mathrm{Aut}$-orbit and $a = a'$. Conversely, given
+$a = a'$ and $|N| = |N'|$, compose an element of $\mathrm{Aut}$ carrying $S$ to $S'$ with any
+bijection $N \to N'$. $\square$
+
+Part (2) is what licenses discarding the *identities* of the types and keeping only the multiset of
+their sizes. The count of choices is
+
+$$\bigl| MS_k(\lambda) \bigr| \;=\; [x^k] \prod_{u=1}^{s} \bigl(1 + x + \dots + x^{\lambda_u}\bigr),$$
+
+a function of $\lambda$ alone. Part (3) says distinct choices give non-isomorphic extensions, so no
+correction for over- or under-counting is needed when we branch over $MS_k(\lambda)$.
+
+### 2.3 The transition
+
+Having chosen $a \in MS_{p-t}(\lambda)$ — reuse $a_u$ vertices from type class $T_u$ — and $t$ new
+vertices, the new type classes are: for each $u$, the $a_u$ reused vertices (whose type gains the new
+facet) and the $\lambda_u - a_u$ untouched ones (whose type does not), plus one class of the $t$ new
+vertices. A class **splits** exactly when $0 < a_u < \lambda_u$; a fully-taken or wholly-untaken
+class does not. So define
+
+$$\mathrm{grow}(\lambda, a, t) \;=\; \{\, a_u : a_u > 0 \,\} \;\uplus\; \{\, \lambda_u - a_u : \lambda_u - a_u > 0 \,\} \;\uplus\; \{\, t : t > 0 \,\},$$
+
+a partition of $|\lambda| + t$. This depends only on $\lambda$, $a$ and $t$, which together with
+Proposition 1 is the whole reason a partition suffices as state.
+
+---
+
+## 3. The ordered decomposition
+
+### 3.1 The new-vertex profile
+
+For a facet-labeled complex, set
+
+$$n_i \;=\; \bigl|\,F_i \setminus (F_1 \cup \dots \cup F_{i-1})\,\bigr|, \qquad i = 1,\dots,M,$$
+
+the number of vertices facet $i$ introduces that no earlier facet used, and call
+$c = (n_1,\dots,n_M)$ the **new-vertex profile**. It is an isomorphism invariant, since a vertex
+bijection matching each $F_i$ preserves every $F_i \setminus \bigcup_{j<i}F_j$. Hence:
+
+**Proposition 2.** *Every isomorphism class has exactly one profile, so the profiles partition the
+classes and*
+$$s_F(p,M,n) \;=\; \sum_{c} W(c),$$
+*where $W(c)$ is the number of classes with profile $c$. Moreover any realised profile satisfies*
+
+1. $n_1 = p$ *(facet 1 is entirely new);*
+2. $0 \le n_i \le p$ *(a facet introduces at most its own size);*
+3. $\sum_i n_i = n$ *(the facets cover $[n]$, and the sets $F_i \setminus \bigcup_{j<i}F_j$ are
+   disjoint with union $[n]$);*
+4. $\binom{S_i}{p} \ge i$ *with $S_i = \sum_{j \le i} n_j$ (after $i$ facets the pool $V_i$ has $S_i$
+   vertices and must supply $i$ pairwise distinct $p$-subsets).*
+
+Write $C(p,M,n)$ for the profiles meeting (1)–(4). Condition (4) is a genuine restriction and is
+sharp in the sense that it discards only empty cases: at $(p,M,n) = (3,4,5)$ it rejects exactly
+$(3,0,2,0)$, $(3,0,1,1)$ and $(3,0,0,2)$, each of which has $\binom{3}{3} = 1 < 2$ at $i = 2$, and
+direct enumeration confirms each supports no classes. The three survivors carry
+
+| $c$ | $(3,1,0,1)$ | $(3,1,1,0)$ | $(3,2,0,0)$ | total |
+| --- | --- | --- | --- | --- |
+| $W(c)$ | 6 | 22 | 15 | **43** $= s_F(3,4,5)$ |
+
+### 3.2 Distinctness
+
+Placing facets in order makes the distinctness condition local, and cheap.
+
+**Proposition 3.** *Let $(F_1,\dots,F_{i-1})$ have type classes $T_1,\dots,T_s$ and partition
+$\lambda$, and consider extending it by $F_i$ with $n_i$ new vertices.*
+
+1. *If $n_i > 0$ then $F_i \neq F_j$ automatically for every $j < i$.*
+2. *If $n_i = 0$ then exactly $i - 1$ of the branches $a \in MS_p(\lambda)$ are forbidden, namely
+   those with $F_i = F_j$ for some $j < i$.*
+3. *Each forbidden branch is **all-or-nothing** — $a_u \in \{0, \lambda_u\}$ for every $u$ — and
+   therefore satisfies $\mathrm{grow}(\lambda, a, 0) = \lambda$.*
+
+*Proof.* (1) $F_i$ contains a vertex outside $V_{i-1} \supseteq F_j$. (2) and (3): for $j < i$ the
+set $F_j$ is a $p$-subset of $V_{i-1}$, so it is one of the branches, and its selection vector is
+$a_u = \lambda_u$ when $j \in \mathrm{ty}(T_u)$ and $a_u = 0$ otherwise — a vertex of $V_{i-1}$ lies
+in $F_j$ iff its type contains $j$, and type is constant on a class. That is all-or-nothing, and an
+all-or-nothing selection splits no class, so the partition is unchanged. Distinctness of the
+forbidden branches: if $F_j \neq F_{j'}$ then some vertex lies in one and not the other, so its type
+class has $j$ in its type and not $j'$ (or conversely), and the two selection vectors differ at that
+class. Hence the $i-1$ earlier facets give $i-1$ distinct forbidden branches. $\square$
+
+Part (3) is the key to the whole construction. Knowing *which* branches are forbidden would require
+the type identities, which the partition state has discarded — but we never need to know. All $i-1$
+forbidden branches lead to the **same** successor state $\lambda$, so their removal is a single
+subtraction of $(i-1)$ copies of one term.
+
+---
+
+## 4. The recursion
+
+Fix $p$, $M$ and $n$. For a partition $\lambda$ with $|\lambda| \le n$ and an integer $0 \le j \le
+M$, let
+
+$$V(\lambda, j) \;=\; \text{the number of ways to place } j \text{ further facets},$$
+
+counted up to isomorphism fixing the existing configuration, so that the resulting complex has
+exactly $n$ vertices, covers them, and has all $M$ facets pairwise distinct — starting from any
+configuration of $M - j$ facets whose type-multiplicity partition is $\lambda$. Propositions 1 and 3
+say this is well defined: the branching and the size of the forbidden set depend on $(\lambda, j)$
+alone, not on the configuration realising them.
+
+**Theorem 4.** *With $r = n - |\lambda|$ the remaining vertex budget,*
+
+$$V(\lambda, j) \;=\; \sum_{t=0}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr)\;-\;(M-j)\,V(\lambda,\ j-1), \tag{4.1}$$
+
+*the subtraction applying only to the $t = 0$ term, with base $V(\lambda, 0) = [\,|\lambda| = n\,]$,
+the inner sum empty unless $0 \le p - t \le |\lambda|$, and*
+
+$$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr). \tag{4.2}$$
+
+*Proof.* Induction on $j$. At $j = 0$ nothing more is placed, so the configuration is complete and
+is counted iff it already has $n$ vertices; covering holds because every vertex of $V_M$ lies in some
+facet by construction. For $j > 0$: the next facet reuses $p - t$ old vertices and brings $t$ new
+ones, $t$ ranging over $0,\dots,\min(p,r)$ since it cannot exceed the budget. By Proposition 1 the
+isomorphism classes of such an extension are exactly the pairs $(t, a)$ with $a \in MS_{p-t}
+(\lambda)$, each giving successor state $\mathrm{grow}(\lambda,a,t)$; by induction each contributes
+$V(\mathrm{grow}(\lambda,a,t), j-1)$ completions. By Proposition 3 the only extensions that violate
+distinctness occur at $t = 0$, number exactly $M - j$, and all have successor state $\lambda$, so
+removing them subtracts $(M-j)V(\lambda, j-1)$. Finally (4.2): facet 1 may be taken to be any
+$p$-set, all choices isomorphic, giving the single state $(p)$ on $p$ vertices with $M-1$ facets
+left. $\square$
+
+Two consequences are worth stating separately.
+
+**The vertex budget is not a free coordinate.** It is $r = n - |\lambda|$, forced by the state, so
+$V$ has two arguments and not three. This is what keeps the state space small.
+
+**Condition (4) of Proposition 2 is not needed here.** The recursion cannot over-subtract: by
+Proposition 3 the $M-j$ forbidden branches are always present among the $MS_p(\lambda)$, so the
+bracket never goes negative, and infeasible configurations contribute zero of their own accord.
+Folding the choice of $t$ into the recursion removes the profile enumeration entirely; profiles are
+the *derivation*, not the algorithm.
+
+---
+
+## 5. Worked example: $W(3,2,0,0) = 15$
+
+Take $p = 3$, $M = 4$, and the profile $c = (3,2,0,0)$, so $n = 5$.
+
+**Stage 1.** Facet 1 is three new vertices. State $(3)$; types $\{1\}^3$.
+
+**Stage 2**, $n_2 = 2$. Facet 2 reuses $p - n_2 = 1$ old vertex, and $|MS_1((3))| = 1$: the only
+choice is one vertex from the single class. That class splits $1 + 2$, and the two new vertices form
+a class of their own, giving state $(2,2,1)$ on $S_2 = 5$ vertices. In types:
+$\{1\}^2,\ \{2\}^2,\ \{1,2\}^1$.
+
+**Stage 3**, $n_3 = 0$. Facet 3 is three old vertices; $|MS_3((2,2,1))| = 5$. Writing selection
+vectors in the coordinates $(\{1\}, \{2\}, \{1,2\})$:
+
+| $a$ | $\mathrm{grow}(\lambda,a,0)$ | |
+| --- | --- | --- |
+| $(2,1,0)$ | $(2,1,1,1)$ | |
+| $(1,2,0)$ | $(2,1,1,1)$ | |
+| $(1,1,1)$ | $(1^5)$ | |
+| $(2,0,1)$ | $(2,2,1)$ | $= F_1$, forbidden |
+| $(0,2,1)$ | $(2,2,1)$ | $= F_2$, forbidden |
+
+The two forbidden branches are exactly the all-or-nothing ones and leave the state at $(2,2,1)$, as
+Proposition 3 predicts. Three branches survive.
+
+**Stage 4**, $n_4 = 0$. Each surviving state contributes its number of $3$-subsets less the $M - 1 =
+3$ already-placed facets, using $|MS_3((2,1,1,1))| = 7$ and $|MS_3((1^5))| = \binom{5}{3} = 10$:
+
+$$W(3,2,0,0) \;=\; (7-3) \;+\; (7-3) \;+\; (10-3) \;=\; 4 + 4 + 7 \;=\; 15 .$$
+
+---
+
+## 6. Complexity
+
+**Proposition 5.** *At fixed $p$ and $n$, the number of states $(\lambda, j)$ reachable by (4.1) is
+$O(M)$, and the cost of evaluating $s_F(p,M,n)$ grows linearly in $M$.*
+
+*Proof sketch.* A reachable $\lambda$ is a partition of some integer $\le n$, and that set does not
+depend on $M$; $j$ ranges over $0,\dots,M-1$. The per-state work — enumerating $\bigcup_t MS_{p-t}
+(\lambda)$, grouping by successor and one table lookup each — likewise does not involve $M$ except
+through the scalar $M-j$. $\square$
+
+The bound is not tight, because most partitions of $\le n$ are unreachable at small $j$, but the
+linearity is visible immediately. Instrumented at $(p,n) = (3,9)$:
+
+| $M$ | 4 | 8 | 12 | 16 | 20 |
+| --- | --- | --- | --- | --- | --- |
+| states | 20 | 146 | 274 | 402 | 530 |
+| states $/\,M$ | 5.0 | 18.3 | 22.8 | 25.1 | 26.5 |
+
+with states$/M$ flattening toward a constant. Timings at the same $(p,n)$, in seconds, against the
+per-profile form of §3 (one tree per element of $C(p,M,n)$, no sharing):
+
+| $M$ | 4 | 6 | 8 | 10 | 12 |
+| --- | --- | --- | --- | --- | --- |
+| per-profile | 0.0015 | 0.100 | 0.849 | 3.640 | 10.759 |
+| folded (4.1) | 0.0036 | 0.018 | 0.031 | 0.043 | **0.055** |
+
+The folded cost rises by about $0.006$ s per additional facet where the per-profile form multiplies —
+$195\times$ at $M = 12$, and widening.
+
+In $n$ the behaviour is different and worth recording, because it is easy to predict wrongly. The
+state count does **not** track the number of partitions of $\le n$: at $(p,M) = (3,6)$ it runs
+$65, 97, 119, 124, 125$ for $n = 8,\dots,16$, against $\sum_{k \le n} P(k) = 67, 139, 272, 508, 915$.
+A partition needs enough facets to be reachable, so $M$ caps the state space, and the count
+saturates. The practical consequence is that (4.1) is the right form when $M$ is the large
+parameter; at small $M$ against large $n$, memoising the §3 form on (state, remaining profile tail)
+can win instead.
+
+---
+
+## 7. Relation to the cycle-index formula
+
+The standard route to $s_F$ is a Burnside average over $S_n$ acting on incidence tableaux, in which
+the central quantity is
+
+$$N(\lambda, p) \;=\; [x^p] \prod_{k \ge 1} \bigl(1 + x^k\bigr)^{m_k(\lambda)},$$
+
+the number of sub-collections of the cycles of a permutation of cycle type $\lambda$ whose lengths
+sum to $p$; the count is assembled from $N(\lambda,p)^{(M)} = N(N-1)\cdots(N-M+1)$ summed over cycle
+types with the usual weights. The two derivations are independent, but they meet at a single
+quantity, and the meeting point explains their different behaviour in $M$.
+
+**Proposition 6.** *Split the $t = 0$ branches of (4.1) by whether they split a type class. The
+non-splitting branches are the all-or-nothing selections, sub-collections of the **parts** of
+$\lambda$ summing to $p$, and their number is*
+$$A(\lambda) \;=\; [x^p]\prod_k (1 + x^k)^{m_k(\lambda)} \;=\; N(\lambda,p),$$
+*the same function, evaluated on a partition of the vertex count instead of a cycle type.
+Consequently the $t = 0$ term of (4.1) may be written*
+$$\sum_{a\ \mathrm{splitting}} V\bigl(\mathrm{grow}(\lambda,a,0),\, j-1\bigr) \;+\; \bigl(N(\lambda,p) - (M-j)\bigr)\,V(\lambda,\, j-1).$$
+
+The bracket $N(\lambda,p) - (M-j)$ reads as *how many all-or-nothing extensions are genuinely new
+facets*. So the two routes handle facet-distinctness at the same quantity from opposite directions:
+the cycle-index route raises $N$ to a falling factorial in one stroke, closing over all $M$ facets at
+once, while (4.1) decrements it one facet at a time. That is also the sharpest statement of why the
+cycle-index route is essentially free in $M$ — it never iterates over facets — and why this one
+cannot be: the ordering is what buys the elementary derivation, and $M$ is the length of the
+ordering.
+
+---
+
+## 8. Verification
+
+The recursion was checked against an independent implementation of the cycle-index formula on
+**180 parameter sets** spanning $p \le 4$, $M \le 6$, $n \le 10$, with zero mismatches, reaching
+$s_F(4,6,10) = 20\,612\,880$. It reproduces the degenerate conventions ($M = 0$ counted as the empty
+complex at $n = 0$; zero unless $p \le n \le pM$; zero when $\binom{n}{p} < M$) and a published
+reference table of 21 values across all three labelings.
+
+The per-profile weights of §3 were checked separately, by enumerating isomorphism classes directly
+and grouping them by profile — this is what establishes $W(3,1,1,0) = 22$ and the $6 + 22 + 15 = 43$
+of §3.1, and what confirms that condition (4) of Proposition 2 rejects only empty profiles.
+
+---
+
+## 9. Implementation notes
+
+Four errors are easy to make and none is caught by the total coming out right on a single small
+case; all four were live in a first implementation.
+
+1. **Add the new vertices of the facet being placed, not of the next one.** At stage $i$ the fresh
+   class has $n_i$ members. Adding $n_{i+1}$ instead silently loses vertices — at $c = (3,2,0,0)$ it
+   leaves three where $S_2 = 5$ — and every later stage is then built on a short state. The error is
+   invisible whenever $n_i = n_{i+1}$, which is why a profile like $(3,1,1,0)$ hides it.
+2. **Subtract $i-1$, not $i$.** There are $i-1$ earlier facets at stage $i$, hence $M-1$ at the last.
+3. **Remove the forbidden branches; do not subtract from each surviving term.** Subtracting $i-1$
+   from every term of the sum gives $\sum_a W(a) - (i-1)|MS_p(\lambda)|$, which at stage 3 of the
+   example in §5 is $19 - 15 = 4$ against the true $15$. The two agree only at the leaves, where the
+   completions are all $1$ — which is exactly why a terminal-only statement of the rule looks
+   correct.
+4. **The all-or-nothing branches *are* the forbidden ones**, not merely equinumerous with them. It
+   is because they leave $\lambda$ unchanged (Proposition 3(3)) that the correction can be applied
+   without the type identities at all. An implementation that identifies them by comparing successor
+   partitions must compare against the *sorted* $\lambda$, since $\mathrm{grow}$ returns a sorted
+   partition while the live type-class list need not be in sorted order.
+
+For the state to be canonical, keep the type classes sorted by size so that $\lambda$ and the
+selection vectors agree in indexing; branches should be grouped by successor partition before
+weighting, since the weight depends only on the successor.
