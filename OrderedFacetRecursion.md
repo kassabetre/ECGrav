@@ -85,6 +85,27 @@ matching rows.
 Write $\mathrm{Aut}(F_1,\dots,F_i) = \{\sigma \in \mathrm{Sym}(V_i) : \sigma(F_j) = F_j \text{ for
 all } j \le i\}$.
 
+**Why an automorphism group appears in a count of isomorphism classes.** We never enumerate the
+classes directly. They are built one facet at a time, and the only quantity each step needs is *how
+many inequivalent ways the next facet can be added*. That is an orbit count, because two extensions
+of the **same** configuration are isomorphic exactly when some automorphism of that configuration
+carries one added facet to the other: an isomorphism of $(i{+}1)$-tuples must match $F_j$ to $F_j$
+for every $j \le i$, so its restriction to $V_i$ lies in $\mathrm{Aut}(F_1,\dots,F_i)$. So
+$\mathrm{Aut}$ of the **parent** classifies the **children**.
+
+> **The group is the one being extended, not the one produced.** Take $F_1 = \{1,2,3\}$ at $p=3$,
+> and its two extensions $A = (\{1,2,3\},\{1,4,5\})$ and $B = (\{1,2,3\},\{2,4,5\})$. These are
+> isomorphic, via $(1\,2)$ — and $(1\,2) \in \mathrm{Aut}(F_1) = \mathrm{Sym}(\{1,2,3\})$, which
+> is the group governing this step. It is *not* in $\mathrm{Aut}(A)$, and that is no objection:
+> $\mathrm{Aut}(A)$ governs the step *after*, when a third facet is added to $A$. The recursion
+> rolls, each configuration's automorphism group classifying the next facet's options and the
+> extended configuration then supplying its own.
+>
+> Carried out for $F_1 = \{1,2,3\}$, the three orbits are $|F_1 \cap F_2| = 2, 1, 0$ —
+> representatives $(\{1,2,3\},\{1,2,4\})$, $(\{1,2,3\},\{1,4,5\})$, $(\{1,2,3\},\{4,5,6\})$ —
+> which is precisely the branch list out of $\lambda = (3)$ in §4, the fourth possibility
+> $|F_1 \cap F_2| = 3$ being barred by distinctness. Both $A$ and $B$ represent the middle orbit.
+
 **Proposition 1.** *Let $T_1,\dots,T_s$ be the type classes of $(F_1,\dots,F_i)$. Then*
 
 1. $\mathrm{Aut}(F_1,\dots,F_i) \;=\; \mathrm{Sym}(T_1) \times \dots \times \mathrm{Sym}(T_s)$,
@@ -111,7 +132,8 @@ bijection $N \to N'$. $\square$
 The factors are independent because the classes are disjoint, so an automorphism is one free
 permutation per class. Classes of size $1$ contribute $1!= 1$ and impose no choice at all; a
 configuration whose classes are all singletons has trivial $\mathrm{Aut}$. Note the order depends
-only on $\lambda$ — a first indication that the integer partition is the right state.
+only on $\lambda$ — a first indication that the integer partition is the right state. The recursion itself uses only the **orbits** of
+$\mathrm{Aut}$ and never its order, so this corollary is orientation rather than machinery.
 
 *The two examples of §2.1.* For $(\{1,2,3\},\{1,2,4\})$, with classes $\{1,2\}, \{3\}, \{4\}$,
 only the first is free:
