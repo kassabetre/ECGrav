@@ -106,6 +106,29 @@ and $\phi(S) = S'$, so $S$ and $S'$ lie in one $\mathrm{Aut}$-orbit and $a = a'$
 $a = a'$ and $|N| = |N'|$, compose an element of $\mathrm{Aut}$ carrying $S$ to $S'$ with any
 bijection $N \to N'$. $\square$
 
+**Corollary 1.1.** $\displaystyle |\mathrm{Aut}(F_1,\dots,F_i)| \;=\; \prod_{u=1}^{s} |T_u|! \;=\; \prod_u \lambda_u!$
+
+The factors are independent because the classes are disjoint, so an automorphism is one free
+permutation per class. Classes of size $1$ contribute $1!= 1$ and impose no choice at all; a
+configuration whose classes are all singletons has trivial $\mathrm{Aut}$. Note the order depends
+only on $\lambda$ — a first indication that the integer partition is the right state.
+
+*The two examples of §2.1.* For $(\{1,2,3\},\{1,2,4\})$, with classes $\{1,2\}, \{3\}, \{4\}$,
+only the first is free:
+$$\mathrm{Aut} \;=\; \mathrm{Sym}(\{1,2\}) \times \mathrm{Sym}(\{3\}) \times \mathrm{Sym}(\{4\}) \;=\; \{\,e,\ (1\,2)\,\}, \qquad 2!\,1!\,1! = 2 .$$
+Read from the constraints instead: $\sigma$ must fix $F_1 \cap F_2 = \{1,2\}$,
+$F_1 \setminus F_2 = \{3\}$ and $F_2 \setminus F_1 = \{4\}$ setwise, and the last two being
+singletons force $\sigma(3) = 3$, $\sigma(4) = 4$. For $(\{1,2,3\},\{1,4,5\})$, with classes
+$\{1\}, \{2,3\}, \{4,5\}$, two classes are free and combine independently:
+$$\mathrm{Aut} \;=\; \{\,e,\ (2\,3),\ (4\,5),\ (2\,3)(4\,5)\,\}, \qquad 1!\,2!\,2! = 4 .$$
+
+> **This is not the automorphism group of the underlying unlabeled complex.** $\mathrm{Aut}$ here
+> fixes each $F_j$ *individually*, because the facets carry labels. In the second example a vertex
+> permutation swapping the two triangles exists, but it sends $F_1 \to F_2$ and is therefore
+> excluded. The distinction is the same one that makes the facet-labeled count per isomorphism class
+> $M!/|H|$ with $H$ the image of the full automorphism group in $\mathrm{Sym}\{F_1,\dots,F_M\}$,
+> rather than $M!$ divided by that group's own order.
+
 Part (2) is what licenses discarding the *identities* of the types and keeping only the multiset of
 their sizes. The count of choices is
 
