@@ -17,8 +17,11 @@
 
 Throughout, $p \ge 1$ is the **purity** (every facet has exactly $p$ vertices), $M \ge 0$ the
 **facet order** (the number of facets), and $n \ge 0$ the **vertex count**. Write
-$[n] = \{1,\dots,n\}$, let $S_n$ be the symmetric group on $[n]$, and for a partition $\lambda$ let
-$m_k(\lambda)$ be its number of parts equal to $k$ and $|\lambda|$ the sum of its parts. We write
+$[n] = \{1,\dots,n\}$ and let $S_n$ be the symmetric group on $[n]$; for an arbitrary finite set
+$\Omega$ write $\mathrm{Sym}(\Omega)$ for the symmetric group on $\Omega$, so
+$S_n = \mathrm{Sym}([n])$. For a
+partition $\lambda$ let $m_k(\lambda)$ be its number of parts equal to $k$, $\ell(\lambda)$ its number
+of parts, and $|\lambda|$ the sum of its parts; $P(k)$ denotes the number of partitions of $k$. We write
 partitions as weakly decreasing tuples, $(2,2,1)$, with $(1^5)$ abbreviating $(1,1,1,1,1)$.
 
 Let
@@ -106,12 +109,12 @@ $\mathrm{Aut}$ of the **parent** classifies the **children**.
 > which is precisely the branch list out of $\lambda = (3)$ in §4, the fourth possibility
 > $|F_1 \cap F_2| = 3$ being barred by distinctness. Both $A$ and $B$ represent the middle orbit.
 
-**Proposition 1.** *Let $T_1,\dots,T_s$ be the type classes of $(F_1,\dots,F_i)$. Then*
+**Proposition 1.** *Let $T_1,\dots,T_\ell$ be the type classes of $(F_1,\dots,F_i)$, so $\ell = \ell(\lambda)$. Then*
 
-1. $\mathrm{Aut}(F_1,\dots,F_i) \;=\; \mathrm{Sym}(T_1) \times \dots \times \mathrm{Sym}(T_s)$,
+1. $\mathrm{Aut}(F_1,\dots,F_i) \;=\; \mathrm{Sym}(T_1) \times \dots \times \mathrm{Sym}(T_\ell)$,
    *the permutations preserving each type class setwise;*
 2. *the orbits of $\mathrm{Aut}$ on $k$-element subsets of $V_i$ are in bijection with the vectors*
-   $$MS_k(\lambda) \;=\; \bigl\{\, a = (a_1,\dots,a_s) \;:\; 0 \le a_u \le |T_u|,\ \textstyle\sum_u a_u = k \,\bigr\},$$
+   $$MS_k(\lambda) \;=\; \bigl\{\, a = (a_1,\dots,a_\ell) \;:\; 0 \le a_u \le |T_u|,\ \textstyle\sum_u a_u = k \,\bigr\},$$
    *a $k$-element subset $S \subseteq V_i$ corresponding to the vector with $a_u = |S \cap T_u|$,
    its intersection sizes with the type classes;*
 3. *two extensions of $(F_1,\dots,F_i)$ by one further facet are isomorphic as facet-labeled
@@ -121,14 +124,14 @@ $\mathrm{Aut}$ of the **parent** classifies the **children**.
 \Leftrightarrow \sigma(v) \in F_j$, i.e. iff $\mathrm{ty}(\sigma(v)) = \mathrm{ty}(v)$ for all $v$ —
 which is exactly preservation of the type classes. (2) Immediate from (1): a product of symmetric
 groups acting on subsets has orbits classified by the intersection sizes, and every vector $a$ in
-range is realised. (3) Let $F_{i+1} = S \sqcup N$ with $S = F_{i+1} \cap V_i$ and $N$ the new
-vertices, and similarly $F_{i+1}' = S' \sqcup N'$. Any isomorphism $\phi$ of the $(i{+}1)$-tuples
+range is realised. (3) Let $F_{i+1} = S \sqcup D$ with $S = F_{i+1} \cap V_i$ and $D$ the new
+vertices, and similarly $F_{i+1}' = S' \sqcup D'$. Any isomorphism $\phi$ of the $(i{+}1)$-tuples
 maps $F_j \to F_j$ for $j \le i$, hence maps $V_i$ onto itself, so $\phi|_{V_i} \in \mathrm{Aut}$;
 and $\phi(S) = S'$, so $S$ and $S'$ lie in one $\mathrm{Aut}$-orbit and $a = a'$. Conversely, given
-$a = a'$ and $|N| = |N'|$, compose an element of $\mathrm{Aut}$ carrying $S$ to $S'$ with any
-bijection $N \to N'$. $\square$
+$a = a'$ and $|D| = |D'|$, compose an element of $\mathrm{Aut}$ carrying $S$ to $S'$ with any
+bijection $D \to D'$. $\square$
 
-**Corollary 1.1.** $\displaystyle |\mathrm{Aut}(F_1,\dots,F_i)| \;=\; \prod_{u=1}^{s} |T_u|! \;=\; \prod_u \lambda_u!$
+**Corollary 1.1.** $\displaystyle |\mathrm{Aut}(F_1,\dots,F_i)| \;=\; \prod_{u=1}^{\ell} |T_u|! \;=\; \prod_u \lambda_u!$
 
 The factors are independent because the classes are disjoint, so an automorphism is one free
 permutation per class. Classes of size $1$ contribute $1!= 1$ and impose no choice at all; a
@@ -155,7 +158,7 @@ $$\mathrm{Aut} \;=\; \{\,e,\ (2\,3),\ (4\,5),\ (2\,3)(4\,5)\,\}, \qquad 1!\,2!\,
 Part (2) is what licenses discarding the *identities* of the types and keeping only the multiset of
 their sizes. The count of choices is
 
-$$\bigl| MS_k(\lambda) \bigr| \;=\; [x^k] \prod_{u=1}^{s} \bigl(1 + x + \dots + x^{\lambda_u}\bigr),$$
+$$\bigl| MS_k(\lambda) \bigr| \;=\; [x^k] \prod_{u=1}^{\ell} \bigl(1 + x + \dots + x^{\lambda_u}\bigr),$$
 
 a function of $\lambda$ alone. Part (3) says distinct choices give non-isomorphic extensions, so no
 correction for over- or under-counting is needed when we branch over $MS_k(\lambda)$.
@@ -212,7 +215,7 @@ direct enumeration confirms each supports no classes. The three survivors carry
 
 Placing facets in order makes the distinctness condition local, and cheap.
 
-**Proposition 3.** *Let $(F_1,\dots,F_{i-1})$ have type classes $T_1,\dots,T_s$ and partition
+**Proposition 3.** *Let $(F_1,\dots,F_{i-1})$ have type classes $T_1,\dots,T_\ell$ and partition
 $\lambda$, and consider extending it by $F_i$ with $n_i$ new vertices.*
 
 1. *If $n_i > 0$ then $F_i \neq F_j$ automatically for every $j < i$.*
@@ -370,7 +373,7 @@ quantity, and the meeting point explains their different behaviour in $M$.
 **Proposition 6.** *Split the $t = 0$ branches of (4.1) by whether they split a type class. The
 non-splitting branches are the all-or-nothing selections, sub-collections of the **parts** of
 $\lambda$ summing to $p$, and their number is*
-$$A(\lambda) \;=\; [x^p]\prod_k (1 + x^k)^{m_k(\lambda)} \;=\; N(\lambda,p),$$
+$$[x^p]\prod_k (1 + x^k)^{m_k(\lambda)} \;=\; N(\lambda,p),$$
 *the same function, evaluated on a partition of the vertex count instead of a cycle type.
 Consequently the $t = 0$ term of (4.1) may be written*
 $$\sum_{a\ \mathrm{splitting}} V\bigl(\mathrm{grow}(\lambda,a,0),\, j-1\bigr) \;+\; \bigl(N(\lambda,p) - (M-j)\bigr)\,V(\lambda,\, j-1).$$
