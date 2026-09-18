@@ -11,7 +11,12 @@ Notation: $p$ is the **purity** (every facet has $p$ vertices), $M$ the **facet 
 matching `NumVertexLabeledPureComplexes` and `NumFacetLabeledPureComplexes`. $[n]$ is
 $\{1,\dots,n\}$, $S_n$ the symmetric group, $\lambda \vdash n$ an integer partition, $m_k$
 the number of parts of $\lambda$ equal to $k$, and $z_\lambda = \prod_k k^{m_k} m_k!$, so
-that $n!/z_\lambda$ is the number of permutations of cycle type $\lambda$.
+that $n!/z_\lambda$ is the number of permutations of cycle type $\lambda$. $\mathrm{Sym}(\Omega)$
+is the symmetric group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$. The three counts of
+§1 are written $U(p,M,n)$ for the fully unlabeled one specified here
+(`NumUnlabeledPureComplexes`), $\mathrm{VL}(p,M,n)$ for the vertex-labeled
+(`NumVertexLabeledPureComplexes`) and $\mathrm{FL}(p,M,n)$ for the facet-labeled
+(`NumFacetLabeledPureComplexes`, written $s_F$ in its own specification).
 
 ---
 
@@ -128,7 +133,8 @@ collecting $m = dj$ gives $\sum_m \frac{z^m}{m} \sum_{d \mid m} d\,n_d\,(-1)^{m/
 $\sum_{d \mid m} d\,n_d = f(m)$, because the orbits whose size divides $m$ consist exactly of
 the points fixed by $\sigma^m$. Splitting the sign by the parity of $m/d$ — for $m$ even,
 $m/d$ is even iff $d \mid m/2$ — leaves $\ell(m) = f(m) - 2f(m/2)$, and $\ell(m) = f(m)$ for
-$m$ odd. Then $z P' = P \cdot \sum_m \ell(m) z^m$ gives the recurrence. $\square$
+$m$ odd. Then $z P' = P \cdot \sum_m \ell(m) z^m$, with $P = \prod_d (1+z^d)^{n_d}$ the product whose
+coefficients are the $c(m)$, gives the recurrence. $\square$
 
 This is worth more than tidiness: $n_d$ is on the order of $\binom{n}{p}/d$, so the binomial
 expansion of $(1+z^d)^{n_d}$ asked for binomial coefficients of enormous arguments, whereas
@@ -265,8 +271,10 @@ number of ways to put one back depends only on $(q,n)$. On *isomorphism classes*
 the deletion map is the number of $\mathrm{Aut}(K)$-orbits on candidate facets, which varies
 from class to class. Burnside averaging is not compatible with a sequential decomposition.
 (`NumFacetLabeledPureComplexes` has no such recurrence either — it is already a cycle-type
-sum. Its Stirling relation $B = \sum_k S(M,k) F$ is an identity between two counting problems,
-used for verification, not a means of computing $F$.)
+sum. Its Stirling relation $B(p,M,n) = \sum_k S(M,k)\,\mathrm{FL}(p,k,n)$ — with $S(M,k)$ the
+Stirling numbers of the second kind and $B$ the number of *covering* tableaux with repeated columns
+allowed (`FacetLabeledCount.md` §3.5) — is an identity between two counting problems, used for
+verification, not a means of computing $\mathrm{FL}$.)
 
 **Empirical confirmation.** A linear-algebra ansatz search for
 $\sum_{i,j} c_{ij}(M,n)\,U(M-i,n-j) = 0$ with polynomial $c_{ij}$ returned nothing at every
@@ -329,9 +337,11 @@ Three of these are independent of the derivation rather than of its endpoints:
 
 ### 8.1 A second oracle: the joint canonical form
 
-The objects are $X/(S_n \times S_M)$ — tuples of facets modulo relabelling the vertices *and*
-relabelling the facets — and that double quotient can be taken in either order. The brute-force
-oracle above takes it as $(X/S_M)/S_n$: it forms *sets* of facets, which has already forgotten the
+Write $X$ for the set of ordered $M$-tuples of pairwise distinct $p$-subsets of $[n]$ covering
+$[n]$, on which $S_n$ acts by relabelling vertices and $S_M$ by permuting the facet labels. The
+objects of §1 are $X/(S_n \times S_M)$ — tuples modulo both — and that double quotient can be taken
+in either order. The brute-force oracle above takes it as $(X/S_M)/S_n$: it forms *sets* of facets,
+which has already forgotten the
 facet order, then groups those under $S_n$. The oracle here takes the other order,
 $(X/S_n)/S_M$: start from the **facet-labeled** classes, which are $X/S_n$ and are exactly the
 incidence tableaux of `FacetLabeledCount.md` §2, then quotient those by $S_M$.
@@ -353,7 +363,7 @@ $$U(p,M,n) \;=\; \#\{\,\mathrm{canon}(S) \;:\; S \text{ a facet-labeled class}\,
 What it removes is *arithmetic*: leg 1 recovers the three counts through $n!/|\mathrm{Stab}|$ and
 $M!/|H|$ and has to guard that orbit $\times$ stabiliser $= n!$, whereas this computes no
 automorphism group, no stabiliser and no index. It counts distinct values of a canonical form. The
-two failure modes are disjoint, and it exercises $s_F$ and $U$ against each other through the
+two failure modes are disjoint, and it exercises $\mathrm{FL}$ and $U$ against each other through the
 tableau picture rather than through orbit–stabiliser bookkeeping.
 
 **Worked example.** At $p=2$, $M=4$, $n=5$, take the tableau
@@ -371,7 +381,7 @@ leaves exactly $4$, which is $U(2,4,5)$.
 > facets means. But the row order is computed lexicographically **from the facet numbers**, so it is
 > not $\tau$-equivariant: relabelling the facets reorders the rows and permutes every column
 > vector's coordinates. The result is a quotient by no group at all, and it lands strictly between
-> the two counts — at $(2,4,5)$ it gives $10$ against $U = 4$ and $s_F = 29$, at $(3,4,5)$ it gives
+> the two counts — at $(2,4,5)$ it gives $10$ against $U = 4$ and $\mathrm{FL} = 29$, at $(3,4,5)$ it gives
 > $11$ against $5$ and $43$. It both merges genuinely distinct facet-labeled classes and splits a
 > single unlabeled one: at $(2,4,5)$ the classes
 > $\{1,2\},\{1,3\},\{2,3\},\{4\},\{4\}$ and $\{1,2\},\{1,4\},\{2,4\},\{3\},\{3\}$ share a column set,
@@ -379,13 +389,13 @@ leaves exactly $4$, which is $U(2,4,5)$.
 > $\tau$ is not a convenience; it is what makes the construction a quotient.
 
 **Verified** on 17 parameter sets across $p \in \{1,2,3,4\}$, $M \le 6$, $n \le 7$ — zero
-mismatches, on values to $U(4,4,7) = 29$ from $s_F = 342$, and $U(2,6,6) = 15$ from $s_F = 3850$.
+mismatches, on values to $U(4,4,7) = 29$ from $\mathrm{FL} = 342$, and $U(2,6,6) = 15$ from $\mathrm{FL} = 3850$.
 
 **Cost, and the range it is usable in.** The work is (number of facet-labeled classes) $\times\ M!$,
 so it is enumeration-bound twice over: $0.013$ s at $(3,4,5)$, $0.115$ s at $(4,4,7)$, $0.405$ s at
-$(2,5,6)$, but $32$ s at $(2,6,6)$ where $s_F = 3850$ and $M! = 720$. The $M!$ factor can be cut by
+$(2,5,6)$, but $32$ s at $(2,6,6)$ where $\mathrm{FL} = 3850$ and $M! = 720$. The $M!$ factor can be cut by
 refining the facets on cheap invariants before branching — the standard canonical-augmentation
-move — but the $s_F$ factor cannot: this is an oracle for small parameters, not a counting method.
+move — but the $\mathrm{FL}$ factor cannot: this is an oracle for small parameters, not a counting method.
 §6's Burnside sum returns a 105-digit $U(5,50,16)$ from 231 cycle types in $0.16$ s, and no
 canonical form competes with that, because Burnside never touches an object.
 
