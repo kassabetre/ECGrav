@@ -376,7 +376,9 @@ and there are exponentially many profiles against polynomially many states. Prof
 
 ---
 
-## 5. Worked example: $W(3,2,0,0) = 15$
+## 5. Worked examples
+
+### 5.1 One profile weight: $W(3,2,0,0) = 15$
 
 Take $p = 3$, $M = 4$, and the profile $c = (3,2,0,0)$, so $n = 5$.
 
@@ -405,6 +407,86 @@ Proposition 3 predicts. Three branches survive.
 3$ already-placed facets, using $|MS_3((2,1,1,1))| = 7$ and $|MS_3((1^5))| = \binom{5}{3} = 10$:
 
 $$W(3,2,0,0) \;=\; (7-3) \;+\; (7-3) \;+\; (10-3) \;=\; 4 + 4 + 7 \;=\; 15 .$$
+
+### 5.2 The whole count: $s_F(3,4,5) = 43$
+
+The same parameters, now through (4.1), which never mentions a profile. By (4.2) the answer is
+$V\bigl((3), 3\bigr)$; throughout, $n = 5$, $M = 4$, the base is $V(\lambda, 0) = [\,|\lambda| = 5\,]$,
+and $M - j$ is the number of facets already placed, so $j = 3$ means one.
+
+**The top level.** $\lambda = (3)$, so $r = n - 3 = 2$ and $M - j = 1$. A single type class admits one
+selection vector per $t$:
+
+| $t$ | $a \in MS_{3-t}\bigl((3)\bigr)$ | $\mathrm{grow}$ | contributes |
+| --- | --- | --- | --- |
+| $0$ | $(3)$ | $(3)$ | $V\bigl((3),2\bigr) - 1\cdot V\bigl((3),2\bigr) \;=\; 0$ |
+| $1$ | $(2)$ | $(2,1,1)$ | $V\bigl((2,1,1),2\bigr) \;=\; 28$ |
+| $2$ | $(1)$ | $(2,2,1)$ | $V\bigl((2,2,1),2\bigr) \;=\; 15$ |
+
+$$s_F(3,4,5) \;=\; 0 + 28 + 15 \;=\; 43 .$$
+
+Compare the three orbits listed in §2.2 for $F_1 = \{1,2,3\}$. Since $t = p - |F_1 \cap F_2|$, the
+rows above are $|F_1 \cap F_2| = 3, 2, 1$; the fourth orbit, $|F_1 \cap F_2| = 0$, would need $t = 3$
+and is cut by the budget $r = 2$, not by distinctness. The $t = 0$ row is the repeat $F_2 = F_1$, and
+here the subtraction consumes the entire term, $MS_3((3))$ having exactly one element.
+
+**The $t = 1$ subtree.** $\lambda = (2,1,1)$, $r = 1$, $M - j = 2$. The classes are $\{1,2\}$ of type
+$\{1,2\}$, one vertex of type $\{1\}$ and one of type $\{2\}$ — the configuration
+$(\{1,2,3\},\{1,2,4\})$ of §2.2. In those coordinates:
+
+| $t$ | $a$ | $\mathrm{grow}$ | $V(\cdot,1)$ | |
+| --- | --- | --- | --- | --- |
+| $0$ | $(2,1,0)$ | $(2,1,1)$ | $4$ | $= F_1$, forbidden |
+| $0$ | $(2,0,1)$ | $(2,1,1)$ | $4$ | $= F_2$, forbidden |
+| $0$ | $(1,1,1)$ | $(1^4)$ | $6$ | |
+| $1$ | $(2,0,0)$ | $(2,1,1,1)$ | $4$ | |
+| $1$ | $(1,1,0)$ | $(1^5)$ | $7$ | |
+| $1$ | $(1,0,1)$ | $(1^5)$ | $7$ | |
+| $1$ | $(0,1,1)$ | $(2,1,1,1)$ | $4$ | |
+
+The $t = 0$ rows sum to $14$, less $2\,V\bigl((2,1,1),1\bigr) = 8$, leaving $6$; the $t = 1$ rows sum
+to $22$. So $V\bigl((2,1,1),2\bigr) = 6 + 22 = 28$. The subtraction has removed precisely the two
+forbidden rows, each worth $4$ — visible here because they are the all-or-nothing selections and
+return to $\lambda$.
+
+**The $t = 2$ subtree.** $\lambda = (2,2,1)$ with $r = 0$, so only $t = 0$ survives, and this node is
+§5.1's stage 3 read again. Its five branches carry $V(\cdot,1) = 4, 2, 4, 7, 2$, summing to $19$,
+less $2\,V\bigl((2,2,1),1\bigr) = 4$, giving $V\bigl((2,2,1),2\bigr) = 15$. Note the bookkeeping
+differs from §5.1 while the answer does not: §5.1 discards the forbidden branches before descending,
+whereas (4.1) descends into them and subtracts them afterwards.
+
+**The leaves**, all at $j = 1$, where $M - j = 3$ and a state counts $1$ iff it has five vertices:
+
+| state | $r$ | value |
+| --- | --- | --- |
+| $V\bigl((1^5),1\bigr)$ | $0$ | $\binom{5}{3} - 3 = 10 - 3 = 7$ |
+| $V\bigl((2,1,1,1),1\bigr)$ | $0$ | $\lvert MS_3\bigl((2,1,1,1)\bigr)\rvert - 3 = 7 - 3 = 4$ |
+| $V\bigl((2,2,1),1\bigr)$ | $0$ | $5 - 3 = 2$ |
+| $V\bigl((1^4),1\bigr)$ | $1$ | $t=0$ gives $0$; $t=1$ gives $\binom{4}{2} = 6$ |
+| $V\bigl((2,1,1),1\bigr)$ | $1$ | $t=0$ gives $0$; $t=1$ gives $4$ |
+
+At $\lambda = (1^5)$ the automorphism group is trivial, so orbits *are* subsets and the count is the
+plain $\binom{5}{3}$ less the three facets already placed. Where $r = 1$ the $t = 0$ branches all
+die at the base, having only four vertices with no further facet able to add a fifth.
+
+**The state §4 warns about.** $V\bigl((3),2\bigr)$ is evaluated here, and its $t = 0$ term is
+$1 - 2\,V\bigl((3),1\bigr) = 1 - 2 = -1$, with $t = 1$ and $t = 2$ giving $4$ and $2$, so the entry is
+$5$. It is unrealisable — two distinct facets cannot leave one type class — and it enters the answer
+only as $V\bigl((3),2\bigr) - V\bigl((3),2\bigr)$ in the top row above.
+
+**The profile table, recovered.** Ten states are visited in all. Grouping §3.1's profiles by $n_2$
+reproduces the top-level $t$-sum exactly:
+
+| $t = n_2$ | profiles | $\sum W$ | top-level term |
+| --- | --- | --- | --- |
+| $0$ | $(3,0,2,0)$, $(3,0,1,1)$, $(3,0,0,2)$ | $0 + 0 + 0$ | $0$ |
+| $1$ | $(3,1,0,1)$, $(3,1,1,0)$ | $6 + 22$ | $28$ |
+| $2$ | $(3,2,0,0)$ | $15$ | $15$ |
+
+and one level down the split continues: the $6$ and the $22$ are exactly the $t = 0$ and $t = 1$
+halves of $V\bigl((2,1,1),2\bigr)$ computed above. This is what "a root-to-leaf path is a profile"
+means concretely. The $t = 0$ row is also the claim of §4 in miniature — the three profiles
+condition (4) would have discarded contribute $0$ without being identified, let alone excluded.
 
 ---
 
@@ -510,7 +592,7 @@ small case; the first four were all live in a first implementation.
 2. **Subtract $i-1$, not $i$.** There are $i-1$ earlier facets at stage $i$, hence $M-1$ at the last.
 3. **Remove the forbidden branches; do not subtract from each surviving term.** Subtracting $i-1$
    from every term of the sum gives $\sum_a W(a) - (i-1)|MS_p(\lambda)|$, which at stage 3 of the
-   example in §5 is $19 - 15 = 4$ against the true $15$. The two agree only at the leaves, where the
+   $\lambda = (2,2,1)$ node of §5.2 is $19 - 15 = 4$ against the true $15$. The two agree only at the leaves, where the
    completions are all $1$ — which is exactly why a terminal-only statement of the rule looks
    correct.
 4. **The all-or-nothing branches *are* the forbidden ones**, not merely equinumerous with them. It
