@@ -155,6 +155,50 @@ $$\mathrm{Aut} \;=\; \{\,e,\ (2\,3),\ (4\,5),\ (2\,3)(4\,5)\,\}, \qquad 1!\,2!\,
 > $M!/|H|$ with $H$ the image of the full automorphism group in $\mathrm{Sym}\{F_1,\dots,F_M\}$,
 > rather than $M!$ divided by that group's own order.
 
+**What the action is.** $\mathrm{Aut}$ acts on $\binom{V_i}{k}$, the set of all $k$-element
+subsets, *elementwise*: each $\sigma$ sends each individual subset $S$ to $\sigma(S)$, so $\sigma$
+induces a permutation of those $\binom{|V_i|}{k}$ objects, and the orbits are the cycles of that
+induced permutation group — a partition of $\binom{V_i}{k}$ into classes of mutually reachable
+subsets. It is a different and vacuous statement that $\mathrm{Aut}$ carries the *collection*
+$\binom{V_i}{k}$ onto itself; every permutation group does, which is what makes the action well
+defined rather than what its orbits are.
+
+*Example, $(F_1,F_2) = (\{1,2,3\},\{1,2,4\})$ at $k = 2$.* Here $\mathrm{Aut} = \{e,(1\,2)\}$, and
+$(1\,2)$ moves the six $2$-subsets by
+$\{1,3\} \leftrightarrow \{2,3\}$ and $\{1,4\} \leftrightarrow \{2,4\}$, fixing $\{1,2\}$ and
+$\{3,4\}$. The four orbits are therefore
+
+| orbit | $\{1,2\}$ | $\{1,3\},\{2,3\}$ | $\{1,4\},\{2,4\}$ | $\{3,4\}$ |
+| --- | --- | --- | --- | --- |
+| $a$ | $(2,0,0)$ | $(1,1,0)$ | $(1,0,1)$ | $(0,1,1)$ |
+| size | $1$ | $2$ | $2$ | $1$ |
+
+summing to $6 = \binom{4}{2}$. Two features are worth pausing on. First, $\{1,3\}$ and $\{1,4\}$
+lie in *different* orbits although both take one vertex from the large class and one from a
+singleton: $a$ records **which** class, not merely how big it was, and no identity is discarded at
+this stage. Second, orbits need not have equal size — for $(\{1,2,3\},\{1,4,5\})$ at $k = 2$ they
+are $1,1,2,2,4$ — since each has size $|\mathrm{Aut}|$ divided by a stabiliser that varies from
+orbit to orbit. The recursion counts orbits and never weights them, so this does not intrude.
+
+**When is there a single orbit?** Exactly when $\mathrm{Aut}$ is transitive on $k$-subsets. Setting
+aside the trivial ends $k = 0$ and $k = |V_i|$, where there is only one $k$-subset to be transitive
+on, a Young subgroup is transitive only when $\ell = 1$, i.e. $\mathrm{Aut} = \mathrm{Sym}(V_i)$:
+the orbit count $|MS_k(\lambda)|$ equals $\ell$ at $k = 1$ and, its coefficient sequence being
+symmetric and unimodal, is no smaller anywhere between. In the example
+$|\mathrm{Aut}| = 2$ forces every orbit to have size $1$ or $2$ and hence at least $6/2 = 3$ of
+them; concretely no automorphism can carry $\{1,2\} = F_1 \cap F_2$ to $\{3,4\}$, which meets it
+not at all. One facet earlier the picture is the opposite: for $(F_1) = (\{1,2,3\})$ there is a
+single type class, $\mathrm{Aut} = \mathrm{Sym}(\{1,2,3\})$, and $\binom{V_1}{2}$ *is* one orbit,
+matching $MS_2\bigl((3)\bigr) = \{(2)\}$. That is the general shape — each facet refines the type
+classes, shrinks $\mathrm{Aut}$ and splits orbits:
+
+$$\lambda = (3),\ \ell = 1,\ |\mathrm{Aut}| = 6,\ 1 \text{ orbit}
+\quad\xrightarrow{\ +\,F_2 = \{1,2,4\}\ }\quad
+\lambda = (2,1,1),\ \ell = 3,\ |\mathrm{Aut}| = 2,\ 4 \text{ orbits.}$$
+
+The recursion starts at the one-orbit end, with $V\bigl((p),\,M-1\bigr)$, and the growth in the
+number of orbits is its branching factor.
+
 Part (2) is what licenses discarding the *identities* of the types and keeping only the multiset of
 their sizes. The count of choices is
 
