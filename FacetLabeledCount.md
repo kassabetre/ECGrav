@@ -887,7 +887,9 @@ That is what licenses throwing the type *identities* away and keeping only the m
 reuses is choosing a sub-multiset, and both the number of choices and the resulting partition depend
 on $\lambda$ alone:
 
-$$\bigl|MS_k(\lambda)\bigr| \;=\; [x^k] \prod_i \bigl(1 + x + \dots + x^{\lambda_i}\bigr).$$
+$$\bigl|MS_k(\lambda)\bigr| \;=\; [x^k] \prod_u \bigl(1 + x + \dots + x^{\lambda_u}\bigr),$$
+
+the product running over the parts of $\lambda$, indexed by $u$ to keep $i$ for facets.
 
 | $\lambda$ | $\vert MS_2\vert$ | $\vert MS_3\vert$ |
 | --- | --- | --- |
@@ -898,8 +900,22 @@ $$\bigl|MS_k(\lambda)\bigr| \;=\; [x^k] \prod_i \bigl(1 + x + \dots + x^{\lambda
 | $(3,2,1)$ | 5 | 6 |
 
 Having chosen a sub-multiset, each partially-taken type **splits** into its taken and untaken halves
-— they are no longer interchangeable, one being in the new facet — and the $n_i$ new vertices enter
-as a fresh part. Fully-taken and untaken types do not split. That is the whole state transition.
+— they are no longer interchangeable, one being in the new facet — and the new vertices enter as a
+fresh part. Fully-taken and untaken types do not split. Write $a = (a_u)$ for the sub-multiset, so
+the facet reuses $a_u$ of the $\lambda_u$ vertices of type $u$, and $t$ for its number of new
+vertices, $t = n_i$ for the facet being placed. Then the transition is
+
+$$\mathrm{grow}(\lambda, a, t) \;=\; \biguplus_{u \,:\, a_u > 0} \{\, a_u \,\} \;\;\uplus\;\; \biguplus_{u \,:\, \lambda_u - a_u > 0} \{\, \lambda_u - a_u \,\} \;\;\uplus\;\; \{\, t : t > 0 \,\},$$
+
+a partition of $|\lambda| + t$, where $\uplus$ denotes **multiset** union — union that adds
+multiplicities, so that $\{1\} \uplus \{1\} = \{1,1\}$ and not $\{1\}$. The first two unions are
+indexed by $u$ for that reason: equal-sized types are still distinct types and each owes its own
+part. At $\lambda = (2,1,1)$ with $a = (1,1,1)$ and $t = 0$, the three taken parts and the one
+leftover part give $\mathrm{grow} = (1,1,1,1)$, a partition of $4$, where collapsing duplicates
+would return a single $1$ and lose three vertices. The third union needs no such care, holding one
+element or none.
+
+That is the whole state transition, and it depends on $\lambda$, $a$ and $t$ alone.
 
 #### 9.3.3 Distinctness, and why multiplicities survive it
 
@@ -959,7 +975,7 @@ and
 $$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr).$$
 
 Here $t$ is the new-vertex count of the facet being placed, $r = n - |\lambda|$ is the budget left,
-$\mathrm{grow}$ splits the partially-taken parts and appends $t$, and $M - j = i - 1$ is the number
+$\mathrm{grow}$ is the transition of §9.3.2, and $M - j = i - 1$ is the number
 of facets already down. Two things are worth pulling out:
 
 - **The budget is not a free coordinate.** $r = n - |\lambda|$ is forced, so the state is
