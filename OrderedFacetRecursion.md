@@ -213,12 +213,20 @@ Having chosen $a \in MS_{p-t}(\lambda)$ — reuse $a_u$ vertices from type class
 vertices, the new type classes are: for each $u$, the $a_u$ reused vertices (whose type gains the new
 facet) and the $\lambda_u - a_u$ untouched ones (whose type does not), plus one class of the $t$ new
 vertices. A class **splits** exactly when $0 < a_u < \lambda_u$; a fully-taken or wholly-untaken
-class does not. So define
+class does not. So define, writing $\uplus$ for **multiset** union — union that adds multiplicities,
+so that $\{1\} \uplus \{1\} = \{1,1\}$ and not $\{1\}$ —
 
-$$\mathrm{grow}(\lambda, a, t) \;=\; \{\, a_u : a_u > 0 \,\} \;\uplus\; \{\, \lambda_u - a_u : \lambda_u - a_u > 0 \,\} \;\uplus\; \{\, t : t > 0 \,\},$$
+$$\mathrm{grow}(\lambda, a, t) \;=\; \biguplus_{u \,:\, a_u > 0} \{\, a_u \,\} \;\;\uplus\;\; \biguplus_{u \,:\, \lambda_u - a_u > 0} \{\, \lambda_u - a_u \,\} \;\;\uplus\;\; \{\, t : t > 0 \,\},$$
 
-a partition of $|\lambda| + t$. This depends only on $\lambda$, $a$ and $t$, which together with
-Proposition 1 is the whole reason a partition suffices as state.
+a partition of $|\lambda| + t$. The multiplicities carry real weight, which is why the first two
+groups are indexed by $u$ rather than written as plain sets: equal-sized classes are still distinct
+classes and each owes its own part. At $\lambda = (2,1,1)$ with $a = (1,1,1)$ and $t = 0$, the three
+taken parts and the one leftover part give $\mathrm{grow} = (1,1,1,1)$, a partition of $4$; collapsing
+duplicates would return a single $1$ and lose three vertices. The last group needs no such care,
+holding one element or none.
+
+Note that $\mathrm{grow}$ depends only on $\lambda$, $a$ and $t$, which together with Proposition 1
+is the whole reason a partition suffices as state.
 
 ---
 
