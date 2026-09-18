@@ -14,7 +14,10 @@ the symmetric group, $\lambda \vdash n$ an integer partition, $m_k$ the number o
 $\lambda$ equal to $k$, and $z_\lambda = \prod_k k^{m_k} m_k!$, so $n!/z_\lambda$ permutations
 have cycle type $\lambda$. Write $x^{(r)} = x(x-1)\cdots(x-r+1)$ for the falling factorial,
 $P(k)$ for the number of integer partitions of $k$, and $\mathrm{Sym}(\Omega)$ for the symmetric
-group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$.
+group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$. Square brackets carry three unrelated meanings in what follows, all
+standard: $[n]$ as above; $[x^k]f$ for the coefficient of $x^k$ in a series $f$; and the **Iverson
+bracket** $[\,P\,]$, equal to $1$ when the proposition $P$ holds and $0$ when it does not, so that
+$[\,|\lambda| = n\,]$ is $1$ exactly on the partitions of $n$.
 
 The count itself is written $s_F(p,M,n)$, as in `FacetLabeledSampler.md`; the letter $F$ is
 reserved for facets. Its two siblings are written $\mathrm{VL}(p,M,n)$ for the vertex-labeled count

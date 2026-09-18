@@ -22,7 +22,10 @@ $\Omega$ write $\mathrm{Sym}(\Omega)$ for the symmetric group on $\Omega$, so
 $S_n = \mathrm{Sym}([n])$. For a
 partition $\lambda$ let $m_k(\lambda)$ be its number of parts equal to $k$, $\ell(\lambda)$ its number
 of parts, and $|\lambda|$ the sum of its parts; $P(k)$ denotes the number of partitions of $k$. We write
-partitions as weakly decreasing tuples, $(2,2,1)$, with $(1^5)$ abbreviating $(1,1,1,1,1)$.
+partitions as weakly decreasing tuples, $(2,2,1)$, with $(1^5)$ abbreviating $(1,1,1,1,1)$. Square brackets carry three unrelated meanings in what follows, all
+standard: $[n]$ as above; $[x^k]f$ for the coefficient of $x^k$ in a series $f$; and the **Iverson
+bracket** $[\,P\,]$, equal to $1$ when the proposition $P$ holds and $0$ when it does not, so that
+$[\,|\lambda| = n\,]$ is $1$ exactly on the partitions of $n$.
 
 Let
 

@@ -11,7 +11,8 @@ Notation: $p$ purity (every facet has $p$ vertices), $M$ facet order (number of 
 vertex count. $\lambda \vdash n$ is a cycle type, written either as a partition or as its
 multiplicity vector $(m_1,\dots,m_p)$, with $z_\lambda = \prod_k k^{m_k} m_k!$, so $n!/z_\lambda$
 permutations of $[n]$ have that type. $s_F(p,M,n)$ is `NumFacetLabeledPureComplexes[p,M,n]`, and
-$x^{(r)} = x(x-1)\cdots(x-r+1)$ is the falling factorial.
+$x^{(r)} = x(x-1)\cdots(x-r+1)$ is the falling factorial. $[n]$ is $\{1,\dots,n\}$; separately,
+$[x^k]f$ denotes the coefficient of $x^k$ in a series $f$.
 
 ---
 

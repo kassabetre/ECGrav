@@ -12,7 +12,9 @@ matching `NumVertexLabeledPureComplexes` and `NumFacetLabeledPureComplexes`. $[n
 $\{1,\dots,n\}$, $S_n$ the symmetric group, $\lambda \vdash n$ an integer partition, $m_k$
 the number of parts of $\lambda$ equal to $k$, and $z_\lambda = \prod_k k^{m_k} m_k!$, so
 that $n!/z_\lambda$ is the number of permutations of cycle type $\lambda$. $\mathrm{Sym}(\Omega)$
-is the symmetric group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$. The three counts of
+is the symmetric group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$. Square brackets carry two unrelated meanings in what follows, both
+standard: $[n]$ as above, and $[x^k]f$ — likewise $[z^k]f$ — for the coefficient of $x^k$ in a
+series $f$. The three counts of
 §1 are written $U(p,M,n)$ for the fully unlabeled one specified here
 (`NumUnlabeledPureComplexes`), $\mathrm{VL}(p,M,n)$ for the vertex-labeled
 (`NumVertexLabeledPureComplexes`) and $\mathrm{FL}(p,M,n)$ for the facet-labeled
