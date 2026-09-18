@@ -980,9 +980,16 @@ of facets already down. Two things are worth pulling out:
 
 - **The budget is not a free coordinate.** $r = n - |\lambda|$ is forced, so the state is
   $(\lambda, j)$ — two coordinates, not three.
-- **Condition 3 becomes unnecessary.** It cannot over-subtract: the $M-j$ earlier facets are always
-  distinct available orbits, so the bracket never goes negative, and infeasible profiles contribute
-  zero on their own.
+- **Condition 3 becomes unnecessary.** There is no profile list left to prune, and the condition was
+  never a matter of correctness anyway: the profiles it rejects carry $W(c) = 0$, and infeasible
+  branches starve on their own — at $\lambda = (3)$ with one facet down, $MS_3((3))$ has a single
+  element and it is the repeat of $F_1$, so the term is $1-1 = 0$. **The bracket can go negative**,
+  though, at states no configuration realises: the recursion reaches them because a forbidden
+  branch's successor is a configuration with a repeated facet. At $(3,4,5)$ it evaluates
+  $V\bigl((3),2\bigr)$, where $|MS_3((3))| = 1$ against $M-j = 2$, giving $1-2 = -1$. Those values
+  are consumed only in cancelling pairs at the realisable parent, so the totals are unaffected —
+  which is why an implementation must not assert non-negativity of its memo entries. See
+  `OrderedFacetRecursion.md` §4 for the cancellation argument in full.
 
 #### 9.3.6 Where it meets the Burnside derivation
 

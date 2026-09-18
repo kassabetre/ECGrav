@@ -305,37 +305,74 @@ configuration of $M - j$ facets whose type-multiplicity partition is $\lambda$. 
 say this is well defined: the branching and the size of the forbidden set depend on $(\lambda, j)$
 alone, not on the configuration realising them.
 
-**Theorem 4.** *With $r = n - |\lambda|$ the remaining vertex budget,*
+Call $(\lambda, j)$ **realisable** when some configuration of $M - j$ pairwise distinct facets does
+have partition $\lambda$. The description above defines $V$ there and nowhere else, while (4.1)
+below, read as a definition, returns a number at every pair; that the two agree wherever both mean
+anything is part of what Theorem 4 asserts.
+
+**Theorem 4.** *Define $V$ at every pair by $V(\lambda, 0) = [\,|\lambda| = n\,]$ and, for $j > 0$,
+with $r = n - |\lambda|$ the remaining vertex budget,*
 
 $$V(\lambda, j) \;=\; \sum_{t=0}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr)\;-\;(M-j)\,V(\lambda,\ j-1), \tag{4.1}$$
 
-*the subtraction applying only to the $t = 0$ term, with base $V(\lambda, 0) = [\,|\lambda| = n\,]$,
-the inner sum empty unless $0 \le p - t \le |\lambda|$, and*
+*the subtraction applying only to the $t = 0$ term and the inner sum empty unless
+$0 \le p - t \le |\lambda|$. Then $V(\lambda, j)$ is the count described above at every realisable
+$(\lambda, j)$, and*
 
 $$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr). \tag{4.2}$$
 
-*Proof.* Induction on $j$. At $j = 0$ nothing more is placed, so the configuration is complete and
-is counted iff it already has $n$ vertices; covering holds because every vertex of $V_M$ lies in some
-facet by construction. For $j > 0$: the next facet reuses $p - t$ old vertices and brings $t$ new
-ones, $t$ ranging over $0,\dots,\min(p,r)$ since it cannot exceed the budget. By Proposition 1 the
-isomorphism classes of such an extension are exactly the pairs $(t, a)$ with $a \in MS_{p-t}
-(\lambda)$, each giving successor state $\mathrm{grow}(\lambda,a,t)$; by induction each contributes
-$V(\mathrm{grow}(\lambda,a,t), j-1)$ completions. By Proposition 3 the only extensions that violate
-distinctness occur at $t = 0$, number exactly $M - j$, and all have successor state $\lambda$, so
-removing them subtracts $(M-j)V(\lambda, j-1)$. Finally (4.2): facet 1 may be taken to be any
-$p$-set, all choices isomorphic, giving the single state $(p)$ on $p$ vertices with $M-1$ facets
-left. $\square$
+*Proof.* Induction on $j$, over realisable states. At $j = 0$ nothing more is placed, so the
+configuration is complete and is counted iff it already has $n$ vertices; covering holds because
+every vertex of $V_M$ lies in some facet by construction.
 
-Two consequences are worth stating separately.
+For $j > 0$, let $\mathcal{F}$ realise $(\lambda, j)$, with its $i = M - j$ pairwise distinct
+facets. The next facet reuses $p - t$ old vertices and brings $t$ new ones, $t$ ranging over
+$0,\dots,\min(p,r)$ since it cannot exceed the budget. By Proposition 1(3) the isomorphism classes
+of such extensions are exactly the pairs $(t, a)$ with $a \in MS_{p-t}(\lambda)$, the extension by
+$(t,a)$ having partition $\mathrm{grow}(\lambda,a,t)$. By Proposition 3 the pairs violating
+distinctness occur only at $t = 0$, number exactly $M - j$, and all have successor state $\lambda$.
+A **legal** pair extends $\mathcal{F}$ to $i + 1$ pairwise distinct facets, so its successor state
+is realisable and the induction hypothesis applies to it. The count sought is therefore
+
+$$\sum_{(t,a)\ \mathrm{legal}} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr).$$
+
+It remains to see that (4.1) computes that sum. Split its double sum into legal and forbidden pairs.
+The forbidden pairs number $M - j$ and every one has successor state $\lambda$, so together they
+contribute exactly $(M-j)\,V(\lambda, j-1)$ — which is what the subtraction removes, leaving the sum
+over legal pairs alone. This cancellation is term by term and uses nothing about the *number*
+$V(\lambda, j-1)$, in particular not that $(\lambda, j-1)$ be realisable. Finally (4.2): facet 1 may
+be taken to be any $p$-set, all choices isomorphic, giving the single state $(p)$ on $p$ vertices
+with $M-1$ facets left, which is realisable. $\square$
+
+> **Off the realisable states $V$ means nothing, and can be negative.** The recursion does reach
+> such pairs: a forbidden branch's successor is $(\lambda, j-1)$, the state of a configuration with
+> a repeated facet, which need not be realisable by distinct ones. At $(p,M,n) = (3,4,5)$ it
+> evaluates $V\bigl((3), 2\bigr)$ — partition $(3)$ with two facets already down, impossible, since
+> three vertices admit only one $3$-subset. There $|MS_3((3))| = 1$ while $M - j = 2$, so the
+> $t = 0$ term is $1 - 2 = -1$: strictly more is subtracted than is present, and Proposition 3 does
+> not apply, having assumed a configuration that does not exist. Nothing is wrong, because that
+> value is consumed only in the cancelling pair at the realisable parent $\bigl((3), 3\bigr)$, where
+> the $t = 0$ term is $V((3),2) - V((3),2) = 0$. It is the cancellation, not any non-negativity,
+> that makes the recursion safe — with a consequence for implementations, §9 item 5.
+
+Three consequences are worth stating separately.
 
 **The vertex budget is not a free coordinate.** It is $r = n - |\lambda|$, forced by the state, so
 $V$ has two arguments and not three. This is what keeps the state space small.
 
-**Condition (4) of Proposition 2 is not needed here.** The recursion cannot over-subtract: by
-Proposition 3 the $M-j$ forbidden branches are always present among the $MS_p(\lambda)$, so the
-bracket never goes negative, and infeasible configurations contribute zero of their own accord.
-Folding the choice of $t$ into the recursion removes the profile enumeration entirely; profiles are
-the *derivation*, not the algorithm.
+**Condition (4) of Proposition 2 is not needed here.** There is no profile list left to prune. Nor
+was the condition ever a matter of correctness in §3: the profiles it rejects carry $W(c) = 0$
+anyway, and infeasible branches starve of their own accord — at $\lambda = (3)$ with one facet down,
+$MS_3((3))$ has a single element and that element is the repeat of $F_1$, so the term is $1 - 1 = 0$.
+Condition (4) buys speed, by not descending into subtrees that will cancel to nothing.
+
+**Folding $t$ into the recursion removes the profile enumeration entirely.** The two organisations
+walk the same objects: unrolled over the $M$ levels, the $t$ chosen at level $i$ is $n_i$, so a
+root-to-leaf path of (4.1) *is* a profile. What changes is that a profile is a **path**, while the
+memo is keyed on a **state** $(\lambda, j)$. Profiles arriving at a common state have identical
+futures, which the profile-first organisation recomputes once per profile and (4.1) computes once —
+and there are exponentially many profiles against polynomially many states. Profiles are the
+*derivation*, not the algorithm.
 
 ---
 
@@ -452,12 +489,19 @@ The per-profile weights of §3 were checked separately, by enumerating isomorphi
 and grouping them by profile — this is what establishes $W(3,1,1,0) = 22$ and the $6 + 22 + 15 = 43$
 of §3.1, and what confirms that condition (4) of Proposition 2 rejects only empty profiles.
 
+The negative intermediates of §4 were checked not to disturb the totals. Over $p \le 3$,
+$2 \le M \le 6$, $n \le 9$ — 63 parameter sets — a negative $t = 0$ term arises in **35** of them,
+and in every one the recursion still agrees with the profile organisation of §3, which never forms
+such a term. Six of these were taken further and matched against a direct construction of
+$X / S_n$ from the definition of §1: $s_F = 1, 15, 1, 43, 222, 252$ at $(p,M,n) = (2,3,3)$,
+$(2,4,4)$, $(3,4,4)$, $(3,4,5)$, $(2,5,5)$ and $(3,5,5)$.
+
 ---
 
 ## 9. Implementation notes
 
-Four errors are easy to make and none is caught by the total coming out right on a single small
-case; all four were live in a first implementation.
+Five things are easy to get wrong and none is caught by the total coming out right on a single
+small case; the first four were all live in a first implementation.
 
 1. **Add the new vertices of the facet being placed, not of the next one.** At stage $i$ the fresh
    class has $n_i$ members. Adding $n_{i+1}$ instead silently loses vertices — at $c = (3,2,0,0)$ it
@@ -474,6 +518,11 @@ case; all four were live in a first implementation.
    without the type identities at all. An implementation that identifies them by comparing successor
    partitions must compare against the *sorted* $\lambda$, since $\mathrm{grow}$ returns a sorted
    partition while the live type-class list need not be in sorted order.
+5. **Do not assert that memo entries are non-negative.** $V$ is a count only at realisable states;
+   elsewhere it is an intermediate that exists to be cancelled, and it may be negative. At
+   $(p,M,n) = (3,4,5)$ the $t = 0$ term of $V\bigl((3),2\bigr)$ is $-1$, and whole entries go
+   negative at $(3,4,4)$ and $(3,6,6)$. A defensive check for non-negativity, or an unsigned
+   accumulator, fires — or wraps — on correct code.
 
 For the state to be canonical, keep the type classes sorted by size so that $\lambda$ and the
 selection vectors agree in indexing; branches should be grouped by successor partition before
