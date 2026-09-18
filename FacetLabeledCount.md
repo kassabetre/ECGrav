@@ -12,10 +12,20 @@ of facets), $n$ the **vertex count**. The argument order is $(p, M, n)$ througho
 `NumVertexLabeledPureComplexes` and `NumUnlabeledPureComplexes`. $[n]$ is $\{1,\dots,n\}$, $S_n$
 the symmetric group, $\lambda \vdash n$ an integer partition, $m_k$ the number of parts of
 $\lambda$ equal to $k$, and $z_\lambda = \prod_k k^{m_k} m_k!$, so $n!/z_\lambda$ permutations
-have cycle type $\lambda$. Write $x^{(r)} = x(x-1)\cdots(x-r+1)$ for the falling factorial.
+have cycle type $\lambda$. Write $x^{(r)} = x(x-1)\cdots(x-r+1)$ for the falling factorial,
+$P(k)$ for the number of integer partitions of $k$, and $\mathrm{Sym}(\Omega)$ for the symmetric
+group on a finite set $\Omega$, so $S_n = \mathrm{Sym}([n])$.
 
 The count itself is written $s_F(p,M,n)$, as in `FacetLabeledSampler.md`; the letter $F$ is
-reserved for facets.
+reserved for facets. Its two siblings are written $\mathrm{VL}(p,M,n)$ for the vertex-labeled count
+(`NumVertexLabeledPureComplexes`) and $U(p,M,n)$ for the fully unlabeled one
+(`NumUnlabeledPureComplexes`); §1 says what each counts and §11 tabulates all three.
+
+**Notation below is section-local where a derivation needs it**, and three letters carry more than
+one meaning across the document: $c$ is a cycle of $\sigma$ in §3.3 and a new-vertex profile in
+§9.3; $R$ is a row of the tableau in §3.2 and a subset of the surviving labels in §9.2; $a$ is a
+row-shape multiplicity in §9.2 and a sub-multiset selection vector in §9.3. Each is defined where it
+is used, and no two of them are in play at once.
 
 ---
 
@@ -397,7 +407,9 @@ $A(2,3,5)$, over all seven cycle types of $S_5$:
 | $\{2,1,1,1\}$ | 12 | 10 | 4 | 24 | 240 |
 | $\{1^5\}$ | 120 | 1 | 10 | 720 | 720 |
 
-$T(5) = 960$, so $A(5) = 960/120 = 8$.
+Writing $T(n) = n!\,A(p,M,n)$ for the weighted total — the quantity the shipped code carries, so
+that the arithmetic stays in integers (§5) — the last column sums to $T(5) = 960$ and
+$A(5) = 960/120 = 8$.
 
 $A(2,3,4)$, over the five cycle types of $S_4$:
 
@@ -961,7 +973,7 @@ of facets already down. Two things are worth pulling out:
 Split the $t = 0$ term by whether the choice splits a type. The non-splitting choices are the
 all-or-nothing ones — sub-collections of *parts* summing to $p$ — and that count is
 
-$$A(\lambda) \;=\; [x^p]\prod_k (1+x^k)^{m_k} \;=\; N(\lambda, p),$$
+$$[x^p]\prod_k (1+x^k)^{m_k} \;=\; N(\lambda, p),$$
 
 the very quantity (3.3) is built on, here with $\lambda$ a partition of the vertex count rather than
 a cycle type. Verified identical on every $\lambda$ tested. So (9.3)'s $t=0$ term reads
