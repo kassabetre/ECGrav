@@ -231,7 +231,8 @@ The worst case is always exactly $n = pM$. Hence covering is built into the comp
 
 ## 10. Why it is uniform
 
-Uniformity is not inferred from goodness-of-fit. Three identities force it:
+Uniformity is not inferred from goodness-of-fit. Three identities force it. ($P(\cdot)$ here is a
+probability, not the fixed-pair set of §3.)
 
 | | identity | what it pins |
 | --- | --- | --- |
@@ -242,12 +243,12 @@ Uniformity is not inferred from goodness-of-fit. Three identities force it:
 Given I3 the conditional draw is uniform, so $P(S \mid \lambda,a) = 1/C_{\mathrm{cov}}(\lambda,a)$,
 and the class probability telescopes:
 
-$$P(c) \;=\; \sum_\lambda \frac{(n!/z_\lambda)\mathrm{Fix_{cov}}(\lambda)}{n!\,U} \sum_a \frac{C_{\mathrm{cov}}(\lambda,a)}{\mathrm{Fix_{cov}}(\lambda)} \cdot \frac{\#\{S \in c \text{ with profile } a\}}{C_{\mathrm{cov}}(\lambda,a)} \;=\; \frac{1}{n!\,U}\sum_\sigma \#\{S \in c : \sigma S = S\},$$
+$$P(c) \;=\; \sum_\lambda \frac{(n!/z_\lambda)\mathrm{Fix_{cov}}(\lambda)}{n!\,U(p,M,n)} \sum_a \frac{C_{\mathrm{cov}}(\lambda,a)}{\mathrm{Fix_{cov}}(\lambda)} \cdot \frac{\#\{S \in c \text{ with profile } a\}}{C_{\mathrm{cov}}(\lambda,a)} \;=\; \frac{1}{n!\,U(p,M,n)}\sum_\sigma \#\{S \in c : \sigma S = S\},$$
 
-and the inner sum is $\sum_{S \in c} |\mathrm{Stab}(S)| = n!$. So $P(c) = 1/U$ **for every class**.
+and the inner sum is $\sum_{S \in c} |\mathrm{Stab}(S)| = n!$. So $P(c) = 1/U(p,M,n)$ **for every class**.
 
 That was also computed directly rather than sampled — enumerating the classes, summing the
-per-cycle-type fixed counts, and comparing — giving exactly $1/U$ for every class on seven
+per-cycle-type fixed counts, and comparing — giving exactly $1/U(p,M,n)$ for every class on seven
 parameter sets, including the 15 classes of $\{3,4,6\}$. A third identity worth noting:
 $\mathrm{Fix_{cov}}(1^n) = $ `NumVertexLabeledPureComplexes`$(p,M,n)$, since the identity
 permutation's invariant covering sets *are* the vertex-labeled complexes — it pins the covering
@@ -264,7 +265,7 @@ Private helpers are named `RandULPC*`.
 | --- | --- | --- |
 | 3540 | `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
 | 3544 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $\binom{n}{p}$ subsets are touched |
-| 3564 | `RandULPCNd[λ,p]` | $n_d$ by Möbius inversion off the counter's $f$, so reduced cycle types cost nothing |
+| 3564 | `RandULPCNd[λ,p]` | $n_d$ by Möbius inversion off the counter's $f(e)$ (`UnlabeledCount.md` §2.5), so reduced cycle types cost nothing |
 | 3581 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
 | 3594 | `RandULPCFixCov[λ,p,M]` | $\mathrm{Fix_{cov}}$ (§5) |
 | 3601 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
@@ -292,8 +293,9 @@ Three, each exact rather than heuristic:
    Sound because $n_d(T)$ depends only on the shape of the surviving cycles, so states of equal
    shape share a memo entry. Checked separately: at size boundaries the compression holds 35/35;
    mid-class it fails 47/59, which is why per-size decisions are atomic.
-2. **Inclusion–exclusion over sub-multisets** with binomial weights, $\prod_k(u_k{+}1)$ terms
-   instead of $2^{\sum u_k}$ subsets.
+2. **Inclusion–exclusion over sub-multisets** with binomial weights: writing $u_k$ for the number
+   of uncovered cycles of length $k$, a sub-multiset is a choice of how many of each length to
+   take, so there are $\prod_k(u_k{+}1)$ terms instead of $2^{\sum_k u_k}$ subsets.
 3. **Candidates bucketed by $(\text{size}, \mathrm{supp} \cap U)$** — orbits sharing that pair lead
    to the same state, so one completion count serves a whole bucket.
 

@@ -348,7 +348,8 @@ A rejection-free **dynamic program over row-type multiplicities** carrying the c
 column-equality partition $\pi$ as part of its state — conditioning on separation instead of
 testing for it — is correct (its counts agree with $s_F$ on all 234 triples with $p \le 4$,
 $M \le 6$) but is exponential where this sampler is polynomial. Its state space is
-$2^M (n+1) (p+1)^M B_M$, and since $n \le pM$ the only free axes are $p$ and $M$, both exponential.
+$2^M (n+1) (p+1)^M B_M$ with $B_M$ the Bell number, and since $n \le pM$ the only free axes are $p$
+and $M$, both exponential.
 Building the table costs 9.7 s / 164 MB at $\{3,6,12\}$, 118 s / 1.8 GB at $\{3,7,14\}$, and did
 not finish in 180 s / 4 GB at $\{3,8,16\}$ — where this sampler draws in 0.27 ms. The reason it
 loses as a *counter* is structural: the $\big(N\big)^{(M)}$ falling factorial in
