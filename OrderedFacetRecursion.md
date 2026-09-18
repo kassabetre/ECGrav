@@ -112,7 +112,8 @@ $\mathrm{Aut}$ of the **parent** classifies the **children**.
    *the permutations preserving each type class setwise;*
 2. *the orbits of $\mathrm{Aut}$ on $k$-element subsets of $V_i$ are in bijection with the vectors*
    $$MS_k(\lambda) \;=\; \bigl\{\, a = (a_1,\dots,a_s) \;:\; 0 \le a_u \le |T_u|,\ \textstyle\sum_u a_u = k \,\bigr\},$$
-   *the correspondence sending $S$ to $a_u = |S \cap T_u|$;*
+   *a $k$-element subset $S \subseteq V_i$ corresponding to the vector with $a_u = |S \cap T_u|$,
+   its intersection sizes with the type classes;*
 3. *two extensions of $(F_1,\dots,F_i)$ by one further facet are isomorphic as facet-labeled
    $(i{+}1)$-tuples if and only if they have the same $a$ and reuse the same number of new vertices.*
 
@@ -195,8 +196,8 @@ $$s_F(p,M,n) \;=\; \sum_{c} W(c),$$
 2. $0 \le n_i \le p$ *(a facet introduces at most its own size);*
 3. $\sum_i n_i = n$ *(the facets cover $[n]$, and the sets $F_i \setminus \bigcup_{j<i}F_j$ are
    disjoint with union $[n]$);*
-4. $\binom{S_i}{p} \ge i$ *with $S_i = \sum_{j \le i} n_j$ (after $i$ facets the pool $V_i$ has $S_i$
-   vertices and must supply $i$ pairwise distinct $p$-subsets).*
+4. $\binom{|V_i|}{p} \ge i$ *with $|V_i| = \sum_{j \le i} n_j$ (after $i$ facets the pool $V_i$ must
+   supply $i$ pairwise distinct $p$-subsets).*
 
 Write $C(p,M,n)$ for the profiles meeting (1)–(4). Condition (4) is a genuine restriction and is
 sharp in the sense that it discards only empty cases: at $(p,M,n) = (3,4,5)$ it rejects exactly
@@ -291,7 +292,7 @@ Take $p = 3$, $M = 4$, and the profile $c = (3,2,0,0)$, so $n = 5$.
 
 **Stage 2**, $n_2 = 2$. Facet 2 reuses $p - n_2 = 1$ old vertex, and $|MS_1((3))| = 1$: the only
 choice is one vertex from the single class. That class splits $1 + 2$, and the two new vertices form
-a class of their own, giving state $(2,2,1)$ on $S_2 = 5$ vertices. In types:
+a class of their own, giving state $(2,2,1)$ on $|V_2| = 5$ vertices. In types:
 $\{1\}^2,\ \{2\}^2,\ \{1,2\}^1$.
 
 **Stage 3**, $n_3 = 0$. Facet 3 is three old vertices; $|MS_3((2,2,1))| = 5$. Writing selection
@@ -405,7 +406,7 @@ case; all four were live in a first implementation.
 
 1. **Add the new vertices of the facet being placed, not of the next one.** At stage $i$ the fresh
    class has $n_i$ members. Adding $n_{i+1}$ instead silently loses vertices — at $c = (3,2,0,0)$ it
-   leaves three where $S_2 = 5$ — and every later stage is then built on a short state. The error is
+   leaves three where $|V_2| = 5$ — and every later stage is then built on a short state. The error is
    invisible whenever $n_i = n_{i+1}$, which is why a profile like $(3,1,1,0)$ hides it.
 2. **Subtract $i-1$, not $i$.** There are $i-1$ earlier facets at stage $i$, hence $M-1$ at the last.
 3. **Remove the forbidden branches; do not subtract from each surviving term.** Subtracting $i-1$
