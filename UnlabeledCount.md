@@ -272,8 +272,10 @@ There is no analogue here, and it is worth recording why, so it is not re-attemp
 number of ways to put one back depends only on $(q,n)$. On *isomorphism classes* the fibre of
 the deletion map is the number of $\mathrm{Aut}(K)$-orbits on candidate facets, which varies
 from class to class. Burnside averaging is not compatible with a sequential decomposition.
-(`NumFacetLabeledPureComplexes` has no such recurrence either — it is already a cycle-type
-sum. Its Stirling relation $B(p,M,n) = \sum_k S(M,k)\,\mathrm{FL}(p,k,n)$ — with $S(M,k)$ the
+(`NumFacetLabeledPureComplexes` **as shipped** has no such recurrence either — it is already a
+cycle-type sum. $\mathrm{FL}$ itself does have one, the partition-state deletion recursion of
+`FacetLabeledCount.md` §9.3, but over partition states rather than in $(M,n)$; §7.1 below asks
+whether it transfers to $U$, and it does not. Its Stirling relation $B(p,M,n) = \sum_k S(M,k)\,\mathrm{FL}(p,k,n)$ — with $S(M,k)$ the
 Stirling numbers of the second kind and $B$ the number of *covering* tableaux with repeated columns
 allowed (`FacetLabeledCount.md` §3.5) — is an identity between two counting problems, used for
 verification, not a means of computing $\mathrm{FL}$.)
@@ -297,6 +299,107 @@ It rules out pure-$n$ recurrences and nothing more; the structural reason above 
 one.
 
 **What does exist** is the recurrence of §2.6, one level down, inside a single cycle type.
+
+### 7.1 Why the facet-labeled deletion recursion does not transfer
+
+`FacetLabeledCount.md` §9.3 gives $\mathrm{FL}$ a Burnside-free recursion, linear in $M$, whose state
+is an integer partition. Since it sidesteps cycle types entirely, the obvious question is whether it
+transfers to $U$. It does not, and the obstruction is the one named above, now with a measurement.
+
+That recursion rests on two facts about a configuration $C$ of $i$ facets: the orbits of one-facet
+extensions depend only on the state, and the number of **forbidden** branches — extensions repeating
+an existing facet — is exactly $i-1$, a constant. Unlabeled, $\mathrm{Aut}(C)$ may permute the
+facets, so the forbidden count becomes the number of $\mathrm{Aut}(C)$-orbits on the facets of $C$,
+written $\varphi(C)$ below, and it is neither $i$ nor a function of the partition. At $p = 3$,
+$i = 3$, $n = 6$, two configurations with the same $\lambda = (2,2,2,1,1,1)$:
+
+| $C$ | $\lvert\mathrm{Aut}(C)\rvert$ | $\varphi(C)$ | extension orbits at $t = 0,1,2$ |
+| --- | --- | --- | --- |
+| $\{123,\,124,\,356\}$ | $4$ | $3$ | $7,\ 8,\ 4$ |
+| $\{123,\,145,\,246\}$ | $6$ | $1$ | $5,\ 4,\ 2$ |
+
+The second has $\mathrm{Aut}$ transitive on its three facets, collapsing them to one orbit. The group
+responsible is $H_C$, the image of $\mathrm{Aut}(C)$ in $\mathrm{Sym}\{F_1,\dots,F_M\}$ — the same
+group that gives each class $M!/|H_C|$ facet-labeled lifts. Hence
+
+$$\mathrm{FL}(p,M,n) \;=\; \sum_{C} \frac{M!}{|H_C|}, \qquad\qquad U(p,M,n) \;=\; \sum_{C} 1,$$
+
+the sums running over isomorphism classes. An ordered facet-by-facet construction computes the left
+sum natively; the weights are the entire difference between the two problems, not bookkeeping at the
+margin.
+
+**Averaging over $S_M$ instead is worse, not better.** $U$ is the set of $S_M$-orbits on the
+$\mathrm{FL}$ facet-labeled classes, so Burnside gives
+
+$$U(p,M,n) \;=\; \sum_{\mu \,\vdash\, M} \frac{|\mathrm{Fix}(\mu)|}{z_\mu}, \qquad |\mathrm{Fix}(1^M)| = \mathrm{FL}(p,M,n),$$
+
+with $\mathrm{Fix}(\mu)$ the classes admitting a vertex permutation realising a facet permutation of
+type $\mu$. Verified exactly at $(3,3,6)$, $(2,4,5)$ and $(3,4,6)$, where the sums return $3$, $4$
+and $15$ and the identity terms are $\mathrm{FL} = 10$, $29$ and $154$. It needs only $P(M)$ terms
+against §2.3's $P(n)$, which looks attractive when $n \gg M$ — but every $|\mathrm{Fix}(\tau)|$ with
+$\tau \neq \mathrm{id}$ is itself a count of $S_n$-orbits, so the total is $P(M)\,P(n)$. This is the
+$S_n \times S_M$ route that §2.1 discards, reached from the other direction.
+
+**Nor is $\mathrm{FL}/M!$ a usable approximation.** It is exact when every class is asymmetric, and
+the ratio $(\mathrm{FL}/M!)/U$ might be expected to approach $1$ with $n$. It does the opposite, at
+$p = 3$, $M = 6$:
+
+| $n$ | $6$ | $7$ | $9$ | $12$ | $15$ | $18$ |
+| --- | --- | --- | --- | --- | --- | --- |
+| $(\mathrm{FL}/M!)/U$ | $0.60$ | $0.70$ | $0.67$ | $0.45$ | $0.12$ | $0.0014$ |
+
+It peaks below $0.7$ and decays to $1/M!$. Sparse complexes are **more** symmetric, not less: at
+$n = pM$ every facet is disjoint from every other, $H_C = S_M$, and all $M!$ orderings coincide. The
+usual "generic objects are asymmetric" intuition points the wrong way at large $n$.
+
+### 7.2 The block-vector signature: invariant, but not complete
+
+A natural attempt to enumerate classes directly. Given a tableau, group its rows by **length** into
+blocks $b_1,\dots,b_s$, with $\ell(b_j)$ rows and $|b_j|$ boxes; let $v_{ij}$ be the number of
+block-$j$ vertices lying in facet $i$, and take the signature to be $\lambda$ together with the
+multiset $\{v_1,\dots,v_M\}$ of the resulting length-$s$ vectors.
+
+**It is genuinely $S_M$-invariant.** Blocks are defined by row length, which relabeling facets
+cannot change, so $\tau$ permutes the vectors without altering any of them. The signature therefore
+descends to isomorphism classes.
+
+**It is not complete.** The smallest failure is $(p,M,n) = (2,5,6)$, where $U = 9$ but only $8$
+signatures occur. The two tableaux sharing one, at $\lambda = (2,2,2,2,1,1)$:
+
+$$\bigl[[1,2],[1,3],[2,3],[4,5],[4],[5]\bigr] \qquad\text{and}\qquad \bigl[[1,2],[1,3],[2,4],[3,5],[4],[5]\bigr]$$
+
+Four length-$2$ rows and two length-$1$ rows in each, and both give
+$\{(2,0),(2,0),(2,0),(1,1),(1,1)\}$. At $p = 2$ these are graphs: the first is a **triangle** on
+$F_1F_2F_3$ plus a path, the second a **path** on all six vertices. One carries a cycle and the other
+does not. The signature records how many vertices of each block a facet takes and never which, and
+that is exactly the distinction it cannot see.
+
+| $(p,M,n)$ | $(2,5,5)$ | $(2,5,6)$ | $(3,4,6)$ | $(3,5,6)$ |
+| --- | --- | --- | --- | --- |
+| $U$ | $5$ | $9$ | $15$ | $37$ |
+| signatures | $5$ | $8$ | $13$ | $27$ |
+
+Every case with $n \le 5$ in $p \le 3$, $M \le 5$ is complete, which is what makes small hand-checks
+agree; the gap opens at $n = 6$ and widens.
+
+**Which signatures are realisable is also not settled by local conditions.** The natural necessary
+conditions — $\sum_j v_{ij} = p$, $\sum_i v_{ij} = |b_j|$, and $v_{ij} \le \min(p, \ell(b_j))$ — are
+sound, in that no realisable signature is ever rejected by them, but they are far from sufficient:
+at $(3,5,6)$ they admit $58$ candidates against $27$ realisable. Two refinements were tested. A
+vector that is **all-or-nothing** ($v_{ij} \in \{0, \ell(b_j)\}$ for every $j$) determines its facet
+exactly and so may not repeat, since the facets are distinct; imposing that cuts $58$ to $31$ and
+does most of the available work. Per-block Gale–Ryser realisability of the bipartite degree sequence
+adds **nothing** beyond it at any tested point, the block column sums being already forced. A
+residue survives — $4$ of the $31$ — failing for reasons that couple blocks to one another rather
+than constraining any one of them.
+
+**And completing that characterisation would still not give the count.** The realisable signatures
+are by definition the *image* of the map from classes, so
+
+$$\#\{\text{realisable signatures}\} \;\le\; U(p,M,n),$$
+
+with equality exactly when the signature is complete. Perfecting the realisability test yields a
+lower bound that is tight only in the range where the answer is already reachable by enumeration.
 
 ---
 
