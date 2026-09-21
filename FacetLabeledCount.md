@@ -969,11 +969,13 @@ worth 3.3–16×. But once the memo is keyed on the tail, the enumeration is doi
 not, so fold the choice of $n_i$ **into** the recursion and drop $C(p,M,n)$ entirely. With $j$
 facets still to place,
 
-$$V(\lambda, j) \;=\; \sum_{t=0}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)}
-V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr)\ -\ (M-j)\,V(\lambda,\ j-1), \tag{9.3}$$
+$$\begin{aligned}
+V(\lambda, j) \;=\;\ & \Biggl(\ \sum_{a \,\in\, MS_{p}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,0),\ j-1\bigr)\ -\ (M-j)\,V(\lambda,\ j-1)\ \Biggr) \\
+& +\ \sum_{t=1}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr),
+\end{aligned} \tag{9.3}$$
 
-the subtraction applying to the $t = 0$ term only, with base $V(\lambda, 0) = [\,|\lambda| = n\,]$
-and
+the parenthesised group being the $t = 0$ term — it alone carries the subtraction — with base
+$V(\lambda, 0) = [\,|\lambda| = n\,]$ and
 
 $$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr).$$
 

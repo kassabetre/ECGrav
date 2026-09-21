@@ -316,11 +316,14 @@ anything is part of what Theorem 4 asserts.
 **Theorem 4.** *Define $V$ at every pair by $V(\lambda, 0) = [\,|\lambda| = n\,]$ and, for $j > 0$,
 with $r = n - |\lambda|$ the remaining vertex budget,*
 
-$$V(\lambda, j) \;=\; \sum_{t=0}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr)\;-\;(M-j)\,V(\lambda,\ j-1), \tag{4.1}$$
+$$\begin{aligned}
+V(\lambda, j) \;=\;\ & \Biggl(\ \sum_{a \,\in\, MS_{p}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,0),\ j-1\bigr)\ -\ (M-j)\,V(\lambda,\ j-1)\ \Biggr) \\
+& +\ \sum_{t=1}^{\min(p,\,r)}\ \sum_{a \,\in\, MS_{p-t}(\lambda)} V\bigl(\mathrm{grow}(\lambda,a,t),\ j-1\bigr),
+\end{aligned} \tag{4.1}$$
 
-*the subtraction applying only to the $t = 0$ term and the inner sum empty unless
-$0 \le p - t \le |\lambda|$. Then $V(\lambda, j)$ is the count described above at every realisable
-$(\lambda, j)$, and*
+*the parenthesised group being the $t = 0$ term — it alone carries the subtraction — and the inner
+sum empty unless $0 \le p - t \le |\lambda|$. Then $V(\lambda, j)$ is the count described above at
+every realisable $(\lambda, j)$, and*
 
 $$s_F(p,M,n) \;=\; V\bigl((p),\ M-1\bigr). \tag{4.2}$$
 
