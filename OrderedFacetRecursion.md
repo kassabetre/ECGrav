@@ -293,6 +293,60 @@ the type identities, which the partition state has discarded — but we never ne
 forbidden branches lead to the **same** successor state $\lambda$, so their removal is a single
 subtraction of $(i-1)$ copies of one term.
 
+### 3.3 The profile weight
+
+Proposition 2 reduces $s_F$ to the weights $W(c)$ without saying how to obtain one. Propositions 1
+and 3 now supply that, and the method is complete.
+
+Fix $c \in C(p,M,n)$ and place the facets in order. Facet 1 may be taken to be any $p$-set, all
+choices isomorphic, giving the state $\lambda = (p)$. At stage $i \ge 2$ the profile already fixes how
+many vertices are new, so the only choice left is which old ones to reuse: $p - n_i$ of them,
+selected by some $a \in MS_{p-n_i}(\lambda)$, after which the state becomes
+$\mathrm{grow}(\lambda,a,n_i)$. Note that $|\lambda| = \sum_{j \le i} n_j$ after stage $i$, fixed by
+the profile — so unlike (4.1) there is no vertex budget to carry, which is the one respect in which
+the unfolded form is the simpler of the two.
+
+Write $W_c(\lambda, i)$ for the number of ways to place facets $i, i+1, \dots, M$ from state
+$\lambda$, counted up to isomorphism fixing the existing configuration.
+
+**Proposition 3.1.** *Define $W_c$ at every pair by $W_c(\lambda,\, M+1) = 1$ and, for
+$2 \le i \le M$,*
+
+$$W_c(\lambda,\, i) \;=\; \sum_{a \,\in\, MS_{p-n_i}(\lambda)} W_c\bigl(\mathrm{grow}(\lambda,a,n_i),\ i+1\bigr) \;-\; [\,n_i = 0\,]\;(i-1)\,W_c(\lambda,\ i+1). \tag{3.1}$$
+
+*Then $W_c(\lambda,i)$ is the count just described at every realisable $(\lambda,i)$, and*
+
+$$W(c) \;=\; W_c\bigl((p),\ 2\bigr), \qquad\qquad s_F(p,M,n) \;=\; \sum_{c \,\in\, C(p,M,n)} W_c\bigl((p),\ 2\bigr). \tag{3.2}$$
+
+*Proof.* Downward induction on $i$, over states realisable by $i-1$ pairwise distinct facets with
+profile prefix $(n_1,\dots,n_{i-1})$. At $i = M+1$ all $M$ facets are placed; condition (3) of
+Proposition 2 gives $|\lambda| = \sum_{j \le M} n_j = n$, so the configuration is complete, covers by
+construction, and counts once.
+
+For $i \le M$, let $\mathcal{F}$ realise $(\lambda, i)$. Facet $i$ brings $n_i$ new vertices and
+reuses $p - n_i$ old ones, so by Proposition 1(3) the isomorphism classes of such extensions are
+exactly the $a \in MS_{p-n_i}(\lambda)$, the extension by $a$ having partition
+$\mathrm{grow}(\lambda,a,n_i)$. A **legal** extension leaves $i$ pairwise distinct facets, so its
+successor state is realisable and the induction hypothesis applies to it; the count sought is the sum
+over legal $a$ of $W_c(\mathrm{grow}(\lambda,a,n_i), i+1)$.
+
+That (3.1) computes it is Proposition 3. When $n_i > 0$ no extension violates distinctness and the
+correction is absent. When $n_i = 0$ exactly $i-1$ do, every one with successor state $\lambda$, so
+together they contribute $(i-1)\,W_c(\lambda, i+1)$ to the sum — which is what the correction
+removes, term by term, using nothing about whether $(\lambda, i+1)$ is itself realisable. $\square$
+
+The same caution as in §4 applies for the same reason: off the realisable states $W_c$ is an
+intermediate that exists to be cancelled, and it may be negative.
+
+§5.1 runs (3.1) through for $c = (3,2,0,0)$ at $(p,M,n) = (3,4,5)$, and §5.2 does the same complex by
+(4.1) for comparison. The three profiles of $C(3,4,5)$ give $W = 6, 22, 15$ as tabulated in §3.1, and
+the three that condition (4) rejects all return $0$ — as §4 explains they must.
+
+**What this costs.** One tree per profile, with no sharing between them, and $|C(p,M,n)|$ grows
+exponentially in $M$: profiles are compositions of $n - p$ into $M - 1$ parts each at most $p$. §4
+removes the enumeration altogether by folding the choice of $n_i$ into the recursion, at which point
+the profile stops being an object the algorithm handles at all.
+
 ---
 
 ## 4. The recursion
@@ -386,7 +440,8 @@ and there are exponentially many profiles against polynomially many states. Prof
 
 ### 5.1 One profile weight: $W(3,2,0,0) = 15$
 
-Take $p = 3$, $M = 4$, and the profile $c = (3,2,0,0)$, so $n = 5$.
+Take $p = 3$, $M = 4$, and the profile $c = (3,2,0,0)$, so $n = 5$. The stages below are (3.1)
+unrolled, one per facet.
 
 **Stage 1.** Facet 1 is three new vertices. State $(3)$; types $\{1\}^3$.
 
