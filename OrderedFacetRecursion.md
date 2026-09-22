@@ -498,16 +498,67 @@ condition (4) would have discarded contribute $0$ without being identified, let 
 
 ## 6. Complexity
 
-**Proposition 5.** *At fixed $p$ and $n$, the number of states $(\lambda, j)$ reachable by (4.1) is
-$O(M)$, and the cost of evaluating $s_F(p,M,n)$ grows linearly in $M$.*
+Throughout this section $p$ and $n$ are fixed and $M$ varies; $O_{p,n}$ hides constants depending on
+them but not on $M$. Write $\Pi(n) = \sum_{k=0}^{n} P(k)$ for the number of partitions of the
+integers $0,\dots,n$, and $B(p,n) = (p+1)\binom{p+n-1}{n-1}$.
 
-*Proof sketch.* A reachable $\lambda$ is a partition of some integer $\le n$, and that set does not
-depend on $M$; $j$ ranges over $0,\dots,M-1$. The per-state work — enumerating $\bigcup_t MS_{p-t}
-(\lambda)$, grouping by successor and one table lookup each — likewise does not involve $M$ except
-through the scalar $M-j$. $\square$
+**Proposition 5.** *Assume $p \le n$. Then*
 
-The bound is not tight, because most partitions of $\le n$ are unreachable at small $j$, but the
-linearity is visible immediately. Instrumented at $(p,n) = (3,9)$:
+1. *every reachable $\lambda$ satisfies $|\lambda| \le n$, and the number of reachable states
+   $(\lambda,j)$ lies between $M$ and $\Pi(n)\,M$, hence is $\Theta_{p,n}(M)$;*
+2. *evaluating (4.1) at all of them takes $O_{p,n}(M)$ arithmetic operations;*
+3. *the value returned has $O_{p,n}(M)$ digits and no intermediate exceeds $O_{p,n}(M \log M)$, so
+   the cost in **bit** operations is $\tilde O_{p,n}(M^2)$ — linear in the count of arithmetic
+   operations, but not in time.*
+
+*Proof.* (1) The initial state is $\bigl((p), M-1\bigr)$, and $|(p)| = p \le n$. From $(\lambda, j)$
+the successors are $\bigl(\mathrm{grow}(\lambda,a,t),\,j-1\bigr)$ with $t \le \min(p,r)$ and
+$r = n - |\lambda|$; since $\mathrm{grow}(\lambda,a,t)$ is a partition of $|\lambda| + t$ and
+$t \le r$, its size is at most $|\lambda| + r = n$. By induction every reachable $\lambda$ is a
+partition of an integer in $[0,n]$, and there are $\Pi(n)$ of those. Each transition decrements $j$
+by exactly one from $M-1$, so $j \in \{0,\dots,M-1\}$ takes $M$ values, giving at most $\Pi(n)\,M$
+states. For the lower bound, take $t = 0$ and $a = (p)$ at $\lambda = (p)$: this lies in
+$MS_p\bigl((p)\bigr)$ and has $\mathrm{grow}\bigl((p),(p),0\bigr) = (p)$, so $\bigl((p),j\bigr)$ is
+reachable for every $0 \le j \le M-1$ — at least $M$ distinct states.
+
+(2) At a state with $\ell = \ell(\lambda)$ parts, $MS_k(\lambda)$ is contained in the set of
+compositions of $k$ into $\ell$ non-negative parts, so $|MS_k(\lambda)| \le \binom{k+\ell-1}{\ell-1}$.
+Since $\ell \le |\lambda| \le n$ by (1) and $k \le p$, summing over $k = 0,\dots,p$ bounds the
+branches at any state by $B(p,n)$, which does not involve $M$. Each branch costs one evaluation of
+$\mathrm{grow}$ — at most $O(n\log n)$ comparisons — and one memo lookup; the $t = 0$ group costs one
+further multiplication by the scalar $M-j$ and one subtraction. So every state is $O_{p,n}(1)$
+arithmetic operations, and by (1) there are $\Theta_{p,n}(M)$ states.
+
+(3) Orbits are no more numerous than the set acted on, so
+$s_F(p,M,n) \le |X| \le \binom{n}{p}^{M}$ and the answer has $O(Mp\log n) = O_{p,n}(M)$ digits.
+(The tempting sharper bound $\binom{\binom{n}{p}}{M}$, counting *sets* of facets, is false here:
+$s_F$ counts ordered tuples up to $S_n$ only, and at $(p,M,n) = (2,6,5)$ it is $1230$ against
+$\binom{10}{6} = 210$.) For the intermediates, (2) gives
+$|V(\lambda,j)| \le \bigl(B(p,n) + M\bigr)\max_{\lambda'}|V(\lambda',j-1)|$ with $|V(\cdot,0)| \le 1$,
+whence $|V(\lambda,j)| \le (B+M)^{M}$, of $O_{p,n}(M \log M)$ digits. The $O_{p,n}(M)$ operations of
+(2) are therefore performed on integers of that length, and the multiplications are by a scalar below
+$M$. $\square$
+
+The gap between (2) and (3) is the point to carry away: **the operation count is linear, the running
+time is not.** The answer's digit count grows linearly in $M$ on its own, so the work per operation
+grows too.
+
+**Why the $\Pi(n)\,M$ bound is loose.** It counts partitions that no configuration can present.
+
+**Lemma 5.1.** *If $(\lambda,j)$ is reachable and $i = M - j$ facets have been placed, then
+$|\lambda| \le \min(n,\,ip)$ and $\ell(\lambda) \le \min(n,\,2^i - 1)$.*
+
+*Proof.* $|\lambda| = |V_i|$ counts the vertices used by $i$ facets of size $p$, so $|\lambda| \le ip$,
+and $|\lambda| \le n$ by Proposition 5(1). The parts of $\lambda$ are the type classes, whose types
+are non-empty subsets of $[i]$; there are at most $2^i - 1$ of those, and $\ell(\lambda) \le |\lambda|$
+gives the other bound. $\square$
+
+Both bounds stop increasing once $i \ge \max\bigl(\lceil n/p\rceil,\ \lceil \log_2(n+1)\rceil\bigr)$,
+so from that depth on, the states per level are capped independently of $M$ — which is why the totals
+below are linear rather than merely bounded by one. At $(p,n) = (3,9)$ the threshold is $i = 4$, and
+the reachable $\lambda$ per level run $1, 4, 15, 30, 32, 32, 32, \dots$, constant from $i = 5$.
+
+Instrumented at $(p,n) = (3,9)$:
 
 | $M$ | 4 | 8 | 12 | 16 | 20 |
 | --- | --- | --- | --- | --- | --- |
@@ -524,6 +575,22 @@ per-profile form of §3 (one tree per element of $C(p,M,n)$, no sharing):
 
 The folded cost rises by about $0.006$ s per additional facet where the per-profile form multiplies —
 $195\times$ at $M = 12$, and widening.
+
+Over this range the folded column looks linear, and Proposition 5(3) says it cannot stay so. The
+evidence is independent of any implementation: at $(p,n) = (3,9)$ the answer $s_F$ has
+
+| $M$ | 4 | 12 | 20 | 28 | 40 |
+| --- | --- | --- | --- | --- | --- |
+| digits of $s_F$ | 2 | 18 | 32 | 47 | 67 |
+
+digits, growing by roughly $1.8$ per facet, so the $\Theta(M)$ additions are performed on operands
+that themselves lengthen with $M$. Carrying the instrumentation out to $M = 40$ in a separate run —
+not comparable in absolute terms with the table above, which was timed differently — the cost **per
+facet** rises by about $30\%$ between $M = 12$ and $M = 40$, the second-order term becoming visible
+once the operands outgrow a machine word. The practical reading is that (4.1) is linear in the work
+it schedules and mildly quadratic in the work it performs, and that the comparison against the
+per-profile form is unaffected: that form pays the same widening arithmetic on top of a branching
+factor that grows.
 
 In $n$ the behaviour is different and worth recording, because it is easy to predict wrongly. The
 state count does **not** track the number of partitions of $\le n$: at $(p,M) = (3,6)$ it runs
