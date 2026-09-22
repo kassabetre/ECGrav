@@ -99,6 +99,73 @@ VerificationTest[ECGrav`NumTriangles[1, 2, 3], $Failed,
 VerificationTest[ECGrav`delNumTriangles["not a matrix"], $Failed,
     {ECGrav`delNumTriangles::argerr}, TestID -> "delNumTriangles-argerr"];
 
+(* ---------- Source operators: NumBdryEdges / delEulerChi (deterministic) ---------- *)
+
+(* Independent oracle: enumerate triangles as 3-cliques and count the edges in exactly one,
+   sharing no code with NumBdryEdges' Unitize formulation. *)
+bdryByEnumeration[am_] := Module[{n = Length[am], tris, cnt},
+    tris = Select[Subsets[Range[n], {3}],
+        am[[#[[1]], #[[2]]]] == 1 && am[[#[[1]], #[[3]]]] == 1 && am[[#[[2]], #[[3]]]] == 1 &];
+    cnt = Counts[Flatten[Subsets[#, {2}] & /@ tris, 1]];
+    Count[Select[Subsets[Range[n], {2}], am[[#[[1]], #[[2]]]] == 1 &],
+        e_ /; Lookup[cnt, Key[e], 0] == 1]];
+matchesRecount[f_, g_, am_] := AllTrue[Subsets[Range[Length[am]], {2}],
+    f[am, #[[1]], #[[2]]] === g[toggleEdge[am, #[[1]], #[[2]]]] - g[am] &];
+singleTriangle = {{0, 1, 1}, {1, 0, 1}, {1, 1, 0}};
+bowtie = {{0,1,1,0,0}, {1,0,1,0,0}, {1,1,0,1,1}, {0,0,1,0,1}, {0,0,1,1,0}};
+
+VerificationTest[ECGrav`NumBdryEdges[singleTriangle], 3,
+    TestID -> "NumBdryEdges-single-triangle-has-3"];
+VerificationTest[ECGrav`NumBdryEdges[bowtie], 6, TestID -> "NumBdryEdges-bowtie-has-6"];
+
+(* The two zeros below are zero for OPPOSITE reasons, and that asymmetry IS the definition:
+   a boundary edge lies in exactly one triangle, so the octahedron scores 0 by being closed
+   while C6 scores 0 by having no triangles at all. An edge in no triangle is not a boundary
+   edge, which is why NumBdryEdges == 0 does not imply a closed manifold. *)
+VerificationTest[ECGrav`NumBdryEdges[octaAm], 0,
+    TestID -> "NumBdryEdges-octahedron-is-0-because-closed"];
+VerificationTest[ECGrav`NumBdryEdges[C6], 0,
+    TestID -> "NumBdryEdges-cycle-is-0-because-no-triangles"];
+VerificationTest[ECGrav`NumBdryEdges[K4], 0, TestID -> "NumBdryEdges-K4-every-edge-in-2"];
+VerificationTest[ECGrav`NumBdryEdges[ConstantArray[0, {4, 4}]], 0,
+    TestID -> "NumBdryEdges-empty-graph-is-0"];
+
+VerificationTest[
+    AllTrue[{K4, C6, octaAm, singleTriangle, bowtie},
+        ECGrav`NumBdryEdges[#] === bdryByEnumeration[#] &],
+    True, TestID -> "NumBdryEdges-agrees-with-triangle-enumeration"];
+
+VerificationTest[matchesRecount[ECGrav`delNumBdryEdges, ECGrav`NumBdryEdges, K4], True,
+    TestID -> "delNumBdryEdges-matches-recount-every-slot-K4"];
+VerificationTest[matchesRecount[ECGrav`delNumBdryEdges, ECGrav`NumBdryEdges, octaAm], True,
+    TestID -> "delNumBdryEdges-matches-recount-every-slot-octahedron"];
+VerificationTest[matchesRecount[ECGrav`delNumBdryEdges, ECGrav`NumBdryEdges, bowtie], True,
+    TestID -> "delNumBdryEdges-matches-recount-every-slot-bowtie"];
+
+VerificationTest[matchesRecount[ECGrav`delEulerChi, ECGrav`EulerChi, K4], True,
+    TestID -> "delEulerChi-matches-recount-every-slot-K4"];
+VerificationTest[matchesRecount[ECGrav`delEulerChi, ECGrav`EulerChi, octaAm], True,
+    TestID -> "delEulerChi-matches-recount-every-slot-octahedron"];
+VerificationTest[matchesRecount[ECGrav`delEulerChi, ECGrav`EulerChi, bowtie], True,
+    TestID -> "delEulerChi-matches-recount-every-slot-bowtie"];
+
+(* delEulerChi's two degenerate paths go through EulerChi[{}] and EulerChi[{{0}}]. Both are
+   easy to break without noticing, so they are pinned directly: adding a lone edge moves chi
+   by -1, and adding an edge with one common neighbour adds an edge and a triangle, so chi is
+   unchanged. *)
+VerificationTest[ECGrav`delEulerChi[ConstantArray[0, {4, 4}], 1, 2], -1,
+    TestID -> "delEulerChi-no-common-neighbour-is-minus-1"];
+VerificationTest[ECGrav`delEulerChi[{{0,0,1,0}, {0,0,1,0}, {1,1,0,0}, {0,0,0,0}}, 1, 2], 0,
+    TestID -> "delEulerChi-one-common-neighbour-is-0"];
+VerificationTest[ECGrav`EulerChi[{}], 0, TestID -> "EulerChi-of-empty-is-0-delEulerChi-relies-on-it"];
+
+VerificationTest[ECGrav`NumBdryEdges[1, 2], $Failed,
+    {ECGrav`NumBdryEdges::argerr}, TestID -> "NumBdryEdges-argerr"];
+VerificationTest[ECGrav`delNumBdryEdges["not a matrix"], $Failed,
+    {ECGrav`delNumBdryEdges::argerr}, TestID -> "delNumBdryEdges-argerr"];
+VerificationTest[ECGrav`delEulerChi["not a matrix"], $Failed,
+    {ECGrav`delEulerChi::argerr}, TestID -> "delEulerChi-argerr"];
+
 (* ---------- Aggregating-data helpers (deterministic) ---------- *)
 
 VerificationTest[ECGrav`LogSumExp[{0., 0., 0.}], Log[3.], SameTest -> floatEq, TestID -> "LogSumExp-log3"];

@@ -548,6 +548,65 @@ Inputs are:
 delNumTriangles::argerr="An adjacency matrix is expected at position 1, an integer at
 position 2, and an integer at position 3.";
 
+(* ::Item::Closed:: *)
+(*NumBdryEdges*)
+
+
+(* :Usage Messages: *)
+
+NumBdryEdges::usage="NumBdryEdges[Am] gives the number of boundary edges of the clique complex
+of the graph with adjacency matrix Am, where a boundary edge is one lying in EXACTLY ONE
+triangle. An edge in no triangle is not counted, so NumBdryEdges[Am]==0 does not by itself
+imply a closed combinatorial manifold.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]It returns an integer.";
+
+(* :Error Messages: *)
+
+NumBdryEdges::argerr="An adjacency matrix is expected at position 1.";
+
+
+(* ::Item::Closed:: *)
+(*delNumBdryEdges*)
+
+
+(* :Usage Messages: *)
+
+delNumBdryEdges::usage="delNumBdryEdges[Am,i,j] computes NumBdryEdges[Amnew] - NumBdryEdges[Am]
+where Amnew is found by toggling Am at row i and col j. Only the edge {i,j} and the edges from
+i and j to their common neighbours can change status, so the cost is local to the common
+neighbourhood rather than a recount.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. i = Integer, row number,
+3. j = Integer, column number\[IndentingNewLine]It returns an integer.";
+
+(* :Error Messages: *)
+
+delNumBdryEdges::argerr="An adjacency matrix is expected at position 1, an integer at
+position 2, and an integer at position 3.";
+
+
+(* ::Item::Closed:: *)
+(*delEulerChi*)
+
+
+(* :Usage Messages: *)
+
+delEulerChi::usage="delEulerChi[Am,i,j] computes EulerChi[Amnew] - EulerChi[Am] on the clique
+complex, where Amnew is found by toggling Am at row i and col j. It equals +/-(EulerChi[W]-1)
+for W the subgraph induced on the common neighbourhood of i and j, so only the common
+neighbourhood is enumerated rather than the whole graph. Its cost nevertheless grows with the
+size of that neighbourhood and dominates a source-term delta in the dense phase.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. i = Integer, row number,
+3. j = Integer, column number\[IndentingNewLine]It returns an integer.";
+
+(* :Error Messages: *)
+
+delEulerChi::argerr="An adjacency matrix is expected at position 1, an integer at
+position 2, and an integer at position 3.";
+
+
 
 (* ::Section::Closed:: *)
 (*Graph Hamiltonians*)

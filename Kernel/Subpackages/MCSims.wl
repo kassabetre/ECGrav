@@ -1007,6 +1007,102 @@ togab*(Am[[a]] . Am[[b]])
 delNumTriangles[args___]:=(Message[delNumTriangles::argerr, args];
 $Failed);
 
+(* ::Item::Closed:: *)
+(*NumBdryEdges*)
+
+
+(* Primary Pattern *)
+NumBdryEdges[Am_List]:=
+(*Number of BOUNDARY edges: edges lying in EXACTLY ONE triangle.
+
+	(A^2)_{ij} is the number of common neighbours of i and j, which for an edge is the number
+	of triangles containing it. Unitize[cn-1] is 0 exactly where cn==1, so 1-Unitize[cn-1] is
+	the indicator of "in exactly one triangle"; masking by Am keeps only real edges and the
+	halving removes the double count.
+
+	Note what this deliberately does NOT count: an edge in ZERO triangles is not a boundary
+	edge under this definition. So NumBdryEdges==0 does NOT imply a closed combinatorial
+	manifold -- a graph of loose edges scores zero here. That has been mistaken for a bug
+	before; it is the definition.*)
+With[{cn=Am . Am},
+Total[Am*(1-Unitize[cn-1]),2]/2
+];
+
+(* Catch-all Pattern *)
+NumBdryEdges[args___]:=(Message[NumBdryEdges::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+delNumBdryEdges[Am_List,i_Integer,j_Integer]:=
+(*NumBdryEdges[Amnew] - NumBdryEdges[Am], where Amnew toggles the edge {i,j}.
+
+	Toggling {i,j} changes the triangle count of {i,j} itself and of the two edges {i,v},
+	{j,v} for every common neighbour v -- nothing else -- so the delta is local to the common
+	neighbourhood rather than a recount. degs collects the current triangle counts of those
+	2*|common| edges as |N(v) cap N(i)| and |N(v) cap N(j)|.
+
+	Removing the edge: each listed edge loses one triangle, so a count of 1 stops being a
+	boundary edge and a count of 2 becomes one; {i,j} itself was a boundary edge iff it had
+	exactly one common neighbour, hence the KroneckerDelta.
+	Adding the edge: each listed edge gains one triangle, so 0 becomes a boundary edge and 1
+	stops being one; {i,j} arrives as a boundary edge iff it has exactly one common neighbour.
+
+	degs is read off the CURRENT matrix and is correct in both directions: when the edge is
+	present, j is already a common neighbour of i and v, so the triangle about to be destroyed
+	is included in the count; when absent it is not. Asserted against the recomputed
+	difference on every edge slot in Tests/MCSims.wlt.*)
+Module[{common=Am[[i]]*Am[[j]],sphInt,numSphIntVertices,degs},
+	sphInt=Flatten[Position[common,1]];
+	numSphIntVertices=Total[common];
+	degs=If[sphInt==={},{},Join[Am[[sphInt]] . Am[[i]],Am[[sphInt]] . Am[[j]]]];
+	Which[
+		Am[[i,j]]==1,Count[degs,2]-Count[degs,1]-KroneckerDelta[numSphIntVertices,1],
+		Am[[i,j]]==0,Count[degs,0]-Count[degs,1]+KroneckerDelta[numSphIntVertices,1]]
+];
+
+(* Catch-all Pattern *)
+delNumBdryEdges[args___]:=(Message[delNumBdryEdges::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*delEulerChi*)
+
+
+(* Primary Pattern *)
+delEulerChi[Am_List,i_Integer,j_Integer]:=
+(*EulerChi[Amnew] - EulerChi[Am], where Amnew toggles the edge {i,j}, on the clique complex.
+
+	Adding {i,j} creates exactly one new clique per clique S contained in the common
+	neighbourhood W = N(i) cap N(j), namely S union {i,j} -- including S = {}, which is the
+	edge itself. A clique of size k comes from an S of size k-2, so with chi = f1 - f2 + f3 -
+	... the change is sum_{m>=0} (-1)^(m+1) c_m over the m-clique counts c_m of W. Since
+	c_0 = 1 that is exactly chi(W) - 1, so
+
+		delta chi = +/- (EulerChi[induced subgraph on W] - 1)
+
+	which is the alternating clique sum in closed form: no clique enumeration of the whole
+	graph, only of the common neighbourhood.
+
+	Both degenerate paths rely on EulerChi's own conventions and are pinned by tests:
+	W empty gives EulerChi[{}] == 0, so adding a lone edge moves chi by -1; a single common
+	neighbour gives EulerChi[{{0}}] == 1, so the new edge and new triangle cancel and chi is
+	unchanged.
+
+	COST WARNING. This is the expensive source operator and its cost grows with |W|, i.e.
+	precisely in the dense phase where the model spends its time. Measured at n = 21: 24.5 us
+	per call at edge density 0.2 but 260 us at density 0.8, where it is 59% of a full dH --
+	against 1.6 us for delNumTriangles. Benchmark before fixing a phase-map grid.*)
+With[{sphInt=Flatten[Position[Am[[i]]*Am[[j]],1]],s=-(2*Am[[i,j]]-1)},
+s*(EulerChi[Am[[sphInt,sphInt]]]-1)
+];
+
+(* Catch-all Pattern *)
+delEulerChi[args___]:=(Message[delEulerChi::argerr, args];
+$Failed);
+
+
 
 (* ::Section::Closed:: *)
 (*Graph Hamiltonians*)
