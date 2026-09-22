@@ -457,22 +457,66 @@ unevaluated, silently**. Whenever something quietly does nothing during this wor
 
 ## 5. Running in parallel with the rest of Phase 7
 
-Three interactions, in order of how much they matter.
+### 5.1 Track interactions
 
-1. **§B2 is now blocking, and it was not before.** §D3 assembles on the homogeneous form. It is
-   written, verified and outside the repo. Landing it serves P2's critical path *and* Stage 4, which
-   is the strongest argument for doing it first.
-2. **Land Stage 0 + Stage 2 early and fast.** Track B (§B3's source operators) and Track C (§C2's
-   Wang–Landau implementation) will both edit `MCSims.wl`. If the backend extraction lands first,
-   they build *on* it; if it lands later, it conflicts with both. This is the main scheduling
-   argument in the plan.
+1. **§B2 is now blocking, and it was not before.** §D3 assembles on the homogeneous form. Landing it
+   serves P2's critical path *and* Stage 4, which is the strongest argument for doing it first.
+   **Scope discovered 2026-09-21: B2 cannot land usefully without B3.** `HomogeneousHamiltonian.wls`
+   does not exist on disk — the code lives only as listings in `HomogeneousHamiltonian.md` §4 and in
+   `HomogeneousHamiltonianBug.nb`, as notebook scratch that captures globals (`e0`, `gN0`,
+   `gNBdry0`) and calls five helpers. Of those, **only `EulerChi` is in the package**;
+   `delEulerChi`, `numTriangles`, `delnumTriangles`, `numBdryEdges` and `delnumBdryEdges` are not.
+   Those are §B3's three source operators, so B2's wrapper is a few lines and B3's operators are the
+   substance. They land together or P2 gets nothing.
+2. **Split the port by additive vs. mutating, not by stage number.** B2/B3, Stage 0, Stage 1 and
+   Stage 2 all *add* symbols and change no existing behaviour, so they are safe on `main` and cannot
+   disturb a running campaign. **Stage 3 is the first mutating stage** and is where a branch becomes
+   necessary — by which point the harness that protects the refactor already exists.
 3. **Wang–Landau is the backend's second customer.** §C2 needs the same nine primitives — propose,
    apply, ΔE, size — against a flat-histogram acceptance rule instead of Metropolis. Doing the
    extraction for Track D makes Track C substantially cheaper, and it means WL works on quantum
-   states the day it is written rather than needing its own port later.
+   states the day it is written rather than needing its own port later. Track B (§B3) and Track C
+   both edit `MCSims.wl`, so landing the backend early means they build *on* it rather than against
+   it.
 
 Stages 1, 4 and 7 have no dependency on the other tracks and can be interleaved freely. Stages 3, 5
 and 6 are strictly ordered after Stage 2.
+
+### 5.2 Running P2's campaign alongside the port
+
+P2's simulations run against the *installed* paclet while this work changes the *repo*, so the two
+are already decoupled — but only until something is rebuilt. The rules that keep them decoupled:
+
+- [ ] **Stage 0's harness is the contract between the two threads.** It proves the refactor leaves
+      the chain bit-identical, which is exactly what licenses P2 to adopt a post-refactor release
+      **without re-running anything**. Without it, any mid-campaign upgrade means re-running, or
+      arguing in prose that results across two versions are comparable.
+- [ ] **Never run `build.wls` or install from a development branch.** Releases are cut on `main`
+      only. Then the paclet the simulations load cannot move while the refactor is in progress. This
+      is free isolation and already matches the release mechanics; it needs to be a rule, not a
+      habit.
+- [ ] **Pin the campaign and make every run self-describing.** Assert the version at the top of each
+      campaign notebook and stamp it into the saved chart beside the data:
+      `Assert[First[PacletFind["ECGrav"]]["Version"] === "1.16.0"]`. A result that cannot name its
+      own build is not reproducible, and this campaign spans a period in which the package changes.
+- [ ] **Two paclets are installed as of 2026-09-21 — 1.16.0 and 1.5.0.** 1.16.0 resolves first, so
+      this is latent rather than active, but 1.5.0 predates the entire MBAR layer, the chart tag
+      column and `corrTMeasured`. If anything ever resolves to it, undefined private symbols return
+      *unevaluated and silent*. Uninstall it.
+- [ ] **Keep one real P2 chart as a test fixture.** §Stage 6 requires energy to stay at chart column
+      3; make that provable rather than aspirational by asserting the post-refactor code still reads
+      a stored campaign chart. 1.13.0 already moved chart observables once, and a campaign
+      accumulates data over weeks.
+- [ ] **Run the golden harness single-kernel** (`$KernelCount = 0`). Determinism probably requires it
+      anyway (§7.1), and it keeps the suite off the cores the campaign is using — this machine has
+      11.
+- [ ] **Use two worktrees** — `git worktree add ../ECGrav-p2 main` — so the repo being consulted
+      while debugging a long run is never in a mid-refactor state.
+
+**The rule when they conflict: P2 figures win.** A refactor step that would invalidate a stored chart
+or change a number already in a draft waits for a phase boundary. Adopt a new release into the
+campaign only when it delivers something P2 needs — B2/B3's source terms is the one item on the list
+that qualifies — and otherwise finish the campaign on a single version.
 
 ---
 
