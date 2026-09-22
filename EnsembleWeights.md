@@ -45,7 +45,9 @@ For a complex `C` on vertex set `V(C)` with `n(C) = |V(C)|`:
 
 `ker ρ` is the subgroup fixing every facet *setwise*, and it is **not** generally trivial:
 
-$$|Γ(C)| \;=\; |\ker ρ(C)| \cdot |Γ_F(C)|.$$
+```math
+|Γ(C)| \;=\; |\ker ρ(C)| \cdot |Γ_F(C)|.
+```
 
 The single triangle `{{1,2,3}}` is the cleanest example: `|Γ| = 6` (all of `S_3`) while `|Γ_F| = 1`,
 since there is only one facet to permute. Two disjoint triangles give `|Γ| = 72` and `|Γ_F| = 2`,
@@ -72,7 +74,9 @@ orbit has size `|Γ(C)|/|\ker ρ(C)| = |Γ_F(C)|`, and the number of orbits is `
 
 Summing over classes:
 
-$$|S_V| = \sum_C \frac{n(C)!}{|Γ(C)|}, \qquad |S_F| = \sum_C \frac{M!}{|Γ_F(C)|}, \qquad |S_U| = \sum_C 1 .$$
+```math
+|S_V| = \sum_C \frac{n(C)!}{|Γ(C)|}, \qquad |S_F| = \sum_C \frac{M!}{|Γ_F(C)|}, \qquad |S_U| = \sum_C 1 .
+```
 
 ## 4. The induced weights — the central table
 
@@ -94,9 +98,13 @@ but a trivial facet action — the single facet, again — is weighted **identic
 
 Dividing the sums of §3:
 
-> $$\boxed{\;\frac{|S_F(p,M)|}{M!\,|S_U(p,M)|} \;=\; \mathbb{E}_U\!\left[\frac{1}{|Γ_F|}\right]\;}$$
+> ```math
+> \boxed{\;\frac{|S_F(p,M)|}{M!\,|S_U(p,M)|} \;=\; \mathbb{E}_U\!\left[\frac{1}{|Γ_F|}\right]\;}
+> ```
 
-> $$\frac{|S_V(p,M)|}{|S_U(p,M)|} \;=\; \mathbb{E}_U\!\left[\frac{n!}{|Γ|}\right]$$
+> ```math
+> \frac{|S_V(p,M)|}{|S_U(p,M)|} \;=\; \mathbb{E}_U\!\left[\frac{n!}{|Γ|}\right]
+> ```
 
 The first is the important one. Since `|Γ_F| >= 1`, it lies in `(0, 1]`, and **it equals 1 exactly
 when every class is facet-asymmetric — which is exactly the condition for `S_F` and `S_U` to
@@ -104,11 +112,15 @@ coincide.** It is computable from two counter calls. No sampling, no estimator, 
 
 The Radon–Nikodym derivative is
 
-$$\frac{dF}{dU}(C) \;=\; \frac{1/|Γ_F(C)|}{\mathbb{E}_U[1/|Γ_F|]},$$
+```math
+\frac{dF}{dU}(C) \;=\; \frac{1/|Γ_F(C)|}{\mathbb{E}_U[1/|Γ_F|]},
+```
 
 so the total variation distance between the two ensembles, over isomorphism classes, is
 
-$$d_{TV}(F, U) \;=\; \tfrac12\, \mathbb{E}_U\!\left[\left|\frac{1}{|Γ_F|\;\mathbb{E}_U[1/|Γ_F|]} - 1\right|\right].$$
+```math
+d_{TV}(F, U) \;=\; \tfrac12\, \mathbb{E}_U\!\left[\left|\frac{1}{|Γ_F|\;\mathbb{E}_U[1/|Γ_F|]} - 1\right|\right].
+```
 
 Because the normalizer is known **exactly**, this is an importance-sampling estimate against a known
 constant — far better conditioned than any two-sample test, and it measures the whole distribution

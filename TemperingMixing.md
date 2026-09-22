@@ -22,9 +22,9 @@ It works on the return of `GraphParallelTempering` and on the four-element multi
 
 ### 1. What parallel tempering is buying, and what can go wrong
 
-A single Metropolis chain at large $\beta$ gets stuck: the moves that would carry it between
+A single Metropolis chain at large $`\beta`$ gets stuck: the moves that would carry it between
 distant low-energy basins are rejected, so it samples one basin and reports its properties as if
-they were the ensemble's. Parallel tempering runs a ladder of replicas at different $\beta$ and
+they were the ensemble's. Parallel tempering runs a ladder of replicas at different $`\beta`$ and
 periodically proposes exchanging their configurations. A configuration that is trapped at the cold
 end can ride up the ladder to where the barriers are surmountable, cross, and come back down. The
 cold replica then samples a genuinely different basin.
@@ -38,9 +38,9 @@ The obvious number to look at is the fraction of proposed exchanges that were ac
 necessary — an acceptance of zero at some rung severs the ladder there — but it is emphatically
 not sufficient, for a reason worth stating precisely.
 
-Acceptance is a *local* quantity. Two neighbouring replicas at nearly the same $\beta$ exchange
+Acceptance is a *local* quantity. Two neighbouring replicas at nearly the same $`\beta`$ exchange
 almost every time, because their energy distributions overlap almost completely. A ladder of
-sixteen replicas packed into a narrow $\beta$ window will show near-perfect acceptance everywhere
+sixteen replicas packed into a narrow $`\beta`$ window will show near-perfect acceptance everywhere
 and transport nothing, because the whole ladder spans a temperature range too small to unfreeze
 anything. Conversely a ladder with mediocre acceptance spread evenly across a wide range can move
 configurations end to end very efficiently.
@@ -80,30 +80,32 @@ the ladder.
 
 Label each configuration with the end it visited most recently: *up* once it has touched the
 coldest rung (it can only head toward hot next), *down* once it has touched the hottest. Then for
-each rung $k$ count the visits made under each label and form
+each rung $`k`$ count the visits made under each label and form
 
-$$f(k) \;=\; \frac{n_{\uparrow}(k)}{n_{\uparrow}(k) + n_{\downarrow}(k)}.$$
+```math
+f(k) \;=\; \frac{n_{\uparrow}(k)}{n_{\uparrow}(k) + n_{\downarrow}(k)}.
+```
 
-By construction $f = 1$ at the coldest rung and $0$ at the hottest. In between, a ladder with no
+By construction $`f = 1`$ at the coldest rung and $`0`$ at the hottest. In between, a ladder with no
 bottleneck gives a smooth monotone descent — the two counter-propagating streams of configurations
 are balanced everywhere and the walker performs an unbiased random walk in rung index. A **plateau**
-in $f$ says configurations are arriving at that rung and turning back rather than passing through:
+in $`f`$ says configurations are arriving at that rung and turning back rather than passing through:
 the diffusion is slow there and that is where extra rungs would buy the most.
 
 This is the standard diagnostic from the replica-flow literature and it is more informative than the
 round-trip count alone, because it says *where* the ladder is failing.
 
-Properly $f$ is a histogram over *time* — a configuration that lingers at a rung should count for
+Properly $`f`$ is a histogram over *time* — a configuration that lingers at a rung should count for
 as long as it lingered. That is what is computed when the run recorded its per-sweep occupancy
 (§7); when the trajectories had to be replayed, the counts are per arrival instead, which
 over-weights the high-degree rungs. On the four-replica cross-validation run of §7 the two agree to
 within 0.013, but they are not the same quantity, and nothing guarantees they stay close.
 
-**It assumes a linear ladder.** With one tempered parameter the rungs form a chain and $f$ is a
-function of position along it. With two — $\beta$ and an external field — the rungs form a *graph*,
-and ordering them by $\beta$ alone does not produce a path: two rungs at nearly the same $\beta$ can
-sit at opposite ends of the field axis. A non-monotone $f$ on a two-dimensional schedule is
-therefore **not by itself evidence of a bottleneck**. Read the round trips first, and treat $f$ as
+**It assumes a linear ladder.** With one tempered parameter the rungs form a chain and $`f`$ is a
+function of position along it. With two — $`\beta`$ and an external field — the rungs form a *graph*,
+and ordering them by $`\beta`$ alone does not produce a path: two rungs at nearly the same $`\beta`$ can
+sit at opposite ends of the field axis. A non-monotone $`f`$ on a two-dimensional schedule is
+therefore **not by itself evidence of a bottleneck**. Read the round trips first, and treat $`f`$ as
 suggestive until the ladder is a chain in the coordinate you plotted it against.
 
 ### 5. Occupancy
@@ -175,7 +177,7 @@ independent implementations against two independent records in the same return, 
 re-running after any change to either.
 
 One asymmetry to know about. The chart's first row is written *after* the first sweep's `Swap[]`, so
-the initial permutation is not in it; the convention that configuration $j$ starts at slot $j$
+the initial permutation is not in it; the convention that configuration $`j`$ starts at slot $`j`$
 supplies it, which is exactly what the `histories` seeding at `MCSims.wl:7954` encodes. `MixingData`
 prepends it to the walk — and to the walk only, since residence and the flow are counted over
 recorded sweeps, where every sweep is a whole sweep. Without that prepend the chart walk is the
@@ -189,7 +191,7 @@ This is the thing to get right, and it is the opposite of what it looks like.
 `"history"`. The natural reading of `"history"` — a list of field values — is that it is the
 trajectory of a replica through field space. It is not.
 
-On an accepted swap between slots $k$ and $l$ the driver exchanges the two **states** and leaves
+On an accepted swap between slots $`k`$ and $`l`$ the driver exchanges the two **states** and leaves
 each slot's `"externalField"` where it is (`MCSims.wl:7999-8006`; the energies are recomputed
 against the slot's own unchanged field). So **a slot is a fixed field value and what moves is the
 configuration.** Then (`MCSims.wl:8011-8020`):
@@ -200,12 +202,12 @@ histories[[l, "history", 1]] = histories[[k, "history", -1]];
 RotateLeft both
 ```
 
-each slot's newest entry becomes the *other* slot's newest entry. Writing $x_k$ for the newest entry
-at slot $k$, the update is a transposition of $x_k$ and $x_l$ — so the multiset $\{x_1,\dots,x_n\}$
+each slot's newest entry becomes the *other* slot's newest entry. Writing $`x_k`$ for the newest entry
+at slot $`k`$, the update is a transposition of $`x_k`$ and $`x_l`$ — so the multiset $`\{x_1,\dots,x_n\}`$
 is invariant, and since `history[[k,1]] === k` initially, the values are a permutation of the slots
 at all times. Each value is a **tag** that moves exactly when a configuration moves. Therefore
 
-> `histories[[k, "history"]]` is the ordered list of configuration **tags** that occupied slot $k$,
+> `histories[[k, "history"]]` is the ordered list of configuration **tags** that occupied slot $`k`$,
 > each tag naming the slot its configuration started in.
 
 It is the transpose of a trajectory, and the empirical check is decisive. A configuration moves only
@@ -227,15 +229,17 @@ involved in a swap advance.
 
 They are nonetheless enough to reconstruct the run exactly.
 
-**The admissibility rule.** An event at slots $k, l$ can be the next one only if each slot's next
+**The admissibility rule.** An event at slots $`k, l`$ can be the next one only if each slot's next
 unread entry is the other slot's current occupant:
 
-$$\texttt{tags}[k][p_k + 1] = \texttt{at}[l] \quad\text{and}\quad \texttt{tags}[l][p_l + 1] = \texttt{at}[k].$$
+```math
+\texttt{tags}[k][p_k + 1] = \texttt{at}[l] \quad\text{and}\quad \texttt{tags}[l][p_l + 1] = \texttt{at}[k].
+```
 
 **The disjointness lemma.** Any two admissible events are slot-disjoint. Suppose two shared slot
-$k$. Both would require $\texttt{tags}[k][p_k+1]$ to equal the current occupant of their other slot;
+$`k`$. Both would require $`\texttt{tags}[k][p_k+1]`$ to equal the current occupant of their other slot;
 but that entry names one tag, and occupants are distinct because the tags form a permutation. So the
-two other slots would have to be the same slot, making the events identical. $\square$
+two other slots would have to be the same slot, making the events identical. $`\square`$
 
 Disjoint transpositions commute, so **the replay is order-independent**: whichever admissible event
 is taken first, the per-configuration trajectories come out the same. Verified on the run below —
@@ -262,13 +266,13 @@ out as the set of pairs that fired, returned as `"swapGraph"`. On the run below 
 edges, exactly the schedule's. This matters because the `GraphParallelTempering` return does not
 carry the schedule, so requiring it would mean carrying the `GraphCTLSchedule` output around.
 
-**Cost** is one pass over the admissible pairs per event: $O(E \cdot S)$ for $S$ swaps, 1.1 s for
+**Cost** is one pass over the admissible pairs per event: $`O(E \cdot S)`$ for $`S`$ swaps, 1.1 s for
 2402 swaps over 16 replicas.
 
 ### 8. Rungs, ends and counting
 
-Rungs are numbered by increasing $\beta$ — in homogeneous $c\cdot O$ form that is $c_0$, the
-component the ladder is a ladder in — so rung 1 is the **hottest** and rung $n$ the coldest.
+Rungs are numbered by increasing $`\beta`$ — in homogeneous $`c\cdot O`$ form that is $`c_0`$, the
+component the ladder is a ladder in — so rung 1 is the **hottest** and rung $`n`$ the coldest.
 `mix["order"]` holds the permutation; the raw arrays stay in the chart's own key order.
 
 A round trip is counted by walking each trajectory with a single label: touching the coldest rung
@@ -301,9 +305,9 @@ one. The acceptance spread is the weak point and it is a statement about the **s
 one was built over the full bounding box of the bootstrap table, so seven of its rungs sit outside
 the sampled fan — see `HomogeneousHamiltonian.md` §8.
 
-The flow $f$ came out non-monotone, and per §4 that is expected here rather than diagnostic: the
-schedule is two-dimensional, with rung 4 at $(\beta, n_{t0}) = (0.857, 1.61)$ and rung 5 at
-$(0.898, -2.22)$.
+The flow $`f`$ came out non-monotone, and per §4 that is expected here rather than diagnostic: the
+schedule is two-dimensional, with rung 4 at $`(\beta, n_{t0}) = (0.857, 1.61)`$ and rung 5 at
+$`(0.898, -2.22)`$.
 
 ### 10. API
 
@@ -311,7 +315,7 @@ $(0.898, -2.22)$.
 | --- | --- |
 | `MixingData[res]` | replays the run; returns the bundle everything else takes |
 | `RoundTrips[mix]` | per-configuration counts, totals, rate, visits to each end |
-| `ReplicaFlow[mix]` | $f$ at each rung, in the chart's key order |
+| `ReplicaFlow[mix]` | $`f`$ at each rung, in the chart's key order |
 | `OccupancyMatrix[mix]` | `m[[rung, configuration]]`, arrivals |
 | `MixingReport[mix]` | the summary table above |
 | `MixingPlots[mix]` | `"RoundTrips"`, `"Acceptance"`, `"Flow"`, `"Occupancy"`, `"Trajectory"` |
@@ -332,7 +336,7 @@ rungs, and only `MixingReport` applies it.
   flow; there is no way to retrofit them.
 - **Per-edge acceptance.** `swapAccept`/`swapTry` are per replica, so a single bad edge is visible
   only as depressed acceptance at both its ends.
-- **A flow diagnostic for a genuinely two-dimensional ladder.** §4's $f$ wants a chain.
+- **A flow diagnostic for a genuinely two-dimensional ladder.** §4's $`f`$ wants a chain.
 
 ### 12. See also
 

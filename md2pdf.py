@@ -242,6 +242,30 @@ def table(rows, v):
 def convert(md, title):
     v = Vault()
 
+    # GitHub's PROTECTED maths forms, normalised back to $$..$$ / $..$ before anything
+    # else runs.  GitHub applies CommonMark backslash-escaping inside $..$ and $$..$$, so
+    # a backslash before ASCII punctuation is eaten before KaTeX sees it: \# errors
+    # outright ("macro parameter character"), while \{ \} \, \; vanish SILENTLY -- set
+    # notation renders as a bare comma list, with no error.  Content inside a ```math
+    # fence or a $`..`$ span is not markdown-processed, so the sources use those.
+    #
+    # This must run FIRST.  The fenced-code rule below would otherwise typeset a ```math
+    # block verbatim, and inline() vaults code spans before maths, which would eat the
+    # backticks of a $`..`$ span and leave its dollars to pair with the next real one.
+    def _mathfence(m):
+        pre = m.group("pre")
+        body = m.group("body")
+        if pre:                       # strip the prefix the fence carries on every line
+            body = "\n".join(l[len(pre):] if l.startswith(pre) else l.lstrip()
+                             for l in body.split("\n"))
+        return pre + "$$" + body + "$$"
+    # The prefix is whatever the opening line carried -- indentation inside a list item,
+    # or "> " inside a blockquote.  The closer must repeat it, which is how the fence is
+    # written, so the backreference pins the pair.
+    md = re.sub(r"(?P<pre>[ \t]*(?:>[ \t]?)*)```math[ \t]*\n(?P<body>.*?)\n(?P=pre)```[ \t]*$",
+                _mathfence, md, flags=re.S | re.M)
+    md = re.sub(r"\$`([^`]+?)`\$", lambda m: "$" + m.group(1) + "$", md)
+
     # Fenced code -> Verbatim, ASCII-folded so pdflatex never sees a stray byte.
     def fence(m):
         body = "\n".join(esc(l, mono=True) for l in m.group(2).rstrip("\n").split("\n"))
