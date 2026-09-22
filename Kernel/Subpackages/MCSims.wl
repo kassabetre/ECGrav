@@ -1102,6 +1102,139 @@ s*(EulerChi[Am[[sphInt,sphInt]]]-1)
 delEulerChi[args___]:=(Message[delEulerChi::argerr, args];
 $Failed);
 
+(* ::Item::Closed:: *)
+(*HSourceTerms and the homogeneous pair*)
+
+
+(* Primary Pattern *)
+HSourceTerms[Am_List,e0_?NumericQ,gChi_?NumericQ,gBdry_?NumericQ]:=
+(*O0 of HomogeneousHamiltonian.md 4.1: everything beta multiplies, at the FIXED physical
+couplings. H2dCombManifold at coupling e0, plus source terms coupling to Euler characteristic
+and boundary-edge count.
+
+	The couplings are arguments rather than globals on purpose. In the notebook form they were
+	captured from the enclosing context, which works but makes a run's Hamiltonian
+	unreconstructable from its own record.*)
+H2dCombManifold[Am,e0]+gChi*EulerChi[Am]+gBdry*NumBdryEdges[Am];
+
+(* Catch-all Pattern *)
+HSourceTerms[args___]:=(Message[HSourceTerms::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+delHSourceTerms[Am_List,e0_?NumericQ,gChi_?NumericQ,gBdry_?NumericQ,i_Integer,j_Integer]:=
+(*HSourceTerms[Amnew] - HSourceTerms[Am] for a toggle of the edge {i,j}, assembled from the
+three incremental deltas. delEulerChi dominates this in the dense phase; see its own note.*)
+delH2dCombManifold[Am,e0,i,j]+gChi*delEulerChi[Am,i,j]+gBdry*delNumBdryEdges[Am,i,j];
+
+(* Catch-all Pattern *)
+delHSourceTerms[args___]:=(Message[delHSourceTerms::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+HHomogeneousSource[Am_List,e0_?NumericQ,gChi_?NumericQ,gBdry_?NumericQ,
+	c0_?NumericQ,c1_?NumericQ]:=
+(*The homogeneous pair of HomogeneousHamiltonian.md 4.2: H = c0*O0 + c1*O1, with O1 the
+triangle count. Run the driver at bt = 1 and the couplings c carry the temperature, so that
+
+	beta*(O0 + nt0*O1) == c0*O0 + c1*O1   with   c = {beta, beta*nt0},
+
+which is HomogeneousCouplings. That identity is a regression test, not a remark.
+
+	EVERY numeric argument is gated on NumericQ, never _Real. An integer-valued coupling does
+	not match _Real, the call then returns UNEVALUATED, and the acceptance test's deliberate
+	fourth branch treats an undetermined comparison as reject -- so the chain silently stops
+	moving instead of erroring. That trap is called out in the spec and is cheap to remove here.
+
+	NOTE ON THE DRIVERS. This form is directly usable by the single-parameter drivers, which
+	call hamiltonian[graph, hparams]: pass HHomogeneousSource[e0,gChi,gBdry,c0,c1] as the inert
+	head. It is NOT usable as-is by the EXTERNAL-FIELD drivers, which discard hparams and call
+	Apply[hamiltonian, externalFieldTable[[i]]] instead -- so the head they receive must already
+	carry e0, gChi and gBdry. Define that head in your own context, where it will distribute to
+	the subkernels; a head built inside this package would live in ECGrav`Private` and be
+	skipped by DistributeDefinitions, silently. The two lines are:
+
+		hHom[am_List,c0_?NumericQ,c1_?NumericQ]:=
+			ECGrav`HHomogeneousSource[am,e0,gChi,gBdry,c0,c1];
+		dHHom[am_List,c0_?NumericQ,c1_?NumericQ,i_Integer,j_Integer]:=
+			ECGrav`delHHomogeneousSource[am,e0,gChi,gBdry,c0,c1,i,j];
+
+	and the conjugate observables come from HomogeneousConjugateObs, which is worth using
+	rather than hand-writing: a mistyped entry there leaves a conjugate observable
+	non-numeric and turns the whole MBAR grid symbolic.*)
+c0*HSourceTerms[Am,e0,gChi,gBdry]+c1*NumTriangles[Am];
+
+(* Catch-all Pattern *)
+HHomogeneousSource[args___]:=(Message[HHomogeneousSource::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+delHHomogeneousSource[Am_List,e0_?NumericQ,gChi_?NumericQ,gBdry_?NumericQ,
+	c0_?NumericQ,c1_?NumericQ,i_Integer,j_Integer]:=
+(*HHomogeneousSource[Amnew] - HHomogeneousSource[Am] for a toggle of the edge {i,j}.*)
+c0*delHSourceTerms[Am,e0,gChi,gBdry,i,j]+c1*delNumTriangles[Am,i,j];
+
+(* Catch-all Pattern *)
+delHHomogeneousSource[args___]:=(Message[delHHomogeneousSource::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+HomogeneousConjugateObs[e0_?NumericQ,gChi_?NumericQ,gBdry_?NumericQ]:=
+(*The conjugate observables {O0, O1} as a list of pure functions, in the order the coupling
+vector c uses, ready to hand to an external-field driver.
+
+	Provided as a builder because hand-writing this list is a known way to lose a day: one
+	mistyped entry leaves a conjugate observable non-numeric, MBARWeightBasis forms
+	obs.Transpose[fields] on it, and the whole grid goes symbolic -- with no error, just a run
+	that never finishes. These are pure Functions closing over numeric values and package
+	symbols only, so they distribute to subkernels unchanged.*)
+{HSourceTerms[#,e0,gChi,gBdry]&,NumTriangles[#]&};
+
+(* Catch-all Pattern *)
+HomogeneousConjugateObs[args___]:=(Message[HomogeneousConjugateObs::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*Coordinate helpers*)
+
+
+(* Primary Pattern *)
+HomogeneousCouplings[beta_?NumericQ,nt0_?NumericQ]:=
+(*(beta,nt0) -> c. HomogeneousHamiltonian.md 4.3. N[] because an exact coupling propagates
+symbolic arithmetic through every proposal.*)
+N[{beta,beta*nt0}];
+
+(* Catch-all Pattern *)
+HomogeneousCouplings[args___]:=(Message[HomogeneousCouplings::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+PhysicalCouplings[c_List/;(Length[c]==2&&VectorQ[c,NumericQ])]:=
+(*c -> (beta,nt0), the inverse of HomogeneousCouplings.*)
+{c[[1]],c[[2]]/c[[1]]};
+
+(* Catch-all Pattern *)
+PhysicalCouplings[args___]:=(Message[PhysicalCouplings::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+HomogeneousCouplingTable[betas_List/;VectorQ[betas,NumericQ],
+	nt0s_List/;VectorQ[nt0s,NumericQ]]:=
+(*The full external-field table over a (beta,nt0) grid, in the row order the drivers index.*)
+Flatten[Outer[HomogeneousCouplings,N[betas],N[nt0s],1],1];
+
+(* Catch-all Pattern *)
+HomogeneousCouplingTable[args___]:=(Message[HomogeneousCouplingTable::argerr, args];
+$Failed);
+
+
 
 
 (* ::Section::Closed:: *)

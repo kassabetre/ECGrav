@@ -166,6 +166,74 @@ VerificationTest[ECGrav`delNumBdryEdges["not a matrix"], $Failed,
 VerificationTest[ECGrav`delEulerChi["not a matrix"], $Failed,
     {ECGrav`delEulerChi::argerr}, TestID -> "delEulerChi-argerr"];
 
+(* ---------- The homogeneous source-term pair (deterministic) ---------- *)
+
+(* The whole point of the homogeneous form is one identity: running at bt = 1 with couplings
+   c = {beta, beta*nt0} must reproduce beta times the physical Hamiltonian. This is
+   HomogeneousHamiltonian.md section 5, re-run against the package rather than the notebook. *)
+srcE0 = 3.0; srcGChi = -0.5; srcGBdry = 0.5;
+hPhysical[am_, nt0_] := ECGrav`HSourceTerms[am, srcE0, srcGChi, srcGBdry] + nt0*ECGrav`NumTriangles[am];
+dHPhysical[am_, nt0_, i_, j_] := ECGrav`delHSourceTerms[am, srcE0, srcGChi, srcGBdry, i, j] + nt0*ECGrav`delNumTriangles[am, i, j];
+srcBetas = {0.5, 1.0, 3.0}; srcNt0s = {-1.6, 0.0, 1.2};
+
+VerificationTest[
+    Max@Flatten@Table[With[{c = ECGrav`HomogeneousCouplings[b, nt]},
+        Abs[b*hPhysical[am, nt] - ECGrav`HHomogeneousSource[am, srcE0, srcGChi, srcGBdry, c[[1]], c[[2]]]]],
+        {am, {K4, C6, octaAm}}, {b, srcBetas}, {nt, srcNt0s}],
+    0., SameTest -> floatEq, TestID -> "HHomogeneousSource-equals-beta-times-physical-H"];
+
+VerificationTest[
+    Max@Flatten@Table[With[{c = ECGrav`HomogeneousCouplings[b, nt]},
+        Abs[b*dHPhysical[am, nt, 1, 2]
+            - ECGrav`delHHomogeneousSource[am, srcE0, srcGChi, srcGBdry, c[[1]], c[[2]], 1, 2]]],
+        {am, {K4, C6, octaAm}}, {b, srcBetas}, {nt, srcNt0s}],
+    0., SameTest -> floatEq, TestID -> "delHHomogeneousSource-equals-beta-times-physical-dH"];
+
+VerificationTest[
+    Max@Table[Abs[ECGrav`delHHomogeneousSource[octaAm, srcE0, srcGChi, srcGBdry, 3.0, 2.1, s[[1]], s[[2]]]
+        - (ECGrav`HHomogeneousSource[toggleEdge[octaAm, s[[1]], s[[2]]], srcE0, srcGChi, srcGBdry, 3.0, 2.1]
+           - ECGrav`HHomogeneousSource[octaAm, srcE0, srcGChi, srcGBdry, 3.0, 2.1])],
+        {s, Subsets[Range[Length[octaAm]], {2}]}],
+    0., SameTest -> floatEq, TestID -> "delHHomogeneousSource-matches-recount-every-slot"];
+
+VerificationTest[
+    Max@Flatten@Table[Abs[ECGrav`PhysicalCouplings[ECGrav`HomogeneousCouplings[b, nt]] - {b, nt}],
+        {b, srcBetas}, {nt, {-1.6, 0.7, 1.2}}],
+    0., SameTest -> floatEq, TestID -> "PhysicalCouplings-inverts-HomogeneousCouplings"];
+
+VerificationTest[ECGrav`HomogeneousCouplingTable[{1.0, 8.0}, {-1.6, 1.2}],
+    {{1., -1.6}, {1., 1.2}, {8., -12.8}, {8., 9.6}},
+    SameTest -> floatEq, TestID -> "HomogeneousCouplingTable-grid-order"];
+
+(* The conjugate observables must be NUMERIC on a state and must be the same O0, O1 the
+   Hamiltonian uses. A mistyped hand-written list leaves one entry non-numeric, MBARWeightBasis
+   then forms obs.Transpose[fields] on it, and the grid goes symbolic with no error at all --
+   which is why this builder exists and why this test checks numericity explicitly. *)
+VerificationTest[
+    With[{co = ECGrav`HomogeneousConjugateObs[srcE0, srcGChi, srcGBdry]},
+        {Length[co], AllTrue[co, NumericQ[#[octaAm]] &],
+         co[[1]][octaAm] === ECGrav`HSourceTerms[octaAm, srcE0, srcGChi, srcGBdry],
+         co[[2]][octaAm] === ECGrav`NumTriangles[octaAm]}],
+    {2, True, True, True}, TestID -> "HomogeneousConjugateObs-is-numeric-and-matches-H"];
+
+(* Every numeric slot is gated on NumericQ, not _Real. Under _Real an integer coupling fails to
+   match, the call returns UNEVALUATED, and the acceptance test's fourth branch reads an
+   undetermined comparison as reject -- so the chain stops moving silently instead of erroring.
+   Integer couplings must therefore produce a number. *)
+VerificationTest[NumericQ[ECGrav`HHomogeneousSource[octaAm, 3, -1, 1, 2, 1]], True,
+    TestID -> "HHomogeneousSource-accepts-integer-couplings"];
+VerificationTest[NumericQ[ECGrav`delHHomogeneousSource[octaAm, 3, -1, 1, 2, 1, 1, 2]], True,
+    TestID -> "delHHomogeneousSource-accepts-integer-couplings"];
+VerificationTest[NumericQ[ECGrav`HSourceTerms[octaAm, 3, -1, 1]], True,
+    TestID -> "HSourceTerms-accepts-integer-couplings"];
+
+VerificationTest[ECGrav`HSourceTerms[octaAm], $Failed,
+    {ECGrav`HSourceTerms::argerr}, TestID -> "HSourceTerms-argerr"];
+VerificationTest[ECGrav`HHomogeneousSource[octaAm], $Failed,
+    {ECGrav`HHomogeneousSource::argerr}, TestID -> "HHomogeneousSource-argerr"];
+VerificationTest[ECGrav`PhysicalCouplings[{1., 2., 3.}], $Failed,
+    {ECGrav`PhysicalCouplings::argerr}, TestID -> "PhysicalCouplings-argerr-on-wrong-width"];
+
 (* ---------- Aggregating-data helpers (deterministic) ---------- *)
 
 VerificationTest[ECGrav`LogSumExp[{0., 0., 0.}], Log[3.], SameTest -> floatEq, TestID -> "LogSumExp-log3"];

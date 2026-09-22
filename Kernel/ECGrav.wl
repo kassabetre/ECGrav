@@ -606,6 +606,119 @@ Inputs are:
 delEulerChi::argerr="An adjacency matrix is expected at position 1, an integer at
 position 2, and an integer at position 3.";
 
+(* ::Item::Closed:: *)
+(*Homogeneous source-term Hamiltonian*)
+
+
+(* :Usage Messages: *)
+
+HSourceTerms::usage="HSourceTerms[Am,e0,gChi,gBdry] = H2dCombManifold[Am,e0] +
+gChi*EulerChi[Am] + gBdry*NumBdryEdges[Am]. This is O0 of HomogeneousHamiltonian.md 4.1: the
+part of the energy that beta multiplies, at fixed physical couplings.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. e0 = the H2dCombManifold coupling,
+3. gChi = the Euler-characteristic source coupling,
+4. gBdry = the boundary-edge source coupling\[IndentingNewLine]It returns a real number.";
+
+(* :Error Messages: *)
+
+HSourceTerms::argerr="An adjacency matrix is expected at position 1 and numbers at
+positions 2, 3 and 4.";
+
+(* :Usage Messages: *)
+
+delHSourceTerms::usage="delHSourceTerms[Am,e0,gChi,gBdry,i,j] computes HSourceTerms[Amnew] -
+HSourceTerms[Am] where Amnew is found by toggling Am at row i and col j.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. e0, 3. gChi, 4. gBdry = couplings,
+5. i = Integer, row number, 6. j = Integer, column number\[IndentingNewLine]It returns a real number.";
+
+(* :Error Messages: *)
+
+delHSourceTerms::argerr="An adjacency matrix is expected at position 1, numbers at positions 2,
+3 and 4, and integers at positions 5 and 6.";
+
+(* :Usage Messages: *)
+
+HHomogeneousSource::usage="HHomogeneousSource[Am,e0,gChi,gBdry,c0,c1] = c0*O0 + c1*O1, the
+homogeneous pair of HomogeneousHamiltonian.md 4.2, with O0 = HSourceTerms[Am,e0,gChi,gBdry] and
+O1 = NumTriangles[Am]. Run a driver at bt = 1 and let c carry the temperature:
+beta*(O0 + nt0*O1) == c0*O0 + c1*O1 for c = HomogeneousCouplings[beta,nt0].
+It is directly usable by the single-parameter drivers, which call hamiltonian[graph,hparams].
+The EXTERNAL-FIELD drivers discard hparams and apply the head to a field row instead, so for
+those define a head in your own context that closes over e0, gChi and gBdry and calls this; a
+head built inside the package would not reach the parallel subkernels.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. e0, 3. gChi, 4. gBdry = fixed couplings,
+5. c0, 6. c1 = the homogeneous couplings\[IndentingNewLine]It returns a real number.";
+
+(* :Error Messages: *)
+
+HHomogeneousSource::argerr="An adjacency matrix is expected at position 1 and numbers at
+positions 2 through 6.";
+
+(* :Usage Messages: *)
+
+delHHomogeneousSource::usage="delHHomogeneousSource[Am,e0,gChi,gBdry,c0,c1,i,j] computes
+HHomogeneousSource[Amnew] - HHomogeneousSource[Am] where Amnew is found by toggling Am at row i
+and col j.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. e0, 3. gChi, 4. gBdry = fixed couplings,
+5. c0, 6. c1 = the homogeneous couplings, 7. i = Integer, row number,
+8. j = Integer, column number\[IndentingNewLine]It returns a real number.";
+
+(* :Error Messages: *)
+
+delHHomogeneousSource::argerr="An adjacency matrix is expected at position 1, numbers at
+positions 2 through 6, and integers at positions 7 and 8.";
+
+(* :Usage Messages: *)
+
+HomogeneousConjugateObs::usage="HomogeneousConjugateObs[e0,gChi,gBdry] gives the conjugate
+observables {O0,O1} as a list of pure functions, in the order the coupling vector c uses, ready
+to pass to an external-field driver. Prefer it to hand-writing the list: a single mistyped entry
+leaves a conjugate observable non-numeric and turns the MBAR grid symbolic, with no error.
+Inputs are:
+1. e0, 2. gChi, 3. gBdry = the fixed physical couplings\[IndentingNewLine]It returns a list of two functions.";
+
+(* :Error Messages: *)
+
+HomogeneousConjugateObs::argerr="Three numbers are expected.";
+
+(* :Usage Messages: *)
+
+HomogeneousCouplings::usage="HomogeneousCouplings[beta,nt0] gives the homogeneous coupling
+vector {beta, beta*nt0} corresponding to the physical point (beta,nt0).
+Inputs are:
+1. beta = inverse temperature\[IndentingNewLine]2. nt0 = the triangle-count coupling\[IndentingNewLine]It returns a list of two reals.";
+
+(* :Error Messages: *)
+
+HomogeneousCouplings::argerr="Two numbers are expected.";
+
+(* :Usage Messages: *)
+
+PhysicalCouplings::usage="PhysicalCouplings[c] gives the physical point {beta,nt0} corresponding
+to the homogeneous coupling vector c, inverting HomogeneousCouplings.
+Inputs are:
+1. c = a two-element numeric list\[IndentingNewLine]It returns a list of two reals.";
+
+(* :Error Messages: *)
+
+PhysicalCouplings::argerr="A two-element numeric list is expected.";
+
+(* :Usage Messages: *)
+
+HomogeneousCouplingTable::usage="HomogeneousCouplingTable[betas,nt0s] gives the external-field
+table over the (beta,nt0) grid, one row per point, in the order the drivers index replicas.
+Inputs are:
+1. betas = a numeric list\[IndentingNewLine]2. nt0s = a numeric list\[IndentingNewLine]It returns a matrix of two-element rows.";
+
+(* :Error Messages: *)
+
+HomogeneousCouplingTable::argerr="Two numeric lists are expected.";
+
+
 
 
 (* ::Section::Closed:: *)
