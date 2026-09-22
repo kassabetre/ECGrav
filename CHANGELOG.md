@@ -4,6 +4,65 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [1.17.0] - 2026-09-21
+
+### Added
+- **P2's three source operators, with incremental deltas.** `NumTriangles` counts 3-cliques as
+  `Total[A*A^2]/6` — `Tr[A^3]/6` with one matrix multiply saved, since `A^2` is symmetric — and
+  `delNumTriangles` is the signed common-neighbour count, O(n) against O(n^3) for a recount. It
+  does not read `Am[[a,b]]`, because the `c=a` and `c=b` terms of the dot product carry the zero
+  diagonal, so the delta comes off the current matrix without forming the toggled one; the driver
+  needs exactly that, since it evaluates `delH` before deciding whether to accept.
+
+  **`NumBdryEdges` counts edges lying in EXACTLY ONE triangle.** An edge in no triangle is not a
+  boundary edge, so `NumBdryEdges == 0` does not imply a closed combinatorial manifold. The
+  octahedron and a 6-cycle both return 0, for opposite reasons, and a test pins each.
+  `delNumBdryEdges` is local to the common neighbourhood: only `{i,j}` and the edges joining `i`
+  and `j` to their common neighbours can change status.
+
+  `delEulerChi` is the alternating clique sum in closed form. The new cliques on adding `{i,j}`
+  are `S ∪ {i,j}` for each clique `S` of the common neighbourhood `W`, so the sum collapses to
+  `±(EulerChi[W] - 1)`, the `-1` being the empty clique. Only `W` is enumerated, never the whole
+  graph. **Its cost grows with `|W|`**, i.e. largest in the dense phase: measured at n = 21 it runs
+  24.4 µs per call at edge density 0.2 but 261 µs at 0.8, where it is 59% of a full `delH` against
+  1.6 µs for `delNumTriangles`. Still 6-19x cheaper than recomputing χ, but the saving shrinks as
+  `|W| → n-2`. Benchmark before fixing a phase-map grid.
+
+- **The homogeneous source-term pair.** `HHomogeneousSource[Am,e0,gChi,gBdry,c0,c1] = c0*O0 +
+  c1*O1`, with `O0 = HSourceTerms[Am,e0,gChi,gBdry]` and `O1 = NumTriangles[Am]`, plus their
+  deltas. Run a driver at `bt = 1` and the couplings carry the temperature:
+  `beta*(O0 + nt0*O1) == c0*O0 + c1*O1` for `c = HomogeneousCouplings[beta,nt0]`.
+  `PhysicalCouplings` inverts that map and `HomogeneousCouplingTable` lays out the external-field
+  table in the row order the drivers index.
+
+  The physical couplings are **arguments, not globals**: a run whose Hamiltonian cannot be
+  reconstructed from its own record cannot be checked later. Every numeric slot is gated on
+  `NumericQ` rather than `_Real` — an integer coupling does not match `_Real`, the call returns
+  unevaluated, and the acceptance test's deliberate fourth branch reads an undetermined comparison
+  as reject, so the chain stops moving silently rather than erroring.
+
+- **`HomogeneousConjugateObs`** builds the conjugate observable list rather than leaving it
+  hand-written. One mistyped entry there leaves an observable non-numeric, `MBARWeightBasis` forms
+  `obs . Transpose[fields]` on it, and the entire MBAR grid goes symbolic — with no error, just a
+  run that never finishes.
+
+- **`QuantumMCSimsPort.md`**, the staged plan for the D > 2, k > 2 expansion (Track D of
+  `ExpansionRoadmap.md`), which builds on the homogeneous form landed here.
+
+### Notes
+- **Nothing breaks and no number moves.** Ten new public symbols; no existing symbol changes.
+- **Numerically identical to the notebook definitions they replace**, checked over 105 graphs
+  spanning n = 4..10 and edge density 0.15..0.9, every edge slot, 2415 comparisons. Existing
+  simulation results are unaffected.
+- Every delta is asserted against a full recount on **every** edge slot rather than a sampled one:
+  a delta right on most slots and wrong on a few surfaces only as a slowly wrong distribution.
+  `NumBdryEdges` is additionally checked against an independent 3-clique enumeration, and the
+  homogeneous identity of `HomogeneousHamiltonian.md` §5 was re-run against the package — 300
+  comparisons, energy to 1.1e-13 and delta to 2.8e-14, the latter matching the figure the
+  specification recorded.
+- `ExpansionRoadmap.md` items **B2 and B3 are complete**.
+- Suite 250 -> 293 tests.
+
 ## [1.16.0] - 2026-09-09
 
 ### Added
