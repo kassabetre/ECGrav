@@ -955,6 +955,60 @@ $Failed);
 
 
 (* ::Section::Closed:: *)
+(*Source operators*)
+
+
+(* The operators P2's source terms couple to, each with the incremental delta it needs. The
+	Metropolis inner loop consumes delH, not H, so an operator without a delta is unusable at
+	campaign scale: recomputing it per proposal is what makes a phase map unaffordable.
+
+	Every delta here is the change under toggling the single edge {a,b}, matching the
+	delH[state, params, row, col] contract the drivers call. Each is asserted against the
+	recomputed difference in Tests/MCSims.wlt rather than trusted from its derivation. *)
+
+
+(* ::Item::Closed:: *)
+(*NumTriangles*)
+
+
+(* Primary Pattern *)
+NumTriangles[Am_List]:=
+(*Number of triangles (3-cliques) of the graph, equivalently the number of 2-faces of its
+clique complex.
+
+	Tr[A^3] counts each triangle once per (starting vertex, direction), so six times over, and
+	Tr[A^3] == Total[A*A^2] because A^2 is symmetric -- which saves the third matrix multiply.
+	Read off the matrix alone: no Graph object and no FindClique, and so affordable inside a
+	Metropolis loop, unlike HWeightedFaceCounts, which builds every maximal clique and caps
+	its face count at size 5.*)
+Total[Am*(Am . Am),2]/6;
+
+(* Catch-all Pattern *)
+NumTriangles[args___]:=(Message[NumTriangles::argerr, args];
+$Failed);
+
+
+(* Primary Pattern *)
+delNumTriangles[Am_List,a_Integer,b_Integer]:=
+(*NumTriangles[Amnew] - NumTriangles[Am], where Amnew toggles the edge {a,b}.
+
+	Toggling {a,b} creates or destroys exactly one triangle per common neighbour of a and b,
+	so the delta is +/-(A^2)_{ab} == Am[[a]].Am[[b]] -- O(n), against O(n^3) for a recount.
+
+	That dot product does NOT depend on Am[[a,b]]: its c==a and c==b terms carry the factors
+	Am[[a,a]] and Am[[b,b]], which are zero on a simple graph. So the delta is taken from the
+	CURRENT matrix without ever forming the toggled one, which is what the driver needs --
+	it evaluates delH before deciding whether to accept.*)
+With[{togab=If[Am[[a,b]]==0,1,-1]},
+togab*(Am[[a]] . Am[[b]])
+];
+
+(* Catch-all Pattern *)
+delNumTriangles[args___]:=(Message[delNumTriangles::argerr, args];
+$Failed);
+
+
+(* ::Section::Closed:: *)
 (*Graph Hamiltonians*)
 
 

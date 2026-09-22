@@ -55,6 +55,50 @@ VerificationTest[
     SameTest -> floatEq, TestID -> "delHIsing-matches-HIsing-difference"
 ];
 
+(* ---------- Source operators: NumTriangles (deterministic) ---------- *)
+
+(* Every delta below is checked against the recomputed difference over EVERY edge slot, not a
+   sampled one. A delta that is right on most slots and wrong on a few is the failure mode
+   these guard, and it would never show up as anything but a slowly wrong distribution. *)
+toggleEdge[am_, i_, j_] := ReplacePart[am, {{i, j} -> 1 - am[[i, j]], {j, i} -> 1 - am[[j, i]]}];
+deltaMatchesRecount[am_] := AllTrue[Subsets[Range[Length[am]], {2}],
+    ECGrav`delNumTriangles[am, #[[1]], #[[2]]]
+      === ECGrav`NumTriangles[toggleEdge[am, #[[1]], #[[2]]]] - ECGrav`NumTriangles[am] &];
+octaAm = Normal[AdjacencyMatrix[octaG]];
+
+VerificationTest[ECGrav`NumTriangles[K4], 4, TestID -> "NumTriangles-K4"];
+VerificationTest[ECGrav`NumTriangles[Normal[AdjacencyMatrix[CompleteGraph[5]]]], 10,
+    TestID -> "NumTriangles-K5-is-binomial-5-3"];
+VerificationTest[ECGrav`NumTriangles[C6], 0, TestID -> "NumTriangles-cycle-is-0"];
+VerificationTest[ECGrav`NumTriangles[octaAm], 8, TestID -> "NumTriangles-octahedron-is-8"];
+VerificationTest[ECGrav`NumTriangles[ConstantArray[0, {4, 4}]], 0,
+    TestID -> "NumTriangles-empty-graph-is-0"];
+
+(* the count is a count: an exact Integer, not a machine float *)
+VerificationTest[IntegerQ[ECGrav`NumTriangles[octaAm]], True,
+    TestID -> "NumTriangles-returns-an-integer"];
+
+VerificationTest[deltaMatchesRecount[K4], True,
+    TestID -> "delNumTriangles-matches-recount-every-slot-K4"];
+VerificationTest[deltaMatchesRecount[C6], True,
+    TestID -> "delNumTriangles-matches-recount-every-slot-C6"];
+VerificationTest[deltaMatchesRecount[octaAm], True,
+    TestID -> "delNumTriangles-matches-recount-every-slot-octahedron"];
+
+(* The driver evaluates delH on the CURRENT matrix, before it knows whether it will accept, so
+   the delta must not read Am[[a,b]] through the common-neighbour sum. Equivalent statement:
+   toggling and re-asking must give exactly the negated delta. Guards the O(n) shortcut. *)
+VerificationTest[
+    AllTrue[Subsets[Range[Length[octaAm]], {2}],
+        ECGrav`delNumTriangles[octaAm, #[[1]], #[[2]]]
+          === -ECGrav`delNumTriangles[toggleEdge[octaAm, #[[1]], #[[2]]], #[[1]], #[[2]]] &],
+    True, TestID -> "delNumTriangles-is-antisymmetric-under-the-toggle"];
+
+VerificationTest[ECGrav`NumTriangles[1, 2, 3], $Failed,
+    {ECGrav`NumTriangles::argerr}, TestID -> "NumTriangles-argerr"];
+VerificationTest[ECGrav`delNumTriangles["not a matrix"], $Failed,
+    {ECGrav`delNumTriangles::argerr}, TestID -> "delNumTriangles-argerr"];
+
 (* ---------- Aggregating-data helpers (deterministic) ---------- *)
 
 VerificationTest[ECGrav`LogSumExp[{0., 0., 0.}], Log[3.], SameTest -> floatEq, TestID -> "LogSumExp-log3"];

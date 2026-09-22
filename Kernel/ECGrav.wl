@@ -510,6 +510,46 @@ ConstrainedProbConjugateField::form="\"Form\" must be \"Density\" or \"PMF\", no
 
 
 (* ::Section::Closed:: *)
+(*Source operators*)
+
+
+(* ::Item::Closed:: *)
+(*NumTriangles*)
+
+
+(* :Usage Messages: *)
+
+NumTriangles::usage="NumTriangles[Am] gives the number of triangles (3-cliques) of the graph
+with adjacency matrix Am, equivalently the number of 2-faces of its clique complex.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]It returns an integer.";
+
+(* :Error Messages: *)
+
+NumTriangles::argerr="An adjacency matrix is expected at position 1.";
+
+
+(* ::Item::Closed:: *)
+(*delNumTriangles*)
+
+
+(* :Usage Messages: *)
+
+delNumTriangles::usage="delNumTriangles[Am,a,b] computes NumTriangles[Amnew] - NumTriangles[Am]
+where Amnew is found by toggling Am at row a and col b. It is the number of common neighbours
+of a and b, signed by whether the edge is being added or removed, and costs O(n) rather than a
+recount.
+Inputs are:
+1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. a = Integer, row number,
+3. b = Integer, column number\[IndentingNewLine]It returns an integer.";
+
+(* :Error Messages: *)
+
+delNumTriangles::argerr="An adjacency matrix is expected at position 1, an integer at
+position 2, and an integer at position 3.";
+
+
+(* ::Section::Closed:: *)
 (*Graph Hamiltonians*)
 
 
