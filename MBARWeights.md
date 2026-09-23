@@ -159,7 +159,7 @@ $`K\times d`$ key matrix:
 
 ```math
 \mathbf{A} = \beta\,\mathbf{O}\mathbf{H}^{\mathsf{T}} \in \mathbb{R}^{S\times K},
-\qquad L_s = \operatorname*{LogSumExp}_{j}\big(\log n_j - F_j - \mathbf{A}_{sj}\big),
+\qquad L_s = \mathop{\mathrm{LogSumExp}}\limits_{j}\big(\log n_j - F_j - \mathbf{A}_{sj}\big),
 \qquad b(x) = \beta\,\mathbf{O}x
 ```
 

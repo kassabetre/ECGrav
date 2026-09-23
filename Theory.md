@@ -109,7 +109,7 @@ i.e. a chemical potential $`J_q`$ on each $`q`$-clique (vertices, edges, triangl
 - **`HEdgeDeg`**$`(A;J,D_1,D_2)`$ — a quartic, degree-regularizing energy tuned by
   target parameters $`D_1,D_2`$,
   ```math
-   H \;=\; \frac{J}{2N}\Big(\operatorname{Tr}A^4 - \operatorname{Tr}\!\big[A^2\,(2D_1 K + 2D_2 I)\big]\Big),\qquad K = \mathbf{1}-I. 
+   H \;=\; \frac{J}{2N}\Big(\mathrm{Tr}\,A^4 - \mathrm{Tr}\!\big[A^2\,(2D_1 K + 2D_2 I)\big]\Big),\qquad K = \mathbf{1}-I. 
   ```
   (The source's comment lists an additive constant $`D_1^2 N(N-1)`$; it is dropped in
   code and is immaterial to sampling, since a constant offset does not change the

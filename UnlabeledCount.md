@@ -159,7 +159,7 @@ expansion of $`(1+z^d)^{n_d}`$ asked for binomial coefficients of enormous argum
 $`\ell(k)`$ is bounded by $`\binom{n}{p}`$.
 
 The recurrence wants $`f(k)`$ for **every** $`k \le M`$, not only divisors — but $`\sigma^k`$ fixes
-the same subsets as $`\sigma^{\gcd(k,L)}`$ where $`L = \operatorname{lcm}`$ of the cycle lengths,
+the same subsets as $`\sigma^{\gcd(k,L)}`$ where $`L = \mathrm{lcm}`$ of the cycle lengths,
 so $`f(k) = f(\gcd(k,L))`$ and the number of distinct evaluations is unchanged.
 
 **This recurrence does not lift.** It holds inside a single cycle type. Burnside averages a
