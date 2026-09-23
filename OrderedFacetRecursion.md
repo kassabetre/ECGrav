@@ -120,7 +120,10 @@ $`\mathrm{Aut}`$ of the **parent** classifies the **children**.
 > which is precisely the branch list out of $`\lambda = (3)`$ in §4, the fourth possibility
 > $`|F_1 \cap F_2| = 3`$ being barred by distinctness. Both $`A`$ and $`B`$ represent the middle orbit.
 
-**Proposition 1.** *Let $`T_1,\dots,T_\ell`$ be the type classes of $`(F_1,\dots,F_i)`$, so $`\ell = \ell(\lambda)`$. Then*
+**Proposition 1.** *Let $`T_1,\dots,T_\ell`$ be the type classes of $`(F_1,\dots,F_i)`$, enumerated so
+that $`|T_u| = \lambda_u`$ for every $`u`$ — weakly decreasing in size, ties broken arbitrarily — so that
+$`\ell = \ell(\lambda)`$. Every vector indexed by $`u`$ below is indexed against that one enumeration.
+Then*
 
 1. $`\mathrm{Aut}(F_1,\dots,F_i) \;=\; \mathrm{Sym}(T_1) \times \dots \times \mathrm{Sym}(T_\ell)`$,
    *the permutations preserving each type class setwise;*
@@ -143,6 +146,10 @@ maps $`F_j \to F_j`$ for $`j \le i`$, hence maps $`V_i`$ onto itself, so $`\phi|
 and $`\phi(S) = S'`$, so $`S`$ and $`S'`$ lie in one $`\mathrm{Aut}`$-orbit and $`a = a'`$. Conversely, given
 $`a = a'`$ and $`|D| = |D'|`$, compose an element of $`\mathrm{Aut}`$ carrying $`S`$ to $`S'`$ with any
 bijection $`D \to D'`$. $`\square`$
+
+How ties are broken is immaterial. Everything downstream depends only on $`\lambda`$ and on the
+multiset of successor states, and permuting classes of equal size changes neither — which is
+precisely what §2.1 meant by $`\lambda`$ being unable to tell such classes apart.
 
 **Corollary 1.1.** $`\displaystyle |\mathrm{Aut}(F_1,\dots,F_i)| \;=\; \prod_{u=1}^{\ell} |T_u|! \;=\; \prod_u \lambda_u!`$
 
@@ -247,6 +254,16 @@ classes and each owes its own part. At $`\lambda = (2,1,1)`$ with $`a = (1,1,1)`
 taken parts and the one leftover part give $`\mathrm{grow} = (1,1,1,1)`$, a partition of $`4`$; collapsing
 duplicates would return a single $`1`$ and lose three vertices. The last group needs no such care,
 holding one element or none.
+
+**The two sides of $`\mathrm{grow}`$ are not alike.** Its inputs are *index-aligned tuples*: $`a_u`$ is
+paired with $`\lambda_u`$ through the single enumeration of type classes fixed in Proposition 1, so the
+order of the components carries meaning. Its output is a *multiset*, written in the weakly decreasing
+form of §1, which discards that order. So at $`\lambda = (2,2,1)`$ the selections $`a = (2,0,1)`$ and
+$`a = (0,2,1)`$ are different branches — they take different vertices, and §5.1 identifies them as
+$`F_1`$ and $`F_2`$ — that nonetheless share the successor $`\mathrm{grow} = (2,2,1)`$. Two things follow.
+The re-sorting on the way out is what keeps the state canonical, so that such branches meet in one
+memo entry; and an implementation holding its live type-class list in any other order must sort
+before comparing against a successor, which is the trap of §9, item 4.
 
 Note that $`\mathrm{grow}`$ depends only on $`\lambda`$, $`a`$ and $`t`$, which together with Proposition 1
 is the whole reason a partition suffices as state.
