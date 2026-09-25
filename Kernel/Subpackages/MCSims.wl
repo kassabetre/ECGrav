@@ -9520,7 +9520,7 @@ GraphWangLandau[seedGraph_List,hamiltonian_[hparams___],delH_[delHparams___],
 Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStates,
 		snap,proposeRC,applyMove,logg,hist,lnf,step,phase,amCur,eCur,merges,maxDrift,
 		minE,minStates,reductions,row,col,dE,eNew,amNew,logRatio,accept,nLev,u,
-		stopped,shift},
+		stopped,shift,windowRejects,margin},
 
 	schedule=OptionValue["Schedule"];
 	flatness=OptionValue["Flatness"];
@@ -9565,29 +9565,47 @@ Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStat
 	hist=<|eCur->0|>;
 	lnf=1.0;step=0;phase="classic";merges=0;maxDrift=0.;reductions={};stopped="budget";
 	minE=eCur;minStates=<|seedGraph->True|>;
+	windowRejects=0;margin=100*snapTol;
 
 	While[step<maxSteps,
 		{row,col}=proposeRC[];
 		dE=delH[amCur,delHparams,row,col];
 		eNew=snap[eCur+dE];
 
+		(*The window is tested FIRST, on the incremental energy, with a margin far above any drift
+			the periodic check below tolerates. An energy outside the window is never a key, so
+			testing it after the key lookup would pay a full hamiltonian evaluation on every such
+			proposal -- and near the top of a restrictive window they are most of them.*)
+		If[eMin-margin<=eNew<=eMax+margin,
+
 		(*A key that has never been seen is either a genuinely new level or accumulated drift
 			throwing a spurious one. Drift would silently inflate the level count, which feeds
 			both the flatness test and the 1/t schedule, so settle it exactly rather than guess:
-			recompute from the hamiltonian instead of trusting the running sum. Genuine new
-			levels are rare -- tens per run -- so the cost is negligible against millions of
-			incremental steps.*)
+			recompute from the hamiltonian instead of trusting the running sum.
+
+			Only an energy INSIDE the window becomes a level. One registered outside it is a level
+			the walk can never visit: its histogram stays at zero so the Classic flatness test can
+			never pass, it inflates nLev in the 1/t rate, and it is returned in the density with
+			logg == 0. None of that shows while the window spans the whole spectrum, which is why
+			the full-window validation could not catch it.
+
+			A new level starts at its PARENT's logg, not at zero. Under 1/t the established levels
+			sit near Log[step] above zero, so a level found late at zero would trap the walk until
+			it caught up -- about Log[step]/lnf visits, a growing share of the run. The parent is
+			one edge toggle away and the nearest estimate available.*)
 		If[!KeyExistsQ[logg,eNew],
 			amNew=applyMove[amCur,row,col];
 			eNew=snap[hamiltonian[amNew,hparams]];
-			If[KeyExistsQ[logg,eNew],
-				merges++,
-				logg[eNew]=0.;hist[eNew]=0
+			Which[
+				KeyExistsQ[logg,eNew],merges++,
+				eMin<=eNew<=eMax,logg[eNew]=logg[eCur];hist[eNew]=0
 			]
-		];
+		]];
 
 		(*Windowed Wang-Landau: a move out of the window is rejected, but the update below still
-			fires at the unchanged current state.*)
+			fires at the unchanged current state. Rejections are counted because any at all means
+			states lie outside the window, which decides the normalisation below.*)
+		If[!(eMin<=eNew<=eMax),windowRejects++];
 		If[eMin<=eNew<=eMax,
 			logRatio=logg[eCur]-logg[eNew];
 			(*Three branches on purpose. The fourth argument of If fires when the comparison is
@@ -9652,17 +9670,24 @@ Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStat
 		pins the constant AND is a free correctness check. Do NOT instead set g(Emin)=1: the
 		labeled ground level is degenerate -- measured g(Emin)=60 at n=5 -- so that convention is
 		wrong for this model by that factor.*)
-	shift=Binomial[v,2]*Log[2.]-LogSumExp[Values[logg]];
+	shift=If[windowRejects==0,
+		Binomial[v,2]*Log[2.]-LogSumExp[Values[logg]],
+		(*The walk pressed against the window, so states lie outside it and the labeled total no
+			longer describes the levels returned. Normalise over the window instead. The density
+			is then RELATIVE: canonical averages and the double-peak diagnostics are indifferent
+			to that, but -beta*F carries an unknown additive constant.*)
+		-LogSumExp[Values[logg]]];
 
 	{
 		<|"minEnergy"->minE,"minEstates"->Keys[minStates]|>,
 		<|"logg"->KeySort[logg+shift],"levels"->Sort[Keys[logg]],"window"->{eMin,eMax},
-			"normalisation"->"TotalStates","totalStates"->2^Binomial[v,2]|>,
+			"normalisation"->If[windowRejects==0,"TotalStates","WindowRelative"],
+			"totalStates"->If[windowRejects==0,2^Binomial[v,2],Missing["WindowRestricted"]]|>,
 		<|1-><|"graph"->amCur,"energy"->eCur|>|>,
 		<|"hist"->KeySort[hist],"logf"->lnf,"steps"->step,"phase"->phase,
 			"schedule"->schedule,"converged"->(stopped==="converged"),
 			"levelsVisited"->Length[logg],"reductions"->reductions,
-			"energyDrift"->maxDrift,"levelMerges"->merges|>
+			"energyDrift"->maxDrift,"levelMerges"->merges,"windowRejections"->windowRejects|>
 	}
 
 	,"ECGravReturn$WL"]

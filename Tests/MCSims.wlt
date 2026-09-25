@@ -1485,6 +1485,47 @@ VerificationTest[
                     wrong by orders of magnitude, not tens of percent *),
     True, TestID -> "GraphWangLandau-g-matches-exact-enumeration"];
 
+(* --- a RESTRICTIVE window, which the walk must press against ---
+   Every test above uses the whole spectrum as the window, so no proposal ever falls outside it
+   and the windowed path went unexercised. It carried a defect: a proposal to an unseen energy
+   OUTSIDE the window was registered as a level the walk could never visit. Its histogram stayed
+   at zero, so the Classic flatness test could never pass. Measured on this exact run before the
+   fix: 200000 steps left ln f at 1.0 with not one reduction, 3 of the 8 levels returned lay
+   outside the window, the normalisation still claimed the total state count, and g was wrong by
+   99.9%. *)
+wlWin = {wlExact[[1,1]], wlExact[[Ceiling[Length[wlExact]/2],1]]};
+wlInWin = Select[wlExact, wlWin[[1]] <= #[[1]] <= wlWin[[2]] &];
+wlWinRun = (SeedRandom[42];
+    ECGrav`GraphWangLandau[First@MinimalBy[wlAll, wlH[#, wlCp] &], wlH[wlCp], wldH[wlCp],
+        wlWin, 200000, "Schedule" -> "Classic", "FinalLogF" -> 10.^-4,
+        "CheckInterval" -> 200]);
+
+VerificationTest[wlWinRun[[4]]["converged"], True,
+    TestID -> "GraphWangLandau-classic-converges-in-a-restrictive-window"];
+
+VerificationTest[wlWinRun[[2]]["levels"] == wlInWin[[All,1]], True,
+    TestID -> "GraphWangLandau-restrictive-window-returns-only-its-own-levels"];
+
+(* States lie outside the window, so Sum g = 2^C(n,2) no longer describes the levels returned. *)
+VerificationTest[
+    {wlWinRun[[2]]["normalisation"], MissingQ[wlWinRun[[2]]["totalStates"]],
+     wlWinRun[[4]]["windowRejections"] > 0, Total[Exp[Values[wlWinRun[[2]]["logg"]]]]},
+    {"WindowRelative", True, True, 1.},
+    SameTest -> (#1[[;;3]] === #2[[;;3]] && Abs[#1[[4]] - #2[[4]]] < 10.^-9 &),
+    TestID -> "GraphWangLandau-restrictive-window-normalises-over-the-window"];
+
+VerificationTest[
+    With[{wl = wlWinRun[[2]]["logg"],
+          ex = AssociationThread[wlInWin[[All,1]] ->
+              Log[N@wlInWin[[All,2]]] - Log[Total[N@wlInWin[[All,2]]]]]},
+        Max[Abs[Exp[wl[#] - ex[#]] - 1] & /@ Keys[wl]]] < 0.30   (* calibrated over 6 seeds: worst observed 0.2402; before the fix, 0.9992 *),
+    True, TestID -> "GraphWangLandau-restrictive-window-g-matches-exact-enumeration"];
+
+(* ...and a window spanning the whole spectrum is never pressed against, so it keeps the exact
+   total-state normalisation tested above. *)
+VerificationTest[{wlRun[[4]]["windowRejections"], wlRun[[2]]["normalisation"]}, {0, "TotalStates"},
+    TestID -> "GraphWangLandau-full-window-rejects-nothing"];
+
 (* --- error paths --- *)
 VerificationTest[
     ECGrav`GraphWangLandau[ConstantArray[0,{wlN,wlN}], wlH[wlCp], wldH[wlCp],

@@ -105,6 +105,11 @@ $`10^{-6}`$ and $`2.7\times10^{9}`$ for the default $`10^{-8}`$. Budget 1/t runs
 applied at the unchanged current state. The window is an argument in this version; automatic
 bracketing from a short annealing run is a later overload.
 
+Only an energy *inside* the window ever becomes a level (§4.3), and the window is tested on the
+incremental energy *before* the key lookup, so an out-of-window proposal never pays for a full
+Hamiltonian evaluation. A window the walk presses against also changes the normalisation (§4.5):
+states then lie outside it and the total state count no longer applies.
+
 ---
 
 ## 4. Design decisions
@@ -144,7 +149,25 @@ $`10^7`$ steps at 0.45 ms is negligible.
 
 This is cheap *because* the spectrum is sparse. If a larger $`n`$ turns out to have thousands of
 levels the assumption weakens and a cheaper discriminator is needed — `levelMerges` and the level
-count are reported so this is visible rather than assumed.
+count are reported so this is visible rather than assumed. **Measured at $`n = 10`$:** the lattice is
+*not* sparse at low energy — 878 levels fill 97.6 % of the 0.1 lattice on $`[10.1, 100]`$ — yet a
+300 000-step pilot still recorded zero drift and zero merges, so the recompute remains affordable.
+
+**Two rules the full-window validation could not exercise,** since there no proposal ever leaves
+the window:
+
+- *Only an in-window energy registers.* Registering one outside the window plants a level the walk
+  can never visit. Its histogram stays at zero, so the Classic flatness test can never pass; it
+  inflates $`N_{\text{lev}}`$ in the 1/t rate; and it is returned in the density with
+  $`\ln g = 0`$. Measured at $`n = 4`$ on the window $`[2.9, 16.2]`$ before the fix: 200 000 Classic
+  steps left $`\ln f`$ at 1.0 with no reduction, 3 of the 8 levels returned lay outside the window,
+  and $`g`$ was wrong by 99.9 %. After it, the run converges in about $`10^4`$ steps with the error of
+  the full-window run.
+- *A new level starts at its parent's $`\ln g`$, not at zero.* Under 1/t the established levels sit
+  near $`\ln j`$ above zero, so a level found late at zero would trap the walk until it caught up —
+  about $`\ln j / \ln f`$ visits, a share of the run that grows with $`j`$. The parent is one edge
+  toggle away and the nearest estimate available; it also makes the first move into the new level
+  certain, so every registered level is visited.
 
 ### 4.4 A periodic assertion guards `delH`
 
@@ -169,6 +192,12 @@ For a labeled ensemble the total is known exactly, so the constant is fixed exac
 This doubles as a free correctness check — a run whose normalisation is badly off is reporting a
 $`g(E)`$ that cannot be right.
 
+**Only while the window holds every state.** Once the walk has pressed against the window, states
+lie outside it and the total describes more than the levels returned. The run then counts its window
+rejections and normalises over the window instead — $`\sum_{E \in W} g(E) = 1`$, reported as
+`"WindowRelative"` with `totalStates` Missing. Canonical averages and the §6.2 diagnostics are ratios
+and do not notice; $`-\beta F`$ carries an unknown additive constant.
+
 ### 4.6 The move set matches `GraphSweepReplica` exactly
 
 Single edge toggle, with the same non-uniform-but-symmetric row/column draw
@@ -192,9 +221,9 @@ A four-element list, matching `GraphMultiHistogram` and `GraphParallelTempering`
 | slot | contents |
 | --- | --- |
 | 1 | `<\|"minEnergy", "minEstates"\|>` — same shape as the other drivers |
-| 2 | **the density of states** — `<\|"logg", "levels", "window", "normalisation", "totalStates"\|>` |
+| 2 | **the density of states** — `<\|"logg", "levels", "window", "normalisation", "totalStates"\|>`; `"normalisation"` is `"TotalStates"` or, if the window rejected any move, `"WindowRelative"` (§4.5) |
 | 3 | `<\|1 -> <\|"graph", "energy"\|>\|>` — final chain state, for restart |
-| 4 | diagnostics — `<\|"hist", "logf", "steps", "phase", "schedule", "converged", "reductions", "energyDrift", "levelMerges"\|>` |
+| 4 | diagnostics — `<\|"hist", "logf", "steps", "phase", "schedule", "converged", "reductions", "energyDrift", "levelMerges", "windowRejections"\|>` |
 
 **Slot 2 is not a chart.** In the tempering drivers that slot holds a time series whose third column
 is the energy, and `TemperingPlots.wls` reads it as `res[[2]][[All,All,3]]`. Wang–Landau's payload is

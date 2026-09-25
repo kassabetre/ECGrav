@@ -1666,12 +1666,16 @@ naive f -> Sqrt[f] schedule and is the production path; Classic is the textbook 
 1. the minimum energy found and the states achieving it, deduplicated by EXACT EQUALITY rather
 than up to isomorphism, since the labeled ensemble is what g(E) counts,
 2. the DENSITY OF STATES: \"logg\", \"levels\", \"window\", \"normalisation\", \"totalStates\".
+The normalisation is \"TotalStates\", pinning the sum of g to 2^Binomial[n,2], only when no move
+was ever rejected by the window. Otherwise states lie outside it, the normalisation is
+\"WindowRelative\" (the sum over the window is 1) and totalStates is Missing: canonical averages
+are unaffected, but -beta F carries an unknown constant,
 This slot is NOT a chart. In the tempering drivers the second slot is a time series whose third
 column is the energy; here it is a function of energy, so it is an Association and the
 res[[2]][[All,All,3]] access used for tempering charts errors rather than misleading,
 3. the final chain state, keyed like a replica set so replica-exchange Wang-Landau fits later,
 4. diagnostics: \"hist\", \"logf\", \"steps\", \"phase\", \"schedule\", \"converged\",
-\"levelsVisited\", \"reductions\", \"energyDrift\", \"levelMerges\".";
+\"levelsVisited\", \"reductions\", \"energyDrift\", \"levelMerges\", \"windowRejections\".";
 
 (* :Error Messages: *)
 
