@@ -1634,6 +1634,64 @@ GraphParallelTempering::argerr="Input must be of the form:
 
 
 (* ::Chapter:: *)
+(*Flat-Histogram MC*)
+
+
+(* ::Section::Closed:: *)
+(*Wang-Landau*)
+
+
+(* ::Item::Closed:: *)
+(*GraphWangLandau*)
+
+
+(* :Usage Messages: *)
+
+GraphWangLandau::usage="GraphWangLandau[seedGraph,hamiltonian[hparams],delH[delHparams],{Emin,Emax},maxSteps,opts]
+performs Wang-Landau flat-histogram sampling and returns the density of states g(E) over the
+energy window {Emin,Emax}. The ensemble is LABELED, so g is a plain density of states and no
+automorphism order is computed. Specification: WangLandau.md.
+Inputs are:
+1. seedGraph = List, adjacency matrix of the starting graph\[IndentingNewLine]2. hamiltonian[hparams] = the energy callback with its parameters,
+3. delH[delHparams] = the incremental energy callback,
+4. {Emin,Emax} = the energy window; moves proposing an energy outside it are rejected,
+5. maxSteps = Integer, the step budget\[IndentingNewLine]Options:
+\"Schedule\" -> \"OneOverT\" (default) or \"Classic\". OneOverT avoids the error saturation of the
+naive f -> Sqrt[f] schedule and is the production path; Classic is the textbook baseline.
+\"Flatness\" -> 0.8, the histogram flatness criterion.
+\"FinalLogF\" -> 10.^-8, the stopping modification factor. NOTE it does not mean the same\nthing to both schedules: for \"Classic\" it is a convergence criterion, but for \"OneOverT\"\nln f = nLevels/steps, so it is arithmetically a step budget of nLevels/FinalLogF. Budget a\n\"OneOverT\" run with maxSteps instead.
+\"CheckInterval\" -> Automatic, steps between flatness tests and energy-drift checks.
+\"EnergySnap\" -> 10.^-6, the float-noise floor the accumulated energy is snapped to.
+\"MaxGroundStates\" -> 500, the cap on stored minimum-energy states.\[IndentingNewLine]It returns a list of four associations,
+1. the minimum energy found and the states achieving it, deduplicated by EXACT EQUALITY rather
+than up to isomorphism, since the labeled ensemble is what g(E) counts,
+2. the DENSITY OF STATES: \"logg\", \"levels\", \"window\", \"normalisation\", \"totalStates\".
+This slot is NOT a chart. In the tempering drivers the second slot is a time series whose third
+column is the energy; here it is a function of energy, so it is an Association and the
+res[[2]][[All,All,3]] access used for tempering charts errors rather than misleading,
+3. the final chain state, keyed like a replica set so replica-exchange Wang-Landau fits later,
+4. diagnostics: \"hist\", \"logf\", \"steps\", \"phase\", \"schedule\", \"converged\",
+\"levelsVisited\", \"reductions\", \"energyDrift\", \"levelMerges\".";
+
+(* :Error Messages: *)
+
+GraphWangLandau::argerr="An adjacency matrix is expected at position 1, a hamiltonian with its
+parameters at position 2, an incremental energy callback at position 3, a two-element numeric
+energy window at position 4, and an integer step budget at position 5.";
+
+GraphWangLandau::schedule="\"Schedule\" must be \"OneOverT\" or \"Classic\", not `1`.";
+
+GraphWangLandau::seedwindow="The seed graph's energy `1` lies outside the window {`2`, `3`}, so the
+walk could never enter it.";
+
+GraphWangLandau::budget="The step budget `1` was exhausted with the modification factor at `2`,
+above the target `3`. The density of states is returned but is not converged.";
+
+GraphWangLandau::drift="The accumulated energy drifted from a fresh hamiltonian evaluation by `1`.
+That is larger than float noise and points at delH disagreeing with the hamiltonian.";
+
+
+(* ::Chapter:: *)
 (*Helper Functions*)
 
 

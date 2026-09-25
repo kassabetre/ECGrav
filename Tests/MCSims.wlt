@@ -1414,3 +1414,89 @@ VerificationTest[
     {{{{777}, {333}, {9}}}, {}},
     TestID -> "SyncParallelSettings-reaches-subkernels"
 ];
+
+(* ---------- Wang-Landau (flat histogram) ---------- *)
+
+(* The reference g(E) is ENUMERATED inside the test rather than hardcoded, so nothing here
+   can go stale against a coupling change, and the comparison is exact rather than statistical
+   -- the standard the MCMC generators were held to. n = 4 keeps it inside the suite budget. *)
+wlH[am_List, a_, b_, c_, d_] := ECGrav`HSourceTerms[am, a, b, c] + d*ECGrav`NumTriangles[am];
+wldH[am_List, a_, b_, c_, d_, i_Integer, j_Integer] :=
+    ECGrav`delHSourceTerms[am, a, b, c, i, j] + d*ECGrav`delNumTriangles[am, i, j];
+wlCp = Sequence[3.0, -0.5, 0.5, 0.7];
+wlN = 4;
+wlSlots = Subsets[Range[wlN], {2}];
+wlAmOf[bits_] := Module[{a = ConstantArray[0, {wlN, wlN}]},
+    Do[If[bits[[i]] == 1,
+        a[[wlSlots[[i,1]], wlSlots[[i,2]]]] = a[[wlSlots[[i,2]], wlSlots[[i,1]]]] = 1],
+        {i, Length[wlSlots]}]; a];
+wlAll   = wlAmOf /@ Tuples[{0,1}, Length[wlSlots]];
+wlExact = Sort@Tally[Round[N[wlH[#, wlCp] & /@ wlAll], 10.^-6]];
+wlWindow = {wlExact[[1,1]], wlExact[[-1,1]]};
+wlRun = (SeedRandom[42];
+    ECGrav`GraphWangLandau[ConstantArray[0, {wlN, wlN}], wlH[wlCp], wldH[wlCp],
+        wlWindow, 200000, "Schedule" -> "Classic", "FinalLogF" -> 10.^-4,
+        "CheckInterval" -> 200]);
+
+VerificationTest[Length[wlRun], 4, TestID -> "GraphWangLandau-returns-a-4-list"];
+
+VerificationTest[
+    {Keys[wlRun[[1]]], Keys[wlRun[[2]]], Keys[wlRun[[3]][1]]},
+    {{"minEnergy", "minEstates"},
+     {"logg", "levels", "window", "normalisation", "totalStates"},
+     {"graph", "energy"}},
+    TestID -> "GraphWangLandau-slot-shapes"];
+
+(* Slot 2 is a density of states, NOT a chart. The tempering drivers put a time series there
+   whose third column is the energy; that access must ERROR here rather than mislead. *)
+VerificationTest[AssociationQ[wlRun[[2]]], True,
+    TestID -> "GraphWangLandau-slot2-is-an-association-not-a-chart"];
+
+(* --- exact invariants: these hold regardless of how well the run converged --- *)
+VerificationTest[wlRun[[1]]["minEnergy"], wlExact[[1,1]],
+    SameTest -> floatEq, TestID -> "GraphWangLandau-finds-the-exact-ground-energy"];
+
+(* dedup is by EXACT EQUALITY, so the count must equal the labeled degeneracy exactly *)
+VerificationTest[Length[wlRun[[1]]["minEstates"]], wlExact[[1,2]],
+    TestID -> "GraphWangLandau-minEstates-equals-labeled-degeneracy"];
+
+VerificationTest[Length[wlRun[[2]]["levels"]], Length[wlExact],
+    TestID -> "GraphWangLandau-visits-every-level"];
+
+(* Sum g = 2^C(v,2) exactly: this tests the normalisation, and is the reason NOT to
+   normalise by setting g(Emin) = 1 -- the labeled ground level is degenerate. *)
+VerificationTest[Total[Exp[Values[wlRun[[2]]["logg"]]]], N[2^Binomial[wlN, 2]],
+    SameTest -> looseEq, TestID -> "GraphWangLandau-normalisation-is-total-state-count"];
+
+VerificationTest[wlRun[[1]]["minEstates"] =!= {} &&
+    AllTrue[wlRun[[1]]["minEstates"], floatEq[wlH[#, wlCp], wlExact[[1,1]]] &],
+    True, TestID -> "GraphWangLandau-minEstates-all-have-minEnergy"];
+
+(* delH must agree with the hamiltonian: drift is snapped away, so without this the
+   disagreement would be invisible.  Zero merges means no spurious levels from drift. *)
+VerificationTest[{wlRun[[4]]["energyDrift"], wlRun[[4]]["levelMerges"]}, {0., 0},
+    TestID -> "GraphWangLandau-no-energy-drift-and-no-spurious-levels"];
+
+(* --- accuracy against exact enumeration --- *)
+VerificationTest[
+    With[{wl = wlRun[[2]]["logg"],
+          ex = AssociationThread[wlExact[[All,1]] -> Log[N@wlExact[[All,2]]]]},
+        Max[Abs[Exp[wl[#] - ex[#]] - 1] & /@ Keys[wl]]] < 0.30   (* calibrated over 4 seeds: worst observed 0.2477; a broken g(E) is
+                    wrong by orders of magnitude, not tens of percent *),
+    True, TestID -> "GraphWangLandau-g-matches-exact-enumeration"];
+
+(* --- error paths --- *)
+VerificationTest[
+    ECGrav`GraphWangLandau[ConstantArray[0,{wlN,wlN}], wlH[wlCp], wldH[wlCp],
+        wlWindow, 100, "Schedule" -> "Nonsense"],
+    $Failed, {ECGrav`GraphWangLandau::schedule},
+    TestID -> "GraphWangLandau-rejects-an-unknown-schedule"];
+
+VerificationTest[
+    ECGrav`GraphWangLandau[ConstantArray[0,{wlN,wlN}], wlH[wlCp], wldH[wlCp],
+        {10.^6, 10.^7}, 100],
+    $Failed, {ECGrav`GraphWangLandau::seedwindow},
+    TestID -> "GraphWangLandau-rejects-a-seed-outside-the-window"];
+
+VerificationTest[ECGrav`GraphWangLandau["not a matrix"], $Failed,
+    {ECGrav`GraphWangLandau::argerr}, TestID -> "GraphWangLandau-argerr"];

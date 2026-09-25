@@ -9491,6 +9491,188 @@ $Failed);
 (*MCSims Protect and End*)
 
 
+
+(* ::Section:: *)
+(*Wang-Landau (flat histogram)*)
+
+
+(* ::Item::Closed:: *)
+(*GraphWangLandau*)
+
+
+Options[GraphWangLandau]={"Schedule"->"OneOverT","Flatness"->0.8,"FinalLogF"->10.^-8,
+	"CheckInterval"->Automatic,"EnergySnap"->10.^-6,"MaxGroundStates"->500};
+
+(* Primary Pattern *)
+GraphWangLandau[seedGraph_List,hamiltonian_[hparams___],delH_[delHparams___],
+	{eMin_?NumericQ,eMax_?NumericQ},maxSteps_Integer,opts:OptionsPattern[]]:=
+(*Flat-histogram sampling of the density of states g(E). Spec: WangLandau.md.
+
+	Returns {groundStates, densityOfStates, replicas, histories}, matching the four-element
+	shape of GraphMultiHistogram and GraphParallelTempering -- but SLOT 2 IS NOT A CHART. In
+	the tempering drivers that slot is a time series whose third column is the energy, read by
+	TemperingPlots.wls as res[[2]][[All,All,3]]. Wang-Landau's payload is a function of energy,
+	not a time series, so slot 2 is an Association with named keys: that access then errors
+	instead of silently returning something plausible.
+
+	The ensemble is LABELED (ExpansionRoadmap.md 0.7), so g is a plain density of states and no
+	automorphism order is ever computed.*)
+Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStates,
+		snap,proposeRC,applyMove,logg,hist,lnf,step,phase,amCur,eCur,merges,maxDrift,
+		minE,minStates,reductions,row,col,dE,eNew,amNew,logRatio,accept,nLev,u,
+		stopped,shift},
+
+	schedule=OptionValue["Schedule"];
+	flatness=OptionValue["Flatness"];
+	lnfEnd=OptionValue["FinalLogF"];
+	snapTol=OptionValue["EnergySnap"];
+	maxGStates=OptionValue["MaxGroundStates"];
+	checkEvery=Replace[OptionValue["CheckInterval"],Automatic:>Max[100*Binomial[v,2],1000]];
+
+	Catch[
+	If[!MemberQ[{"OneOverT","Classic"},schedule],
+		Message[GraphWangLandau::schedule,schedule];Throw[$Failed,"ECGravReturn$WL"]];
+
+	(*The energy callbacks are probed once here, never mid-sweep; see ECGrav::badham. Same gate
+		the other drivers use, and the reason it exists is the 1.8.1 bug where a gate written for
+		one calling convention rejected correct hamiltonians written for another.*)
+	If[!(HamiltonianUsableQ[seedGraph,hamiltonian,hparams]&&DelHUsableQ[seedGraph,delH,delHparams]),
+		Throw[$Failed,"ECGravReturn$WL"]];
+
+	(*Snapping to a noise floor, NOT to the physical lattice. Its only job is to stop float
+		error accumulating across millions of "eCur += dE" updates; the physical level spacing
+		emerges as the realised key set.*)
+	snap[e_]:=Round[e,snapTol];
+
+	(*State access, deliberately isolated into the four primitives of QuantumMCSimsPort.md 2 so
+		the later repoint onto the state backend is a substitution rather than a rewrite. The
+		proposal is byte-for-byte GraphSweepReplica's: non-uniform over pairs but INDEPENDENT of
+		the state, hence symmetric, hence valid -- and identical moves make the Wang-Landau and
+		Metropolis chains directly comparable.*)
+	proposeRC[]:=With[{r=RandomInteger[{1,v-1}]},{r,RandomInteger[{r+1,v}]}];
+	applyMove[am_,r_,c_]:=ReplacePart[am,{{r,c}->Mod[am[[r,c]]+1,2],{c,r}->Mod[am[[c,r]]+1,2]}];
+
+	amCur=seedGraph;
+	eCur=snap[hamiltonian[seedGraph,hparams]];
+	If[!(eMin<=eCur<=eMax),
+		Message[GraphWangLandau::seedwindow,eCur,eMin,eMax];Throw[$Failed,"ECGravReturn$WL"]];
+
+	(*Keyed by energy over REALISED levels, never indexed on a dense lattice. The spectrum is
+		lattice-valued but SPARSE -- measured 2.92% occupancy at n=5 -- so a dense grid would
+		leave most slots permanently at H=0, the flatness test could never be satisfied, and the
+		run would never terminate. See WangLandau.md 2.*)
+	logg=<|eCur->0.|>;
+	hist=<|eCur->0|>;
+	lnf=1.0;step=0;phase="classic";merges=0;maxDrift=0.;reductions={};stopped="budget";
+	minE=eCur;minStates=<|seedGraph->True|>;
+
+	While[step<maxSteps,
+		{row,col}=proposeRC[];
+		dE=delH[amCur,delHparams,row,col];
+		eNew=snap[eCur+dE];
+
+		(*A key that has never been seen is either a genuinely new level or accumulated drift
+			throwing a spurious one. Drift would silently inflate the level count, which feeds
+			both the flatness test and the 1/t schedule, so settle it exactly rather than guess:
+			recompute from the hamiltonian instead of trusting the running sum. Genuine new
+			levels are rare -- tens per run -- so the cost is negligible against millions of
+			incremental steps.*)
+		If[!KeyExistsQ[logg,eNew],
+			amNew=applyMove[amCur,row,col];
+			eNew=snap[hamiltonian[amNew,hparams]];
+			If[KeyExistsQ[logg,eNew],
+				merges++,
+				logg[eNew]=0.;hist[eNew]=0
+			]
+		];
+
+		(*Windowed Wang-Landau: a move out of the window is rejected, but the update below still
+			fires at the unchanged current state.*)
+		If[eMin<=eNew<=eMax,
+			logRatio=logg[eCur]-logg[eNew];
+			(*Three branches on purpose. The fourth argument of If fires when the comparison is
+				undetermined -- which is what a non-numeric logRatio gives -- and it rejects.*)
+			accept=0;
+			If[logRatio>=0,accept=1,
+				If[Log[RandomReal[]]<logRatio,accept=1],
+				accept=0];
+			If[accept==1,
+				amCur=applyMove[amCur,row,col];
+				eCur=eNew;
+				(*Kept as an Association keyed by the matrix, not a list. MemberQ against a
+					list is an O(|minStates|) scan of full matrices on EVERY visit to the ground
+					level, and the labeled ground degeneracy is large -- 60 already at n=5. Key
+					assignment is O(1) and idempotent, so no membership test is needed at all.
+					Dedup is by EXACT EQUALITY, not up to isomorphism: the labeled ensemble is
+					what g(E) counts.*)
+				Which[
+					eCur<minE,minE=eCur;minStates=<|amCur->True|>,
+					eCur==minE&&Length[minStates]<maxGStates,minStates[amCur]=True
+				]
+			]
+		];
+
+		(*THE update, applied at the current state whether or not the move was accepted. Doing it
+			only on acceptance biases g(E) and leaves the run looking perfectly healthy.*)
+		logg[eCur]+=lnf;
+		hist[eCur]+=1;
+		step++;
+
+		(*Snapping removes small discrepancies, which would equally hide a genuinely wrong delH.
+			So the accumulated energy is checked against a fresh hamiltonian evaluation at a low
+			frequency; GraphSweepReplica carries the same check, commented out.*)
+		If[Mod[step,checkEvery]==0,
+			maxDrift=Max[maxDrift,Abs[eCur-snap[hamiltonian[amCur,hparams]]]]];
+
+		nLev=Length[logg];
+
+		If[phase==="classic",
+			If[Mod[step,checkEvery]==0,
+				If[Min[hist]>=flatness*Mean[N@Values[hist]],
+					AppendTo[reductions,{step,lnf,N[Min[hist]/Mean[N@Values[hist]]]}];
+					lnf=lnf/2;
+					hist=AssociationMap[0&,Keys[hist]]
+				]
+			];
+			If[schedule==="OneOverT"&&lnf<=nLev/step,phase="oneOverT"],
+			(*else: the 1/t phase. lnf tracks 1/t with t = step/nLev, and neither the flatness
+				test nor the histogram reset runs again. This is what avoids the error saturation
+				of the naive f -> Sqrt[f] schedule, which is precisely what would blur the double
+				peak the order-of-transition analysis looks for.*)
+			lnf=N[nLev/step]
+		];
+
+		If[lnf<lnfEnd,stopped="converged";Break[]];
+	];
+
+	If[stopped==="budget",Message[GraphWangLandau::budget,maxSteps,lnf,lnfEnd]];
+	If[maxDrift>100*snapTol,Message[GraphWangLandau::drift,maxDrift]];
+
+	(*g is fixed only up to a constant. For a LABELED ensemble the total is known exactly, which
+		pins the constant AND is a free correctness check. Do NOT instead set g(Emin)=1: the
+		labeled ground level is degenerate -- measured g(Emin)=60 at n=5 -- so that convention is
+		wrong for this model by that factor.*)
+	shift=Binomial[v,2]*Log[2.]-LogSumExp[Values[logg]];
+
+	{
+		<|"minEnergy"->minE,"minEstates"->Keys[minStates]|>,
+		<|"logg"->KeySort[logg+shift],"levels"->Sort[Keys[logg]],"window"->{eMin,eMax},
+			"normalisation"->"TotalStates","totalStates"->2^Binomial[v,2]|>,
+		<|1-><|"graph"->amCur,"energy"->eCur|>|>,
+		<|"hist"->KeySort[hist],"logf"->lnf,"steps"->step,"phase"->phase,
+			"schedule"->schedule,"converged"->(stopped==="converged"),
+			"levelsVisited"->Length[logg],"reductions"->reductions,
+			"energyDrift"->maxDrift,"levelMerges"->merges|>
+	}
+
+	,"ECGravReturn$WL"]
+];
+
+(* Catch-all Pattern *)
+GraphWangLandau[args___]:=(Message[GraphWangLandau::argerr, args];
+$Failed);
+
+
 (* End private context *)
 
 (* Protect exported symbols *)
