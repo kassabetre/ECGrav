@@ -209,14 +209,97 @@ what $`g(E)`$ counts, so isomorphism-dedup would report a different object from 
 
 ## 6. Order of the transition
 
-From $`g(E)`$, form $`P_\beta(E) \propto g(E) e^{-\beta E}`$ and locate $`\beta_c`$ by equal-weight
-double peak.
+### 6.1 One Wang-Landau run per coupling point — decided by measurement
+
+$`g(E)`$ **cannot be reweighted across the source couplings.** Since
+$`E(s) = O_0(s) + n_{t0} O_1(s)`$, changing $`n_{t0}`$ moves each state's energy by the
+*state-dependent* amount $`O_1(s)`$, so states degenerate at one coupling split at another. This
+follows from linearity; no reweighting trick recovers another coupling from a one-dimensional
+$`g(E)`$.
+
+That leaves two routes, and the choice was settled by measuring rather than by argument:
+
+1. **One run per coupling point.** Each is independently validated by the invariants of §7 and the
+   runs share no state, so a coupling grid parallelises trivially.
+2. **A joint density $`g(O_0, O_1)`$.** Because $`H = c \cdot O`$ is linear in the couplings, one
+   joint density would give $`Z(c)`$ for *every* coupling point at once — the flat-histogram
+   analogue of what MBAR does for tempering.
+
+Route 2 is attractive only if the joint support stays close to the one-dimensional level count. **At
+$`n \le 6`$ it does, and that is a small-$`n`$ accident.** Measuring the conditional multiplicity —
+for each observed $`O_0`$, how many distinct $`O_1`$ — over bins holding at least five samples:
+
+| $`n`$ | mean multiplicity | max | samples/bin (median) |
+| --- | --- | --- | --- |
+| 5 (exact) | 1.04 | 2 | 265 |
+| 6 (exact) | 1.20 | 2 | 72 |
+| 7 | 1.92 | 6 | 28 |
+| 9 | 3.97 | 12 | 10 |
+| 12 | 5.01 | 15 | 9 |
+| 15 | **5.66** | 14 | 10 |
+
+Sampled and exact agree at $`n = 5, 6`$ (1.04 / 1.21 against 1.04 / 1.20), which is what makes the
+larger sizes trustworthy. **The multiplicity grows steadily**, and at $`n = 15`$ it is a *lower*
+bound — with ~10 samples per bin one cannot observe more than ten distinct $`O_1`$ values, and the
+observed maximum of 14–15 sits at that ceiling. So the joint support is already ~6× the
+one-dimensional level count at $`n = 15`$ and still climbing: **route 1**.
+
+*Do not estimate this from raw support counts.* The naive ratio $`|(O_0,O_1)|/|O_0|`$ came out 1.78,
+2.36, 1.73, 1.49 at $`n = 7, 9, 12, 15`$ — non-monotonic and *falling*, because unsampled support is
+missing from both counts. The conditional multiplicity is the robust statistic.
+
+### 6.2 The diagnostics
+
+From $`g(E)`$, form $`P_\beta(E) \propto g(E) e^{-\beta E}`$ and locate $`\beta_c`$ by equal peak
+heights.
 
 - **First order** — the peak separation $`\Delta E`$ scales with system size (latent heat), and the
-  depth of the histogram minimum between the peaks grows with the interface free energy.
-- **Second order** — a single peak broadens, and the Binder energy cumulant minimum tends to 2/3.
+  depth of the histogram minimum between the peaks, $`\ln(P_{\max}/P_{\min})`$, grows with the
+  interface free energy.
+- **Second order** — a single peak broadens, and the minimum of the Binder energy cumulant
+  $`V = 1 - \langle E^4\rangle / (3\langle E^2\rangle^2)`$ tends to 2/3.
 
 **Report against several $`N`$.** One size cannot distinguish the two.
+
+#### Telling a double peak from lattice granularity
+
+The attainable energies are irregularly spaced on a sparse lattice (§2), so $`g`$ jumps between
+adjacent levels and $`P_\beta(E)`$ is jagged. A bare local-maximum test is therefore useless: on the
+**exact** $`n = 6`$ density it found **31 "maxima" among 91 levels** and called every $`\beta`$
+bimodal. `TransitionOrderDiagnostics` filters candidates by topographic **prominence** — a peak is
+kept only if it stands `"MinProminence"` above the higher of the two saddles flanking it, in log
+units.
+
+That threshold cannot be chosen once and for all. **Scan it and look for a plateau:**
+
+| | peak count as `"MinProminence"` goes 0.5 → 4.0 |
+| --- | --- |
+| synthetic double peak | **2, 2, 2, 2** — a plateau |
+| exact $`n = 6`$, $`n_{t0} = 0.7`$ | 28, 22, 15, 4 — no plateau |
+
+A genuine bimodality is robust to the threshold; lattice granularity slides away as the threshold
+rises. **The $`n = 6`$ result is a negative control, not a measurement**: six vertices cannot host a
+transition, so there is nothing there to find, and the diagnostic correctly declines to find it once
+granularity is filtered out.
+
+The detector itself is validated against a **synthetic** density built so the answer is known —
+$`\ln g = \ln(\text{two Gaussians}) + \beta_0 E`$, making $`P_{\beta_0}(E)`$ exactly that mixture.
+It recovers the peak positions, the separation, the log depth and $`\beta_0`$ to float precision,
+and returns `Missing["NoBimodalBeta"]` on a single Gaussian.
+
+### 6.3 Where to point the telescope
+
+Two parameters fell out of the $`n = 6`$ scan. They are finite-size numbers, so they say where to
+look, not what is there.
+
+**The $`\beta`$ grid must reach at least ~10.** At $`n_{t0} = 0.7`$ the global $`C_v`$ peak sits at
+$`\beta = 7.0`$. A first pass capped at $`\beta = 3`$ reported the peak at 0.26 with a twentieth of
+the height — a pure truncation artifact. **Report every local maximum, never a bare argmax.**
+
+**The $`n_{t0}`$ grid should be non-uniform.** The $`C_v`$ peak moves $`0.64 \to 1.10 \to 1.70 \to
+7.00`$ across $`n_{t0} = -1.6 \to 0.7`$, most of it between 0 and 0.7, and by $`n_{t0} = 1.2`$ the
+high-$`\beta`$ structure is gone entirely ($`C_v(\beta = 12) = 0.008`$ against 0.936). Uniform
+spacing wastes runs at the flat end and under-resolves the steep one.
 
 ---
 

@@ -1500,3 +1500,76 @@ VerificationTest[
 
 VerificationTest[ECGrav`GraphWangLandau["not a matrix"], $Failed,
     {ECGrav`GraphWangLandau::argerr}, TestID -> "GraphWangLandau-argerr"];
+
+(* ---------- Density-of-states thermodynamics and transition diagnostics ---------- *)
+
+(* ThermodynamicsFromDOS is checked against DIRECT summation over every state, not against
+   another grouped calculation -- the two share no code path, so agreement is meaningful. *)
+tdN = 4;
+tdSlots = Subsets[Range[tdN], {2}];
+tdAmOf[bits_] := Module[{a = ConstantArray[0, {tdN, tdN}]},
+    Do[If[bits[[i]] == 1,
+        a[[tdSlots[[i,1]], tdSlots[[i,2]]]] = a[[tdSlots[[i,2]], tdSlots[[i,1]]]] = 1],
+        {i, Length[tdSlots]}]; a];
+tdE = Round[N[(ECGrav`HSourceTerms[#, 3.0, -0.5, 0.5] + 0.7*ECGrav`NumTriangles[#]) & /@
+        (tdAmOf /@ Tuples[{0,1}, Length[tdSlots]])], 10.^-6];
+tdTally = Sort@Tally[tdE];
+tdDos = <|"logg" -> AssociationThread[tdTally[[All,1]] -> Log[N@tdTally[[All,2]]]],
+          "levels" -> tdTally[[All,1]]|>;
+tdBetas = {0.05, 0.5, 1.7, 7.0};
+tdFromDos = ECGrav`ThermodynamicsFromDOS[tdDos, tdBetas];
+tdDirect = Table[
+    With[{w = Exp[-b*tdE - ECGrav`LogSumExp[-b*tdE]]},
+        With[{u1 = tdE . w, u2 = (tdE^2) . w, u4 = (tdE^4) . w},
+            <|"U" -> u1, "Cv" -> b^2*(u2 - u1^2),
+              "minusBetaF" -> ECGrav`LogSumExp[-b*tdE],
+              "binderEnergyCumulant" -> 1 - u4/(3*u2^2)|>]], {b, tdBetas}];
+
+VerificationTest[
+    Max@Flatten@Table[Abs[tdFromDos[tdBetas[[i]]][k] - tdDirect[[i]][k]],
+        {i, Length[tdBetas]}, {k, {"U", "Cv", "minusBetaF", "binderEnergyCumulant"}}],
+    0., SameTest -> floatEq,
+    TestID -> "ThermodynamicsFromDOS-matches-direct-state-summation"];
+
+(* The transition detector is validated on a SYNTHETIC density with a known double peak:
+   log g = Log[two Gaussians] + b0*E makes P(E) exactly that mixture at beta = b0, so the
+   peak positions, separation, depth and equal-height beta are all known in advance. The
+   real Hamiltonian cannot serve here -- at the sizes the suite can afford there is no
+   transition to detect, only lattice granularity. *)
+synLv = N@Range[0, 100]; synB0 = 0.35;
+synMix = Exp[-(synLv - 30.)^2/(2*6.^2)] + Exp[-(synLv - 70.)^2/(2*6.^2)];
+synDos = <|"logg" -> AssociationThread[synLv -> (Log[synMix] + synB0*synLv)], "levels" -> synLv|>;
+synDiag = ECGrav`TransitionOrderDiagnostics[synDos, Range[0.05, 0.8, 0.01]];
+
+VerificationTest[synDiag["equalHeight"]["peakEnergies"], {30., 70.},
+    SameTest -> floatEq, TestID -> "TransitionOrderDiagnostics-finds-the-known-peaks"];
+VerificationTest[{synDiag["equalHeight"]["beta"], synDiag["equalHeight"]["deltaE"]},
+    {synB0, 40.}, SameTest -> floatEq,
+    TestID -> "TransitionOrderDiagnostics-equal-height-beta-and-separation"];
+VerificationTest[synDiag["equalHeight"]["logDepth"],
+    Log[Min[synMix[[31]], synMix[[71]]]/synMix[[51]]], SameTest -> floatEq,
+    TestID -> "TransitionOrderDiagnostics-log-depth-matches-construction"];
+
+(* A genuine double peak survives every prominence threshold -- that PLATEAU is the
+   discriminator against lattice granularity, which instead slides away as the threshold rises. *)
+VerificationTest[
+    Union@Table[ECGrav`TransitionOrderDiagnostics[synDos, Range[0.2, 0.6, 0.02],
+        "MinProminence" -> mp]["maxPeaksSeen"], {mp, {0.5, 1.0, 2.0, 4.0}}],
+    {2}, TestID -> "TransitionOrderDiagnostics-two-peaks-plateau-across-prominence"];
+
+(* Negative control: one Gaussian must not be called bimodal. *)
+VerificationTest[
+    With[{d = ECGrav`TransitionOrderDiagnostics[
+        <|"logg" -> AssociationThread[synLv -> (Log[Exp[-(synLv - 50.)^2/(2*12.^2)]] + synB0*synLv)],
+          "levels" -> synLv|>, Range[0.05, 0.8, 0.01]]},
+        {d["maxPeaksSeen"], d["bimodalBetas"], Head[d["equalHeight"]]}],
+    {1, {}, Missing}, TestID -> "TransitionOrderDiagnostics-single-peak-is-not-bimodal"];
+
+VerificationTest[ECGrav`ThermodynamicsFromDOS[<|"levels" -> {1., 2.}|>, {1.0}], $Failed,
+    {ECGrav`ThermodynamicsFromDOS::baddos}, TestID -> "ThermodynamicsFromDOS-baddos"];
+VerificationTest[ECGrav`TransitionOrderDiagnostics[
+        <|"logg" -> <|1. -> 0.|>, "levels" -> {1.}|>, {1.0}], $Failed,
+    {ECGrav`TransitionOrderDiagnostics::toofew},
+    TestID -> "TransitionOrderDiagnostics-needs-three-levels"];
+VerificationTest[ECGrav`ThermodynamicsFromDOS["nope"], $Failed,
+    {ECGrav`ThermodynamicsFromDOS::argerr}, TestID -> "ThermodynamicsFromDOS-argerr"];

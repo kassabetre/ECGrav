@@ -9673,6 +9673,143 @@ GraphWangLandau[args___]:=(Message[GraphWangLandau::argerr, args];
 $Failed);
 
 
+
+(* ::Item::Closed:: *)
+(*ThermodynamicsFromDOS*)
+
+
+(* Private helper: the canonical weights at one beta, in log space.
+
+	Every quantity below is a ratio of sums of g(E)Exp[-beta E], and both parts overflow long
+	before the ratio does: the energies here span hundreds and beta reaches ten, so beta*E
+	passes a thousand and Exp of that is not representable. Subtracting LogSumExp first is the
+	softmax max-shift already used elsewhere in the package -- the largest weight becomes
+	Exp[0] == 1 and the rest decay from there. Tail weights that underflow to zero are
+	genuinely negligible and contribute nothing to the sums. *)
+dosWeights[levels_List,logg_List,beta_?NumericQ]:=
+	With[{shifted=logg-beta*levels},Exp[shifted-LogSumExp[shifted]]];
+
+(* Primary Pattern *)
+ThermodynamicsFromDOS[dos_Association,betas_List/;VectorQ[betas,NumericQ]]:=
+(*Canonical thermodynamics reconstructed from a density of states, i.e. from the SECOND slot of
+GraphWangLandau. Implements ExpansionRoadmap.md C5, feeding g(E) into the same reweighting the
+tempering path uses.
+
+	Returns, per beta: the internal energy U, the specific heat Cv = beta^2 Var[E], the free
+	energy -beta F = Log[Z], and the fourth-order Binder ENERGY cumulant
+	V = 1 - <E^4>/(3 <E^2>^2), whose minimum tends to 2/3 at a second-order transition and to
+	something strictly smaller at a first-order one.
+
+	Note Cv here is the TOTAL, not per site. SpecificHeat[etable,NN,beta] divides by a site
+	count; which count is right for a graph Hamiltonian is a reporting convention that has to be
+	fixed before any figure, so it is deliberately not baked in here.*)
+Module[{levels,logg,w,u1,u2,u4},
+	Catch[
+	If[!(KeyExistsQ[dos,"logg"]&&KeyExistsQ[dos,"levels"]),
+		Message[ThermodynamicsFromDOS::baddos];Throw[$Failed,"ECGravReturn$TD"]];
+	levels=N[dos["levels"]];
+	logg=N[Lookup[dos["logg"],dos["levels"]]];
+	If[!VectorQ[logg,NumericQ],
+		Message[ThermodynamicsFromDOS::baddos];Throw[$Failed,"ECGravReturn$TD"]];
+
+	Association@Table[
+		w=dosWeights[levels,logg,b];
+		u1=levels . w; u2=(levels^2) . w; u4=(levels^4) . w;
+		b-><|"U"->u1,"Cv"->b^2*(u2-u1^2),
+			"minusBetaF"->LogSumExp[logg-b*levels],
+			"binderEnergyCumulant"->1-u4/(3*u2^2)|>
+	,{b,N[betas]}]
+	,"ECGravReturn$TD"]
+];
+
+(* Catch-all Pattern *)
+ThermodynamicsFromDOS[args___]:=(Message[ThermodynamicsFromDOS::argerr, args];
+$Failed);
+
+
+(* ::Item::Closed:: *)
+(*TransitionOrderDiagnostics*)
+
+
+(* Private helper: local maxima filtered by PROMINENCE, in log units.
+
+	A bare up-down test is useless here. The attainable energies are irregularly spaced on a
+	sparse lattice, so g jumps between adjacent levels and P(E) is jagged: on the exact n=6
+	density the naive test found 31 "local maxima" among 91 levels and called every beta
+	bimodal. A double peak means a peak that STANDS OUT, so each candidate is measured against
+	the higher of the two saddles flanking it -- walking outward to the first strictly greater
+	value, which is the standard topographic prominence -- and kept only if it clears minProm
+	in log units. *)
+prominentMaxima[p_List,minProm_?NumericQ]:=
+	Module[{n=Length[p],raw,prom},
+		raw=Select[Range[2,n-1],p[[#]]>p[[#-1]]&&p[[#]]>p[[#+1]]&];
+		prom=Function[i,
+			Module[{l=i,r=i},
+				While[l>1&&p[[l-1]]<=p[[i]],l--];
+				While[r<n&&p[[r+1]]<=p[[i]],r++];
+				Log[p[[i]]]-Log[Max[Min[p[[l;;i]]],Min[p[[i;;r]]]]]]];
+		Select[raw,prom[#]>=minProm&]];
+
+Options[TransitionOrderDiagnostics]={"MinProminence"->1.0};
+
+(* Primary Pattern *)
+TransitionOrderDiagnostics[dos_Association,betas_List/;VectorQ[betas,NumericQ],
+	OptionsPattern[]]:=
+(*The order-of-transition diagnostics of WangLandau.md 6.2, read off P_beta(E) = g(E)Exp[-beta E].
+
+	Scans the supplied betas, and at each one finds EVERY local maximum of P rather than its
+	argmax. That is not fastidiousness: a bare argmax off a truncated beta grid already produced
+	a wrong answer once here, reporting a peak at beta 0.26 with a twentieth of the height when
+	the real one sat at beta 7.0, outside the grid. The caller supplies the grid, so the caller
+	must be able to see that it was too small -- hence "peaks" is reported at every beta.
+
+	At the equal-height beta the two leading peaks give the separation deltaE, which scales with
+	the latent heat, and Log[Pmax/Pmin] across the intervening minimum, which scales with the
+	interface free energy. BOTH growing with system size is the first-order signature; neither
+	means anything from a single size.*)
+Module[{levels,logg,scan,bimodal,best,minProm=OptionValue["MinProminence"]},
+	Catch[
+	If[!(KeyExistsQ[dos,"logg"]&&KeyExistsQ[dos,"levels"]),
+		Message[TransitionOrderDiagnostics::baddos];Throw[$Failed,"ECGravReturn$TO"]];
+	levels=N[dos["levels"]];
+	logg=N[Lookup[dos["logg"],dos["levels"]]];
+	If[Length[levels]<3,
+		Message[TransitionOrderDiagnostics::toofew,Length[levels]];Throw[$Failed,"ECGravReturn$TO"]];
+
+	scan=Table[
+		Module[{p,loc,ord,top,i1,i2,lo,dip},
+			p=dosWeights[levels,logg,b];
+			loc=prominentMaxima[p,minProm];
+			ord=Reverse@Ordering[p[[loc]]];
+			top=loc[[Take[ord,UpTo[2]]]];
+			If[Length[top]<2,
+				<|"beta"->b,"nPeaks"->Length[loc],"peaks"->levels[[loc]],"bimodal"->False|>,
+				{i1,i2}=Sort[top];
+				lo=i1+First@Ordering[p[[i1;;i2]]]-1;
+				dip=Log[Min[p[[i1]],p[[i2]]]/p[[lo]]];
+				<|"beta"->b,"nPeaks"->Length[loc],"peaks"->levels[[loc]],"bimodal"->True,
+					"peakEnergies"->levels[[{i1,i2}]],"deltaE"->levels[[i2]]-levels[[i1]],
+					"logDepth"->dip,"heightRatio"->p[[i1]]/p[[i2]]|>
+			]
+		],{b,N[betas]}];
+
+	bimodal=Select[scan,#["bimodal"]&];
+	(*Equal-height criterion: the beta whose two leading peaks are closest to the same height.*)
+	best=If[bimodal==={},Missing["NoBimodalBeta"],
+		First@MinimalBy[bimodal,Abs[Log[#["heightRatio"]]]&]];
+
+	<|"scan"->scan,"bimodalBetas"->(#["beta"]&/@bimodal),
+		"equalHeight"->best,
+		"betaRange"->MinMax[N[betas]],
+		"maxPeaksSeen"->Max[#["nPeaks"]&/@scan]|>
+	,"ECGravReturn$TO"]
+];
+
+(* Catch-all Pattern *)
+TransitionOrderDiagnostics[args___]:=(Message[TransitionOrderDiagnostics::argerr, args];
+$Failed);
+
+
 (* End private context *)
 
 (* Protect exported symbols *)

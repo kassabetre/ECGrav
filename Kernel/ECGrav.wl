@@ -1691,6 +1691,60 @@ GraphWangLandau::drift="The accumulated energy drifted from a fresh hamiltonian 
 That is larger than float noise and points at delH disagreeing with the hamiltonian.";
 
 
+(* ::Item::Closed:: *)
+(*ThermodynamicsFromDOS*)
+
+
+(* :Usage Messages: *)
+
+ThermodynamicsFromDOS::usage="ThermodynamicsFromDOS[dos,betas] reconstructs canonical
+thermodynamics from a density of states, i.e. from the SECOND slot of GraphWangLandau. It returns
+an association keyed by beta, each giving \"U\", \"Cv\", \"minusBetaF\" and
+\"binderEnergyCumulant\" = 1 - <E^4>/(3<E^2>^2), whose minimum tends to 2/3 at a second-order
+transition and to a strictly smaller value at a first-order one. Cv is the TOTAL, not per site:
+which site count is right for a graph Hamiltonian is a reporting convention and is deliberately
+not baked in.
+Inputs are:
+1. dos = Association with keys \"logg\" and \"levels\"\[IndentingNewLine]2. betas = a numeric list\[IndentingNewLine]It returns an association keyed by beta.";
+
+(* :Error Messages: *)
+
+ThermodynamicsFromDOS::argerr="An association with \"logg\" and \"levels\" is expected at position
+1, and a numeric list of inverse temperatures at position 2.";
+
+ThermodynamicsFromDOS::baddos="The first argument is not a density of states: it needs numeric
+\"logg\" and \"levels\" entries, as returned in the second slot of GraphWangLandau.";
+
+
+(* ::Item::Closed:: *)
+(*TransitionOrderDiagnostics*)
+
+
+(* :Usage Messages: *)
+
+TransitionOrderDiagnostics::usage="TransitionOrderDiagnostics[dos,betas] reads the
+order-of-transition diagnostics off P_beta(E) proportional to g(E)Exp[-beta E]. At each beta it
+reports EVERY local maximum rather than an argmax, because an argmax taken off a beta grid that is
+too small is silently wrong. Where P is bimodal it gives the peak separation deltaE, which scales
+with the latent heat, and the log depth of the minimum between the peaks, which scales with the
+interface free energy. BOTH growing with system size is the first-order signature; neither means
+anything from a single size.
+Inputs are:
+1. dos = Association with keys \"logg\" and \"levels\"\[IndentingNewLine]2. betas = a numeric list of inverse temperatures to scan\[IndentingNewLine]It returns an association with \"scan\", \"bimodalBetas\", \"equalHeight\", \"betaRange\" and
+\"maxPeaksSeen\".";
+
+(* :Error Messages: *)
+
+TransitionOrderDiagnostics::argerr="An association with \"logg\" and \"levels\" is expected at
+position 1, and a numeric list of inverse temperatures at position 2.";
+
+TransitionOrderDiagnostics::baddos="The first argument is not a density of states: it needs numeric
+\"logg\" and \"levels\" entries, as returned in the second slot of GraphWangLandau.";
+
+TransitionOrderDiagnostics::toofew="A density of states with `1` levels cannot have an interior
+local maximum; at least three are needed.";
+
+
 (* ::Chapter:: *)
 (*Helper Functions*)
 
