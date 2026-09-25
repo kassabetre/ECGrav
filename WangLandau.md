@@ -384,11 +384,16 @@ spacing wastes runs at the flat end and under-resolves the steep one.
    units. If a whole band of $`m`$ levels is off by $`\Delta`$, the walk spends almost all its time
    in that band, so each of its levels gains $`\ln f \cdot N_{\text{lev}}/m`$ per step relative to
    the rest: with $`\ln f = N_{\text{lev}}/j`$ and $`m \approx N_{\text{lev}}/2`$ that is $`2/j`$,
-   integrating to only $`2 \ln(j_2/j_1)`$. Clearing $`\Delta \approx 15`$ — the range at
-   $`n = 10`$ — takes a factor $`e^{7.5} \approx 1800`$ in run length. The first phase clears it
-   in a few traversals at large $`\ln f`$. Measured at $`n = 10`$ on the defective schedule: after
-   300 000 steps the density missed the canonical $`U`$ at $`\beta = 0.5`$ by $`z \approx 300`$
-   and called **every** $`\beta`$ bimodal.
+   integrating to only $`2 \ln(j_2/j_1)`$, so clearing $`\Delta`$ takes a factor
+   $`e^{\Delta/2}`$ in run length. At $`n = 10`$ the band spans $`\Delta = 5.9`$ across the window
+   $`[0, 50]`$ — a factor of about 19 — and more across a wider window, since the span grows with it.
+   The first phase clears it in a few traversals at large $`\ln f`$. A 300 000-step $`n = 10`$
+   pilot on the defective schedule missed the canonical $`U`$ at $`\beta = 0.5`$ by
+   $`z \approx 300`$ and called **every** $`\beta`$ bimodal — but that pilot was also short, 342
+   visits per level on 878 levels, so it shows what an unconverged density does rather than
+   isolating the schedule. The corrected schedule on $`[0, 50]`$, $`8\times10^6`$ steps: 11 halvings,
+   switched to 1/t by step 729 000, histogram min/mean 0.894, and $`U`$ within $`|z| \le 2.3`$ of
+   independent canonical chains at all ten $`\beta`$ checked.
 7. **Never register an energy outside the window as a level** (§4.3).
 
 ---

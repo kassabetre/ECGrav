@@ -9660,8 +9660,9 @@ Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStat
 						runs. That is not harmless. Under 1/t alone an error shared by a whole BAND of
 						levels shrinks only like Log[step], so the ln g gradient the first phase builds
 						in a few traversals would instead need the run to grow by a factor of order
-						Exp[gradient]. At n=5 the gradient is small enough not to show; at n=10 it is
-						about 15 units across the window. See WangLandau.md 8.*)
+						Exp[gradient/2]. At n=5 the gradient is small enough not to show; at n=10 it is
+						5.9 units across the window {0,50}, a factor of ~19 in run length, and it
+						grows with the window. See WangLandau.md 8.*)
 					If[schedule==="OneOverT"&&lnf<=nLev/step,phase="oneOverT";lnf=N[nLev/step]]
 				]
 			],
