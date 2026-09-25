@@ -644,10 +644,13 @@ HHomogeneousSource::usage="HHomogeneousSource[Am,e0,gChi,gBdry,c0,c1] = c0*O0 + 
 homogeneous pair of HomogeneousHamiltonian.md 4.2, with O0 = HSourceTerms[Am,e0,gChi,gBdry] and
 O1 = NumTriangles[Am]. Run a driver at bt = 1 and let c carry the temperature:
 beta*(O0 + nt0*O1) == c0*O0 + c1*O1 for c = HomogeneousCouplings[beta,nt0].
-It is directly usable by the single-parameter drivers, which call hamiltonian[graph,hparams].
-The EXTERNAL-FIELD drivers discard hparams and apply the head to a field row instead, so for
-those define a head in your own context that closes over e0, gChi and gBdry and calls this; a
-head built inside the package would not reach the parallel subkernels.
+It CANNOT be passed to a driver directly as hamiltonian[hparams]: driver arguments are evaluated,
+and HHomogeneousSource[e0,gChi,gBdry,c0,c1] without the matrix hits the argerr catch-all and
+becomes $Failed before the driver sees it. Every driver therefore needs an inert head defined in
+your own context that calls this, e.g. hHom[am_List,c0_,c1_] := HHomogeneousSource[am,3.0,-0.5,
+0.5,c0,c1]. The EXTERNAL-FIELD drivers discard hparams and apply the head to a field row instead,
+and for those your own context matters twice over: a head built inside the package would not
+reach the parallel subkernels.
 Inputs are:
 1. Am = List, adjacency matrix of a graph\[IndentingNewLine]2. e0, 3. gChi, 4. gBdry = fixed couplings,
 5. c0, 6. c1 = the homogeneous couplings\[IndentingNewLine]It returns a real number.";
