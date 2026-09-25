@@ -1526,6 +1526,28 @@ VerificationTest[
 VerificationTest[{wlRun[[4]]["windowRejections"], wlRun[[2]]["normalisation"]}, {0, "TotalStates"},
     TestID -> "GraphWangLandau-full-window-rejects-nothing"];
 
+(* --- the 1/t schedule must RUN its first phase ---
+   The switch to ln f = nLev/step was once tested on every step, where it fires at step 1
+   (ln f = 1 <= nLev/1), so the first phase never ran: this exact run recorded ZERO reductions.
+   At n = 4 accuracy barely notices -- the ln g range is small -- so the reduction count, not the
+   error, is the regression test here. At n = 10, with ~15 units of ln g across the window, a band
+   error decays only like Log[step] without the first phase. Measured over 6 seeds: 8 reductions,
+   1 -> 1/256, all within the first ~2000 steps. *)
+(* ::budget is expected and silenced: a 1/t run ends on its step budget by design. *)
+wlOneT = (SeedRandom[42];
+    Quiet[ECGrav`GraphWangLandau[ConstantArray[0, {wlN, wlN}], wlH[wlCp], wldH[wlCp],
+        wlWindow, 200000, "Schedule" -> "OneOverT", "CheckInterval" -> 200],
+        {ECGrav`GraphWangLandau::budget}]);
+
+VerificationTest[{wlOneT[[4]]["phase"], Length[wlOneT[[4]]["reductions"]] >= 3}, {"oneOverT", True},
+    TestID -> "GraphWangLandau-oneovert-runs-its-first-phase"];
+
+VerificationTest[
+    With[{wl = wlOneT[[2]]["logg"],
+          ex = AssociationThread[wlExact[[All,1]] -> Log[N@wlExact[[All,2]]]]},
+        Max[Abs[Exp[wl[#] - ex[#]] - 1] & /@ Keys[wl]]] < 0.10   (* calibrated over 6 seeds: worst observed 0.0476, against 0.2477 for Classic at the same budget *),
+    True, TestID -> "GraphWangLandau-oneovert-g-matches-exact-enumeration"];
+
 (* --- error paths --- *)
 VerificationTest[
     ECGrav`GraphWangLandau[ConstantArray[0,{wlN,wlN}], wlH[wlCp], wldH[wlCp],

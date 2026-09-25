@@ -89,8 +89,11 @@ the run looking healthy.
 
 - `"Classic"` — $`f \to \sqrt{f}`$ on each flat histogram, resetting $`H`$. Simple, textbook, and the
   baseline §7 validates against.
-- `"OneOverT"` (default) — run classic until $`\ln f \le N_{\text{lev}}/j`$ for $`j`$ steps, then set
-  $`\ln f = N_{\text{lev}}/j`$ every step with no further flatness tests or histogram resets. This
+- `"OneOverT"` (default) — Belardinelli–Pereyra. A first phase halves $`\ln f`$ each time *every
+  level has been visited* since the last reset — weaker than the flatness test, because this phase
+  only has to shape $`\ln g`$ roughly — and **after each halving** tests
+  $`\ln f \le N_{\text{lev}}/j`$ at step $`j`$. Once that holds it sets
+  $`\ln f = N_{\text{lev}}/j`$ every step with no further tests or histogram resets. This
   avoids the **error saturation** of the naive schedule, where the error stops decreasing below a
   floor set by the flatness criterion however long the run continues. §6's double-peak analysis is
   precisely what a saturated error obscures, so 1/t is the production path.
@@ -354,6 +357,12 @@ spacing wastes runs at the flat end and under-resolves the steep one.
   Both runs recovered all 27 levels, the exact normalisation, and the exact ground-state
   degeneracy of 60.
 
+  **The `"OneOverT"` row measured a defective schedule** — the one of §8 trap 6, whose first phase
+  never ran; its final $`\ln f = 27/500\,000`$ exactly says so. At $`n = 4`$, same budget of
+  200 000 steps, the defective and corrected schedules give worst errors of 2.5–9.3 % (3 seeds) and
+  2.9–4.8 % (6 seeds): a small $`\ln g`$ range hides the defect, which is why the regression test
+  counts reductions — 0 before, 8 after — rather than measuring error.
+
 ---
 
 ## 8. Traps
@@ -369,6 +378,18 @@ spacing wastes runs at the flat end and under-resolves the steep one.
    instead of erroring. Same trap as `HomogeneousHamiltonian.md` §4.2.
 5. **The inner loop needs a step budget.** A flatness criterion that cannot be satisfied — for any
    of the reasons above — otherwise spins forever.
+6. **Test the 1/t switch only after a reduction.** Tested on every step, $`\ln f \le N_{\text{lev}}/j`$
+   holds at $`j = 1`$ — $`1 \le N_{\text{lev}}`$ — so the first phase never runs and the run is 1/t
+   from its first step. That converges in principle but not in practice once $`\ln g`$ spans many
+   units. If a whole band of $`m`$ levels is off by $`\Delta`$, the walk spends almost all its time
+   in that band, so each of its levels gains $`\ln f \cdot N_{\text{lev}}/m`$ per step relative to
+   the rest: with $`\ln f = N_{\text{lev}}/j`$ and $`m \approx N_{\text{lev}}/2`$ that is $`2/j`$,
+   integrating to only $`2 \ln(j_2/j_1)`$. Clearing $`\Delta \approx 15`$ — the range at
+   $`n = 10`$ — takes a factor $`e^{7.5} \approx 1800`$ in run length. The first phase clears it
+   in a few traversals at large $`\ln f`$. Measured at $`n = 10`$ on the defective schedule: after
+   300 000 steps the density missed the canonical $`U`$ at $`\beta = 0.5`$ by $`z \approx 300`$
+   and called **every** $`\beta`$ bimodal.
+7. **Never register an energy outside the window as a level** (§4.3).
 
 ---
 

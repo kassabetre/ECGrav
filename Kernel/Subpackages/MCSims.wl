@@ -9646,13 +9646,25 @@ Module[{v=Length[seedGraph],schedule,flatness,lnfEnd,checkEvery,snapTol,maxGStat
 
 		If[phase==="classic",
 			If[Mod[step,checkEvery]==0,
-				If[Min[hist]>=flatness*Mean[N@Values[hist]],
+				(*The stage criterion differs by schedule. Classic needs a FLAT histogram, because its
+					accuracy is set there. OneOverT's first phase only has to bring ln f down to 1/t
+					while shaping ln g roughly, so it uses Belardinelli and Pereyra's weaker criterion
+					-- every level visited since the last reset -- and moves on after each traversal
+					instead of waiting for flatness across hundreds of jagged levels.*)
+				If[If[schedule==="OneOverT",Min[hist]>0,Min[hist]>=flatness*Mean[N@Values[hist]]],
 					AppendTo[reductions,{step,lnf,N[Min[hist]/Mean[N@Values[hist]]]}];
 					lnf=lnf/2;
-					hist=AssociationMap[0&,Keys[hist]]
+					hist=AssociationMap[0&,Keys[hist]];
+					(*The switch is tested HERE, after a reduction, and nowhere else. Tested on every
+						step it fires at step 1 -- ln f = 1 <= nLev/1 -- and the first phase never
+						runs. That is not harmless. Under 1/t alone an error shared by a whole BAND of
+						levels shrinks only like Log[step], so the ln g gradient the first phase builds
+						in a few traversals would instead need the run to grow by a factor of order
+						Exp[gradient]. At n=5 the gradient is small enough not to show; at n=10 it is
+						about 15 units across the window. See WangLandau.md 8.*)
+					If[schedule==="OneOverT"&&lnf<=nLev/step,phase="oneOverT";lnf=N[nLev/step]]
 				]
-			];
-			If[schedule==="OneOverT"&&lnf<=nLev/step,phase="oneOverT"],
+			],
 			(*else: the 1/t phase. lnf tracks 1/t with t = step/nLev, and neither the flatness
 				test nor the histogram reset runs again. This is what avoids the error saturation
 				of the naive f -> Sqrt[f] schedule, which is precisely what would blur the double

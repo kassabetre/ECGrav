@@ -1658,7 +1658,8 @@ Inputs are:
 5. maxSteps = Integer, the step budget\[IndentingNewLine]Options:
 \"Schedule\" -> \"OneOverT\" (default) or \"Classic\". OneOverT avoids the error saturation of the
 naive f -> Sqrt[f] schedule and is the production path; Classic is the textbook baseline.
-\"Flatness\" -> 0.8, the histogram flatness criterion.
+\"Flatness\" -> 0.8, the histogram flatness criterion of \"Classic\". The first phase of
+\"OneOverT\" halves ln f instead whenever every level has been visited since the last reset.
 \"FinalLogF\" -> 10.^-8, the stopping modification factor. NOTE it does not mean the same\nthing to both schedules: for \"Classic\" it is a convergence criterion, but for \"OneOverT\"\nln f = nLevels/steps, so it is arithmetically a step budget of nLevels/FinalLogF. Budget a\n\"OneOverT\" run with maxSteps instead.
 \"CheckInterval\" -> Automatic, steps between flatness tests and energy-drift checks.
 \"EnergySnap\" -> 10.^-6, the float-noise floor the accumulated energy is snapped to.
