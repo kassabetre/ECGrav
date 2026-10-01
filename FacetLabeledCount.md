@@ -283,9 +283,24 @@ be nonempty.
 
 #### What $`N(\lambda,p)`$ counts
 
-For a single label, choose a sub-collection of the **cycles** whose lengths total $`p`$. Each cycle
-is either taken or not, and one of length $`k`$ contributes $`x^k`$ when taken; with $`m_k`$ cycles of
-length $`k`$ that is a factor $`(1+x^k)^{m_k}`$, and $`[x^p]`$ selects total length exactly $`p`$.
+**It is itself a fixed-point count.** For any $`\sigma`$ of cycle type $`\lambda`$,
+
+```math
+N(\lambda,p) \;=\; \#\bigl\{\, F \subseteq [n] \;:\; |F| = p,\ \ \sigma(F) = F \,\bigr\},
+```
+
+the number of $`p`$-subsets of the $`n`$ row slots that $`\sigma`$ leaves invariant. A set is
+$`\sigma`$-invariant exactly when it is a union of whole cycles, which is what makes it computable:
+choose a sub-collection of the **cycles** whose lengths total $`p`$. Each cycle is either taken or
+not, and one of length $`k`$ contributes $`x^k`$ when taken; with $`m_k`$ cycles of length $`k`$ that is
+a factor $`(1+x^k)^{m_k}`$, and $`[x^p]`$ selects total length exactly $`p`$.
+
+This reading is also the shortest route to the power in (3.3). The rows that label $`i`$ occupies,
+$`\{\, j \in [n] : i \in R_j \,\}`$, form a $`p`$-subset of $`[n]`$, and $`\sigma`$ fixes the tuple
+exactly when every one of these $`M`$ sets is $`\sigma`$-invariant. Nothing links different labels, so
+each picks independently among the same $`N(\lambda,p)`$ invariant sets — the transpose argument
+above, read as a statement about fixed points.
+
 Equivalently, expanded over the partitions $`\nu \vdash p`$,
 
 ```math
@@ -296,11 +311,32 @@ which is the form `NumFLPCNCoeff` evaluates. It is a truncated cycle-index-style
 function, the same one the sampler calls $`N(\nu)`$.
 
 > **It counts sub-collections of cycles, not sub-multisets of cycle lengths.** Cycles of equal
-> length are distinguishable, which is exactly what the $`\binom{m_k}{\nu_k}`$ record. For
-> $`\lambda = \{2,1,1,1\}`$ and $`p = 2`$ there are only two sub-multisets of *lengths* summing to 2,
-> namely $`\{2\}`$ and $`\{1,1\}`$ — but $`N = 4`$, because the three 1-cycles offer $`\binom{3}{2} = 3`$
-> distinct pairs. (Earlier revisions of this section described it the wrong way; the generating
-> function and the code were always right.)
+> length are distinguishable, which is exactly what the $`\binom{m_k}{\nu_k}`$ record: each $`\nu`$ in
+> the sum is a sub-multiset of lengths — a *shape* — and $`\prod_k \binom{m_k}{\nu_k}`$ counts the ways
+> to *realise* it with actual cycles. $`N`$ counts realisations. For $`\lambda = \{2,1,1,1\}`$ and
+> $`p = 2`$ there are only two sub-multisets of *lengths* summing to 2, namely $`\{2\}`$ and
+> $`\{1,1\}`$ — but $`N = 4`$, because the three 1-cycles offer $`\binom{3}{2} = 3`$ distinct pairs. At
+> $`\lambda = \{1^5\}`$ the gap is starker: one shape, $`\{1,1\}`$, against $`N = 10`$. (Earlier
+> revisions of this section described it the wrong way; the generating function and the code were
+> always right.)
+
+**Three generating functions on one partition.** The same expression reappears in §9.3.6, applied
+to a different partition — the type classes of a configuration instead of the cycles of a
+permutation — where it counts the extensions that take every class wholly or not at all. Beside it
+sit two relatives, easily confused with it and with each other. Indexing the parts of $`\lambda`$ by
+$`u`$ and the part sizes by $`k`$:
+
+| product | what it chooses | $`[x^p]`$ counts |
+| --- | --- | --- |
+| $`\prod_u \bigl(1 + x^{\lambda_u}\bigr)`$ | a set of parts, each taken whole | $`N(\lambda,p)`$ |
+| $`\prod_u \bigl(1 + x + \dots + x^{\lambda_u}\bigr)`$ | an amount from $`0`$ to $`\lambda_u`$ of each part | $`\lvert MS_p(\lambda)\rvert`$, the branches of §9.3.2 |
+| $`\prod_k \bigl(1 + x^k + \dots + x^{k m_k}\bigr)`$ | how many parts of each size, equal parts interchangeable | sub-multisets of the part sizes |
+
+The first is (3.3)'s, since $`\prod_u (1+x^{\lambda_u})`$ regroups by part size as
+$`\prod_k (1+x^k)^{m_k}`$. At $`\lambda = (2,2,1)`$ and $`p = 3`$ the three give $`2`$, $`5`$ and $`1`$. Of the
+five selections §9.3.4 lists for a facet reusing three old vertices, exactly two take every class
+whole — the two it marks $`F_1`$ and $`F_2`$ — and those two are the realisations of the single shape
+$`\{2,1\}`$ that the third row counts once.
 
 #### Examples
 
