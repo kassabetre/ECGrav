@@ -990,8 +990,8 @@ the product running over the parts of $`\lambda`$, indexed by $`u`$ to keep $`i`
 
 Having chosen a sub-multiset, each partially-taken type **splits** into its taken and untaken halves
 — they are no longer interchangeable, one being in the new facet — and the new vertices enter as a
-fresh part. Fully-taken and untaken types do not split. Write $`a = (a_u)`$ for the sub-multiset, so
-the facet reuses $`a_u`$ of the $`\lambda_u`$ vertices of type $`u`$, and $`t`$ for its number of new
+fresh part. Fully-taken and untaken types do not split. Write $`a = (a_u)`$ for the sub-multiset — its
+**selection vector** — so the facet reuses $`a_u`$ of the $`\lambda_u`$ vertices of type $`u`$, and $`t`$ for its number of new
 vertices, $`t = n_i`$ for the facet being placed. Then the transition is
 
 ```math
@@ -1013,7 +1013,7 @@ That is the whole state transition, and it depends on $`\lambda`$, $`a`$ and $`t
 Facet $`i`$ must differ from $`F_1,\dots,F_{i-1}`$. When $`n_i > 0`$ it contains a brand-new vertex and
 cannot coincide with any of them, so nothing is needed. When $`n_i = 0`$ the correction is exactly
 $`i-1`$: each $`F_j`$ is an available sub-multiset of size $`p`$, and $`F_j \neq F_{j'}`$ forces their
-profiles apart, since $`F_j`$ takes all of every type containing $`j`$ and none of the rest.
+selection vectors apart, since $`F_j`$ takes all of every type containing $`j`$ and none of the rest.
 
 That last sentence is also the reason the partition state survives a correction that seems to need
 type identities:
@@ -1031,10 +1031,10 @@ Profile $`c = (3,2,0,0)`$ at $`p=3`$, $`M=4`$. Partitions written with multiplic
 That type splits $`1 + 2`$, and the two new vertices join as a part: state $`(2,2,1)`$, five vertices
 $`= S_2`$. In types: $`\{1\}^2,\ \{2\}^2,\ \{1,2\}^1`$.
 
-**Stage 3** ($`n_3 = 0`$). Facet 3 is three old vertices; $`|MS_3((2,2,1))| = 5`$. Writing profiles in
-the coordinates $`(\{1\}, \{2\}, \{1,2\})`$:
+**Stage 3** ($`n_3 = 0`$). Facet 3 is three old vertices; $`|MS_3((2,2,1))| = 5`$. Writing selection
+vectors in the coordinates $`(\{1\}, \{2\}, \{1,2\})`$:
 
-| profile | grows to | |
+| $`a`$ | $`\mathrm{grow}(\lambda,a,0)`$ | |
 | --- | --- | --- |
 | $`(2,1,0)`$ | $`(2,1,1,1)`$ | |
 | $`(1,2,0)`$ | $`(2,1,1,1)`$ | |
