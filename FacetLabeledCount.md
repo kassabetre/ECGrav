@@ -354,8 +354,10 @@ Taking $`p = 2`$, as in §4:
 **A fixed tuple in full.** Take $`n = 5`$, $`p = 2`$, $`M = 3`$ and $`\sigma = (1\,2)`$, so the cycles are
 $`c_1 = \{1,2\}`$ of length 2 and $`c_2 = \{3\}`$, $`c_3 = \{4\}`$, $`c_4 = \{5\}`$. The menu has the
 $`N = 4`$ entries $`\{c_1\}, \{c_2,c_3\}, \{c_2,c_4\}, \{c_3,c_4\}`$. Let label 1 choose $`\{c_1\}`$,
-label 2 choose $`\{c_2,c_3\}`$ and label 3 choose $`\{c_3,c_4\}`$. Transposing gives
-$`R_{c_1} = \{1\}`$, $`R_{c_2} = \{2\}`$, $`R_{c_3} = \{2,3\}`$, $`R_{c_4} = \{3\}`$, so
+label 2 choose $`\{c_2,c_3\}`$ and label 3 choose $`\{c_3,c_4\}`$. Transposing gives one subset per
+**cycle**, $`R_{c_1} = \{1\}`$, $`R_{c_2} = \{2\}`$, $`R_{c_3} = \{2,3\}`$, $`R_{c_4} = \{3\}`$, and the tuple of
+**rows** is recovered by writing each cycle's subset on every row of that cycle. Since $`c_1`$ has two
+rows, $`\{1\}`$ appears twice:
 
 ```math
 (R_1,\dots,R_5) \;=\; \bigl(\{1\},\ \{1\},\ \{2\},\ \{2,3\},\ \{3\}\bigr),
@@ -365,6 +367,22 @@ constant on $`c_1`$ as required, with each label occupying exactly two rows. Rea
 $`j`$ lists the facets containing vertex $`j`$ — this is $`F_1 = \{1,2\}`$, $`F_2 = \{3,4\}`$,
 $`F_3 = \{4,5\}`$: three edges on five vertices, fixed by the swap of vertices 1 and 2. All three
 labels choose independently, so this cycle type contributes $`4^3 = 64`$ fixed tuples.
+
+Independently includes identically, and that is the case where the expansion is easiest to drop. If
+all three labels choose $`\{c_1\}`$, then $`R_{c_1} = \{1,2,3\}`$ while the other three cycles stay
+empty, so
+
+```math
+(R_1,\dots,R_5) \;=\; \bigl(\{1,2,3\},\ \{1,2,3\},\ \varnothing,\ \varnothing,\ \varnothing\bigr),
+```
+
+again with two copies for the two rows of $`c_1`$. A single copy would leave each label in one row
+and would not be fixed by $`\sigma`$; and the three empty rows are the three unchosen one-row cycles,
+not filler added to reach length five. As a complex this is $`F_1 = F_2 = F_3 = \{1,2\}`$ with
+vertices 3, 4 and 5 isolated — repeated facets and uncovered vertices at once. It is counted all the
+same, because (3.3) computes $`\tilde B`$, which admits both defects, and each is handled by its own
+device: repeats by the falling factorial $`N^{(M)}`$ introduced just below, under which
+$`4 \cdot 3 \cdot 2 = 24`$ of the $`64`$ survive, and empty rows by the differencing of §3.1.
 
 #### A consequence worth carrying to §3.5
 
