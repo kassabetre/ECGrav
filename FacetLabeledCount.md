@@ -566,10 +566,14 @@ derivation above appears as the header comment at line 1861.
 | 1958 | `NumFLPCWeightTable[p,n]` | the $`\{N,\text{weight}\}`$ pairs of that sum with equal $`N`$ merged. **Memoized**, cleared by `NumPCClearCache[]` |
 | 1984 | `NumFLPCTFromTable[tab,M]` | $`n!\,A(n)`$ for one $`M`$, one pass over the table |
 | 1990 | `NumFLPCCount[p,M,n]` | $`\bigl(T(n) - n\,T(n-1)\bigr)/n!`$, the differencing (3.1) |
-| 1999 | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
-| 2015 | `NumFacetLabeledPureComplexes[p,Mlist,n]` | the same for a list of facet orders, guards applied per entry |
-| — | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count |
-| — | catch-all | `::argerr` and `$Failed` |
+| 1999 | `NumFLPCExpSeries[p,nmax]` | $`E_p`$ of (8.1) to degree $`n_{\max}`$, by $`n f_n = -\sum_{k \le \min(p,n)} f_{n-k}`$ |
+| 2014 | `NumFLPCShortTable[p,nmax]` | the short-cycle series $`H`$ of (8.1): $`\{u, N\} \to \sum 1/z`$, one pass serving every $`n \le n_{\max}`$. Not memoized |
+| 2033 | `NumFLPCRow[p,M,nmax]` | $`s_F(p,M,n)`$ for every $`n \le n_{\max}`$ by (8.1), unguarded |
+| 2044 | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
+| 2060 | `NumFacetLabeledPureComplexes[p,Mlist,n]` | the same for a list of facet orders, guards applied per entry |
+| 2084 | `NumFacetLabeledPureComplexes[p,M,nlist]` | the same for a list of vertex counts — a whole row is `Range[0, p M]` — through `NumFLPCRow`, guards applied per entry |
+| 2107 | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count, as $`A(p,M,pM)`$ from one table (§6) |
+| 2124 | catch-all | `::argerr` and `$Failed` |
 
 Three implementation details worth naming:
 
@@ -635,11 +639,12 @@ for a different reason. Falling through on an out-of-range $`n`$ enters the cycl
 $`n`$; $`(3,4,100)`$ would walk every multiplicity vector for $`n = 100`$. It is in the degenerate test
 for exactly this reason.
 
-**The two-argument form sums rather than telescoping.** It finds the least $`n`$ with
-$`\binom{n}{p} \ge M`$ and adds $`s_F(p,M,n)`$ up to $`n = pM`$. Since (3.1) telescopes, the whole sum
-is just $`A(p,M,pM)`$ — verified on $`p \in \{2,3\}`$, $`M \in \{2,\dots,5\}`$ — so the form currently
-pays $`O(pM)`$ cycle-type sums where one would do. Measured: $`0.038`$ s at $`(3,6)`$, $`0.098`$ s at
-$`(3,8)`$, $`0.213`$ s at $`(3,10)`$. Not a correctness issue, and not yet changed.
+**The two-argument form telescopes.** Since (3.1) telescopes, the sum of $`s_F(p,M,n)`$ over $`n`$ is
+just $`A(p,M,pM)`$ — one cycle-type table. The form used to find the least $`n`$ with
+$`\binom{n}{p} \ge M`$ and add $`s_F(p,M,n)`$ up to $`n = pM`$, paying $`O(pM)`$ cycle-type sums where one
+would do: $`0.038`$ s at $`(3,6)`$, $`0.098`$ s at $`(3,8)`$, $`0.213`$ s at $`(3,10)`$. It now evaluates
+$`A(p,M,pM)`$ directly under the same guards, is identical to the summing version on all 77 tested
+$`(p,M)`$ pairs — $`p \le 0`$ and $`M \le 0`$ included — and runs 7–14.5× faster at $`p \le 5`$ (§8).
 
 ---
 
@@ -708,8 +713,9 @@ can be summarised away.
 
 ## 8. What the differencing and the long-cycle table amount to
 
-Not shipped; an observation made while writing this specification, verified on ten parameter sets
-including out-of-range zeros. It is the cleanest statement of why §3.4 cannot be shortcut.
+An observation made while writing this specification, first verified on ten parameter sets
+including out-of-range zeros; it now drives the row form `NumFacetLabeledPureComplexes[p, M, nlist]`
+(§5). It is also the cleanest statement of why §3.4 cannot be shortcut.
 
 Let $`h_u = \sum_{\lambda \vdash u,\ \text{parts} \le p} N(\lambda,p)^{(M)}/z_\lambda`$ and
 $`H(z) = \sum_{u \ge 0} h_u z^u`$ — the short-cycle part alone. With
@@ -727,9 +733,41 @@ exponential. The two series agree through $`z^p`$ and **first differ at $`z^{p+1
 $`\exp(-z-z^2/2) = 1 - z + 0\,z^2 + z^3/3 - \cdots`$ against $`1 - z`$ — which is precisely the
 discrepancy §3.4 reports. It is not a small correction: the coefficients do not decay.
 
-(8.1) also suggests a refinement, unmeasured: one pass over the restricted multiplicity vectors
-building $`H`$ to degree $`n`$, convolved once with a fixed length-$`(n{+}1)`$ series, would replace the
-two cycle-type sums of `NumFLPCCount` with one and give the whole row $`n = 0..N`$ at once.
+**One fixed series.** Write $`E_p(z) = \exp\bigl(-\sum_{k \le p} z^k/k\bigr)`$, so that
+$`E_p = (1-z)\,G`$: the long-cycle table and the differencing are a single factor. It needs neither to
+compute. Differentiating $`E_p = e^{Q}`$, with $`Q = \sum_k q_k z^k = -\sum_{k \le p} z^k/k`$, gives
+$`E_p' = Q' E_p`$, and since $`k\,q_k = -1`$ for every $`k \le p`$,
+
+```math
+f_0 = 1, \qquad n\,f_n \;=\; -\sum_{k=1}^{\min(p,n)} f_{n-k},
+```
+
+giving $`1, -1, 0, \tfrac13, -\tfrac1{12}, -\tfrac1{20}, \dots`$ at $`p = 2`$. $`E_p`$ depends on $`p`$ alone,
+and $`H`$ on $`p`$ and $`M`$ but not on $`n`$.
+
+**What (8.1) buys, measured.** One pass over the multiplicity vectors up to degree $`N`$ builds $`H`$
+for every $`n \le N`$ at once. Three access patterns, cold cache, best of three; the first and last
+columns time the shipped forms before and after:
+
+| $`(p,M)`$ | $`N = pM`$ | whole row: per-$`n`$ tables → (8.1) | vectors visited | one value | total over $`n`$: summing → $`A(pM)`$ |
+| --- | --- | --- | --- | --- | --- |
+| $`(2,20)`$ | 40 | 72.9 → 4.8 ms (15.1×) | 6391 → 441 | 2.5× | 74.2 → 5.1 ms (14.5×) |
+| $`(3,12)`$ | 36 | 195 → 16.9 ms (11.6×) | 17689 → 1708 | 2.2× | 195 → 18.3 ms (10.7×) |
+| $`(3,16)`$ | 48 | 551 → 39.0 ms (14.1×) | 50625 → 3789 | 2.0× | 549 → 40.3 ms (13.6×) |
+| $`(4,10)`$ | 40 | 913 → 88.6 ms (10.3×) | 70616 → 7386 | 2.0× | 914 → 95.9 ms (9.5×) |
+| $`(5,6)`$ | 30 | 594 → 78.7 ms (7.6×) | 35900 → 5326 | 2.0× | 592 → 84.9 ms (7.0×) |
+
+The margins are explained rather than merely observed: each time ratio tracks the ratio of
+cycle-type vectors visited to within a quarter. A row built from per-$`n`$ tables visits
+$`\sum_{n \le N} V(n)`$ vectors against $`V(N)`$ for one pass — roughly $`N/(p+1)`$ times as many — so the
+margin grows with the row. A single value needs one sum where `NumFLPCCount` takes two, at $`n`$ and
+$`n-1`$, hence 2× in the limit. And the total over $`n`$ telescopes to $`A(pM)`$, one table.
+
+The row and the total are shipped — the overload `NumFacetLabeledPureComplexes[p, M, nlist]` and the
+two-argument form (§6). The single value is not. Its 2× is on a cold call, while the scalar form's
+table is memoized per $`(p,n)`$ and shared by every $`M`$. A table keyed on $`\{u, N\}`$ up to degree
+$`N`$ contains the one for every smaller $`n`$, so a memo per $`p`$ could serve them all — but that is a
+restructuring of the cache, not a substitution, and it waits on a use that needs it.
 
 ---
 
@@ -1308,7 +1346,7 @@ empty profiles.
 
 ## 10. Verification
 
-Five independent legs, in `Tests/PureComplexes.wlt` lines 224–323 unless noted.
+Five independent legs, in `Tests/PureComplexes.wlt` lines 224–325 unless noted.
 
 1. **Against the source notebook.** Eleven separating counts from the author's
    `Facet-labeled-count.nb` (`sFDirect`), plus its 93-digit $`s_F(3,50,10)`$.
@@ -1332,7 +1370,10 @@ Five independent legs, in `Tests/PureComplexes.wlt` lines 224–323 unless noted
    summing to 154. Not currently in the suite; worth adding, since it is the only check that
    touches §1.1 and it catches the $`|\mathrm{Aut}|`$-vs-$`|H|`$ error specifically.
 5. **Structure and guards.** Degenerate inputs including the deliberately out-of-range
-   $`(3,4,100)`$ of §6, the two-argument/sum agreement, and argument-error handling.
+   $`(3,4,100)`$ of §6, the two-argument/sum agreement — which now pins the telescoped total of §6,
+   over $`p \in 0..4`$ and $`M \in 0..5`$ — and argument-error handling. The row form is pinned
+   elementwise against the scalar form near line 1835 (`-row-matches-scalar`), on unsorted lists with
+   repeats, entries out of range on both sides, the empty list and the degenerate $`(p,M)`$.
 
 **On method.** Everything above is an exact integer identity. There is no statistical leg here
 and none is wanted — contrast the samplers, where chi-square is available and is still the
