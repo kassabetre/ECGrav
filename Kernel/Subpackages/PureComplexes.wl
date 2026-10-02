@@ -1867,23 +1867,32 @@ NumVertexLabeledPureComplexes[args];
    are pairwise distinct, which is the "separating" condition.
 
    Counting them directly over n rows is hopeless, so the count goes through Burnside on the n
-   row slots. Allowing empty rows first, let A(n) be the number of multisets of exactly n
-   subsets of [M] with every label in exactly p of them; padding with empty rows gives
-   A(n) = Sum_{k<=n} F(k), hence F(n) = A(n) - A(n-1). A tuple fixed by a permutation sigma is
+   row slots, with empty rows allowed. Two padded families matter: Bt(n), the multisets of
+   exactly n subsets of [M] with every label in exactly p of them, columns arbitrary; and A(n),
+   those whose M columns are also pairwise distinct. Padding the separating family with empty
+   rows gives A(n) = Sum_{k<=n} F(k) -- distinct columns on both sides -- hence
+   F(n) = A(n) - A(n-1). A tuple fixed by a permutation sigma is
    constant on each cycle, so choosing one amounts to choosing a subset per cycle, and the
    condition "label i lies in exactly p rows" becomes "the cycles containing i have lengths
-   summing to p" -- separately for each label. The labels therefore decouple and
+   summing to p" -- separately for each label. The labels therefore decouple and, for Bt,
 
 	|Fix(sigma)| = N(lambda,p)^M,   N(lambda,p) = [x^p] Product_k (1+x^k)^m_k,
 
-   with lambda the cycle type of sigma and m_k its number of parts of length k. Cycles longer
-   than p can never be used, so N depends only on m_1..m_p, leaving a sum over those few
-   exponents times the number of ways to arrange the remaining long cycles.
+   with lambda the cycle type of sigma and m_k its number of parts of length k. N counts the
+   sub-collections of CYCLES whose lengths sum to p -- equivalently the p-subsets of the row
+   slots that sigma leaves invariant. Cycles longer than p can never be used, so N depends only
+   on m_1..m_p, and grouping the Burnside average by those few exponents sums the long cycles
+   out in closed form:
+
+	Bt(n) = Sum_{m_1..m_p >= 0, s = n - Sum_k k m_k >= 0}  g(s)/s! * N^M / Product_k k^m_k m_k!,
+
+   with g(s) the number of permutations of [s] whose every cycle is longer than p.
 
    The separating condition is one substitution away: N^M counts arbitrary labellings, while
-   labellings with pairwise DISTINCT columns are counted by the falling factorial N^(M). Since
+   labellings with pairwise DISTINCT columns are counted by the falling factorial N^(M), and
+   making that substitution in the sum above turns Bt(n) into A(n). Since
    N^M = Sum_k StirlingS2[M,k] N^(k), swapping the weight IS the Stirling inversion of
-   B(p,n,M) = Sum_k StirlingS2[M,k] F(p,n,k), applied cycle type by cycle type -- and unlike
+   Bt(p,M,n) = Sum_k StirlingS2[M,k] A(p,k,n), applied cycle type by cycle type -- and unlike
    that inversion it has no cancellation, since every summand stays non-negative.
 
    Ported from the author's Facet-labeled-count.nb (sFDirect), whose values were verified there
@@ -1911,13 +1920,18 @@ Module[{gg=ConstantArray[0,smax+1],tot,fall},
 
 (* Private helper *)
 NumFLPCNCoeff[mvec_List,jvecs_List]:=
-(*N(lambda,p) = [x^p] Product_k (1+x^k)^m_k, the number of sub-multisets of the cycle lengths
-summing to p. Expanded over the partitions of p, jvecs holding each partition's part counts.*)
+(*N(lambda,p) = [x^p] Product_k (1+x^k)^m_k: the number of sub-collections of the CYCLES whose
+lengths sum to p, equivalently the p-subsets of the row slots that a permutation of cycle type
+lambda leaves invariant. Equal-length cycles are distinct cycles, so this is NOT a count of
+sub-multisets of the lengths. Expanded over the partitions nu of p, jvecs holding each
+partition's part counts: Sum_nu Product_k Binomial[m_k, nu_k], the binomial choosing which of
+the m_k cycles of length k are taken.*)
 Sum[Times@@Binomial[mvec,jv],{jv,jvecs}];
 
 (* Private helper *)
 NumFLPCTSum[p_Integer,n_Integer,wf_,gg_List,fac_List,jvecs_List]:=
-(*n! A(n), summed over the cycle types of the n row slots. The recursion walks the multiplicities
+(*n! A(n) with wf = FactorialPower[#,M] -- or n! Bt(n) with wf = #^M -- summed over the cycle
+types of the n row slots. The recursion walks the multiplicities
 m_1..m_p of the short cycles; s is what is left for cycles longer than p, arranged gg[[s+1]]
 ways, and the multinomial fac[[n+1]]/(fac[[s+1]] denom) counts the ways to lay the short cycles
 down. wf turns the per-cycle-type count N into its weight: #^M would count all tableaux, while
