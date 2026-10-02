@@ -306,13 +306,15 @@ VerificationTest[
     TestID -> "NumFacetLabeledPureComplexes-degenerate"
 ];
 
-(* The two-argument form sums the three-argument one over the vertex count. *)
+(* The two-argument form sums the three-argument one over the vertex count. It is computed as
+   A(p M) from one cycle-type table, by telescoping, so this pins that identity -- p = 0 and
+   M = 0 included. *)
 VerificationTest[
     Table[{ECGrav`NumFacetLabeledPureComplexes[p, M],
            Total[Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {n, 0, p*M}]]},
-        {p, 2, 3}, {M, 2, 5}],
+        {p, 0, 4}, {M, 0, 5}],
     Table[{#, #} &@Total[Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {n, 0, p*M}]],
-        {p, 2, 3}, {M, 2, 5}],
+        {p, 0, 4}, {M, 0, 5}],
     TestID -> "NumFacetLabeledPureComplexes-2arg-equals-sum"
 ];
 
