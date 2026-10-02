@@ -40,7 +40,7 @@ jobs:
       WOLFRAM_PASS: ${{ secrets.WOLFRAM_PASS }}
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Activate the free Engine for this run; the license persists on the container
       # filesystem for the following step.
