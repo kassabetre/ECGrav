@@ -1816,6 +1816,31 @@ VerificationTest[
     {ECGrav`NumFacetLabeledPureComplexes::argerr},
     TestID -> "NumFacetLabeledPureComplexes-list-noninteger-reports"];
 
+(* ---------- Facet-labeled count: the n-row path, (8.1) ---------- *)
+(* A list of vertex counts goes through (8.1) of FacetLabeledCount.md -- one pass over the
+   short-cycle multiplicities, read off for every n -- instead of a cycle-type table per n.
+   Nothing observable may change, so pin it elementwise against the scalar form: unsorted
+   lists with repeats, entries out of range on both sides, the empty list, and the
+   degenerate (p, M) corners. *)
+
+VerificationTest[
+    Flatten[Table[
+        With[{top = Max[p M, 1] + 3},
+            Table[ECGrav`NumFacetLabeledPureComplexes[p, M, l] ===
+                    (ECGrav`NumFacetLabeledPureComplexes[p, M, #] & /@ l),
+                {l, {Range[-2, top], Reverse[Range[-2, top]],
+                     Join[{top, 0, top, p, p}, Range[0, top, 2]], {}}}]],
+        {p, -1, 4}, {M, -1, 6}]] // Union,
+    {True},
+    TestID -> "NumFacetLabeledPureComplexes-row-matches-scalar"];
+
+(* A non-integer entry is an argument error, not a silent 0. *)
+VerificationTest[
+    ECGrav`NumFacetLabeledPureComplexes[3, 4, {5, 2.5}],
+    $Failed,
+    {ECGrav`NumFacetLabeledPureComplexes::argerr},
+    TestID -> "NumFacetLabeledPureComplexes-row-noninteger-reports"];
+
 (* The memo must be transparent: clearing it cannot change any value. *)
 VerificationTest[
     Module[{warm, cold},

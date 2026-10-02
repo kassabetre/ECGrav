@@ -2523,12 +2523,17 @@ over Mlist. Prefer it when sweeping M: the cycle-type sum depends on M only thro
 factorial, so the rest is computed once and reused. That table is also memoised per (p, n) and
 released by ECGrav`Private`NumPCClearCache[], so a sweep through the scalar form is equally fast
 once the first call has paid for it.
+NumFacetLabeledPureComplexes[p_Integer, M_Integer, nlist_List] gives the count for each vertex
+count in nlist at one facet order, elementwise identical to mapping the three-argument form over
+nlist; a whole row is NumFacetLabeledPureComplexes[p, M, Range[0, p M]]. Prefer it when sweeping n:
+one pass over the cycle types serves every n in the list, where the three-argument form builds a
+table per n.
 It is zero unless p <= n <= p M and Binomial[n, p] >= M.
 See NumVertexLabeledPureComplexes for the count with the vertices labelled instead, and
 NumUnlabeledPureComplexes for the count with neither labelled.";
 
 NumFacetLabeledPureComplexes::argerr="Input should be of the form NumFacetLabeledPureComplexes[p_Integer, M_Integer, n_Integer]
-	or NumFacetLabeledPureComplexes[p_Integer, M_Integer].";
+	or NumFacetLabeledPureComplexes[p_Integer, M_Integer], with a list of integers allowed in place of M or of n.";
 
 
 (* ::Item::Closed:: *)
