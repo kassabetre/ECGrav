@@ -417,10 +417,42 @@ $`p`$. The number of permutations with prescribed short multiplicities is then
 \frac{n!}{s!\ \prod_{k \le p} k^{m_k} m_k!}\; g(s),
 ```
 
-giving the sum that `NumFLPCTSum` walks. $`g`$ is tabulated by `NumFLPCLongCycleTable` off the
+so dividing by the $`n!`$ of (3.2) — it cancels — collapses the sum over cycle types to one over the
+short multiplicities alone:
+
+```math
+\tilde B(p,M,n) \;=\; \sum_{\substack{m_1,\dots,m_p \,\ge\, 0 \\ s \,=\, n - \sum_k k\,m_k \,\ge\, 0}} \frac{g(s)}{s!}\cdot\frac{N(\lambda,p)^M}{\prod_{k=1}^{p} k^{m_k}\, m_k!}, \qquad N(\lambda,p) = [x^p]\prod_{k=1}^{p}\bigl(1+x^k\bigr)^{m_k}, \tag{3.4}
+```
+
+with $`A(p,M,n)`$ the same sum under the substitution $`N^M \to N^{(M)}`$ of §3.5. Each term gathers
+every cycle type with those short multiplicities: $`g(s)/s!`$ is the probability that a random
+permutation of the $`s`$ leftover points has no cycle of length $`\le p`$, so the long cycles are
+summed out in closed form. That is what turns a sum over all $`P(n)`$ cycle types into one over the
+$`O(n^p)`$ vectors $`(m_1,\dots,m_p)`$. $`g`$ is tabulated by `NumFLPCLongCycleTable` off the
 recurrence obtained by reading the cycle through the point $`1`$: it has some length $`k>p`$, laid
 down in $`(s-1)!/(s-k)!`$ ways, leaving the same problem on $`s-k`$ points. (Equivalently
-$`\sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)`$; the two agree through $`s=8`$.)
+$`\sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)`$; the two agree through $`s = 15`$ at every
+$`p \le 4`$.) On the shipped path the sum is walked by `NumFLPCWeightTable`, which stores $`n!`$
+times each weight and merges terms with equal $`N`$; `NumFLPCTSum` walks it unmerged and is kept as
+the reference form (§5).
+
+**Worked through at $`(p,M,n) = (2,3,5)`$**, five terms survive:
+
+| $`(m_1,m_2)`$ | cycle type | $`s`$ | weight | $`N`$ | $`N^3`$ | term |
+| --- | --- | --- | --- | --- | --- | --- |
+| $`(5,0)`$ | $`(1^5)`$ | $`0`$ | $`1/120`$ | $`10`$ | $`1000`$ | $`25/3`$ |
+| $`(3,1)`$ | $`(2,1,1,1)`$ | $`0`$ | $`1/12`$ | $`4`$ | $`64`$ | $`16/3`$ |
+| $`(1,2)`$ | $`(2,2,1)`$ | $`0`$ | $`1/8`$ | $`2`$ | $`8`$ | $`1`$ |
+| $`(2,0)`$ | $`(3,1,1)`$ | $`3`$ | $`1/6`$ | $`1`$ | $`1`$ | $`1/6`$ |
+| $`(0,1)`$ | $`(3,2)`$ | $`3`$ | $`1/6`$ | $`1`$ | $`1`$ | $`1/6`$ |
+
+summing to $`\tilde B(2,3,5) = 15`$, the value §3.5 quotes. At this size each row gathers a single
+cycle type, so each weight is just its $`1/z_\lambda`$; for larger $`s`$ a row gathers several — at
+$`p = 2`$ and $`s = 6`$, a 6-cycle or two 3-cycles, $`g(6)/6! = 1/6 + 1/18`$. The last two rows are
+where the long cycles enter, a 3-cycle among the $`s = 3`$ leftover points: drop them and the sum is
+$`44/3`$, not even an integer. With $`N^{(3)}`$ in place of $`N^3`$ only the first two rows survive,
+giving $`A(2,3,5) = 6 + 2 = 8`$, and differencing against $`A(2,3,4) = 5`$ gives $`s_F(2,3,5) = 3`$, the
+value §4 reaches by hand.
 
 > **This is a real difference from the sampler, and the direction is easy to get backwards.**
 > `FacetLabeledSampler.md` §4 restricts to `IntegerPartitions[n, All, Range[p]]` because *there*
@@ -459,9 +491,9 @@ B(p,M,n) \;=\; \sum_{k} S(M,k)\, s_F(p,k,n), \qquad
 \tilde B(p,M,n) \;=\; \sum_{k} S(M,k)\, A(p,k,n). \tag{3.6}
 ```
 
-Both hold, and the **row condition must match across the equation**. The first is the form the
-suite checks (§10, leg 3), whose brute force enumerates covering tableaux with repeated columns
-allowed. Pairing $`\tilde B`$ with $`s_F`$ is the mismatch to avoid: at $`(2,3,5)`$, $`\tilde B = 15`$
+Both hold, and the **row condition must match across the equation**. The suite checks both (§10,
+leg 3): the first against a brute force over covering tableaux with repeated columns allowed, the
+second against one that also allows empty rows. Pairing $`\tilde B`$ with $`s_F`$ is the mismatch to avoid: at $`(2,3,5)`$, $`\tilde B = 15`$
 while $`\sum_k S(3,k)\,s_F(2,k,5) = 3`$.
 
 Substituting (3.5) cycle type by cycle type **is** the Stirling inversion of (3.6) — and unlike
@@ -470,9 +502,11 @@ non-negative, because $`N^{(M)} \ge 0`$ for integer $`N \ge 0`$ and $`N^{(M)} = 
 $`N < M`$, which is the honest statement that a block collection offering fewer than $`M`$ admissible
 facets can supply no separating tableau at all.
 
-`NumFLPCTSum` takes the weight as a parameter `wf` for this reason; passing `#^M &` returns
-$`\tilde B`$ and passing `FactorialPower[#, M] &` returns $`A`$. The shipped code always
-passes the latter, but the hook is what makes (3.6) directly testable (§10).
+`NumFLPCTSum` takes the weight as a parameter `wf` for this reason: passing `#^M &` returns
+$`n!\,\tilde B`$ and passing `FactorialPower[#, M] &` returns $`n!\,A`$. The shipped path does not
+call it — it builds `NumFLPCWeightTable` once and applies `FactorialPower` in `NumFLPCTFromTable`
+(§5) — so the hook's value is that it puts $`\tilde B`$ within reach of a test, which is how the
+padded form of (3.6) is checked (§10, leg 3).
 
 ---
 
@@ -522,18 +556,18 @@ not by being long.
 ## 5. Implementation map
 
 All in `Kernel/Subpackages/PureComplexes.wl`. Private helpers are named `NumFLPC*`; the
-derivation above appears as the header comment at line 1801.
+derivation above appears as the header comment at line 1861.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 1834 | `NumFLPCLongCycleTable[p,smax]` | $`g(0..s_{\max})`$, permutations with every cycle $`> p`$ (§3.4) |
-| 1853 | `NumFLPCNCoeff[mvec,jvecs]` | $`N(\lambda,p)`$ of (3.3), expanded over the partitions of $`p`$ |
-| 1859 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | the cycle-type sum: $`n!\,A(n)`$ with `wf` $`= N^{(M)}`$, or $`n!\,\tilde B(n)`$ with `wf` $`= N^M`$ (§3.1). Kept as the reference form; the shipped path now goes through the table below |
-| — | `NumFLPCWeightTable[p,n]` | the $`\{N,\text{weight}\}`$ pairs of that sum with equal $`N`$ merged. **Memoized**, cleared by `NumPCClearCache[]` |
-| — | `NumFLPCTFromTable[tab,M]` | $`n!\,A(n)`$ for one $`M`$, one pass over the table |
-| — | `NumFLPCCount[p,M,n]` | $`\bigl(T(n) - n\,T(n-1)\bigr)/n!`$, the differencing (3.1) |
-| — | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
-| — | `NumFacetLabeledPureComplexes[p,Mlist,n]` | the same for a list of facet orders, guards applied per entry |
+| 1903 | `NumFLPCLongCycleTable[p,smax]` | $`g(0..s_{\max})`$, permutations with every cycle $`> p`$ (§3.4) |
+| 1922 | `NumFLPCNCoeff[mvec,jvecs]` | $`N(\lambda,p)`$ of (3.3), expanded over the partitions of $`p`$ |
+| 1932 | `NumFLPCTSum[p,n,wf,gg,fac,jvecs]` | the cycle-type sum: $`n!\,A(n)`$ with `wf` $`= N^{(M)}`$, or $`n!\,\tilde B(n)`$ with `wf` $`= N^M`$ (§3.1). Kept as the reference form, and the only route to $`\tilde B`$ (tested in §10, leg 3); the shipped path goes through the table below |
+| 1958 | `NumFLPCWeightTable[p,n]` | the $`\{N,\text{weight}\}`$ pairs of that sum with equal $`N`$ merged. **Memoized**, cleared by `NumPCClearCache[]` |
+| 1984 | `NumFLPCTFromTable[tab,M]` | $`n!\,A(n)`$ for one $`M`$, one pass over the table |
+| 1990 | `NumFLPCCount[p,M,n]` | $`\bigl(T(n) - n\,T(n-1)\bigr)/n!`$, the differencing (3.1) |
+| 1999 | `NumFacetLabeledPureComplexes[p,M,n]` | guards, then `NumFLPCCount` |
+| 2015 | `NumFacetLabeledPureComplexes[p,Mlist,n]` | the same for a list of facet orders, guards applied per entry |
 | — | `NumFacetLabeledPureComplexes[p,M]` | summed over the vertex count |
 | — | catch-all | `::argerr` and `$Failed` |
 
@@ -1274,7 +1308,7 @@ empty profiles.
 
 ## 10. Verification
 
-Five independent legs, in `Tests/PureComplexes.wlt` lines 224–293 unless noted.
+Five independent legs, in `Tests/PureComplexes.wlt` lines 224–323 unless noted.
 
 1. **Against the source notebook.** Eleven separating counts from the author's
    `Facet-labeled-count.nb` (`sFDirect`), plus its 93-digit $`s_F(3,50,10)`$.
@@ -1287,7 +1321,11 @@ Five independent legs, in `Tests/PureComplexes.wlt` lines 224–293 unless noted
    not — on four parameter sets. Covering on both sides is what makes the identity true; the brute
    force enforces it by drawing rows from `Rest[Subsets[Range[M]]]`, which omits the empty row. `NumFacetLabeledPureComplexes-stirling-identity`. This is the strongest
    leg: it exercises §3.5, the one step where a plausible-looking wrong answer is easiest to
-   produce, rather than only the endpoints.
+   produce, rather than only the endpoints. Its padded twin, `-padded-stirling-identity`, checks
+   $`\tilde B(p,M,n) = \sum_k S(M,k)\,A(p,k,n)`$ the same way, against a brute force drawing rows
+   from **all** of `Subsets[Range[M]]`; it is the only test that runs `NumFLPCTSum` with `#^M &`,
+   and since drawing from `Rest[...]` instead matches none of its six cases, the empty row is what
+   it tests.
 4. **Against the automorphism decomposition of §1.1.** $`s_F = \sum_{\text{classes}} M!/|H|`$ with
    $`H`$ the image of $`\mathrm{Aut}`$ in $`\mathrm{Sym}(S)`$, computed by explicit orbit enumeration,
    on $`(2,3,4)`$, $`(2,3,5)`$, $`(2,4,5)`$, $`(3,3,5)`$, $`(2,4,6)`$, $`(3,4,6)`$ — the last with 15 classes
