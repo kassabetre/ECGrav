@@ -259,6 +259,36 @@ VerificationTest[
     TestID -> "NumFacetLabeledPureComplexes-stirling-identity"
 ];
 
+(* The padded companion of the identity above, and the only exercise of NumFLPCTSum's weight hook
+   with #^M. With that weight the cycle-type sum counts Bt(p,M,n): tableaux with every label in
+   exactly p rows, empty rows ALLOWED, columns arbitrary. The shipped path never asks for it, so
+   pin it three ways -- an independent brute force drawing rows from ALL of Subsets[Range[M]], the
+   empty row included; the hook itself; and the padded Stirling identity
+   Bt(p,M,n) = Sum_k StirlingS2[M,k] A(p,k,n), with A the separating padded count the shipped
+   table gives. Drawing the brute force from Rest[Subsets[...]] instead, as the covering test above
+   does, matches none of these six cases, so the empty row really is what is being tested. *)
+VerificationTest[
+    Module[{paddedTab, btHook, aTable},
+        paddedTab = Function[{p, M, n},
+            Module[{rows = Subsets[Range[M]]},
+                Length[Select[Subsets[Range[Length[rows] + n - 1], {n}],
+                    With[{ms = # - Range[0, n - 1]},
+                        AllTrue[Range[M], Function[lab,
+                            Count[rows[[ms]], r_ /; MemberQ[r, lab]] === p]]] &]]]];
+        btHook = Function[{p, M, n},
+            ECGrav`Private`NumFLPCTSum[p, n, #^M &,
+                ECGrav`Private`NumFLPCLongCycleTable[p, n], Table[k!, {k, 0, n}],
+                Table[Count[nu, k], {nu, IntegerPartitions[p]}, {k, 1, p}]]/n!];
+        aTable = Function[{p, k, n},
+            ECGrav`Private`NumFLPCTFromTable[ECGrav`Private`NumFLPCWeightTable[p, n], k]/n!];
+        Map[Function[s, With[{p = s[[1]], M = s[[2]], n = s[[3]]},
+            {paddedTab[p, M, n], btHook[p, M, n],
+             Sum[StirlingS2[M, k]*aTable[p, k, n], {k, 1, M}]}]],
+            {{2, 2, 4}, {3, 2, 5}, {2, 3, 4}, {2, 3, 5}, {2, 4, 5}, {3, 3, 6}}]],
+    {{3, 3, 3}, {3, 3, 3}, {12, 12, 12}, {15, 15, 15}, {107, 107, 107}, {28, 28, 28}},
+    TestID -> "NumFacetLabeledPureComplexes-padded-stirling-identity"
+];
+
 (* Cost is essentially independent of M, which enters only as an exponent; this 93-digit value
    is the notebook's sF[3,10,50] and returns in milliseconds. *)
 VerificationTest[
