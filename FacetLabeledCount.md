@@ -431,8 +431,8 @@ summed out in closed form. That is what turns a sum over all $`P(n)`$ cycle type
 $`O(n^p)`$ vectors $`(m_1,\dots,m_p)`$. $`g`$ is tabulated by `NumFLPCLongCycleTable` off the
 recurrence obtained by reading the cycle through the point $`1`$: it has some length $`k>p`$, laid
 down in $`(s-1)!/(s-k)!`$ ways, leaving the same problem on $`s-k`$ points. (Equivalently
-$`\sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)`$; the two agree through $`s = 15`$ at every
-$`p \le 4`$.) On the shipped path the sum is walked by `NumFLPCWeightTable`, which stores $`n!`$
+$`\sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)`$, proved two ways at the end of this
+section.) On the shipped path the sum is walked by `NumFLPCWeightTable`, which stores $`n!`$
 times each weight and merges terms with equal $`N`$; `NumFLPCTSum` walks it unmerged and is kept as
 the reference form (§5).
 
@@ -463,6 +463,64 @@ value §4 reaches by hand.
 > is $`(2,3,6)`$, where it returns $`\tfrac{2}{3}`$ against the true $`1`$ — **not even an integer,
 > and in range**; further out it gives $`1`$ instead of $`6`$ at $`(2,4,7)`$ and $`165`$ instead of
 > $`175`$ at $`(2,5,7)`$. §8 says exactly how much of the factor it drops.
+
+#### The long-cycle series, proved
+
+The parenthesis above asserts an identity on which (8.1), and with it the row form, depends:
+
+```math
+G(z) \;=\; \sum_{s \ge 0} g(s)\,\frac{z^s}{s!} \;=\; \exp\Bigl(\sum_{k>p} \frac{z^k}{k}\Bigr),
+```
+
+as formal power series — the classical exponential formula for permutations with restricted cycle
+lengths. The sum is over $`k > p`$ strictly, since $`g`$ allows cycles of length $`p+1`$ and up. Two short
+proofs follow, one by cycle type and one from the recurrence the table is built on.
+
+*Proof 1, by cycle type.* A permutation counted by $`g(s)`$ is one whose cycle type uses only
+lengths $`k > p`$, and $`s!/z_\mu`$ permutations of $`[s]`$ have cycle type $`\mu`$: write the $`s`$
+points into a fixed template of the cycles in $`s!`$ ways, and each permutation arises
+$`z_\mu = \prod_k k^{m_k} m_k!`$ times, from the $`k`$ starting points of each $`k`$-cycle and the
+$`m_k!`$ orders of the cycles of equal length. Hence
+
+```math
+\frac{g(s)}{s!} \;=\; \sum_{\substack{(m_k)_{k>p} \\ \sum_k k\,m_k \,=\, s}} \;\prod_{k>p} \frac{(1/k)^{m_k}}{m_k!}.
+```
+
+Multiplying by $`z^s = \prod_k (z^k)^{m_k}`$ and summing over $`s`$, each sequence $`(m_k)_{k>p}`$
+occurs exactly once, at $`s = \sum_k k\,m_k`$, and the sum factorises over $`k`$:
+
+```math
+G(z) \;=\; \sum_{(m_k)_{k>p}}\, \prod_{k>p} \frac{(z^k/k)^{m_k}}{m_k!} \;=\; \prod_{k>p}\, \sum_{m \ge 0} \frac{(z^k/k)^m}{m!} \;=\; \prod_{k>p} e^{z^k/k} \;=\; \exp\Bigl(\sum_{k>p}\frac{z^k}{k}\Bigr).
+```
+
+Exchanging the sum and the product is legitimate coefficient by coefficient: the coefficient of
+$`z^s`$ on either side involves only $`k \le s`$ and $`m_k \le s/k`$, finitely many terms. Equivalently,
+$`e^{z^k/k} = 1 + z^k/k + \cdots`$ is $`1`$ to order $`z^{k-1}`$, so the infinite product is well
+defined. $`\square`$
+
+*Proof 2, from the recurrence `NumFLPCLongCycleTable` uses.* Follow the cycle through the point
+$`1`$. It has some length $`k > p`$; its other $`k-1`$ points, in cycle order, can be chosen in
+$`(s-1)(s-2)\cdots(s-k+1) = (s-1)!/(s-k)!`$ ways; and the remaining $`s-k`$ points form any
+permutation counted by $`g(s-k)`$. That is a bijection, so
+
+```math
+g(0) = 1, \qquad g(s) \;=\; \sum_{k=p+1}^{s} \frac{(s-1)!}{(s-k)!}\, g(s-k) \quad (s \ge 1).
+```
+
+Divide by $`(s-1)!`$, multiply by $`z^{s-1}`$, sum over $`s \ge 1`$, and put $`j = s-k`$ on the right:
+
+```math
+G'(z) \;=\; \sum_{s \ge 1} \frac{g(s)}{(s-1)!}\, z^{s-1} \;=\; \sum_{k>p} z^{k-1} \sum_{j \ge 0} \frac{g(j)}{j!}\, z^j \;=\; Q'(z)\, G(z), \qquad Q(z) = \sum_{k>p} \frac{z^k}{k}.
+```
+
+So $`G' = Q'G`$ with $`G(0) = 1`$. The series $`e^{Q}`$ satisfies the same equation with the same
+constant term, and the equation fixes every coefficient of $`G`$ from the lower ones, so
+$`G = e^{Q}`$. $`\square`$ It is the same differentiation that gives the recurrence for $`E_p`$ in §8.
+
+**Checks.** At $`p = 0`$ every cycle is allowed, $`g(s) = s!`$, and the identity reads
+$`\sum_s z^s = \exp(-\log(1-z)) = 1/(1-z)`$. At $`p = 1`$ only fixed points are excluded, $`g`$ counts
+derangements, and the right side is their classical series $`e^{-z}/(1-z)`$. Numerically, the
+shipped `NumFLPCLongCycleTable` and the exponential agree through $`s = 15`$ at every $`p \le 4`$.
 
 ### 3.5 Separating is one substitution
 
