@@ -779,8 +779,27 @@ Let $`h_u = \sum_{\lambda \vdash u,\ \text{parts} \le p} N(\lambda,p)^{(M)}/z_\l
 $`H(z) = \sum_{u \ge 0} h_u z^u`$ — the short-cycle part alone. With
 $`G(z) = \sum_s g(s) z^s/s! = \exp\bigl(\sum_{k>p} z^k/k\bigr)`$ the long-cycle EGF, §3.4 says
 $`A(n) = [z^n]\,H(z)G(z)`$ — note $`h_u`$ is built from $`N^{(M)}`$, so this is the padded separating
-family of §3.1. Since $`\exp\bigl(\sum_{k \ge 1} z^k/k\bigr) = 1/(1-z)`$, the differencing
-(3.1) contributes the factor $`(1-z)`$ and the two collapse:
+family of §3.1. Three steps take the differencing (3.1) from there to a single series.
+
+*Step 1: the differencing is a factor $`(1-z)`$.* Multiplying by $`z`$ moves every coefficient up one
+place, so $`A(n-1) = [z^n]\,z\,H(z)G(z)`$ and
+
+```math
+s_F(p,M,n) \;=\; A(n) - A(n-1) \;=\; [z^n]\;(1-z)\,H(z)\,G(z).
+```
+
+*Step 2: that factor is an exponential.* At $`p = 0`$ every cycle is longer than $`p`$, so
+$`g(s) = s!`$ and the long-cycle series reads $`\exp\bigl(\sum_{k \ge 1} z^k/k\bigr) = \sum_s z^s = 1/(1-z)`$
+— the first of the checks that close §3.4. Hence $`1 - z = \exp\bigl(-\sum_{k \ge 1} z^k/k\bigr)`$.
+
+*Step 3: multiplied into $`G`$, the terms with $`k > p`$ cancel.* Exponents add, and each such term
+occurs once with each sign:
+
+```math
+(1-z)\,G(z) \;=\; \exp\Bigl(-\sum_{k \ge 1} \frac{z^k}{k} \;+\; \sum_{k > p} \frac{z^k}{k}\Bigr) \;=\; \exp\Bigl(-\sum_{k=1}^{p} \frac{z^k}{k}\Bigr).
+```
+
+Grouping step 1 as $`H \cdot (1-z)\,G`$ and substituting step 3:
 
 ```math
 s_F(p,M,n) \;=\; [z^n]\; H(z)\,\exp\!\Bigl(-\sum_{k=1}^{p} \frac{z^k}{k}\Bigr). \tag{8.1}
@@ -791,10 +810,11 @@ exponential. The two series agree through $`z^p`$ and **first differ at $`z^{p+1
 $`\exp(-z-z^2/2) = 1 - z + 0\,z^2 + z^3/3 - \cdots`$ against $`1 - z`$ — which is precisely the
 discrepancy §3.4 reports. It is not a small correction: the coefficients do not decay.
 
-**One fixed series.** Write $`E_p(z) = \exp\bigl(-\sum_{k \le p} z^k/k\bigr)`$, so that
-$`E_p = (1-z)\,G`$: the long-cycle table and the differencing are a single factor. It needs neither to
-compute. Differentiating $`E_p = e^{Q}`$, with $`Q = \sum_k q_k z^k = -\sum_{k \le p} z^k/k`$, gives
-$`E_p' = Q' E_p`$, and since $`k\,q_k = -1`$ for every $`k \le p`$,
+**One fixed series.** Write $`E_p(z) = \exp\bigl(-\sum_{k \le p} z^k/k\bigr) = \sum_{n \ge 0} f_n z^n`$,
+so that (8.1) reads $`s_F(p,M,n) = \sum_{u=0}^{n} h_u\, f_{n-u}`$. By step 3, $`E_p = (1-z)\,G`$: the
+long-cycle table and the differencing are a single factor. It needs neither to compute.
+Differentiating $`E_p = e^{Q}`$, with $`Q = \sum_k q_k z^k = -\sum_{k \le p} z^k/k`$, gives
+$`E_p' = Q' E_p`$; comparing coefficients of $`z^{n-1}`$, and since $`k\,q_k = -1`$ for every $`k \le p`$,
 
 ```math
 f_0 = 1, \qquad n\,f_n \;=\; -\sum_{k=1}^{\min(p,n)} f_{n-k},
