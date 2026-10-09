@@ -823,6 +823,61 @@ f_0 = 1, \qquad n\,f_n \;=\; -\sum_{k=1}^{\min(p,n)} f_{n-k},
 giving $`1, -1, 0, \tfrac13, -\tfrac1{12}, -\tfrac1{20}, \dots`$ at $`p = 2`$. $`E_p`$ depends on $`p`$ alone,
 and $`H`$ on $`p`$ and $`M`$ but not on $`n`$.
 
+**Worked through at $`(p,M) = (2,3)`$**, the whole row from one $`H`$. At $`p = 2`$ an invariant
+2-subset is either two fixed points or one 2-cycle (§3.3), so $`N = \binom{m_1}{2} + m_2`$, and
+$`z_\lambda = m_1!\,2^{m_2} m_2!`$. Three distinct facets need $`N \ge 3`$. For $`u \le 2`$ there is at
+most one invariant 2-subset, so $`h_0 = h_1 = h_2 = 0`$; the rest, one row per multiplicity vector:
+
+| $`u`$ | $`(m_1,m_2)`$ | $`\lambda`$ | $`z_\lambda`$ | $`N`$ | $`N^{(3)}`$ | $`N^{(3)}/z_\lambda`$ | $`h_u`$ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | $`(3,0)`$ | $`\{1^3\}`$ | 6 | 3 | 6 | $`1`$ | $`1`$ |
+| | $`(1,1)`$ | $`\{2,1\}`$ | 2 | 1 | 0 | 0 | |
+| 4 | $`(4,0)`$ | $`\{1^4\}`$ | 24 | 6 | 120 | $`5`$ | $`5`$ |
+| | $`(2,1)`$ | $`\{2,1,1\}`$ | 4 | 2 | 0 | 0 | |
+| | $`(0,2)`$ | $`\{2,2\}`$ | 8 | 2 | 0 | 0 | |
+| 5 | $`(5,0)`$ | $`\{1^5\}`$ | 120 | 10 | 720 | $`6`$ | $`8`$ |
+| | $`(3,1)`$ | $`\{2,1,1,1\}`$ | 12 | 4 | 24 | $`2`$ | |
+| | $`(1,2)`$ | $`\{2,2,1\}`$ | 8 | 2 | 0 | 0 | |
+| 6 | $`(6,0)`$ | $`\{1^6\}`$ | 720 | 15 | 2730 | $`91/24`$ | $`26/3`$ |
+| | $`(4,1)`$ | $`\{2,1^4\}`$ | 48 | 7 | 210 | $`35/8`$ | |
+| | $`(2,2)`$ | $`\{2,2,1,1\}`$ | 16 | 3 | 6 | $`3/8`$ | |
+| | $`(0,3)`$ | $`\{2,2,2\}`$ | 48 | 3 | 6 | $`1/8`$ | |
+
+The $`u = 5`$ rows are §4's two surviving rows of $`A(5)`$, divided by $`5!`$: $`720/120`$ and
+$`240/120`$. With $`f_0,\dots,f_3 = 1, -1, 0, \tfrac13`$ from the recurrence,
+$`s_F(2,3,n) = \sum_u h_u f_{n-u}`$ gives every $`n`$ at once:
+
+| $`n`$ | $`h_3 f_{n-3}`$ | $`h_4 f_{n-4}`$ | $`h_5 f_{n-5}`$ | $`h_6 f_{n-6}`$ | $`s_F(2,3,n)`$ |
+| --- | --- | --- | --- | --- | --- |
+| 3 | $`1`$ | | | | **1** |
+| 4 | $`-1`$ | $`5`$ | | | **4** |
+| 5 | $`0`$ | $`-5`$ | $`8`$ | | **3** |
+| 6 | $`1/3`$ | $`0`$ | $`-8`$ | $`26/3`$ | **1** |
+
+At $`p = 2`$ these are graphs on three labelled edges, so the row can be checked by hand: the triangle
+(1); the path $`P_4`$ (3) and the star $`K_{1,3}`$ (1); $`P_3 \sqcup K_2`$ (3, as §4 finds); three
+disjoint edges (1). Three things to read off it:
+
+- **Through $`n = 5`$ it is plain differencing.** Only $`f_0, f_1, f_2 = 1, -1, 0`$ meet a nonzero
+  $`h_u`$, and those are the coefficients of $`1 - z`$. Since $`g(1) = g(2) = 0`$ at $`p = 2`$, $`A(n) = h_n`$
+  for $`n \le 5`$, and $`s_F = h_n - h_{n-1}`$: the $`n = 5`$ entry is §4's $`8 - 5 = 3`$.
+- **At $`n = 6`$ the long cycles enter.** $`f_3 = \tfrac13`$ is the first coefficient where $`E_2`$
+  departs from $`1 - z`$, and its term $`h_3 f_3 = \tfrac13`$ is the cycle type $`\{3,1,1,1\}`$: the
+  triangle on the three fixed points, with a 3-cycle permuting the three empty rows. Without it the
+  row gives $`\tfrac{26}{3} - 8 = \tfrac23`$, the non-integer §3.4 reports for the naive restriction at
+  $`(2,3,6)`$.
+- **The row ends at $`n = pM`$ by cancellation.** The $`u = 7`$ group — $`(7,0)`$, $`(5,1)`$,
+  $`(3,2)`$, $`(1,3)`$, contributing $`\tfrac{19}{12}`$, $`\tfrac{33}{8}`$, $`\tfrac54`$, $`\tfrac18`$ — gives
+  $`h_7 = \tfrac{85}{12}`$, and then
+  $`s_F(2,3,7) = -\tfrac1{12} + \tfrac53 + 0 - \tfrac{26}{3} + \tfrac{85}{12} = 0`$. The row sums to
+  $`9 = A(2,3,6)`$, the two-argument total of §6.
+
+In the code, `NumFLPCShortTable` is the first table up to its $`z_\lambda`$ column: weights
+$`1/z_\lambda`$ keyed by $`(u, N)`$, rows of equal $`(u, N)`$ merged — at $`u = 6`$ the two $`N = 3`$ rows
+become the single entry $`\tfrac1{16} + \tfrac1{48} = \tfrac1{12}`$. It is free of $`M`$, which enters
+only when `NumFLPCRow` applies the falling factorial, sums each $`u`$ into $`h_u`$, and convolves with
+the $`f_n`$.
+
 **What (8.1) buys, measured.** One pass over the multiplicity vectors up to degree $`N`$ builds $`H`$
 for every $`n \le N`$ at once. Three access patterns, cold cache, best of three; the first and last
 columns time the shipped forms before and after:
