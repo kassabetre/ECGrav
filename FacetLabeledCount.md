@@ -711,7 +711,8 @@ $`(p,M)`$ pairs — $`p \le 0`$ and $`M \le 0`$ included — and runs 7–14.5×
 The sum is over **multiplicity vectors $`(m_1,\dots,m_p)`$ with $`\sum_k k\,m_k \le n`$** — that is,
 partitions of at most $`n`$ into parts at most $`p`$ — not over all $`P(n)`$ partitions. Long cycles
 are absorbed into $`g(s)`$ rather than enumerated. Per vector the work is one $`N`$ (that is $`P(p)`$
-binomial products) and one falling factorial.
+binomial products) and its weight; equal values of $`N`$ are merged, so the falling factorial is taken
+once per distinct $`N`$.
 
 **$`M`$ is essentially free**, entering only as the length of a falling factorial. At
 $`(p,n) = (3,12)`$:
@@ -736,6 +737,106 @@ does cost is $`n`$, and then $`p`$:
 | $`\{3,12,30\}`$ | 1041 | 0.0239 | 9 |
 | $`\{3,20,40\}`$ | 2282 | 0.0528 | 30 |
 | $`\{4,10,30\}`$ | 2724 | 0.0769 | 12 |
+| $`\{5,10,30\}`$ | 5326 | 0.1897 | 20 |
+| $`\{6,8,30\}`$ | 8547 | 0.4187 | 15 |
+| $`\{3,100,12\}`$ | 102 | 0.0027 | 214 |
+| $`\{3,200,40\}`$ | 2282 | 0.0662 | 751 |
+
+Time tracks the vector count almost exactly — $`\approx 23\,\mu`$s each at $`p \le 3`$, $`28\,\mu`$s at
+$`p = 4`$, drifting to $`49\,\mu`$s at $`p = 6`$ as $`P(p)`$ grows. The count is $`\Theta(n^p)`$ at fixed
+$`p`$, yet in the usable range it grows far more gently than that suggests — at $`n = 18`$ it is
+$`100, 274, 515, 769, 996`$ for $`p = 2,\dots,6`$. The next paragraphs derive both.
+
+**What one evaluation does.** Without the memo, `NumFLPCWeightTable` and `NumFLPCTFromTable` compute
+$`A(p,M,n)`$ in four steps:
+
+| step | work | operations |
+| --- | --- | --- |
+| long-cycle table $`g(0),\dots,g(n)`$ | double loop over $`s \le n`$ and $`k \le s`$ | $`n(n+1)/2`$ |
+| factorials, partitions of $`p`$ | one pass each | $`O(n) + O(p\,P(p))`$ |
+| walk the multiplicity vectors | per vector: $`N`$, its weight, one table update | $`V_p(n) \cdot O(p\,P(p))`$ |
+| falling factorials | one $`N^{(M)}`$ per distinct $`N`$, then a multiply-add | $`D \cdot O(M)`$ |
+
+Per vector, $`N = \sum_{\nu \vdash p} \prod_k \binom{m_k}{\nu_k}`$ (§3.3) is $`P(p)`$ products of $`p`$
+binomials, and the weight $`n!\,g(s)/(s!\,z_\lambda)`$ is a few big-integer operations. $`D \le V_p(n)`$ is
+the number of distinct $`N`$ — 164, 456 and 924 against 256, 1041 and 2724 vectors at $`p = 2, 3, 4`$
+and $`n = 30`$. Counting each arithmetic operation as one unit,
+
+```math
+T_A(p,M,n) \;=\; \Theta\bigl(p\,P(p)\,V_p(n)\bigr) \;+\; \Theta(n^2) \;+\; O(M D).
+```
+
+$`s_F`$ costs the same up to a constant: `NumFLPCCount` builds the tables at both $`n`$ and $`n-1`$,
+and the (8.1) route of §8 builds one and adds $`O(pn)`$ for $`E_p`$.
+
+**Why the count is $`\Theta(n^p)`$.** The count is
+
+```math
+V_p(n) \;=\; \#\bigl\{(m_1,\dots,m_p) \in \mathbb{N}^p \;:\; m_1 + 2m_2 + \dots + p\,m_p \le n\bigr\},
+```
+
+and two products already pin it. Each $`m_k \le n/k`$, so $`V_p(n) \le \prod_{k=1}^{p}(n/k + 1)`$. And if
+every $`m_k \le n/(pk)`$, each term $`k\,m_k`$ is at most $`n/p`$ and the constraint holds automatically,
+so $`V_p(n) \ge \prod_{k=1}^{p}\bigl(\lfloor n/(pk) \rfloor + 1\bigr) \ge n^p/(p^p\,p!)`$. Both bounds are
+products of $`p`$ factors linear in $`n`$, so $`V_p(n) = \Theta(n^p)`$ at fixed $`p`$; they differ by a
+factor $`p^p`$, a constant once $`p`$ is fixed.
+
+**The leading constant is $`1/(p!)^2`$.** The vectors are the lattice points of the region
+$`\{x \ge 0 : \sum_k k\,x_k \le n\}`$. Putting $`y_k = k\,x_k`$ maps it onto the standard simplex
+$`\{y \ge 0 : \sum_k y_k \le n\}`$, of volume $`n^p/p!`$, by a map with Jacobian $`p!`$, so the region has
+volume $`n^p/(p!)^2`$. A region dilated by $`n`$ holds its volume plus $`O(n^{p-1})`$ lattice points,
+hence $`V_p(n) = n^p/(p!)^2 + O(n^{p-1})`$.
+
+**The generating function gives the correction.** Count the slack $`s = n - \sum_k k\,m_k`$ as one more
+part of size 1 — in $`A`$ it is exactly the room left for long cycles — and
+
+```math
+\sum_{n \ge 0} V_p(n)\, z^n \;=\; \frac{1}{(1-z)\,\prod_{k=1}^{p}\,(1-z^k)}.
+```
+
+The pole at $`z = 1`$ has order $`p+1`$, which is where $`n^p`$ comes from, and near it each
+$`1 - z^k \approx k\,(1-z)`$, which returns the constant $`1/(p!)^2`$. One order further, $`n`$ is shifted
+by half the sum of the part sizes $`1, 1, 2, \dots, p`$:
+
+```math
+V_p(n) \;\approx\; \frac{(n + \sigma_p)^p}{(p!)^2}, \qquad \sigma_p \;=\; \frac{p^2 + p + 2}{4}.
+```
+
+Against the counts in the table above:
+
+| $`(p,n)`$ | $`V_p(n)`$ | $`n^p/(p!)^2`$ | $`(n+\sigma_p)^p/(p!)^2`$ |
+| --- | --- | --- | --- |
+| $`(2,8)`$ | 25 | 16 | 25.0 |
+| $`(3,12)`$ | 102 | 48 | 103.4 |
+| $`(3,40)`$ | 2282 | 1778 | 2286 |
+| $`(4,30)`$ | 2724 | 1406 | 2757 |
+| $`(5,30)`$ | 5326 | 1688 | 5502 |
+| $`(6,30)`$ | 8547 | 1406 | 9163 |
+
+That is the "far more gently" above: $`1/(p!)^2`$ is $`1/36`$ at $`p = 3`$ and $`1/14400`$ at $`p = 5`$, and
+at these sizes the shift $`\sigma_p`$ weighs as much as the leading term.
+
+**Why the exponent is $`p`$.** There is one free index per short cycle length $`k = 1,\dots,p`$, each
+ranging up to about $`n/k`$, tied by a single linear constraint: a $`p`$-dimensional simplex. Long cycles
+add no dimension, because $`g(s)`$ sums them in closed form. Without that the sum would run over every
+cycle type of $`S_n`$, $`P(n) \sim e^{\pi\sqrt{2n/3}}/(4\sqrt{3}\,n)`$ of them — the unlabeled counter's
+situation, below.
+
+**Where $`\Theta(n^p)`$ is not the whole story.**
+
+- **It assumes $`p`$ fixed.** At fixed $`n`$ the count saturates in $`p`$: no part can exceed $`n`$, so
+  $`V_p(n) = \sum_{j \le n} P(j)`$ once $`p \ge n`$, and the $`n = 18`$ sequence above tops out at
+  $`1597`$. The worst case over $`p`$ is $`e^{O(\sqrt n)}`$ — never exponential in $`n`$.
+- **At $`p = 2`$ the $`g`$ table costs as much as the walk.** Its $`n(n+1)/2`$ steps come to $`465`$ at
+  $`n = 30`$, against $`V_2(30) = 256`$ vectors — still $`\Theta(n^2)`$, and lower order for $`p \ge 3`$. At
+  $`p = 1`$, $`V_1(n) = n + 1`$ but the table makes the cost $`\Theta(n^2)`$.
+- **The walk also visits partial vectors.** Its recursion tree has $`\sum_{j<p} V_j(n)`$ internal nodes,
+  a factor $`1 + O(p^2/n)`$ over the leaves: $`1.12`$ at $`p = 2`$ and $`2.10`$ at $`p = 6`$, both at
+  $`n = 30`$.
+- **Arithmetic was counted at unit cost.** The integers carried have about $`n \log_2 n`$ bits from the
+  $`n!`$ in the weights, plus $`M \log_2 \binom{n}{p}`$ from the falling factorial. In the measured range
+  that is small next to the per-vector work, which is why a $`50\times`$ increase in $`M`$ costs $`35\%`$.
+- **It is the cost of this algorithm**, not a lower bound for the problem.
 
 **Sweeping $`M`$ at fixed $`(p,n)`$** is the access pattern that motivated the memoized table of §5,
 and it is where the cost above is misleading: the figures are per call, and before the table each
@@ -751,15 +852,6 @@ A repeated scalar call at the same $`(p,n)`$ goes from 0.0397 s to 0.00068 s, a 
 list form `NumFacetLabeledPureComplexes[p, Mlist, n]` is **not faster than the memoized scalar
 form** — it is the same machinery — but it states the intent and does not depend on the memo
 surviving a `NumPCClearCache[]`.
-| $`\{5,10,30\}`$ | 5326 | 0.1897 | 20 |
-| $`\{6,8,30\}`$ | 8547 | 0.4187 | 15 |
-| $`\{3,100,12\}`$ | 102 | 0.0027 | 214 |
-| $`\{3,200,40\}`$ | 2282 | 0.0662 | 751 |
-
-Time tracks the vector count almost exactly — $`\approx 23\,\mu`$s each at $`p \le 3`$, $`28\,\mu`$s at
-$`p = 4`$, drifting to $`49\,\mu`$s at $`p = 6`$ as $`P(p)`$ grows. Asymptotically the count is $`\Theta(n^p)`$, but in the
-usable range it grows far more gently than that suggests: at $`n = 18`$ it is $`100, 274, 515, 769,
-996`$ for $`p = 2,\dots,6`$.
 
 **This is the sharpest contrast with `NumUnlabeledPureComplexes`**, whose sum is over all $`P(n)`$
 cycle types and which therefore costs $`27`$ s at $`\{2,20,40\}`$ where this returns in
