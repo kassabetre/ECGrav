@@ -239,9 +239,51 @@ so $`f(k) = f(\gcd(k,L))`$ and the number of distinct evaluations is unchanged.
 *product* over $`\sigma`$, and the average of a product is not the product of averages, so there
 is no corresponding recurrence for $`A`$ or $`U`$ — see §7.
 
+### 2.7 The assembled formula
+
+Put together, with $`m_k`$ the number of $`k`$-cycles in $`\lambda \vdash n`$ and
+$`z_\lambda = \prod_k k^{m_k} m_k!`$:
+
+```math
+A(p,M,n) \;=\; \sum_{\lambda \vdash n} \frac{1}{z_\lambda}\; [z^M] \exp\Bigl(\,\sum_{j \ge 1} f_\lambda(j)\, \frac{z^j - z^{2j}}{j}\Bigr),
+```
+
+```math
+f_\lambda(j) \;=\; [x^p] \prod_k \bigl(1 + x^{\,k/\gcd(k,j)}\bigr)^{\gcd(k,j)\,m_k},
+```
+
+and $`U(p,M,n) = A(p,M,n) - A(p,M,n-1)`$ by §2.2. Each piece is one earlier subsection. The outer sum
+is §2.3. $`|\mathrm{Fix}(\lambda)|`$ is the coefficient of $`\prod_d (1+z^d)^{n_d}`$ by §2.4. §2.6's logarithm
+writes that product as $`\exp\bigl(\sum_j \ell(j)\, z^j/j\bigr)`$, and
+$`\sum_j \ell(j)\, z^j/j = \sum_j f(j)\,(z^j - z^{2j})/j`$ because the $`z^{2j}`$ half is exactly the
+correction $`-2f(j/2)`$ at even $`j`$. §2.5 gives $`f_\lambda`$ from $`\lambda`$ alone. Only $`j \le M`$ reaches
+$`z^M`$ — and in the $`z^{2j}`$ half only $`2j \le M`$ — while $`f_\lambda(j) = f_\lambda(\gcd(j,L))`$ with $`L`$
+the lcm of the cycle lengths, so few distinct values of $`f`$ are ever evaluated. The code does not
+exponentiate: for each $`\lambda`$ it runs §2.6's recurrence, which yields the same coefficients one at
+a time.
+
+Two equivalent forms:
+
+- **Orbit form.** The exponential is $`\prod_d (1+z^d)^{n_d(\lambda)}`$, with
+  $`n_d(\lambda) = \frac1d \sum_{e \mid d} \mu(d/e)\, f_\lambda(e)`$. This is the form §3 tabulates.
+- **Pólya form.** $`A(p,M,n) = [z^M]\, Z\bigl(S_n^{(p)};\ s_d \mapsto 1 + z^d\bigr)`$, where
+  $`Z(S_n^{(p)}) = \sum_{\lambda \vdash n} z_\lambda^{-1} \prod_d s_d^{\,n_d(\lambda)}`$ is the cycle index of
+  $`S_n`$ acting on $`p`$-subsets. At $`p = 2`$ that is the pair group of Harary and Palmer's
+  *Graphical Enumeration*, and the formula is the classical count of graphs with $`n`$ vertices and
+  $`M`$ edges.
+
+At the identity every $`f(j) = \binom{n}{p}`$, the exponent sums to $`\binom{n}{p}\log(1+z)`$, and the
+term is $`\binom{\binom{n}{p}}{M}/n!`$: every $`M`$-set is fixed. The formula agrees with a brute-force
+orbit count for every $`n \le 5`$, $`p`$ and $`M`$ (72 cases), and at $`p = 2`$, summed over $`M`$, it
+reproduces the number of graphs on $`n`$ vertices (OEIS A000088) for $`n \le 8`$.
+
 ---
 
 ## 3. Worked example: $`A(2,3,4)`$
+
+The formula of §2.7 at $`(p,M,n) = (2,3,4)`$, in its orbit form: one row per partition of 4, with the
+#perms column $`4!/z_\lambda`$ and the weighted column $`4!\,|\mathrm{Fix}(\lambda)|/z_\lambda`$, so that the
+weighted column sums to $`4!\,A(2,3,4)`$.
 
 | $`\lambda`$ | $`z_\lambda`$ | #perms | $`f(e)`$ | $`n_d`$ | $`\prod_d(1+z^d)^{n_d}`$ | $`[z^3]`$ | weighted |
 | --- | --- | --- | --- | --- | --- | --- | --- |
