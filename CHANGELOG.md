@@ -4,6 +4,94 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [1.18.0] - 2026-10-17
+
+### Added
+- **Wang–Landau flat-histogram sampling: `GraphWangLandau`** (`ExpansionRoadmap.md` Track C,
+  C1–C3; specification in `WangLandau.md`). It estimates the density of states g(E) of the labeled
+  graph ensemble directly. Deciding whether a transition is first or second order needs g(E) across
+  the gap between two peaks of P(E), and canonical sampling avoids exactly those states. The
+  ensemble is labeled, so g is a plain density of states and no automorphism order is computed.
+
+  Three design decisions were forced by measurement:
+  - **Levels are keyed by energy over the realised levels**, not indexed on a lattice. The spectrum
+    is lattice-valued but sparse: at n = 5 the 27 realised levels occupy 2.92% of a 925-point
+    lattice. A dense array would hold slots the walk can never visit, so the flatness test could
+    never pass.
+  - **The energy is accumulated incrementally.** A full H costs 6–20x the incremental delta at
+    n = 21. A proposal landing on an unseen key is re-anchored from the Hamiltonian, so float drift
+    cannot register as a spurious level (`"levelMerges"` reports it), and a periodic assertion
+    against a fresh evaluation catches a wrong `delH`.
+  - **The normalisation is the total state count**, Σg = 2^C(n,2), not g(Emin) = 1. The labeled
+    ground level is degenerate: g(Emin) = 60 at n = 5. A run that rejected any proposal at the
+    window edge reports `"normalisation" -> "WindowRelative"` instead. Canonical averages are
+    unaffected, but −βF then carries an unknown constant.
+
+  There are two schedules: `"OneOverT"` (the default, after Belardinelli and Pereyra) and
+  `"Classic"` (f → √f). At n = 5, Classic drove ln f to 1.9·10⁻⁹ and still had a 10.3% maximum
+  error, so a small ln f under the naive schedule is not accuracy.
+
+- **`ThermodynamicsFromDOS`** reconstructs U, Cv, −βF and the Binder energy cumulant from a density
+  of states. **`TransitionOrderDiagnostics`** reports every local maximum of
+  P(E) = g(E)e^{−βE}, filtered by topographic prominence. The threshold is an option, meant to be
+  scanned for a plateau: a bare local-maximum test found 31 "maxima" in the exact n = 6 density and
+  called every β bimodal. Both functions take `GraphWangLandau`'s second slot directly (Track C,
+  C4–C5).
+
+- **`NumFacetLabeledPureComplexes[p, M, nlist]`**: the count for every vertex count in `nlist`. It
+  is computed from one pass over the short-cycle multiplicities by (8.1) of `FacetLabeledCount.md`,
+  and is elementwise identical to mapping the scalar form.
+
+### Changed
+- **`NumFacetLabeledPureComplexes[p, M]`**, the total over n, is now built from one table, since the
+  padding identity telescopes the sum. It is 7.0x faster at (5, 6) and 14.5x at (2, 20). Results are
+  unchanged on all 77 (p, M) pairs checked against the old definition.
+- CI: `actions/checkout` v4 → v5, which runs on Node 24. No behaviour change.
+
+### Fixed
+- **`HHomogeneousSource`'s usage message** said it is directly usable by the single-parameter
+  drivers. It is not: a driver evaluates its arguments, so `HHomogeneousSource[e0, gChi, gBdry, c0,
+  c1]` without the matrix becomes `$Failed` before the driver sees it. The message now says that a
+  driver needs an inert head in the user's own context. `ReleaseNotes/v1.17.0.md` is left as
+  published.
+- **The specifications' maths now renders on GitHub.** GitHub's Markdown escaping inside `$..$`
+  consumed backslashes before punctuation: 866 braces, 348 `\;`, 264 `\,`, 21 `\#`. Set literals
+  therefore rendered as bare comma lists, with no error. 522 maths spans across 13 specifications
+  now use the ` ```math ` and `` $`..`$ `` forms, which `md2pdf.py` normalises. `\operatorname`,
+  which GitHub's KaTeX refuses, became `\mathrm`. The PDFs were never affected.
+- Three stale comments in the facet-labeled counter were corrected. This is comment-only: the code
+  is byte-identical.
+
+### Known limitations
+- **`GraphWangLandau`'s first 1/t phase can stall on rare levels at n ≳ 21.** It halves ln f only
+  when every registered level has been revisited since the last reset. On rugged spectra some levels
+  are found once and almost never again, and ln f then stays at 1 (seen for 10^7 steps). The
+  workaround is to narrow the energy window to exclude such levels, or to split the range into
+  overlapping windows. A first-phase test over active levels only is planned.
+- **Single-edge moves change topology slowly.** Where each closed-surface topology is its own energy
+  level, a window spanning several of them may not converge at n ≳ 21. Use narrower windows.
+
+### Documentation
+- `WangLandau.md` (new): the specification, its validation, and the traps found at n = 10.
+- `FacetLabeledCount.md`:
+  - (8.1) is derived in three steps and worked through at (p, M) = (2, 3);
+  - the row form and the telescoped total are recorded;
+  - §3.4 states B̃ in closed form and proves the long-cycle series G(z) two ways;
+  - §7 derives the Θ(n^p) cost.
+- `UnlabeledCount.md` §2.4 defines ⟨σ⟩ and its orbits on p-subsets.
+
+### Notes
+- **Nothing breaks and no number moves.** There are three new public symbols and one new overload.
+  `NumFacetLabeledPureComplexes[p, M]` returns the same values, faster.
+- **Validation.** The Wang–Landau and density-of-states functions were checked against exact
+  enumeration and direct summation at n = 4–6, and against independent canonical chains at
+  n = 10.
+- **Two defects found before release.** The n ≤ 5 validation could not see them; both were found at
+  n = 10 and fixed:
+  - out-of-window levels were registered and never visited, so the flatness test could not pass;
+  - the 1/t schedule's first phase never ran, because its switch was tested on every step.
+- Suite 293 → 325 tests.
+
 ## [1.17.0] - 2026-09-21
 
 ### Added
@@ -1628,7 +1716,14 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.13.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.18.0...HEAD
+[1.18.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.18.0
+[1.17.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.17.0
+[1.16.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.16.0
+[1.15.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.15.0
+[1.14.2]: https://github.com/kassabetre/ECGrav/releases/tag/v1.14.2
+[1.14.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.14.1
+[1.14.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.14.0
 [1.13.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.13.0
 [1.12.1]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.1
 [1.12.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.12.0

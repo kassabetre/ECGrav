@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.17.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.18.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -18,9 +18,10 @@ ECGrav provides two complementary toolkits:
 - **Monte Carlo statistical mechanics** — sample ensembles of graphs/complexes
   under energy functionals (Hamiltonians) that reward geometric, manifold-like
   configurations, and extract thermodynamic observables via Metropolis MC,
-  parallel tempering, multi-histogram reweighting, and exact enumeration.
+  parallel tempering, Wang–Landau flat-histogram sampling, multi-histogram
+  reweighting, and exact enumeration.
 
-> **Status:** 1.17.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.18.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -42,6 +43,11 @@ metric from, and that cost grows as the square of the bootstrap table — a few 
 external field, hours at two. **[MBARWeights.md](MBARWeights.md)** specifies the rewrite that
 reduces every MBAR quantity to a ratio of one shared weight vector, with the algebra, the
 reference implementation, and the measurements.
+
+Wang–Landau flat-histogram sampling estimates the density of states directly, which is what
+deciding the order of a transition needs. **[WangLandau.md](WangLandau.md)** specifies it: the
+design decisions the sparse energy spectrum forces, the validation against exact enumeration, and
+the traps found at n = 10.
 
 ---
 
@@ -67,7 +73,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.17.0.paclet"];
+PacletInstall["/path/to/ECGrav-1.18.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -81,7 +87,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.17.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.18.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -152,6 +158,7 @@ ECGrav exports 116 public functions across two subpackages. A selection:
 | Ground-state search | `LowEnergyStates`, `GradDescent`, `SGradDescent`, `SimulatedAnnealing` |
 | Sampling | `GraphMetropolis`, `GraphSweepReplica`, `GraphEquilibriate`, `GraphParallelTempering` |
 | Reweighting & schedules | `GraphMultiHistogram`, `GraphCTLSchedule`, `GraphCEITempSchedule`, `ComputeMinusBetaTimesFreeEnergy`, `ExtrapolatedExpectationValue` |
+| Flat-histogram (Wang–Landau) | `GraphWangLandau`, `ThermodynamicsFromDOS`, `TransitionOrderDiagnostics` |
 | Exact & analysis | `ExactExpectationValue`, `CorrelationTime`, `SpecificHeat`, `Susceptibility`, `ErrorBootstrap`, `LogSumExp` |
 
 Use the built-in help for details on any symbol:
@@ -161,13 +168,14 @@ Use the built-in help for details on any symbol:
 ?GraphMetropolis (* usage message for one function *)
 ```
 
-Reference documentation pages are available for every public function in the Wolfram
-Documentation Center, along with an **ECGrav** guide (API by theme) and a
-**Getting Started with ECGrav** tutorial.
+Reference documentation pages are available in the Wolfram Documentation Center for every
+public function except the 1.17.0 source operators and homogeneous-pair helpers and the 1.18.0
+Wang–Landau functions, whose usage messages (`?Name`) are their reference for now. There is also
+an **ECGrav** guide (API by theme) and a **Getting Started with ECGrav** tutorial.
 
 ## Tests
 
-The `Tests/` directory holds a `.wlt` regression suite (188 tests) that loads the
+The `Tests/` directory holds a `.wlt` regression suite (325 tests) that loads the
 package **from source**:
 
 ```wolfram
@@ -181,9 +189,14 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.17.0). Earlier releases are preserved as git tags:
+current release (1.18.0). Earlier releases are preserved as git tags:
 
-- `v1.17.0` — current: P2's three source operators and the homogeneous `c·O` form move into
+- `v1.18.0` — current: Wang–Landau flat-histogram sampling. `GraphWangLandau` estimates the
+  density of states of the labeled graph ensemble, and `ThermodynamicsFromDOS` and
+  `TransitionOrderDiagnostics` read the thermodynamics and the transition-order diagnostics off
+  it. `NumFacetLabeledPureComplexes` gains whole rows over the vertex count and a faster total.
+  Purely additive
+- `v1.17.0` — P2's three source operators and the homogeneous `c·O` form move into
   the package. `NumTriangles`, `NumBdryEdges` and `delEulerChi` with their incremental deltas,
   plus `HHomogeneousSource` and the coordinate helpers, with the physical couplings as arguments
   rather than notebook globals. Numerically identical to the notebook definitions they replace.
