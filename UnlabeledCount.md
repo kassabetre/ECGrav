@@ -365,9 +365,33 @@ its largest $`n`$, and is only practical while $`\mathrm{PartitionsP}(pM)`$ is.
 ## 6. Cost
 
 The outer loop is $`\mathrm{PartitionsP}(n)`$ cycle types, plus $`\mathrm{PartitionsP}(n-1)`$ for
-the differencing. Per cycle type: $`O(M)`$ divisibility tests; one $`f(e)`$ per divisor of $`L`$
-that is $`\le M`$, each $`O(p \cdot \#\text{distinct parts})`$; then the $`O(M^2)`$ Newton
-convolution. **$`n`$ is the limiting argument, not $`p`$ or $`M`$.**
+the differencing unless `NumULPCA`'s memo already holds it. With $`r_\lambda`$ the number of distinct
+parts of $`\lambda`$ and $`E_\lambda`$ the divisors of $`L_\lambda = \mathrm{lcm}(\lambda)`$ that are $`\le M`$, one
+cycle type costs:
+
+| step | operations |
+| --- | --- |
+| generate and `Tally` $`\lambda`$ | $`O(\ell(\lambda)) \le n`$ |
+| find $`E_\lambda`$ by divisibility tests over $`1,\dots,M`$ | $`O(M)`$ |
+| $`f(e)`$ for each $`e \in E_\lambda`$: one truncated product per distinct part, a dense `ListConvolve` | $`O(\lvert E_\lambda \rvert\, r_\lambda\, p^2)`$ |
+| $`\ell(k)`$ for $`k \le M`$ | $`O(M)`$ |
+| the Newton recurrence | $`M(M+1)/2`$ multiply-adds |
+
+Since $`\lvert E_\lambda \rvert \le M`$, $`r_\lambda \le \sqrt{2n}`$ ($`r`$ distinct parts sum to at least
+$`r(r+1)/2`$), and every cycle type runs the recurrence to $`M`$, counting arithmetic operations at
+unit cost,
+
+```math
+\tfrac12\,\mathrm{PartitionsP}(n)\,M^2 \;\le\; T_A(p,M,n) \;=\; O\Bigl(\mathrm{PartitionsP}(n)\,\bigl(n + M^2 + M\,p^2\sqrt{2n}\bigr)\Bigr).
+```
+
+That is $`\Theta(\mathrm{PartitionsP}(n)\,M^2)`$ only when $`M`$ is large against $`p^2\sqrt{n}`$. Counted per
+partition at the cases below, with each convolution as $`(p+1)^2`$ multiplies, the $`f`$ evaluations do
+1.7 to 10 times the Newton arithmetic — 116 against 21 at $`\{3,6,12\}`$, 373 against 36 at
+$`\{4,8,28\}`$ — they draw level at $`\{2,20,40\}`$, and only at large $`M`$ does the recurrence dominate,
+5050 against 154 at $`\{3,100,12\}`$. Every one of these terms is polynomial; the exponential factor is
+$`\mathrm{PartitionsP}(n) \sim e^{\pi\sqrt{2n/3}}/(4\sqrt{3}\,n)`$. **$`n`$ is the limiting argument, not
+$`p`$ or $`M`$.**
 
 Measured cold (cache cleared before each), current implementation:
 
@@ -385,8 +409,11 @@ Measured cold (cache cleared before each), current implementation:
 | $`\{3,50,10\}`$ | 42 | 0.02 |
 | $`\{3,100,12\}`$ | 77 | 0.07 |
 
-Large $`M`$ at small $`n`$ is cheap — $`\{3,100,12\}`$ returns a 56-digit value in 0.07 s. Large $`n`$
-is what hurts, and no amount of tuning changes that: the partition sum is the algorithm.
+Large $`M`$ at small $`n`$ is cheap — $`\{3,100,12\}`$ returns a 56-digit value in 0.07 s. Wall-clock
+time barely follows the operation count: $`\{3,6,12\}`$ and $`\{3,100,12\}`$ run the same 77 cycle types,
+$`M^2`$ grows about 280-fold and the time 3.5-fold, so in this range each partition costs a near-constant
+overhead. Large $`n`$ is what hurts, and no amount of tuning changes that: the partition sum is the
+algorithm.
 
 ---
 
