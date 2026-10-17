@@ -272,6 +272,27 @@ Two equivalent forms:
   *Graphical Enumeration*, and the formula is the classical count of graphs with $`n`$ vertices and
   $`M`$ edges.
 
+**Example: the Pólya form at $`n = 4`$, $`p = 2`$.** The monomials are the rows of §3's $`n_d`$ column,
+with the six transpositions and three double transpositions collected into one term because they act
+alike on the edges:
+
+```math
+Z\bigl(S_4^{(2)}\bigr) \;=\; \tfrac{1}{24}\bigl(s_1^6 + 9\,s_1^2 s_2^2 + 8\,s_3^2 + 6\,s_2 s_4\bigr).
+```
+
+Setting $`s_d = 1 + z^d`$ gives every $`M`$ at once:
+
+```math
+\begin{aligned}
+\sum_M A(2,M,4)\, z^M &\;=\; \tfrac{1}{24}\Bigl[(1+z)^6 + 9\,(1+z)^2(1+z^2)^2 + 8\,(1+z^3)^2 + 6\,(1+z^2)(1+z^4)\Bigr] \\
+&\;=\; 1 + z + 2z^2 + 3z^3 + 2z^4 + z^5 + z^6,
+\end{aligned}
+```
+
+the graphs on 4 vertices counted by edges. Its $`z^3`$ coefficient, $`(20 + 36 + 16 + 0)/24 = 3`$, is §3's
+weighted column term by term: 20 from the identity, $`24 + 12`$ from the transpositions and double
+transpositions, 16 from the 3-cycles, 0 from the 4-cycles.
+
 At the identity every $`f(j) = \binom{n}{p}`$, the exponent sums to $`\binom{n}{p}\log(1+z)`$, and the
 term is $`\binom{\binom{n}{p}}{M}/n!`$: every $`M`$-set is fixed. The formula agrees with a brute-force
 orbit count for every $`n \le 5`$, $`p`$ and $`M`$ (72 cases), and at $`p = 2`$, summed over $`M`$, it
