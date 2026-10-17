@@ -179,6 +179,30 @@ f(e) \;=\; [x^p] \prod_k \bigl(1 + x^{\,k/\gcd(k,e)}\bigr)^{\gcd(k,e)\,m_k}.
 Cycles of $`\sigma^e`$ longer than $`p`$ can never be used, so those factors are $`1`$ up to degree
 $`p`$ and are skipped.
 
+**Example.** A single 6-cycle, $`\sigma = (1\,2\,3\,4\,5\,6)`$:
+
+| $`e`$ | $`\gcd(6,e)`$ | $`\sigma^e`$ | cycles of $`\sigma^e`$ |
+| --- | --- | --- | --- |
+| 1 | 1 | $`(1\,2\,3\,4\,5\,6)`$ | one of length 6 |
+| 2 | 2 | $`(1\,3\,5)(2\,4\,6)`$ | two of length 3 |
+| 3 | 3 | $`(1\,4)(2\,5)(3\,6)`$ | three of length 2 |
+| 4 | 2 | $`(1\,5\,3)(2\,6\,4)`$ | two of length 3 |
+| 5 | 1 | $`(1\,6\,5\,4\,3\,2)`$ | one of length 6 |
+| 6 | 6 | $`\mathrm{id}`$ | six of length 1 |
+
+Rows $`e = 2`$ and $`e = 3`$ separate the count of the cycles from their length: the reverse reading,
+$`k/\gcd(k,e)`$ cycles of length $`\gcd(k,e)`$, would give $`\sigma^2`$ the three 2-cycles of $`\sigma^3`$,
+and at $`e = 1`$ it would make $`\sigma`$ the identity. The reason is index arithmetic. Write the cycle
+as $`(a_0\,a_1 \dots a_{k-1})`$, so that $`\sigma^e(a_i) = a_{i+e}`$ with indices mod $`k`$, and put
+$`g = \gcd(k,e)`$. The walk from $`a_i`$ is back after $`t`$ steps exactly when $`k \mid te`$, that is when
+$`(k/g) \mid t`$, since $`k/g`$ and $`e/g`$ are coprime; so every cycle of $`\sigma^e`$ has length $`k/g`$.
+Steps of $`e`$ never leave a residue class mod $`g`$, which holds exactly $`k/g`$ indices, so the $`g`$
+classes are the $`g`$ cycles.
+
+Each cycle of $`\sigma`$ splits on its own. For $`\sigma = (1\,2\,3\,4\,5\,6)(7\,8)`$,
+$`\sigma^2 = (1\,3\,5)(2\,4\,6)(7)(8)`$, so in $`f(2)`$ the 6-cycle contributes the factor $`(1+x^3)^2`$
+and the 2-cycle the factor $`(1+x)^2`$.
+
 ### 2.6 From $`f`$ to the coefficient, by Newton's identity
 
 The orbit counts $`n_d`$ *could* be recovered by Möbius inversion over the divisor lattice —
