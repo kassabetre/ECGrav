@@ -304,23 +304,23 @@ throw low p-values by chance; prefer legs 1 and 2.
 
 ## 10. Implementation map
 
-All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3804.
+All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 4002.
 Private helpers are named `RandFLPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 3853 | `RandFLPCWeightCounts[ν]` | coefficients of $`\prod_k (1+x^k)^{\nu_k}`$ out to $`x^p`$; last entry is $`N(\nu)`$ (§4) |
-| 3869 | `RandFLPCCompletions[λ,M,j,ν]` | $`C(\lambda,M,j,\nu)`$, the inclusion–exclusion of §6 |
-| 3884 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
-| 3913, 3916 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 3920 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
-| 3942 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
-| 3993 | primary pattern | `[{p,M,n}, numSamples]` |
-| 4037 | overload | `[{p,M}, numSamples]` (§8) |
-| 4080, 4089 | overloads | single-sample forms |
+| 4051 | `RandFLPCWeightCounts[ν]` | coefficients of $`\prod_k (1+x^k)^{\nu_k}`$ out to $`x^p`$; last entry is $`N(\nu)`$ (§4) |
+| 4067 | `RandFLPCCompletions[λ,M,j,ν]` | $`C(\lambda,M,j,\nu)`$, the inclusion–exclusion of §6 |
+| 4082 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
+| 4111, 4114 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 4118 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
+| 4140 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
+| 4191 | primary pattern | `[{p,M,n}, numSamples]` |
+| 4235 | overload | `[{p,M}, numSamples]` (§8) |
+| 4278, 4287 | overloads | single-sample forms |
 
-The counter it sits on is `NumFacetLabeledPureComplexes` at line 1897, with its own derivation at
-line 1801 and helpers `NumFLPC*`.
+The counter it sits on is `NumFacetLabeledPureComplexes` at line 2044, with its own derivation at
+line 1861 and helpers `NumFLPC*`.
 
 All memo tables are released by the shared ``ECGrav`Private`NumPCClearCache[]`` — which must list
 every memoised helper, `RandFLPCCandTable` included.

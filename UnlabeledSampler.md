@@ -274,24 +274,25 @@ count against a function computed a wholly different way.
 
 ## 11. Implementation map
 
-All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3484.
+All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 3682.
 Private helpers are named `RandULPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 3540 | `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 3544 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $`\binom{n}{p}`$ subsets are touched |
-| 3564 | `RandULPCNd[λ,p]` | $`n_d`$ by Möbius inversion off the counter's $`f(e)`$ (`UnlabeledCount.md` §2.5), so reduced cycle types cost nothing |
-| 3581 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
-| 3594 | `RandULPCFixCov[λ,p,M]` | $`\mathrm{Fix_{cov}}`$ (§5) |
-| 3601 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
-| 3612 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
-| 3626 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
-| 3636 | `RandULPCComps[...]` | completion counts (§8) |
-| 3657 | `RandULPCDraw[λ,p,M,a]` | step 4 |
-| 3702 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
-| 3721 | primary pattern | `[{p,M,n}, numSamples]` |
-| 3745 | overload | `[{p,M}, numSamples]` |
+| 3735, 3738 | `$RandomUnlabeledParallelThreshold`, `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 3742 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $`\binom{n}{p}`$ subsets are touched |
+| 3762 | `RandULPCNd[λ,p]` | $`n_d`$ by Möbius inversion off the counter's $`f(e)`$ (`UnlabeledCount.md` §2.5), so reduced cycle types cost nothing |
+| 3779 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
+| 3792 | `RandULPCFixCov[λ,p,M]` | $`\mathrm{Fix_{cov}}`$ (§5) |
+| 3799 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
+| 3810 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
+| 3824 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
+| 3834 | `RandULPCComps[...]` | completion counts (§8) |
+| 3855 | `RandULPCDraw[λ,p,M,a]` | step 4 |
+| 3900 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
+| 3919 | primary pattern | `[{p,M,n}, numSamples]` |
+| 3943 | overload | `[{p,M}, numSamples]` |
+| 3979, 3988 | overloads | single-sample forms |
 
 All memo tables are released by the shared ``ECGrav`Private`NumPCClearCache[]``.
 
