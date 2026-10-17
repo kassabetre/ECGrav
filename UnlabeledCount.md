@@ -260,19 +260,19 @@ to $`[z^3]`$ by §2.6.)
 ## 4. Implementation map
 
 All in `Kernel/Subpackages/PureComplexes.wl`. Private helpers are named `NumULPC*`; the
-derivation above appears as the header comment at line 1934.
+derivation above appears as the header comment at line 2132.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 1991 | `NumULPCPolyMul[a,b,deg]` | product of two coefficient lists, truncated at `deg`, via `ListConvolve` |
-| 1996 | `NumULPCPowPoly[r,c,deg]` | $`(1+z^r)^c`$ truncated, stocking only multiples of $`r`$ |
-| 2005 | `NumULPCFixedSubsets[parts,e,p]` | $`f(e)`$ of §2.5; `parts` is `Tally[λ]`, i.e. `{length, multiplicity}` pairs |
-| 2020 | `NumULPCFixSets[parts,p,M]` | $`|\mathrm{Fix}(\sigma)|`$ by the Newton recurrence of §2.6 |
-| 2046 | `NumULPCA[p,M,n]` | $`A(p,M,n)`$: the cycle-type sum of §2.3. **Memoized** |
-| 2060 | `NumULPCCount[p,M,n]` | $`A(n) - A(n-1)`$ |
-| 2065 | `NumUnlabeledPureComplexes[p,M,n]` | guards, then `NumULPCCount` |
-| 2081 | `NumUnlabeledPureComplexes[p,M]` | summed over $`n`$ |
-| 2094 | catch-all | `::argerr` and `$Failed` |
+| 2189 | `NumULPCPolyMul[a,b,deg]` | product of two coefficient lists, truncated at `deg`, via `ListConvolve` |
+| 2194 | `NumULPCPowPoly[r,c,deg]` | $`(1+z^r)^c`$ truncated, stocking only multiples of $`r`$ |
+| 2203 | `NumULPCFixedSubsets[parts,e,p]` | $`f(e)`$ of §2.5; `parts` is `Tally[λ]`, i.e. `{length, multiplicity}` pairs |
+| 2218 | `NumULPCFixSets[parts,p,M]` | $`|\mathrm{Fix}(\sigma)|`$ by the Newton recurrence of §2.6 |
+| 2244 | `NumULPCA[p,M,n]` | $`A(p,M,n)`$: the cycle-type sum of §2.3. **Memoized** |
+| 2258 | `NumULPCCount[p,M,n]` | $`A(n) - A(n-1)`$ |
+| 2263 | `NumUnlabeledPureComplexes[p,M,n]` | guards, then `NumULPCCount` |
+| 2279 | `NumUnlabeledPureComplexes[p,M]` | summed over $`n`$ |
+| 2292 | catch-all | `::argerr` and `$Failed` |
 
 Two implementation choices that are exact, not heuristic:
 
