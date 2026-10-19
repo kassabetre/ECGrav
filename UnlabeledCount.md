@@ -205,11 +205,10 @@ and the 2-cycle the factor $`(1+x)^2`$.
 
 ### 2.6 From $`f`$ to the coefficient, by Newton's identity
 
-The orbit counts $`n_d`$ *could* be recovered by Möbius inversion over the divisor lattice —
-$`f(e)`$ counts the subsets of period dividing $`e`$, so $`n_d = \frac{1}{d}\sum_{e \mid d} \mu(d/e) f(e)`$
-— but they are **never formed**. Taking the logarithmic derivative of the product in §2.4
-turns it into a recurrence whose coefficients are the $`f`$ directly. Writing
-$`c(m) = [z^m]\prod_d (1+z^d)^{n_d}`$:
+The orbit counts $`n_d`$ *could* be recovered from the $`f`$ by Möbius inversion (Lemma B below) —
+the sampler does exactly that, in `RandULPCNd` — but here they are **never formed**. The
+logarithmic derivative of the product in §2.4 turns it into a recurrence whose coefficients are
+the $`f`$ directly. Writing $`c(m) = [z^m]\prod_d (1+z^d)^{n_d}`$:
 
 ```math
 m\,c(m) \;=\; \sum_{k=1}^{m} \ell(k)\, c(m-k), \qquad c(0) = 1,
@@ -219,21 +218,99 @@ m\,c(m) \;=\; \sum_{k=1}^{m} \ell(k)\, c(m-k), \qquad c(0) = 1,
 \ell(k) \;=\; \begin{cases} f(k) & k \text{ odd} \\ f(k) - 2 f(k/2) & k \text{ even.}\end{cases}
 ```
 
-*Proof sketch.* $`\log \prod_d (1+z^d)^{n_d} = \sum_d n_d \sum_{j\ge1} (-1)^{j-1} z^{dj}/j`$;
-collecting $`m = dj`$ gives $`\sum_m \frac{z^m}{m} \sum_{d \mid m} d\,n_d\,(-1)^{m/d-1}`$. Now
-$`\sum_{d \mid m} d\,n_d = f(m)`$, because the orbits whose size divides $`m`$ consist exactly of
-the points fixed by $`\sigma^m`$. Splitting the sign by the parity of $`m/d`$ — for $`m`$ even,
-$`m/d`$ is even iff $`d \mid m/2`$ — leaves $`\ell(m) = f(m) - 2f(m/2)`$, and $`\ell(m) = f(m)`$ for
-$`m`$ odd. Then $`z P' = P \cdot \sum_m \ell(m) z^m`$, with $`P = \prod_d (1+z^d)^{n_d}`$ the product whose
-coefficients are the $`c(m)`$, gives the recurrence. $`\square`$
+The setting is §2.4's: $`\sigma_X`$ is the permutation $`\sigma`$ induces on the set $`X`$ of
+$`p`$-subsets, $`n_d`$ is the number of its cycles of length $`d`$, and $`f(e)`$ is the number of
+$`p`$-subsets fixed by $`\sigma^e`$. One fact links the two, and it carries the whole proof:
+
+> **Lemma A (fixed points of a power).** For every $`e \ge 1`$, $`f(e) = \sum_{d \mid e} d\,n_d`$.
+
+*Proof.* By the lemma of §2.4, each $`F \in X`$ lies on exactly one cycle of $`\sigma_X`$, of some
+length $`d`$. On it, $`F, \sigma_X(F), \dots, \sigma_X^{d-1}(F)`$ are distinct and
+$`\sigma_X^j(F) = \sigma_X^{j \bmod d}(F)`$, so $`\sigma^e`$ fixes $`F`$ exactly when $`d \mid e`$. The subsets
+fixed by $`\sigma^e`$ are therefore exactly the members of the cycles whose length divides $`e`$, and a
+cycle of length $`d`$ has $`d`$ of them. $`\square`$
+
+Lemma A is the bridge: $`f(e)`$ comes from $`\lambda`$ alone by §2.5, while $`n_d`$ does not.
+
+> **Lemma B (Möbius inversion).** $`n_d = \frac{1}{d}\sum_{e \mid d} \mu(d/e)\, f(e)`$, where
+> $`\mu(m) = (-1)^r`$ if $`m`$ is a product of $`r`$ distinct primes and $`\mu(m) = 0`$ if a prime
+> divides it twice.
+
+*Proof.* First, $`\sum_{t \mid m} \mu(t) = [m = 1]`$: for $`m > 1`$ with distinct prime factors
+$`q_1, \dots, q_r`$, the only divisors with $`\mu \neq 0`$ are the products of subsets of them, so the
+sum is $`\sum_S (-1)^{|S|} = (1-1)^r = 0`$. Now put $`g(c) = c\,n_c`$, so that Lemma A reads
+$`f(e) = \sum_{c \mid e} g(c)`$. Exchanging the sums over $`c \mid e \mid d`$ and writing $`t = d/e`$,
+which runs over the divisors of $`d/c`$,
+
+```math
+\sum_{e \mid d} \mu(d/e)\, f(e) \;=\; \sum_{e \mid d} \mu(d/e) \sum_{c \mid e} g(c) \;=\; \sum_{c \mid d} g(c) \sum_{t \mid d/c} \mu(t) \;=\; g(d),
+```
+
+since only $`c = d`$ survives. $`\square`$
+
+**Example 1.** $`\sigma = (1\,2\,3)(4\,5)(6)`$ at $`n = 6`$, $`p = 2`$:
+
+| $`e`$ | $`\sigma^e`$ | $`f(e)`$ |
+| --- | --- | --- |
+| 1 | $`(1\,2\,3)(4\,5)(6)`$ | 1: the edge $`45`$ |
+| 2 | $`(1\,3\,2)(4)(5)(6)`$ | 3: the edges among $`4, 5, 6`$ |
+| 3 | $`(1)(2)(3)(4\,5)(6)`$ | 7: $`\binom{4}{2} = 6`$ among $`1, 2, 3, 6`$, plus $`45`$ |
+| 6 | $`\mathrm{id}`$ | 15 |
+
+Lemma B gives $`n_1 = f(1) = 1`$, $`n_2 = (f(2) - f(1))/2 = 1`$, $`n_3 = (f(3) - f(1))/3 = 2`$, and, with
+$`\mu(6) = 1`$ and $`\mu(2) = \mu(3) = -1`$, $`n_6 = (f(6) - f(3) - f(2) + f(1))/6 = 1`$. The orbits agree:
+$`\{45\}`$; $`\{46, 56\}`$; $`\{12, 13, 23\}`$ and $`\{16, 26, 36\}`$; and the six edges joining the 3-cycle to the
+2-cycle, one orbit of length $`\mathrm{lcm}(3,2) = 6`$ — all $`1 + 2 + 6 + 6 = 15`$ edges.
+
+*Proof of the recurrence.* Only finitely many $`n_d`$ are nonzero, so $`P(z) = \prod_d (1+z^d)^{n_d}`$ is
+a polynomial with $`P(0) = 1`$, and $`1/P`$ is a power series.
+
+*Step 1: logarithmic derivative.* By the product rule, $`zP'/P = \sum_d n_d\, d z^d/(1+z^d)`$; no
+logarithm is needed.
+
+*Step 2: geometric series.* $`d z^d/(1+z^d) = \sum_{j \ge 1} (-1)^{j-1}\, d\, z^{dj}`$.
+
+*Step 3: collect powers.* $`z^m`$ comes from the pairs with $`dj = m`$, so $`zP'/P = \sum_m \ell(m) z^m`$
+with $`\ell(m) = \sum_{d \mid m} d\,n_d\,(-1)^{m/d-1}`$.
+
+*Step 4: split the sign.* For $`m`$ odd every $`m/d`$ is odd, every sign is $`+`$, and $`\ell(m) = f(m)`$ by
+Lemma A. For $`m`$ even, $`m/d`$ is even exactly when $`2d \mid m`$, that is when $`d \mid m/2`$, so the
+divisors of $`m/2`$ carry the minus sign:
+
+```math
+\ell(m) \;=\; \Bigl[\sum_{d \mid m} d\,n_d - \sum_{d \mid m/2} d\,n_d\Bigr] - \sum_{d \mid m/2} d\,n_d \;=\; f(m) - 2f(m/2).
+```
+
+This is where the $`n_d`$ drop out: from here on only $`f`$ appears.
+
+*Step 5: compare coefficients.* Multiplying step 3 by $`P`$ gives $`zP' = P \cdot \sum_k \ell(k) z^k`$,
+whose $`z^m`$ coefficients are $`m\,c(m)`$ on the left and $`\sum_{k=1}^{m} \ell(k)\, c(m-k)`$ on the right;
+$`c(0) = P(0) = 1`$, and each $`c(m)`$ follows from the earlier ones. $`\square`$
+
+**Example 2.** The same $`\sigma`$, up to $`M = 3`$. $`\ell(1) = f(1) = 1`$, $`\ell(2) = f(2) - 2f(1) = 1`$ and
+$`\ell(3) = f(3) = 7`$. Step 3 gives $`\ell(2)`$ directly too, as $`-1 \cdot n_1 + 2 \cdot n_2 = -1 + 2 = 1`$: the
+fixed edge $`45`$ enters with a minus sign, its factor being $`1 + z`$ and $`z/(1+z) = z - z^2 + \cdots`$.
+The recurrence gives $`c(1) = 1`$, then $`2c(2) = 1 \cdot 1 + 1 \cdot 1`$ so $`c(2) = 1`$, then
+$`3c(3) = 1 \cdot 1 + 1 \cdot 1 + 7 \cdot 1 = 9`$ so $`c(3) = 3`$. The orbit form agrees,
+$`(1+z)(1+z^2)(1+z^3)^2(1+z^6) = 1 + z + z^2 + 3z^3 + \cdots`$, and the three invariant 3-edge sets are the
+triangle $`456`$ (the orbits $`\{45\}`$ and $`\{46, 56\}`$), the triangle $`123`$, and the star at $`6`$.
 
 This is worth more than tidiness: $`n_d`$ is on the order of $`\binom{n}{p}/d`$, so the binomial
 expansion of $`(1+z^d)^{n_d}`$ asked for binomial coefficients of enormous arguments, whereas
 $`\ell(k)`$ is bounded by $`\binom{n}{p}`$.
 
-The recurrence wants $`f(k)`$ for **every** $`k \le M`$, not only divisors — but $`\sigma^k`$ fixes
-the same subsets as $`\sigma^{\gcd(k,L)}`$ where $`L = \mathrm{lcm}`$ of the cycle lengths,
-so $`f(k) = f(\gcd(k,L))`$ and the number of distinct evaluations is unchanged.
+The recurrence wants $`f(k)`$ for **every** $`k \le M`$, not only divisors, but the number of distinct
+evaluations is unchanged:
+
+> **Lemma C.** $`f(k) = f(\gcd(k, L))`$, with $`L`$ the lcm of the cycle lengths.
+
+*Proof.* $`L`$ is the order of $`\sigma`$, so $`\sigma^L = \mathrm{id}`$. By Bézout, $`g = \gcd(k,L) = ak + bL`$
+for some integers $`a, b`$, so $`\sigma^g = (\sigma^k)^a`$, while $`\sigma^k = (\sigma^g)^{k/g}`$. Each is a power of
+the other, and any power or inverse of a permutation fixing $`F`$ also fixes $`F`$, so $`\sigma^k`$ and
+$`\sigma^g`$ fix the same subsets. $`\square`$ In Example 1, $`L = 6`$, so $`f(4) = f(2) = 3`$ and $`f(5) = f(1) = 1`$.
+
+Lemmas A, B and C and the recurrence were checked exhaustively, the recurrence against the orbit
+polynomial, for every cycle type with $`n \le 7`$ and $`p \le 3`$ (128 cases).
 
 **This recurrence does not lift.** It holds inside a single cycle type. Burnside averages a
 *product* over $`\sigma`$, and the average of a product is not the product of averages, so there
