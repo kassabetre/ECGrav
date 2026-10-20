@@ -236,6 +236,12 @@ Lemma A is the bridge: $`f(e)`$ comes from $`\lambda`$ alone by §2.5, while $`n
 > $`\mu(m) = (-1)^r`$ if $`m`$ is a product of $`r`$ distinct primes and $`\mu(m) = 0`$ if a prime
 > divides it twice.
 
+This is the classical Möbius inversion formula applied to Lemma A, which gives
+$`f(e) = \sum_{c \mid e} c\,n_c`$ for every $`e`$: inversion on the positive integers ordered by
+divisibility, whose Möbius function is $`\mu(e,d) = \mu(d/e)`$, and only the divisors of $`d`$ enter.
+See Hardy and Wright, *An Introduction to the Theory of Numbers*, Ch. XVI, or Stanley,
+*Enumerative Combinatorics*, Vol. 1, §3.7. The standard proof is given for completeness.
+
 *Proof.* First, $`\sum_{t \mid m} \mu(t) = [m = 1]`$: for $`m > 1`$ with distinct prime factors
 $`q_1, \dots, q_r`$, the only divisors with $`\mu \neq 0`$ are the products of subsets of them, so the
 sum is $`\sum_S (-1)^{|S|} = (1-1)^r = 0`$. Now put $`g(c) = c\,n_c`$, so that Lemma A reads
