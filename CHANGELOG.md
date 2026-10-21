@@ -4,6 +4,40 @@ All notable changes to ECGrav are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning is
 semantic-ish; breaking changes are called out explicitly.
 
+## [Unreleased]
+
+### Fixed
+- **The free-vertex complex MCMC no longer starts an equilibration replica in a trap.**
+  `RandomPureSimplicialComplexMCMCEquilibriate`, and so `RandomPureSimplicialComplexMCMC`, started
+  the replica that probes the high end of the vertex count from M disjoint facets. Under the
+  unlabeled weighting (labelingChoise 2) that complex's automorphism group, (p!)^M M!, is so large
+  that moves out of it are almost never accepted. The mean first exit is 339 sweeps at p = 3,
+  M = 12, 1,629 at M = 20 and 26,250 at M = 50, more than the whole 25,000-sweep budget; it was
+  computed exactly from the weights of every proposal and confirmed by measured exits at M = 12.
+  Equilibration cannot converge until that replica leaves, because all four replicas must agree,
+  and trapped sweeps cost about ten times more (2.9 s against 0.25 s at p = 3, M = 50), so such a
+  run would have taken about a day and failed roughly 40% of the time. The replica now starts
+  from a linear chain of facets, consecutive facets sharing one vertex (v = (p−1)M + 1), whose
+  automorphism group is small. At p = 3, M = 20 the chain start reaches typical vertex counts
+  within about 25 sweeps, where the disjoint start was still trapped after 600, and three
+  equilibrations converged at 1,201–1,601 sweeps.
+
+### Changed
+- **The documentation no longer says `RandomPureSimplicialComplexMCMC` returns independent
+  samples.** Samples are one correlation time (corrT sweeps) apart, and corrT is about one decay
+  time of the slowest observable, so consecutive samples stay correlated: 0.2–0.3 in the energy
+  and the vertex count at p = 3, M = 8 and 12, which about doubles the variance of a sample mean.
+  Corrected in the usage message, the reference page and the code comments.
+
+### Added
+- **`RandomPureSimplicialComplexMCMC` reports effective sample sizes.** Its returned association
+  gains `"effectiveSampleSize"`, the smallest over the recorded observables, and
+  `"effectiveSampleSizeValues"`, one per observable in the order of `"corrTValues"`. Each is
+  n/(2τ), with τ the integrated autocorrelation time of the returned samples over Sokal's
+  self-consistent window; a constant observable gives `Missing["Constant"]` and fewer than 20
+  samples give `Missing["TooFewSamples"]`. Additive: no key removed, no argument changed. New tests
+  cover the chain start, the estimator against an AR(1) series, and the new keys.
+
 ## [1.18.0] - 2026-10-17
 
 ### Added

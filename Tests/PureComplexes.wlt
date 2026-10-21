@@ -1119,13 +1119,15 @@ VerificationTest[
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-converges"
 ];
 
-(* ... and still emits its energy-vs-sweep diagnostic plot. *)
+(* ... and still emits its energy-vs-sweep diagnostic plot. The eqlT is 101, convergence at
+   the first check; it was 201 under this seed until the high-vertex replica started from a
+   linear chain of facets instead of M disjoint facets, which changes the seeded trajectory. *)
 VerificationTest[
     Module[{n, res}, SeedRandom[406];
         {n, res} = emittedGraphicsAndResult[
             ECGrav`RandomPureSimplicialComplexMCMCEquilibriate[mcmcSeed24, 1]];
         {n >= 1, res["converged"], res["eqlT"]}],
-    {True, True, 201},
+    {True, True, 101},
     TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-emits-plot"
 ];
 
@@ -1550,7 +1552,8 @@ VerificationTest[
          Last[meas][[-1]] === data[["state", "complex"]],
          Keys[data], data["converged"], data["eqlT"], data["corrT"], data["corrTValues"]}],
     {5, {6, 6, 6, 6, 6}, Range[5], True, False, True, True,
-     {"eqlT", "converged", "state", "corrT", "corrTValues", "corrTMeasured"}, True, 101, 2,
+     {"eqlT", "converged", "state", "corrT", "corrTValues", "corrTMeasured",
+      "effectiveSampleSize", "effectiveSampleSizeValues"}, True, 101, 2,
      {2, 2, 2, 2}},
     TestID -> "RandomPureSimplicialComplexMCMC-measurements-are-self-consistent"
 ];
@@ -1658,6 +1661,65 @@ VerificationTest[
         {a === b, c1 === c2}],
     {True, True},
     TestID -> "RandomPureSimplicialComplexMCMC-free-vertex-delegates"
+];
+
+(* The equilibration replica that probes the high end of the vertex count starts from a linear
+   chain of facets, not from M disjoint facets. Under the unlabeled weighting the disjoint
+   complex's automorphism group, (p!)^M M!, makes it a trap: its mean first exit is 26250 sweeps
+   at p=3, M=50, more than the whole equilibration budget, and equilibration cannot converge
+   until that replica leaves. Pin the chain's shape -- distinct p-facets, consecutive ones sharing
+   exactly one vertex and the rest none, (p-1)M+1 vertices inside the label pool -- and its small
+   automorphism group, 2((p-1)!)^2((p-2)!)^(M-2). p=1 has no chain and no trap, so it keeps the
+   disjoint start. *)
+VerificationTest[
+    Module[{chainQ},
+        chainQ = Function[{p, M},
+            Module[{c = ECGrav`Private`RandomPureSimplicialComplexMCMCHighVertexStart[p, M]},
+                {Length[c] == M, DuplicateFreeQ[c], AllTrue[c, Length[#] == p &],
+                 Union @@ c === Range[(p - 1) M + 1],
+                 AllTrue[Subsets[Range[M], {2}],
+                     Length[Intersection[c[[#[[1]]]], c[[#[[2]]]]]] == If[#[[2]] - #[[1]] == 1, 1, 0] &],
+                 ECGrav`PureComplexAutomorphismGroupOrder[c] == 2 ((p - 1)!)^2 ((p - 2)!)^(M - 2)}]];
+        {AllTrue[Flatten[chainQ @@@ {{2, 5}, {3, 4}, {3, 20}, {4, 3}}], TrueQ],
+         ECGrav`Private`RandomPureSimplicialComplexMCMCHighVertexStart[1, 4]}],
+    {True, {{1}, {2}, {3}, {4}}},
+    TestID -> "RandomPureSimplicialComplexMCMCEquilibriate-high-vertex-start-is-a-chain"
+];
+
+(* The estimator behind the effectiveSampleSize key. On an AR(1) series with coefficient rho the
+   exact effective size is n(1-rho)/(1+rho), a third of n at rho = 1/2; independent draws give
+   about n. A constant observable says nothing about its own correlation and comes back
+   Missing["Constant"]; under 20 samples every observable is Missing["TooFewSamples"]. *)
+VerificationTest[
+    Module[{n = 6000, ar, iid, rows, ess, short},
+        SeedRandom[611];
+        ar = FoldList[0.5 #1 + #2 &, 0., RandomVariate[NormalDistribution[], n - 1]];
+        iid = RandomVariate[NormalDistribution[], n];
+        rows = Transpose[{Range[n], ar, iid, ConstantArray[3, n], ConstantArray[{}, n]}];
+        ess = ECGrav`Private`RandomPureSimplicialComplexMCMCEffectiveSampleSizes[rows, 3];
+        short = ECGrav`Private`RandomPureSimplicialComplexMCMCEffectiveSampleSizes[Take[rows, 10], 3];
+        {Abs[ess[[1]]/(n/3) - 1] < 0.2, Abs[ess[[2]]/n - 1] < 0.15, ess[[3]], short}],
+    {True, True, Missing["Constant"], ConstantArray[Missing["TooFewSamples"], 3]},
+    TestID -> "RandomPureSimplicialComplexMCMC-effective-sample-size-estimator"
+];
+
+(* The driver returns the effective sample size of its samples alongside them:
+   effectiveSampleSize, the smallest over the recorded observables, and
+   effectiveSampleSizeValues, one per observable in the order of corrTValues (energy, vertex
+   count, then operators). Samples one corrT apart stay correlated, so this, not numSamples, is
+   the count behind an error bar. A constant operator gets Missing["Constant"], and the effective
+   size never exceeds the number of samples. *)
+VerificationTest[
+    Module[{ops = {Function[c, Total[Flatten[c]]], Function[c, Length[c]]}, meas, data, ess},
+        SeedRandom[612];
+        {meas, data} = Quiet@Block[{Print = Null &},
+            ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 2, 60]];
+        ess = data["effectiveSampleSizeValues"];
+        {Length[ess], ess[[4]], NumberQ[data["effectiveSampleSize"]],
+         0 < data["effectiveSampleSize"] <= 60,
+         data["effectiveSampleSize"] == Min[Select[ess, NumberQ]]}],
+    {4, Missing["Constant"], True, True, True},
+    TestID -> "RandomPureSimplicialComplexMCMC-reports-effective-sample-size"
 ];
 
 (* ==================================================================== *)

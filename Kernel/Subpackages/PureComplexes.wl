@@ -4637,8 +4637,9 @@ Module[{result,purity=Length[seedComplex[[1]]],facetOrder=Length[seedComplex],da
 data=<|"state"-><|"complex"->Sort[Sort/@seedComplex],
 				"vertexCount"->Length[DeleteDuplicates[Flatten[seedComplex]]],
 				"weight"->1.0,"energy" ->0.0|>,
-		"maxNumV"-><|"complex"->Partition[Range[purity*facetOrder],purity],
-				"vertexCount"->purity*facetOrder,"weight"->1.0,"energy" ->0.0|>,
+		"maxNumV"-><|"complex"->RandomPureSimplicialComplexMCMCHighVertexStart[purity,facetOrder],
+				"vertexCount"->Length[Union@@RandomPureSimplicialComplexMCMCHighVertexStart[purity,facetOrder]],
+				"weight"->1.0,"energy" ->0.0|>,
 		"minNumV"-><|"complex"->With[{minN=Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]]},RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder,minN}]],
 				"vertexCount"->Catch[Do[If[Binomial[n,purity]>=facetOrder,Throw[n]],{n,purity,purity*facetOrder}]],"weight"->1.0,"energy" ->0.0|>,
 		"random"-><|"complex"->RandomVertexLabeledPureSimplicialComplex[{purity,facetOrder}],
@@ -4650,12 +4651,12 @@ data[["random","vertexCount"]]=Length[DeleteDuplicates[Flatten[data[["random","c
 Which[
 	labelingChoise==1,(*facet-labeled*)
 		data[["state","weight"]]=PureComplexFacetStabilizerGroupOrder[seedComplex]*(facetOrder!/(data[["state","vertexCount"]]!));
-		data[["maxNumV","weight"]]=((purity!)^facetOrder)*(facetOrder!/(purity*facetOrder)!);
+		data[["maxNumV","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["maxNumV","complex"]]]*(facetOrder!/data[["maxNumV","vertexCount"]]!);
 		data[["minNumV","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["minNumV","complex"]]]*(facetOrder!/data[["minNumV","vertexCount"]]!);
 		data[["random","weight"]]=PureComplexFacetStabilizerGroupOrder[data[["random","complex"]]]*(facetOrder!/data[["random","vertexCount"]]!),
 	labelingChoise==2,(*unlabeled*)	
 		data[["state","weight"]]=PureComplexAutomorphismGroupOrder[seedComplex]/((data[["state","vertexCount"]])!);
-		data[["maxNumV","weight"]]=(facetOrder!*(purity!)^facetOrder)/((purity*facetOrder)!);
+		data[["maxNumV","weight"]]=PureComplexAutomorphismGroupOrder[data[["maxNumV","complex"]]]/(data[["maxNumV","vertexCount"]]!);
 		data[["minNumV","weight"]]=PureComplexAutomorphismGroupOrder[data[["minNumV","complex"]]]/(data[["minNumV","vertexCount"]]!);
 		data[["random","weight"]]=PureComplexAutomorphismGroupOrder[data[["random","complex"]]]/(data[["random","vertexCount"]]!);
 ];
@@ -5313,6 +5314,67 @@ $Failed);
 
 (* :Code Section *)
 
+(* Private helper *)
+RandomPureSimplicialComplexMCMCHighVertexStart[purity_Integer,facetOrder_Integer]:=
+(*The starting complex of the equilibration replica that probes the high end of the vertex
+	count: a linear chain of facets, consecutive facets sharing exactly one vertex, so that
+	v = (p-1)M+1, the most any connected complex can have. It replaces M disjoint facets, which
+	has more vertices still but is a trap under the unlabeled weighting: its automorphism group,
+	(p!)^M M!, is so large that moves out of it are almost never accepted. Leaving it takes on
+	average 339 sweeps at p=3, M=12, 1629 at M=20 and 26250 at M=50 -- more than the whole
+	equilibration budget -- computed exactly from the weights of every proposal and confirmed
+	by measured first exits at M=12. Equilibration cannot converge until that replica has left,
+	because all four replicas must agree. The chain's automorphism group is small,
+	2((p-1)!)^2((p-2)!)^(M-2) -- 8 at p=3, from reversal and the free vertices of the two end
+	facets -- and the chain is not a weight maximum, so it relaxes like any other state. At
+	p=1 every complex is M distinct points, so there is no chain to build and no trap, and the
+	disjoint start stays.*)
+If[purity<=1,
+	Partition[Range[purity*facetOrder],purity],
+	Table[Range[(purity-1)*(i-1)+1,(purity-1)*(i-1)+purity],{i,facetOrder}]
+];
+
+(* Private helper *)
+RandomPureSimplicialComplexMCMCEffectiveSampleSizes[measurements_List,numObservables_Integer]:=
+(*The effective sample size of each recorded observable over the returned samples, n/(2 tau),
+	with tau = 1/2 + Sum_{t>=1} rho(t) summed over Sokal's self-consistent window, the smallest W
+	with W >= 6 tau(W). The samples are corrT sweeps apart and still correlated: corrT is about one
+	decay time of the slowest observable, which leaves a correlation of 0.2-0.3 between
+	consecutive samples in the energy and the vertex count (measured at p=3, M=8 and 12), so the
+	effective size is typically about half the number of samples. A constant observable says
+	nothing about its own correlation and gets Missing["Constant"]; a non-numeric one gets
+	Missing["NotNumeric"]; fewer than 20 samples get Missing["TooFewSamples"] for all.*)
+Module[{n=Length[measurements],cols},
+	cols=If[n==0,ConstantArray[{},numObservables],Transpose[measurements[[All,2;;numObservables+1]]]];
+	Table[
+		Which[
+			n<20,Missing["TooFewSamples"],
+			!VectorQ[col,NumericQ],Missing["NotNumeric"],
+			Length[DeleteDuplicates[col]]==1,Missing["Constant"],
+			True,
+				Module[{x=N[col],c0,tau=0.5,w=0},
+					c0=CorrelationTime[0,x];
+					While[w<n-2,
+						w++;
+						tau+=CorrelationTime[w,x]/c0;
+						If[w>=6*tau,Break[]]];
+					N[n/(2*Max[tau,0.5])]]],
+	{col,cols}]
+];
+
+(* Private helper *)
+RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data_Association,measurements_List,operators_List]:=
+(*Adds effectiveSampleSize, the smallest effective sample size over the recorded observables, and
+	effectiveSampleSizeValues, one per observable in the order energy, vertex count (edge count on
+	the fixed-vertex chain), then operators -- the order of corrTValues. Use the former, not
+	numSamples, as the sample count behind an error bar.*)
+Module[{ess=RandomPureSimplicialComplexMCMCEffectiveSampleSizes[measurements,2+Length[operators]],num},
+	num=Select[ess,NumberQ];
+	Join[data,<|"effectiveSampleSize"->If[num==={},Missing["NotAvailable"],Min[num]],
+		"effectiveSampleSizeValues"->ess|>]
+];
+
+
 (* Primary Pattern *)
 RandomPureSimplicialComplexMCMC[seedComplex_List, operators_/;MatchQ[operators,{__Function}],
 	labelingChoise_Integer, numSamples_Integer]:=
@@ -5323,8 +5385,11 @@ RandomPureSimplicialComplexMCMC[seedComplex_List, operators_/;MatchQ[operators,{
 (*   (* Note: .*) *) 
 (****************************************)
 (*takes as an input seed complex, a list of functions, a choice of labeleing and 
-	number of samples and outputs a list of numSamples independent random pure simplicial 
-	complexes from a uniform disribution. it first runs equilibriation run and determines correlation times
+	number of samples and outputs a list of numSamples random pure simplicial complexes from a
+	uniform disribution, spaced corrT sweeps apart. They are NOT independent: corrT is about one
+	decay time of the slowest observable, which leaves consecutive samples correlated (0.2-0.3 in
+	the energy and the vertex count at p=3, M=8 and 12), so the returned association also carries
+	effectiveSampleSize. it first runs equilibriation run and determines correlation times
 	labelingChoise is an integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled. *)
 
 *)
@@ -5396,7 +5461,7 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-{measurements,data}, "ECGravReturn$69"]
+{measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$69"]
 
 ]
 
@@ -5411,8 +5476,11 @@ RandomPureSimplicialComplexMCMC[seedComplex_List, HoldNumberOfVerticesFixed_?Boo
 (*   (* Note: .*) *) 
 (****************************************)
 (*takes as an input seed complex, a list of functions, a choice of labeleing and 
-	number of samples and outputs a list of numSamples independent random pure simplicial 
-	complexes from a uniform disribution. it first runs equilibriation run and determines correlation times
+	number of samples and outputs a list of numSamples random pure simplicial complexes from a
+	uniform disribution, spaced corrT sweeps apart. They are NOT independent: corrT is about one
+	decay time of the slowest observable, which leaves consecutive samples correlated (0.2-0.3 in
+	the energy and the vertex count at p=3, M=8 and 12), so the returned association also carries
+	effectiveSampleSize. it first runs equilibriation run and determines correlation times
 	labelingChoise is an integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled. *)
 
 *)
@@ -5491,7 +5559,7 @@ measurements=
 		]
 	][[2,1]];
 
-{measurements,data}, "ECGravReturn$57"]
+{measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$57"]
 
 ];
 
@@ -5538,7 +5606,7 @@ measurements=Reap[
 ][[2,1]];
 
 
-{measurements,data}
+{measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}
 
 ];
 
@@ -5588,7 +5656,7 @@ measurements=Reap[
 	]
 ][[2,1]];
 
-{measurements,data}, "ECGravReturn$58"]
+{measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$58"]
 
 ];
 

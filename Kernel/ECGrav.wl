@@ -3300,8 +3300,14 @@ RandomPureSimplicialComplexMCMC::usage="
 	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_,
 	labelingChoise_Integer, numSamples_Integer] 
 	takes as an input seed complex, a list of functions, a choice of labeleing and 
-	number of samples and outputs a list of numSamples independent random pure simplicial 
-	complexes from a uniform disribution. it first runs equilibriation run and determines correlation times
+	number of samples and outputs numSamples random pure simplicial complexes from a uniform
+	distribution, spaced one correlation time (corrT sweeps) apart. It first runs an
+	equilibriation run and determines the correlation time. Consecutive samples are NOT
+	independent: corrT is about one decay time of the slowest observable, so they stay
+	correlated, typically at 0.2-0.3 in the energy and the vertex count. The returned
+	association therefore also gives effectiveSampleSize, the smallest effective number of
+	independent samples over the recorded observables, and effectiveSampleSizeValues, one per
+	observable in the order of corrTValues; use these rather than numSamples for error bars.
 	labelingChoise is an integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled.";
 	
 (* :Error Messages: *)
