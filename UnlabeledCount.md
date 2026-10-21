@@ -677,12 +677,15 @@ lower bound that is tight only in the range where the answer is already reachabl
 
 ## 8. Verification
 
-Ten tests in `Tests/PureComplexes.wlt`:
+Thirteen tests in `Tests/PureComplexes.wlt`:
 
 | TestID | what it pins |
 | --- | --- |
 | `-known-values` | 22 values from the brute-force oracle table (§9) |
 | `-brute-force` | in-suite enumeration + canonicalisation over the $`n!`$ relabellings, 7 parameter sets |
+| `-joint-canonical-form` | §8.1's oracle: the sorted tableau minimised over $`S_M`$, 7 parameter sets |
+| `-joint-canonical-form-tau-needed` | negative control: without the minimisation over $`S_M`$ the count overshoots |
+| `-canonical-graph` | §8.2's oracle: `CanonicalGraph` of the incidence graph, the same partition as §8.1 at 7 points |
 | `-burnside-identity` | the Burnside average from **explicitly enumerated** fixed sets, bypassing §2.4–2.6 |
 | `-fix-recurrence` | §2.6 at its own level: `NumULPCFixSets` vs a direct count of $`\sigma`$-invariant $`M`$-sets, over 435 (case, cycle type) pairs |
 | `-unlabeled-graphs` | external: differenced unlabelled-graph sequence, $`n = 0..7`$ |
@@ -786,6 +789,43 @@ Additionally, the Newton rewrite was differentially tested against the Möbius r
 replaced: **61,172 helper-level comparisons** across $`p = 1..4`$, $`M = 0..40`$ and every cycle
 type of $`n = 0..13`$, zero mismatches. Since `NumULPCFixSets` is reached only from `NumULPCA`,
 that covers every public value.
+
+### 8.2 A third oracle: canonical labelling of the incidence graph
+
+§8.1's minimisation over $`S_M`$ is a canonical form computed by exhaustion. A practical one is
+already in the package. `ComplexAutomorphismIncidenceGraph`, built for
+`PureComplexAutomorphismGroupOrder`, is the vertex–facet incidence graph with a rigid triangle hung
+off every facet node. The incidence graph is bipartite, hence triangle-free, so the triangles mark
+the facet nodes and no isomorphism can exchange a vertex node with a facet node: two complexes are
+isomorphic exactly when these graphs are. The sorted edge list of the canonical graph is therefore
+a complete invariant,
+
+```
+key[f_] := Sort[Sort /@ (List @@@ EdgeList[
+    CanonicalGraph[ComplexAutomorphismIncidenceGraph[f]]])]
+```
+
+and $`U(p,M,n)`$ is its number of distinct values over the covering $`M`$-sets.
+
+**It agrees with §8.1 as a partition, not just in count.** Over every covering $`M`$-set at 16
+parameter points with $`p \le 4`$, $`M \le 6`$, $`n \le 7`$ — up to $`42910`$ sets at $`(4,4,7)`$ — the key and
+§8.1's form induce the same classes: as many (key, form) pairs as keys and as forms, each equal to
+`NumUnlabeledPureComplexes`. Without the `CanonicalGraph` step the raw graphs merge nothing. The
+counts alone also match at $`(2,6,7)`$, $`U = 20`$, and $`(3,6,6)`$, $`U = 88`$.
+
+**Its cost does not grow with $`M`$.** About $`0.12`$ ms per complex, against §8.1's $`0.27`$, $`1.27`$ and
+$`7.79`$ ms at $`M = 4, 5, 6`$: $`58\times`$ faster at $`(2,6,6)`$. It is still one key per object, so like
+§8.1 it is an oracle, not a counting method.
+
+**The gadget is cheap insurance.** Removing it caused no collisions at any tested point. A vertex
+node and a facet node can only be exchanged inside a component in which every vertex lies in $`p`$
+facets and there are as many vertices as facets, and that only matters if the component's dual is a
+different complex — impossible at $`p = 2`$, where such components are cycles. The gadget costs
+nothing measurable and makes the key safe by construction.
+
+The test is `-canonical-graph`. At §8.1's points, less the single-complex $`(1,3,3)`$ where nothing
+can merge, plus $`(2,5,6)`$, where §7.2's signature first fails, it pins $`U`$, the numbers of keys, of §8.1 forms and of (key, form) pairs, and that the
+partition merges; a copy with the `CanonicalGraph` step removed fails it.
 
 ---
 

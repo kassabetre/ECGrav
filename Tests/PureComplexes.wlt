@@ -407,6 +407,42 @@ VerificationTest[
     TestID -> "NumUnlabeledPureComplexes-joint-canonical-form-tau-needed"
 ];
 
+(* The third oracle, of UnlabeledCount.md section 8.2: canonical labelling of the vertex-facet
+   incidence graph. Where the oracle above minimises over all M! facet relabellings, this hands
+   the whole quotient to CanonicalGraph, applied to the graph ComplexAutomorphismIncidenceGraph
+   builds for the automorphism-group order -- vertices and facets as nodes, with a rigid triangle
+   hung off every facet node so that no isomorphism can exchange a vertex node and a facet node.
+   Two complexes are then isomorphic exactly when their graphs are, so the sorted edge list of the
+   canonical graph is a complete invariant, at a cost per complex that does not grow with M.
+   The test pins more than the count. Per point it returns {U, #keys, #joint forms, #(key, form)
+   pairs, merges}: the key and the joint canonical form above must induce the SAME partition of
+   the covering M-sets -- as many pairs as keys and as forms -- and the partition must merge
+   (fewer classes than sets), so a key that separated everything or merged everything cannot
+   pass. The points are the oracle's above, less the single-complex (1,3,3) where nothing can
+   merge, plus (2,5,6), where the block-vector signature of section 7.2 first fails. *)
+VerificationTest[
+    Module[{key, form, row},
+        key = Function[f, Sort[Sort /@ (List @@@ EdgeList[CanonicalGraph[
+            ECGrav`Private`ComplexAutomorphismIncidenceGraph[f]]])]];
+        form = Function[{s, M, n, taus},
+            Module[{rows = Table[Select[Range[M], MemberQ[s[[#]], v] &], {v, n}]},
+                First[Sort[Table[
+                    SortBy[Sort /@ (rows /. Thread[Range[M] -> tau]), {-Length[#] &, # &}],
+                    {tau, taus}]]]]];
+        row = Function[{p, M, n},
+            Module[{sets, taus, ks, fs},
+                sets = Select[Subsets[Subsets[Range[n], {p}], {M}], Union @@ # === Range[n] &];
+                taus = Permutations[Range[M]];
+                ks = key /@ sets;
+                fs = form[#, M, n, taus] & /@ sets;
+                {ECGrav`NumUnlabeledPureComplexes[p, M, n], Length[Union[ks]], Length[Union[fs]],
+                    Length[Union[Transpose[{ks, fs}]]], Length[sets] > Length[Union[ks]]}]];
+        row @@@ {{2, 3, 4}, {2, 4, 5}, {3, 3, 5}, {3, 4, 5}, {3, 3, 6}, {4, 3, 6}, {2, 5, 6}}],
+    {{2, 2, 2, 2, True}, {4, 4, 4, 4, True}, {3, 3, 3, 3, True}, {5, 5, 5, 5, True},
+     {3, 3, 3, 3, True}, {4, 4, 4, 4, True}, {9, 9, 9, 9, True}},
+    TestID -> "NumUnlabeledPureComplexes-canonical-graph"
+];
+
 (* The derivation, not just its endpoints. Burnside over S_n says the class count is the average
    over sigma of the number of sigma-invariant covering M-sets; here those fixed sets are counted
    by explicit enumeration instead of through the orbit polynomial Product (1+z^d)^n_d and the
