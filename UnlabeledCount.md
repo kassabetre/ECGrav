@@ -336,14 +336,95 @@ f_\lambda(j) \;=\; [x^p] \prod_k \bigl(1 + x^{\,k/\gcd(k,j)}\bigr)^{\gcd(k,j)\,m
 ```
 
 and $`U(p,M,n) = A(p,M,n) - A(p,M,n-1)`$ by §2.2. Each piece is one earlier subsection. The outer sum
-is §2.3. $`|\mathrm{Fix}(\lambda)|`$ is the coefficient of $`\prod_d (1+z^d)^{n_d}`$ by §2.4. §2.6's logarithm
-writes that product as $`\exp\bigl(\sum_j \ell(j)\, z^j/j\bigr)`$, and
-$`\sum_j \ell(j)\, z^j/j = \sum_j f(j)\,(z^j - z^{2j})/j`$ because the $`z^{2j}`$ half is exactly the
-correction $`-2f(j/2)`$ at even $`j`$. §2.5 gives $`f_\lambda`$ from $`\lambda`$ alone. Only $`j \le M`$ reaches
-$`z^M`$ — and in the $`z^{2j}`$ half only $`2j \le M`$ — while $`f_\lambda(j) = f_\lambda(\gcd(j,L))`$ with $`L`$
-the lcm of the cycle lengths, so few distinct values of $`f`$ are ever evaluated. The code does not
-exponentiate: for each $`\lambda`$ it runs §2.6's recurrence, which yields the same coefficients one at
-a time.
+is §2.3. $`|\mathrm{Fix}(\lambda)|`$ is $`[z^M]\,P(z)`$ with $`P(z) = \prod_d (1+z^d)^{n_d}`$, by §2.4. §2.5
+gives $`f_\lambda`$ from $`\lambda`$ alone. The step that joins them is an identity of whole power
+series, so it holds coefficient by coefficient, $`[z^M]`$ included. For $`\sigma`$ of cycle type
+$`\lambda`$ and $`f = f_\lambda`$:
+
+```math
+\prod_{d \ge 1} (1+z^d)^{n_d} \;=\; \exp\Bigl(\,\sum_{j \ge 1} f(j)\, \frac{z^j - z^{2j}}{j}\Bigr).
+```
+
+*Proof.* These are identities of formal power series. $`P`$ is a polynomial with $`P(0) = 1`$, so
+$`\log P`$ is a power series with no constant term and $`\exp(\log P) = P`$. Only Lemma A of §2.6 is
+used.
+
+*Step 1: one factor.* Since $`1 + w = (1 - w^2)/(1 - w)`$ and $`-\log(1 - w) = \sum_{i \ge 1} w^i/i`$,
+
+```math
+\log(1 + w) \;=\; -\log(1 - w) + \log(1 - w^2) \;=\; \sum_{i \ge 1} \frac{w^i - w^{2i}}{i},
+```
+
+which is $`w - \tfrac12 w^2 + \tfrac13 w^3 - \cdots`$ (the $`w^2`$ coefficient is $`-1 + \tfrac12`$), as it
+should be. Put $`w = z^d`$ for each factor.
+
+*Step 2: the product.* The logarithm turns the product into a sum:
+
+```math
+\log P(z) \;=\; \sum_d n_d \log(1 + z^d) \;=\; \sum_d \sum_{i \ge 1} n_d\, \frac{z^{di} - z^{2di}}{i}.
+```
+
+*Step 3: regroup by exponent.* In the first half, $`z^j`$ comes from the pairs $`(d, i)`$ with
+$`di = j`$, that is $`d \mid j`$ and $`i = j/d`$; only finitely many pairs reach any one power, so the
+regrouping is allowed. Since $`1/i = d/j`$, each pair contributes $`d\,n_d\, z^j/j`$, and by Lemma A
+
+```math
+\sum_d \sum_{i \ge 1} n_d\, \frac{z^{di}}{i} \;=\; \sum_{j \ge 1} \frac{z^j}{j} \sum_{d \mid j} d\,n_d \;=\; \sum_{j \ge 1} f(j)\, \frac{z^j}{j}.
+```
+
+The second half is the same double sum with $`z^2`$ in place of $`z`$, so it is
+$`\sum_j f(j)\, z^{2j}/j`$. This is where the $`n_d`$ drop out: Lemma A says the weighted divisor sum
+$`\sum_{d \mid j} d\,n_d`$ is the fixed-point count $`f(j)`$.
+
+*Step 4: exponentiate.* So $`\log P(z) = \sum_j f(j)\,(z^j - z^{2j})/j`$. Exponentiating gives the
+identity, and taking $`[z^M]`$ inside §2.3's sum gives the formula for $`A`$. $`\square`$
+
+**Example.** $`\sigma = (1\,2\,3)(4\,5)(6)`$ at $`p = 2`$, as in §2.6's Examples 1 and 2: $`n_1 = 1`$,
+$`n_2 = 1`$, $`n_3 = 2`$, $`n_6 = 1`$, and $`f(1), f(2), f(3) = 1, 3, 7`$. Step 3's regrouping, as the
+coefficient of $`z^j/j`$:
+
+| $`j`$ | pairs $`(d, i)`$ with $`di = j`$ | $`\sum_{d \mid j} d\,n_d`$ | $`f(j)`$ |
+| --- | --- | --- | --- |
+| 1 | $`(1,1)`$ | $`1`$ | 1 |
+| 2 | $`(1,2)`$, $`(2,1)`$ | $`1 + 2 = 3`$ | 3 |
+| 3 | $`(1,3)`$, $`(3,1)`$ | $`1 + 6 = 7`$ | 7 |
+
+So the exponent is $`f(1)(z - z^2) + f(2)\, z^2/2 + f(3)\, z^3/3 + O(z^4) = z + \tfrac12 z^2 + \tfrac73 z^3 + O(z^4)`$,
+the $`-z^2`$ being the $`z^{2j}`$ half at $`j = 1`$. Its square is $`z^2 + z^3 + O(z^4)`$ and its cube
+$`z^3 + O(z^4)`$, so
+
+```math
+\begin{aligned}
+\exp(\cdots) &\;=\; 1 + \bigl(z + \tfrac12 z^2 + \tfrac73 z^3\bigr) + \tfrac12\bigl(z^2 + z^3\bigr) + \tfrac16 z^3 + O(z^4) \\
+&\;=\; 1 + z + z^2 + 3z^3 + O(z^4),
+\end{aligned}
+```
+
+the orbit product $`(1+z)(1+z^2)(1+z^3)^2(1+z^6) = 1 + z + z^2 + 3z^3 + \cdots`$ of Example 2.
+
+**The same exponent through §2.6's $`\ell`$.** §2.6's Step 3 shows $`zP'/P = \sum_m \ell(m)\, z^m`$. The
+left side is $`z\,(\log P)'`$ and $`\log P(0) = 0`$, so integrating term by term gives
+$`\log P = \sum_m \ell(m)\, z^m/m`$. With $`\ell(m) = f(m)`$ at odd $`m`$ and $`f(m) - 2f(m/2)`$ at even $`m`$,
+the $`f(m)`$ parts give $`\sum_m f(m)\, z^m/m`$, and at $`m = 2j`$ the correction is
+$`-2f(j)\, z^{2j}/(2j) = -f(j)\, z^{2j}/j`$: the $`2`$ cancels the $`1/m`$, so the $`z^{2j}`$ half is exactly
+that correction. The two routes make the same sign split. §2.6's Step 4 splits the alternating sign
+of its Step 2 as $`(-1)^{i-1} = 1 - 2\,[i \text{ even}]`$, that is $`w/(1+w) = \sum_i w^i - 2\sum_i w^{2i}`$,
+and applying $`w\, d/dw`$ to Step 1's identity gives exactly that.
+
+**Without logarithms.** Put $`Q(z) = \exp\bigl(\sum_m \ell(m)\, z^m/m\bigr)`$. Then
+$`zQ' = \bigl(\sum_m \ell(m)\, z^m\bigr)\, Q`$, so its coefficients satisfy
+$`m\,q(m) = \sum_{k=1}^{m} \ell(k)\, q(m-k)`$ with $`q(0) = 1`$, the recurrence §2.6 proved for the
+coefficients $`c(m)`$ of $`P`$. It fixes each coefficient from the earlier ones, so $`q = c`$ and
+$`Q = P`$. This is why the code does not exponentiate: for each $`\lambda`$ it runs §2.6's recurrence,
+which computes the exponential one coefficient at a time.
+
+**Truncation.** Every term of the exponent has degree at least $`1`$, so a term of degree above $`M`$
+reaches only degrees above $`M`$: $`z^M`$ needs only $`j \le M`$, and in the $`z^{2j}`$ half only
+$`2j \le M`$. And $`f_\lambda(j) = f_\lambda(\gcd(j,L))`$ with $`L`$ the lcm of the cycle lengths
+(Lemma C), so few distinct values of $`f`$ are ever evaluated.
+
+The identity was checked with the exponential expanded directly as a sum of powers, not through the
+recurrence, for every cycle type with $`n \le 7`$ and $`p \le 3`$, through $`z^{12}`$: 128 cases.
 
 Two equivalent forms:
 
