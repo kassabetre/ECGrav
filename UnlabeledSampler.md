@@ -218,6 +218,137 @@ ordering factor cancels out of the weights. The invariant that makes this work i
 $`t`$ the number still to pick — each completing set counted once per choice of its next element.
 Asserted at **every step of every draw** in testing: 0 violations in ~4,600 steps.
 
+### A worked draw at $`\{p,M,n\} = \{2,4,5\}`$
+
+Four edges covering five vertices. It is small enough to follow by hand, but every step does real
+work: several cycle types carry weight, the inclusion–exclusion for covering has nonzero
+correction terms, one cycle type has two admissible profiles, candidate orbits share buckets, and
+one bucket is shut out by covering. Every number below comes from the shipped helpers
+(`RandULPCTypeWeights`, `RandULPCOrbits`, `RandULPCProfiles`, `RandULPCCCov`, `RandULPCComps`), and the
+draw is a seeded run of the same logic as `RandULPCDraw`.
+
+**The target.** $`U(2,4,5) = 4`$, and the four classes have very different automorphism groups:
+
+| class | $`\lvert\mathrm{Aut}\rvert`$ | labelled complexes | uniform labelled draw | target |
+| --- | --- | --- | --- | --- |
+| path $`P_5`$ | 2 | 60 | $`4/9`$ | $`1/4`$ |
+| chair (a vertex of degree 3 with one leg extended) | 2 | 60 | $`4/9`$ | $`1/4`$ |
+| triangle plus an edge, $`K_3 \cup K_2`$ | 12 | 10 | $`2/27`$ | $`1/4`$ |
+| star $`K_{1,4}`$ | 24 | 5 | $`1/27`$ | $`1/4`$ |
+
+The labelled complexes total $`\mathrm{VL}(2,4,5) = 135`$, which is why a uniform labelled draw is so
+far from the target.
+
+**Step 1: the cycle type.**
+
+| $`\lambda`$ | $`n!/z_\lambda`$ | $`\lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$ | weight |
+| --- | --- | --- | --- |
+| $`(5)`$ | 24 | 0 | 0 |
+| $`(4,1)`$ | 30 | 1 | 30 |
+| $`(3,2)`$ | 20 | 1 | 20 |
+| $`(3,1,1)`$ | 20 | 3 | 60 |
+| $`(2,2,1)`$ | 15 | 7 | 105 |
+| $`(2,1,1,1)`$ | 10 | 13 | 130 |
+| $`(1^5)`$ | 1 | 135 | 135 |
+
+The weights sum to $`480 = 5! \cdot 4`$, which is I1. For $`(2,1,1,1)`$ the inclusion–exclusion of §5
+has one nonzero correction. There are $`\lvert\mathrm{Fix}(2,1,1,1)\rvert = 22`$ invariant 4-sets, of
+which $`3\,\lvert\mathrm{Fix}(2,1,1)\rvert = 3 \cdot 3 = 9`$ miss one of the three fixed points, so
+$`\lvert\mathrm{Fix_{cov}}\rvert = 22 - 9 = 13`$. Every other term vanishes, because four edges cannot
+fit on three vertices. The draw takes $`(2,1,1,1)`$ with probability $`130/480 = 13/48`$.
+
+**Step 2: the canonical $`\sigma`$.** For $`(2,1,1,1)`$ this is $`\sigma_\lambda = (1\,2)`$, with cycles
+$`c_1 = \{1,2\}`$, $`c_2 = \{3\}`$, $`c_3 = \{4\}`$, $`c_4 = \{5\}`$. Its $`\langle\sigma\rangle`$-orbits on
+the ten edges are
+
+| orbit | size | support | members |
+| --- | --- | --- | --- |
+| $`O_1`$ | 1 | $`c_1`$ | $`\{1,2\}`$ |
+| $`O_2`$ | 2 | $`c_1, c_2`$ | $`\{1,3\},\{2,3\}`$ |
+| $`O_3`$ | 2 | $`c_1, c_3`$ | $`\{1,4\},\{2,4\}`$ |
+| $`O_4`$ | 2 | $`c_1, c_4`$ | $`\{1,5\},\{2,5\}`$ |
+| $`O_5`$ | 1 | $`c_2, c_3`$ | $`\{3,4\}`$ |
+| $`O_6`$ | 1 | $`c_2, c_4`$ | $`\{3,5\}`$ |
+| $`O_7`$ | 1 | $`c_3, c_4`$ | $`\{4,5\}`$ |
+
+so $`n_1 = 4`$ and $`n_2 = 3`$.
+
+**Step 3: the size profile.** A profile needs $`a_1 + 2a_2 = 4`$:
+
+| profile $`(a_1, a_2)`$ | full term | minus one fixed point deleted | $`C_{\mathrm{cov}}(\lambda,a)`$ | probability |
+| --- | --- | --- | --- | --- |
+| $`(4,0)`$ | $`\binom44 = 1`$ | $`3\binom24 = 0`$ | 1 | $`1/13`$ |
+| $`(2,1)`$ | $`\binom42\binom31 = 18`$ | $`3\binom22\binom21 = 6`$ | 12 | $`12/13`$ |
+| $`(0,2)`$ | $`\binom32 = 3`$ | $`3\binom22 = 3`$ | 0 | 0 |
+
+The deleted-point counts use the orbit counts of the reduced type $`(2,1,1)`$, which has
+$`n_1 = 2`$ and $`n_2 = 2`$. Profile $`(0,2)`$ is admissible in size but cannot cover: two pair orbits
+reach only two of the three fixed points. The profile column sums to $`13 = \lvert\mathrm{Fix_{cov}}\rvert`$,
+which is I2. The draw takes $`(2,1)`$: two orbits of size 1 and one of size 2.
+
+**Step 4: the orbits.** Candidates are bucketed by (size, support $`\cap\,\mathcal{U}`$). A bucket's
+weight is its size times $`K`$ of the state it leads to, and within a bucket the orbit is uniform.
+
+*First orbit.* Nothing is covered, so $`\mathcal{U} = \{c_1,c_2,c_3,c_4\}`$, $`K = 12`$ and $`t = 3`$.
+Every orbit is its own bucket:
+
+| bucket | orbits | $`K`$ after | weight | probability |
+| --- | --- | --- | --- | --- |
+| $`(1, \{c_1\})`$ | $`O_1`$ | 3 | 3 | $`1/12`$ |
+| $`(2, \{c_1,c_2\})`$, $`(2, \{c_1,c_3\})`$, $`(2, \{c_1,c_4\})`$ | $`O_2`$, $`O_3`$, $`O_4`$ | 4 each | 4 each | $`1/9`$ each |
+| $`(1, \{c_2,c_3\})`$, $`(1, \{c_2,c_4\})`$, $`(1, \{c_3,c_4\})`$ | $`O_5`$, $`O_6`$, $`O_7`$ | 7 each | 7 each | $`7/36`$ each |
+
+The weights sum to $`36 = t\,K`$, which is I3. The draw takes $`O_6 = \{3,5\}`$, covering $`c_2`$ and $`c_4`$.
+
+*Second orbit.* Now $`\mathcal{U} = \{c_1, c_3\}`$, $`K = 7`$ and $`t = 2`$, and buckets start to merge:
+
+| bucket | orbits | $`K`$ after | weight | probability |
+| --- | --- | --- | --- | --- |
+| $`(1, \{c_1\})`$ | $`O_1`$ | 1 | 1 | $`1/14`$ |
+| $`(2, \{c_1\})`$ | $`O_2`$, $`O_4`$ | 2 | 4 | $`2/7`$ |
+| $`(2, \{c_1,c_3\})`$ | $`O_3`$ | 3 | 3 | $`3/14`$ |
+| $`(1, \{c_3\})`$ | $`O_5`$, $`O_7`$ | 3 | 6 | $`3/7`$ |
+
+The weights sum to $`14 = t\,K`$. The draw takes the bucket $`(2,\{c_1\})`$ and, uniformly within it,
+$`O_2 = \{\{1,3\},\{2,3\}\}`$. This covers $`c_1`$ and uses up the one orbit of size 2.
+
+*Third orbit.* Now $`\mathcal{U} = \{c_3\}`$, $`K = 2`$ and $`t = 1`$:
+
+| bucket | orbits | $`K`$ after | weight | probability |
+| --- | --- | --- | --- | --- |
+| $`(1, \varnothing)`$ | $`O_1`$ | 0 | 0 | 0 |
+| $`(1, \{c_3\})`$ | $`O_5`$, $`O_7`$ | 1 | 2 | 1 |
+
+$`O_1`$ is still available by size but would leave vertex 4 uncovered, so its completion count is 0.
+This is covering being enforced during the draw rather than by rejection (§9). The draw takes
+$`O_5 = \{3,4\}`$.
+
+This ordered path had probability $`\tfrac{7}{36} \cdot \tfrac27 \cdot \tfrac12 \cdot \tfrac12 = \tfrac1{72}`$.
+The same three orbits arrive in $`3! = 6`$ orders, each with probability $`1/72`$, so the set has
+probability $`1/12 = 1/C_{\mathrm{cov}}(\lambda,a)`$, as every set with this profile does.
+
+**Step 5: relabel.** The set is $`S = \{\{3,5\},\{1,3\},\{2,3\},\{3,4\}\}`$, the star $`K_{1,4}`$ centred at
+vertex 3, which $`\sigma = (1\,2)`$ visibly fixes. The uniform relabelling drawn,
+$`\pi = (1\,2)`$, happens to be an automorphism of $`S`$, so the output is the same facet list.
+
+**Why every class comes out at exactly $`1/4`$.** For each class, count the $`\sigma_\lambda`$-fixed
+covering sets of that class, for each cycle type, and weight by $`n!/z_\lambda`$:
+
+| class | $`(4,1)`$ ×30 | $`(3,2)`$ ×20 | $`(3,1,1)`$ ×20 | $`(2,2,1)`$ ×15 | $`(2,1,1,1)`$ ×10 | $`(1^5)`$ ×1 | weighted total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| $`P_5`$ | 0 | 0 | 0 | 4 | 0 | 60 | 120 |
+| chair | 0 | 0 | 0 | 0 | 6 | 60 | 120 |
+| $`K_3 \cup K_2`$ | 0 | 1 | 1 | 2 | 4 | 10 | 120 |
+| $`K_{1,4}`$ | 1 | 0 | 2 | 1 | 3 | 5 | 120 |
+| column total | 1 | 1 | 3 | 7 | 13 | 135 | 480 |
+
+Every row is $`\sum_{S \in c} \lvert\mathrm{Stab}(S)\rvert = n! = 120`$, the orbit–stabiliser count of §3, so
+every class gets $`120/480 = 1/4`$; the column totals are the $`\lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$ of
+step 1. The identity column alone is the uniform labelled draw. The star collects only 5 of its
+120 there; the other 115 come from the nontrivial cycle types, in proportion to its 24
+automorphisms. Following every branch of the shipped draw exactly, rather than counting fixed
+sets, gives the same $`1/4`$ for each class, with I3 holding at every step.
+
 ---
 
 ## 9. Covering during the draw, not after
