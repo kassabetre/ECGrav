@@ -273,6 +273,103 @@ Two supporting details:
 A wrong key here would still emit perfectly plausible complexes from the wrong distribution, so
 the test suite checks the two invariants directly (§10).
 
+### A worked draw at $`\{p,M,n\} = \{3,3,5\}`$
+
+Small enough to follow by hand, but every mechanism above fires. A nontrivial cycle type carries
+real weight, the grouped draw offers more than one group at two of its three stages, and the
+classes have different stabilisers, which is exactly where "uniform over tuples" and "uniform over
+classes" part company. It is also the parameter set of the chi-square test in §12. Every number
+below comes from the shipped helpers (`RandFLPCTypeWeights`, `RandFLPCCandTable`,
+`RandFLPCCompletions`), and the draw is a seeded run of the same logic as `RandFLPCOne`.
+
+**The target.** $`s_F(3,3,5) = 7`$. There are $`3! \cdot 100 = 600`$ tuples in $`X`$, since 100 is the
+vertex-labeled count. Four of the seven classes have a stabiliser of order 2, and so 60 tuples each;
+the other three have a trivial stabiliser and 120 tuples each. A uniform tuple would therefore put
+$`1/10`$ on each of the first four classes and $`1/5`$ on each of the last three. The sampler must put
+$`1/7`$ on every one.
+
+**Step 1: the cycle type.** Only types with all parts $`\le 3`$ occur (§4):
+
+| $`\lambda`$ | $`n!/z_\lambda`$ | $`N(\lambda,3)`$ | $`C(\lambda,3,0,\lambda)`$ | $`w(\lambda)`$ |
+| --- | --- | --- | --- | --- |
+| $`(3,2)`$ | 20 | 1 | 0 | 0 |
+| $`(3,1,1)`$ | 20 | 1 | 0 | 0 |
+| $`(2,2,1)`$ | 15 | 2 | 0 | 0 |
+| $`(2,1,1,1)`$ | 10 | 4 | 24 | 240 |
+| $`(1^5)`$ | 1 | 10 | 600 | 600 |
+
+The first three types offer fewer than $`M = 3`$ admissible facets, so every falling factorial in
+their inclusion–exclusion vanishes. The weights sum to $`840 = 5! \cdot 7`$, which is (I1). The draw
+takes $`(2,1,1,1)`$ with probability $`240/840 = 2/7`$ and the identity type with probability $`5/7`$.
+Suppose it takes $`(2,1,1,1)`$.
+
+**Step 2: the blocks.** The shuffle gives $`(1,4,3,2,5)`$, and cutting it to the sizes
+$`(2,1,1,1)`$ gives the blocks $`b_1 = \{1,4\}`$, $`b_2 = \{3\}`$, $`b_3 = \{2\}`$, $`b_4 = \{5\}`$. This is
+$`\sigma = (1\,4)`$; the cyclic order inside a block never matters (§4).
+
+**The candidates.** A candidate is a set of blocks of total size 3, so there are $`N(\lambda,3) = 4`$
+of them. Their keys are packed in base $`p + 1 = 4`$, as
+$`\mathrm{code} = \kappa_1 + 4\kappa_2 + 16\kappa_3`$:
+
+| candidate | blocks | facet | key $`\kappa(S \cap U)`$ | code |
+| --- | --- | --- | --- | --- |
+| $`c_1`$ | $`b_1, b_2`$ | $`\{1,3,4\}`$ | $`(1,1,0)`$ | 5 |
+| $`c_2`$ | $`b_1, b_3`$ | $`\{1,2,4\}`$ | $`(1,1,0)`$ | 5 |
+| $`c_3`$ | $`b_1, b_4`$ | $`\{1,4,5\}`$ | $`(1,1,0)`$ | 5 |
+| $`c_4`$ | $`b_2, b_3, b_4`$ | $`\{2,3,5\}`$ | $`(3,0,0)`$ | 3 |
+
+Any three distinct candidates cover all four blocks, so all $`4 \cdot 3 \cdot 2 = 24`$ ordered choices
+are $`\sigma`$-fixed tuples, which is the $`C(\lambda,3,0,\lambda) = 24`$ of step 1.
+
+**Step 3, first facet ($`j = 0`$).** Nothing is covered yet, so $`\kappa(U) = (3,1,0)`$:
+
+| group (code) | members | $`\lvert g \rvert`$ | $`\kappa(U) - \text{key}`$ | $`C(\lambda,3,1,\cdot)`$ | weight | probability |
+| --- | --- | --- | --- | --- | --- | --- |
+| 5 | $`c_1, c_2, c_3`$ | 3 | $`(2,0,0)`$ | 6 | 18 | $`3/4`$ |
+| 3 | $`c_4`$ | 1 | $`(0,1,0)`$ | 6 | 6 | $`1/4`$ |
+
+The weights sum to $`24 = C(\lambda,3,0,\lambda)`$, as the recursive method requires. The draw takes
+group 5 and then, uniformly within it, $`c_2`$: so $`F_1 = \{1,2,4\}`$. This covers $`b_1`$ and $`b_3`$ for
+the first time. The candidates containing $`b_1`$ ($`c_1, c_2, c_3`$) lose the place value 4, those
+containing $`b_3`$ ($`c_2, c_4`$) lose 1, and $`c_2`$ is marked spent. The codes are now
+$`(1, \text{spent}, 1, 2)`$.
+
+**Step 3, second facet ($`j = 1`$).** $`b_2`$ and $`b_4`$ are uncovered, so $`\kappa(U) = (2,0,0)`$:
+
+| group (code) | members | $`\lvert g \rvert`$ | $`\kappa(U) - \text{key}`$ | $`C(\lambda,3,2,\cdot)`$ | weight | probability |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | $`c_1, c_3`$ | 2 | $`(1,0,0)`$ | 2 | 4 | $`2/3`$ |
+| 2 | $`c_4`$ | 1 | $`(0,0,0)`$ | 2 | 2 | $`1/3`$ |
+
+The weights sum to $`6 = C(\lambda,3,1,(2,0,0))`$. The draw takes group 2, so $`F_2 = \{2,3,5\}`$. This
+covers $`b_2`$ and $`b_4`$, and every remaining code drops to 0.
+
+**Step 3, third facet ($`j = 2`$).** Everything is covered, and the one group holds $`c_1`$ and $`c_3`$,
+each with $`C(\lambda,3,3,0) = 1`$. The draw takes $`c_1`$ uniformly, so $`F_3 = \{1,3,4\}`$.
+
+Given the cycle type and the blocks, this path had probability
+$`\tfrac34 \cdot \tfrac13 \cdot \tfrac13 \cdot \tfrac12 = \tfrac1{24} = 1/C(\lambda,3,0,\lambda)`$. So does
+every other path: each of the 24 $`\sigma`$-fixed tuples is equally likely.
+
+**Step 4: the output** is $`(F_1,F_2,F_3) = (\{1,2,4\}, \{2,3,5\}, \{1,3,4\})`$: $`F_1`$ and $`F_3`$ share
+the edge $`\{1,4\}`$, and $`F_2`$ meets each of them in one vertex. Every facet is a union of blocks, so
+$`\sigma = (1\,4)`$ fixes the tuple. The output therefore lies in a class with a stabiliser of order 2,
+as every draw from a nontrivial cycle type must.
+
+**Why every class comes out at exactly $`1/7`$.** Enumerating every shuffle and every branch of
+step 3, for both cycle types, gives each tuple's probability exactly:
+
+| $`\lvert\mathrm{Stab}\rvert`$ | via $`(1^5)`$ | via $`(2,1,1,1)`$ | per tuple | tuples per class | per class |
+| --- | --- | --- | --- | --- | --- |
+| 1 | $`\tfrac57 \cdot \tfrac1{600} = \tfrac1{840}`$ | 0 | $`\tfrac1{840}`$ | 120 | $`\tfrac17`$ |
+| 2 | $`\tfrac1{840}`$ | $`\tfrac27 \cdot \tfrac1{240} = \tfrac1{840}`$ | $`\tfrac1{420}`$ | 60 | $`\tfrac17`$ |
+
+The identity branch alone is a uniform tuple, which would give the $`1/10`$ and $`1/5`$ above. The
+$`(2,1,1,1)`$ branch adds exactly one more pair per tuple on the classes that have an automorphism:
+the 240 pairs of that slice of $`\Phi`$ are the $`4 \times 60`$ tuples with a stabiliser of order 2,
+each with its one non-identity stabiliser element. This is the orbit–stabiliser count of §3, in
+numbers: each tuple has probability $`|\mathrm{Stab}(x)|/(n!\,s_F) = |\mathrm{Stab}(x)|/840`$.
+
 ---
 
 ## 8. Vertex count free
