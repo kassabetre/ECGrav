@@ -308,7 +308,7 @@ N(\lambda,p) \;=\; \sum_{\nu \,:\, \sum_k k\,\nu_k = p}\ \prod_k \binom{m_k}{\nu
 ```
 
 which is the form `NumFLPCNCoeff` evaluates. It is a truncated cycle-index-style generating
-function, the same one the sampler calls $`N(\nu)`$.
+function, the same one the sampler uses, under the same name $`N(\lambda,p)`$.
 
 > **It counts sub-collections of cycles, not sub-multisets of cycle lengths.** Cycles of equal
 > length are distinguishable, which is exactly what the $`\binom{m_k}{\nu_k}`$ record: each $`\nu`$ in

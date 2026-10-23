@@ -7,9 +7,13 @@
 > the draw rather than by rejection, and how uniformity is established — by exact identities
 > rather than by goodness-of-fit.
 
-Notation as in `UnlabeledCount.md`: $`p`$ purity, $`M`$ facet order, $`n`$ vertex count, $`\lambda
-\vdash n`$ a cycle type with $`z_\lambda = \prod_k k^{m_k} m_k!`$, so $`n!/z_\lambda`$ permutations
-have that type. $`U(p,M,n)`$ is `NumUnlabeledPureComplexes`.
+Notation as in `UnlabeledCount.md`: $`p`$ purity, $`M`$ facet order, $`n`$ vertex count,
+$`\lambda \vdash n`$ an integer partition used as a cycle type, $`m_k`$ the number of parts of
+$`\lambda`$ equal to $`k`$, and $`z_\lambda = \prod_k k^{m_k} m_k!`$, so $`n!/z_\lambda`$ permutations
+have that type. $`U(p,M,n)`$ is `NumUnlabeledPureComplexes`, $`\mathrm{VL}(p,M,n)`$ is
+`NumVertexLabeledPureComplexes`, $`A(p,M,n)`$ is the count with covering not required
+(`UnlabeledCount.md` §2.2), and $`n_d`$ is the number of $`\langle\sigma\rangle`$-orbits of size $`d`$
+on $`p`$-subsets (§2.4 there).
 
 ---
 
@@ -48,18 +52,18 @@ complexes from a subtly wrong distribution.
 Let
 
 ```math
-P \;=\; \{(\sigma, S) \;:\; \sigma \in S_n,\ S \text{ a } \sigma\text{-invariant covering } M\text{-set}\}.
+\Phi \;=\; \{(\sigma, S) \;:\; \sigma \in S_n,\ S \text{ a } \sigma\text{-invariant covering } M\text{-set}\}.
 ```
 
 For any $`S_n`$-orbit $`O`$ (i.e. any isomorphism class),
 
 ```math
-\#\{(\sigma,S) \in P : S \in O\} \;=\; \sum_{S \in O} |\mathrm{Stab}(S)| \;=\; |O| \cdot \frac{n!}{|O|} \;=\; n!,
+\#\{(\sigma,S) \in \Phi : S \in O\} \;=\; \sum_{S \in O} |\mathrm{Stab}(S)| \;=\; |O| \cdot \frac{n!}{|O|} \;=\; n!,
 ```
 
 **the same number for every orbit, whatever its size.** So drawing $`(\sigma,S)`$ uniformly from
-$`P`$ and discarding $`\sigma`$ leaves the class exactly uniform. No automorphism weighting, no
-rejection. ($`|P| = \sum_\sigma \mathrm{Fix_{cov}}(\sigma) = n!\,U(p,M,n)`$, which is the identity
+$`\Phi`$ and discarding $`\sigma`$ leaves the class exactly uniform. No automorphism weighting, no
+rejection. ($`|\Phi| = \sum_\sigma \lvert\mathrm{Fix_{cov}}(\sigma)\rvert = n!\,U(p,M,n)`$, which is the identity
 §10 checks.)
 
 This is the same argument that made `RandomUniformFacetLabeledPureSimplicialComplex` exact; only
@@ -70,7 +74,7 @@ the inner object changes, from an ordered tuple to a $`\sigma`$-invariant set.
 ## 4. The five steps
 
 ```
-1.  λ  ~  ∝ (n!/z_λ) · Fix_cov(λ)                      cycle type of σ
+1.  λ  ~  ∝ (n!/z_λ) · |Fix_cov(λ)|                      cycle type of σ
 2.  work on the canonical σ_λ (cycles = consecutive blocks)
 3.  a  ~  ∝ C_cov(λ, a)   over profiles with Σ_d d·a_d = M       size profile
 4.  choose a_d distinct ⟨σ_λ⟩-orbits of size d, for each d, covering [n]
@@ -84,21 +88,21 @@ why steps 3 and 4 are phrased in orbits rather than facets.
 
 ## 5. Step 1 — the cycle type
 
-$`\mathrm{Fix_{cov}}(\lambda)`$ is the number of $`\sigma`$-invariant **covering** $`M`$-sets for
+$`\lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$ is the number of $`\sigma`$-invariant **covering** $`M`$-sets for
 $`\sigma`$ of type $`\lambda`$. The counter never forms this — it reaches covering by differencing
 $`U(n) = A(n) - A(n-1)`$ over the vertex count, which says nothing per cycle type — so the sampler
 supplies it, by inclusion–exclusion over **deleted cycles**:
 
 ```math
-\mathrm{Fix_{cov}}(\lambda) \;=\; \sum_{\mu \subseteq \lambda} (-1)^{\ell(\lambda)-\ell(\mu)} \prod_k \binom{m_k(\lambda)}{m_k(\mu)} \cdot \mathrm{Fix}(\mu),
+\lvert\mathrm{Fix_{cov}}(\lambda)\rvert \;=\; \sum_{\rho \subseteq \lambda} (-1)^{\ell(\lambda)-\ell(\rho)} \prod_k \binom{m_k(\lambda)}{m_k(\rho)} \cdot \lvert\mathrm{Fix}(\rho)\rvert,
 ```
 
-$`\mu`$ ranging over sub-multisets, $`\ell`$ the number of parts, and $`\mathrm{Fix}`$ the counter's own
+$`\rho`$ ranging over sub-multisets, $`\ell`$ the number of parts, and $`\lvert\mathrm{Fix}\rvert`$ the counter's own
 non-covering `NumULPCFixSets`. The identity behind it: the sets avoiding a cycle set $`T`$ are
 exactly the sets of the permutation with those cycles removed, so they are counted at the reduced
 cycle type. This one idea supplies every count in the sampler.
 
-The weight for $`\lambda`$ is $`(n!/z_\lambda)\cdot\mathrm{Fix_{cov}}(\lambda)`$. Cost of the whole
+The weight for $`\lambda`$ is $`(n!/z_\lambda)\cdot\lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$. Cost of the whole
 table is about $`3\times`$ a single call to the counter.
 
 ---
@@ -112,7 +116,7 @@ and applies a uniform $`\pi \in S_n`$ at the very end.
 This is legitimate because conjugation by $`\pi`$ is a bijection from $`\sigma_\lambda`$-invariant
 covering sets to $`\pi\sigma_\lambda\pi^{-1}`$-invariant ones, and $`\pi\sigma_\lambda\pi^{-1}`$
 ranges uniformly over the permutations of type $`\lambda`$. The pair $`(\sigma,S)`$ therefore comes
-out uniform over its slice of $`P`$.
+out uniform over its slice of $`\Phi`$.
 
 It matters for cost, not elegance: **every orbit computation becomes a function of $`\lambda`$
 alone**, so the orbit list, orbit-size counts, profiles and completion counts are memoised across
@@ -177,7 +181,7 @@ C_{\mathrm{cov}}(\lambda, a) \;=\; \sum_{T \subseteq \text{cycles}} (-1)^{|T|} \
 ```
 
 with $`n_d(T)`$ the orbits of size $`d`$ avoiding $`T`$. Summing over profiles returns
-$`\mathrm{Fix_{cov}}(\lambda)`$, which §10 checks.
+$`\lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$, which §10 checks.
 
 *(As a counting algorithm the $`S_M`$ route is not better — the outer loop shrinks from
 $`\mathrm{PartitionsP}(n)`$ to $`\mathrm{PartitionsP}(M)`$, but the inner sum over $`\sigma`$ no longer
@@ -190,25 +194,25 @@ collapses well. Its value is entirely this structural one.)*
 With the profile fixed, the task is: pick $`a_d`$ distinct orbits of size $`d`$ for each $`d`$, such
 that their supports cover every cycle.
 
-**Completion counts.** For a partial selection with $`\alpha_d`$ orbits of size $`d`$ used and $`U`$
+**Completion counts.** For a partial selection with $`\alpha_d`$ orbits of size $`d`$ used and $`\mathcal{U}`$
 still uncovered,
 
 ```math
-N(\alpha, U) \;=\; \sum_{T \subseteq U} (-1)^{|T|} \prod_d \binom{n_d(T) - \alpha_d}{\,a_d - \alpha_d\,}.
+K(\alpha, \mathcal{U}) \;=\; \sum_{T \subseteq \mathcal{U}} (-1)^{|T|} \prod_d \binom{n_d(T) - \alpha_d}{\,a_d - \alpha_d\,}.
 ```
 
 The subtraction is exactly right because an orbit already chosen has its support inside the
-*covered* cycles, so it avoids every $`T \subseteq U`$ and survives into every term — only its count
+*covered* cycles, so it avoids every $`T \subseteq \mathcal{U}`$ and survives into every term — only its count
 per size enters. Verified against brute force on 333 partial selections, 288 of them nonzero,
 zero mismatches.
 
-**The draw.** Orbits are taken one at a time, each weighted by $`N`$ of the state it leads to. This
+**The draw.** Orbits are taken one at a time, each weighted by $`K`$ of the state it leads to. This
 is exact by the chain rule, and it produces an *ordered sequence*; the order is then forgotten.
 Every valid set has the same number of orderings, so the underlying set is uniform, and the
 ordering factor cancels out of the weights. The invariant that makes this work is
 
 ```math
-\sum_{O \text{ candidate}} N(\text{state after } O) \;=\; t \cdot N(\text{state}),
+\sum_{O \text{ candidate}} K(\text{state after } O) \;=\; t \cdot K(\text{state}),
 ```
 
 $`t`$ the number still to pick — each completing set counted once per choice of its next element.
@@ -224,7 +228,7 @@ $`C_{\mathrm{all}}(\lambda,a) = \prod_d \binom{n_d}{a_d}`$ for the unconstrained
 acceptance is $`C_{\mathrm{cov}}/C_{\mathrm{all}}`$ and
 
 ```math
-\mathbb{E}[\text{trials}] \;=\; \sum_{\lambda,a} q(\lambda,a)\,\frac{C_{\mathrm{all}}}{C_{\mathrm{cov}}} \;=\; \frac{1}{n!\,U}\sum_\lambda \frac{n!}{z_\lambda}\,\mathrm{Fix}(\lambda) \;=\; \frac{A(p,M,n)}{U(p,M,n)}.
+\mathbb{E}[\text{trials}] \;=\; \sum_{\lambda,a} q(\lambda,a)\,\frac{C_{\mathrm{all}}}{C_{\mathrm{cov}}} \;=\; \frac{1}{n!\,U(p,M,n)}\sum_\lambda \frac{n!}{z_\lambda}\,\lvert\mathrm{Fix}(\lambda)\rvert \;=\; \frac{A(p,M,n)}{U(p,M,n)}.
 ```
 
 Two things follow. First, $`C_{\mathrm{cov}}`$ **cancels**: weighting $`\lambda`$ and $`a`$ toward
@@ -245,28 +249,27 @@ The worst case is always exactly $`n = pM`$. Hence covering is built into the co
 
 ## 10. Why it is uniform
 
-Uniformity is not inferred from goodness-of-fit. Three identities force it. ($`P(\cdot)`$ here is a
-probability, not the fixed-pair set of §3.)
+Uniformity is not inferred from goodness-of-fit. Three identities force it.
 
 | | identity | what it pins |
 | --- | --- | --- |
-| **I1** | $`\sum_\lambda (n!/z_\lambda)\,\mathrm{Fix_{cov}}(\lambda) = n!\,U(p,M,n)`$ | step 1 marginal |
-| **I2** | $`\sum_a C_{\mathrm{cov}}(\lambda,a) = \mathrm{Fix_{cov}}(\lambda)`$ | step 3 marginal |
-| **I3** | $`\sum_O N(\text{after } O) = t\,N(\text{state})`$ | step 4 draw is uniform |
+| **I1** | $`\sum_\lambda (n!/z_\lambda)\,\lvert\mathrm{Fix_{cov}}(\lambda)\rvert = n!\,U(p,M,n)`$ | step 1 marginal |
+| **I2** | $`\sum_a C_{\mathrm{cov}}(\lambda,a) = \lvert\mathrm{Fix_{cov}}(\lambda)\rvert`$ | step 3 marginal |
+| **I3** | $`\sum_O K(\text{after } O) = t\,K(\text{state})`$ | step 4 draw is uniform |
 
-Given I3 the conditional draw is uniform, so $`P(S \mid \lambda,a) = 1/C_{\mathrm{cov}}(\lambda,a)`$,
+Given I3 the conditional draw is uniform, so $`\Pr[S \mid \lambda,a] = 1/C_{\mathrm{cov}}(\lambda,a)`$,
 and the class probability telescopes:
 
 ```math
-P(c) \;=\; \sum_\lambda \frac{(n!/z_\lambda)\mathrm{Fix_{cov}}(\lambda)}{n!\,U(p,M,n)} \sum_a \frac{C_{\mathrm{cov}}(\lambda,a)}{\mathrm{Fix_{cov}}(\lambda)} \cdot \frac{\#\{S \in c \text{ with profile } a\}}{C_{\mathrm{cov}}(\lambda,a)} \;=\; \frac{1}{n!\,U(p,M,n)}\sum_\sigma \#\{S \in c : \sigma S = S\},
+\Pr[c] \;=\; \sum_\lambda \frac{(n!/z_\lambda)\lvert\mathrm{Fix_{cov}}(\lambda)\rvert}{n!\,U(p,M,n)} \sum_a \frac{C_{\mathrm{cov}}(\lambda,a)}{\lvert\mathrm{Fix_{cov}}(\lambda)\rvert} \cdot \frac{\#\{S \in c \text{ with profile } a\}}{C_{\mathrm{cov}}(\lambda,a)} \;=\; \frac{1}{n!\,U(p,M,n)}\sum_\sigma \#\{S \in c : \sigma S = S\},
 ```
 
-and the inner sum is $`\sum_{S \in c} |\mathrm{Stab}(S)| = n!`$. So $`P(c) = 1/U(p,M,n)`$ **for every class**.
+and the inner sum is $`\sum_{S \in c} |\mathrm{Stab}(S)| = n!`$. So $`\Pr[c] = 1/U(p,M,n)`$ **for every class**.
 
 That was also computed directly rather than sampled — enumerating the classes, summing the
 per-cycle-type fixed counts, and comparing — giving exactly $`1/U(p,M,n)`$ for every class on seven
 parameter sets, including the 15 classes of $`\{3,4,6\}`$. A third identity worth noting:
-$`\mathrm{Fix_{cov}}(1^n) = `$ `NumVertexLabeledPureComplexes`$`(p,M,n)`$, since the identity
+$`\lvert\mathrm{Fix_{cov}}(1^n)\rvert = \mathrm{VL}(p,M,n)`$, since the identity
 permutation's invariant covering sets *are* the vertex-labeled complexes — it pins the covering
 count against a function computed a wholly different way.
 
@@ -313,7 +316,7 @@ Three, each exact rather than heuristic:
 2. **Inclusion–exclusion over sub-multisets** with binomial weights: writing $`u_k`$ for the number
    of uncovered cycles of length $`k`$, a sub-multiset is a choice of how many of each length to
    take, so there are $`\prod_k(u_k{+}1)`$ terms instead of $`2^{\sum_k u_k}`$ subsets.
-3. **Candidates bucketed by $`(\text{size}, \mathrm{supp} \cap U)`$** — orbits sharing that pair lead
+3. **Candidates bucketed by $`(\text{size}, \mathrm{supp} \cap \mathcal{U})`$** — orbits sharing that pair lead
    to the same state, so one completion count serves a whole bucket.
 
 Together these took $`\{3,5,12\}`$ from 455 ms to 2.1 ms per sample.
@@ -354,7 +357,7 @@ In `Tests/PureComplexes.wlt`:
 | --- | --- |
 | `-weight-identity` | I1, over 120 parameter sets |
 | `-profile-marginals` | I2, every cycle type of every set |
-| `-fixcov-at-identity` | $`\mathrm{Fix_{cov}}(1^n)`$ = vertex-labeled count |
+| `-fixcov-at-identity` | $`\lvert\mathrm{Fix_{cov}}(1^n)\rvert`$ = vertex-labeled count |
 | `-valid-samples` | $`M`$ distinct $`p`$-subsets covering $`[n]`$, across 9 sets including $`n = pM`$ |
 | `-uniform-15-classes` | chi-square over the 15 classes of $`\{3,4,6\}`$ |
 | `-vertex-count-marginal` | `{p,M}` draws $`n`$ from `NumUnlabeledPureComplexes` |

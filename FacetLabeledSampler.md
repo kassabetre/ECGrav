@@ -8,11 +8,13 @@
 > how correctness is established — by exact identities rather than by goodness-of-fit.
 
 Notation: $`p`$ purity (every facet has $`p`$ vertices), $`M`$ facet order (number of facets), $`n`$
-vertex count. $`\lambda \vdash n`$ is a cycle type, written either as a partition or as its
-multiplicity vector $`(m_1,\dots,m_p)`$, with $`z_\lambda = \prod_k k^{m_k} m_k!`$, so $`n!/z_\lambda`$
-permutations of $`[n]`$ have that type. $`s_F(p,M,n)`$ is `NumFacetLabeledPureComplexes[p,M,n]`, and
-$`x^{(r)} = x(x-1)\cdots(x-r+1)`$ is the falling factorial. $`[n]`$ is $`\{1,\dots,n\}`$; separately,
-$`[x^k]f`$ denotes the coefficient of $`x^k`$ in a series $`f`$.
+vertex count, as in `FacetLabeledCount.md`, whose notation this document follows. $`\lambda \vdash n`$
+is an integer partition, used as a cycle type, $`m_k`$ the number of parts of $`\lambda`$ equal to
+$`k`$ (so $`\lambda`$ is also written as its multiplicity vector $`(m_1,\dots,m_p)`$), and
+$`z_\lambda = \prod_k k^{m_k} m_k!`$, so $`n!/z_\lambda`$ permutations of $`[n]`$ have that type.
+$`s_F(p,M,n)`$ is `NumFacetLabeledPureComplexes[p,M,n]`, $`x^{(r)} = x(x-1)\cdots(x-r+1)`$ is the
+falling factorial, and $`P(k)`$ is the number of integer partitions of $`k`$. $`[n]`$ is
+$`\{1,\dots,n\}`$; separately, $`[x^k]f`$ denotes the coefficient of $`x^k`$ in a series $`f`$.
 
 ---
 
@@ -90,24 +92,24 @@ specified here.
 Let
 
 ```math
-P \;=\; \{(\sigma, x) : \sigma \in S_n,\ x \in X,\ \sigma \cdot x = x\}
+\Phi \;=\; \{(\sigma, x) : \sigma \in S_n,\ x \in X,\ \sigma \cdot x = x\}
 ```
 
 be the set of **fixed pairs**. For any orbit $`O`$, the orbit–stabiliser theorem gives
 
 ```math
-\#\{(\sigma,x) \in P : x \in O\} \;=\; \sum_{x \in O} |\mathrm{Stab}(x)| \;=\; |O| \cdot \frac{n!}{|O|} \;=\; n!,
+\#\{(\sigma,x) \in \Phi : x \in O\} \;=\; \sum_{x \in O} |\mathrm{Stab}(x)| \;=\; |O| \cdot \frac{n!}{|O|} \;=\; n!,
 ```
 
 **the same number for every orbit, whatever its size.** So drawing $`(\sigma,x)`$ uniformly from
-$`P`$ and discarding $`\sigma`$ leaves the orbit exactly uniform. No rejection, and no
+$`\Phi`$ and discarding $`\sigma`$ leaves the orbit exactly uniform. No rejection, and no
 automorphism-order weighting to get wrong.
 
 This is the double-counting that proves the Cauchy–Frobenius (Burnside) lemma [1,2], read as a
 sampling recipe rather than a counting one; summing the display over orbits gives
-$`|P| = \sum_\sigma |\mathrm{Fix}(\sigma)| = n!\,s_F(p,M,n)`$, which is the identity §9 checks. The
+$`|\Phi| = \sum_\sigma |\mathrm{Fix}(\sigma)| = n!\,s_F(p,M,n)`$, which is the identity §9 checks. The
 same observation underlies Jerrum's Burnside process [3,4] — the difference is that the Burnside
-process is a Markov chain that converges to the orbit-uniform distribution, whereas here $`P`$ is
+process is a Markov chain that converges to the orbit-uniform distribution, whereas here $`\Phi`$ is
 simple enough to sample from **directly and exactly**, in one shot.
 
 The identical argument makes `RandomUniformUnlabeledPureSimplicialComplex` exact; only the inner
@@ -125,24 +127,24 @@ Two consequences:
 
 - **Only cycle types with all parts $`\le p`$ occur.** A cycle longer than $`p`$ fits inside no facet,
   so it could never be covered, and $`|\mathrm{Fix}(\sigma)| = 0`$. This is why the type list is
-  `IntegerPartitions[n, All, Range[p]]` and not all of $`\mathcal{P}(n)`$.
+  `IntegerPartitions[n, All, Range[p]]` and not all $`\lambda \vdash n`$.
 - **Only the cycle *supports* matter, never the cyclic order.** Given the block partition, the
   number of $`\sigma`$ realising it is $`\prod_k ((k-1)!)^{m_k}`$, a constant depending only on
   $`\lambda`$. So sampling $`\sigma`$ uniformly among its type is the same as sampling the block
   partition uniformly, and the implementation only ever materialises blocks.
 
-Writing $`N(\nu)`$ for the number of admissible facets available to a block collection with $`\nu_k`$
-blocks of size $`k`$,
+Writing $`N(\lambda,p)`$ for the number of admissible facets available to a block collection of type
+$`\lambda`$, with $`m_k`$ blocks of size $`k`$,
 
 ```math
-N(\nu) \;=\; [x^p] \prod_{k \ge 1} (1 + x^k)^{\nu_k},
+N(\lambda,p) \;=\; [x^p] \prod_{k \ge 1} (1 + x^k)^{m_k},
 ```
 
 counting the sub-collections of **blocks** whose sizes total $`p`$ — a truncated cycle-index-style
 generating function [5,6]. Blocks of equal size are distinguishable, which is what the exponents
-$`\nu_k`$ supply: expanded, $`N(\nu) = \sum_{\omega} \prod_k \binom{\nu_k}{\omega_k}`$ over
-$`\omega`$ with $`\sum_k k\,\omega_k = p`$. It is *not* the number of sub-multisets of the block
-*sizes*: for $`\nu = (3,1)`$ — three blocks of size 1 and one of size 2 — only two size-multisets
+$`m_k`$ supply: expanded, $`N(\lambda,p) = \sum_{\nu} \prod_k \binom{m_k}{\nu_k}`$ over
+$`\nu`$ with $`\sum_k k\,\nu_k = p`$. It is *not* the number of sub-multisets of the block
+*sizes*: for $`\lambda = \{2,1,1,1\}`$ — three blocks of size 1 and one of size 2 — only two size-multisets
 total $`p = 2`$, namely $`\{2\}`$ and $`\{1,1\}`$, while $`N = 4`$, because the three unit blocks offer
 $`\binom{3}{2} = 3`$ distinct pairs. `FacetLabeledCount.md` §3.3 states the same count for the same
 reason. `RandFLPCWeightCounts` builds the whole coefficient list out to $`x^p`$
@@ -179,17 +181,18 @@ distinct, distinct from the $`j`$ already spent, covering all of $`U`$?
 Inclusion–exclusion over which uncovered blocks are *left* uncovered gives
 
 ```math
-C(\lambda, M, j, \nu) \;=\; \sum_{\omega \le \nu} (-1)^{|\omega|} \left(\prod_k \binom{\nu_k}{\omega_k}\right) \Big(N(\lambda - \omega) - j\Big)^{(M-j)},
+C(\lambda, M, j, \kappa) \;=\; \sum_{\omega \le \kappa} (-1)^{|\omega|} \left(\prod_k \binom{\kappa_k}{\omega_k}\right) \Big(N(\lambda - \omega, p) - j\Big)^{(M-j)},
 ```
 
-where $`\nu`$ is the multiplicity vector of the sizes of the blocks in $`U`$, $`\omega`$ runs
-componentwise over $`0 \le \omega_k \le \nu_k`$, and $`|\omega| = \sum_k \omega_k`$
+where $`\kappa`$ is the multiplicity vector of the sizes of the blocks in $`U`$, $`\omega`$ runs
+componentwise over $`0 \le \omega_k \le \kappa_k`$, $`|\omega| = \sum_k \omega_k`$, and
+$`\lambda - \omega`$ is the type left after removing $`\omega_k`$ blocks of size $`k`$
 (`RandFLPCCompletions`). The falling factorial counts ordered choices of distinct subsets, which
 is what "the facets are labelled and pairwise distinct" asks for.
 
 ### 6.1 The lemma that makes step 3 exact
 
-The $`-j`$ in $`\big(N(\lambda-\omega) - j\big)`$ is the whole subtlety, and it is exact for a reason
+The $`-j`$ in $`\big(N(\lambda-\omega,p) - j\big)`$ is the whole subtlety, and it is exact for a reason
 worth stating:
 
 > **The number of completions depends on the draws so far only through $`(j, U)`$ — how *many*
@@ -209,7 +212,7 @@ sampler, where a naive port produced plausible complexes from a subtly wrong dis
 
 The state is indexed by the **multiplicity vector of uncovered block sizes**, not by the uncovered
 block *set*. Blocks of equal size are interchangeable at this point, so nothing is lost, and a
-$`2^{\#\text{blocks}}`$ inclusion–exclusion becomes $`\prod_k(\nu_k + 1) = O(n^p)`$ terms — the same
+$`2^{\#\text{blocks}}`$ inclusion–exclusion becomes $`\prod_k(\kappa_k + 1) = O(n^p)`$ terms — the same
 polynomial scaling, and the same near-independence of $`M`$, that
 `NumFacetLabeledPureComplexes` has.
 
@@ -233,8 +236,11 @@ the number of permutations of type $`\lambda`$ times the number of tuples each f
 Steps 3's naive form weighs every candidate subset separately: at $`\{p,M,n\} = \{4,6,15\}`$ that is
 441 candidates $`\times`$ 6 facets, and it was ~100% of the cost of a draw.
 
-But a candidate's weight enters **only** through $`\nu\big(U \setminus S\big)`$, a multiplicity
-vector of block sizes with $`\sum_k k\,\nu_k \le p`$. The number of distinct such vectors is at most
+But a candidate's weight enters **only** through $`\kappa\big(U \setminus S\big)`$, the uncovered
+blocks it would leave, and with $`U`$ fixed at this stage that is
+$`\kappa(U) - \kappa(S \cap U)`$. So the weight is determined by the **key** $`\kappa(S \cap U)`$, the
+multiplicity vector of the still-uncovered blocks that $`S`$ itself contains, which has
+$`\sum_k k\,\kappa_k(S \cap U) \le p`$ because $`|S| = p`$. The number of distinct such keys is at most
 
 ```math
 \sum_{i=0}^{p} P(i) \;=\; 4,\ 7,\ 12 \quad\text{for } p = 2,3,4,
@@ -246,7 +252,7 @@ the 441 candidates carry 3 distinct keys.
 So the implementation groups candidates by that key and draws
 
 ```math
-\Pr[\text{group } g] \;\propto\; |g| \cdot C(\lambda, M, j{+}1, \text{key}(g)),
+\Pr[\text{group } g] \;\propto\; |g| \cdot C\big(\lambda, M, j{+}1, \kappa(U) - \text{key}(g)\big),
 ```
 
 then a member of $`g`$ uniformly. Members of a group have equal weight, so this is the same
@@ -254,8 +260,8 @@ distribution — but with a handful of memo lookups per facet instead of one per
 
 Two supporting details:
 
-- **The key is carried as an integer.** Each $`\nu_k \le p`$, so base $`p+1`$ packs the vector without
-  carrying: $`\mathrm{code} = \sum_k \nu_k (p+1)^{k-1}`$, and `Tally` on a packed integer array does
+- **The key is carried as an integer.** Each entry of $`\kappa(S \cap U)`$ is at most $`p`$, so base
+  $`p+1`$ packs the vector without carrying: $`\mathrm{code} = \sum_k \kappa_k(S \cap U)\,(p+1)^{k-1}`$, and `Tally` on a packed integer array does
   the grouping in one pass.
 - **Codes are updated in place, not recomputed.** When a facet covers block $`b`$ for the first
   time, exactly the candidates containing $`b`$ lose it from their intersection with $`U`$, so
@@ -291,8 +297,9 @@ Three independent legs, in decreasing order of how much they would catch:
    weight still produces plausible-looking complexes, so this identity — not the outputs — is the
    thing to check.
 2. **The completion-count invariants** of §7: the candidate table lists exactly the admissible
-   facets, and the incrementally maintained codes still decode to $`\nu(U \setminus S)`$ after any
-   sequence of facets has been laid down.
+   facets, and the incrementally maintained codes still decode to $`\kappa(S \cap U)`$, so that
+   $`\kappa(U)`$ minus the decoded key is $`\kappa(U \setminus S)`$, after any sequence of facets has
+   been laid down.
 3. **Goodness-of-fit** over exhaustively enumerated classes, as a backstop. At 60,000–100,000
    draws on $`\{2,4,5\}`$, $`\{3,3,5\}`$ and $`\{4,3,8\}`$ the draw is uniform and statistically
    indistinguishable from an independently derived exact sampler.
@@ -309,8 +316,8 @@ Private helpers are named `RandFLPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 4051 | `RandFLPCWeightCounts[ν]` | coefficients of $`\prod_k (1+x^k)^{\nu_k}`$ out to $`x^p`$; last entry is $`N(\nu)`$ (§4) |
-| 4067 | `RandFLPCCompletions[λ,M,j,ν]` | $`C(\lambda,M,j,\nu)`$, the inclusion–exclusion of §6 |
+| 4051 | `RandFLPCWeightCounts[m]` | coefficients of $`\prod_k (1+x^k)^{m_k}`$ out to $`x^p`$; last entry is $`N(\lambda,p)`$ (§4) |
+| 4067 | `RandFLPCCompletions[λ,M,j,κ]` | $`C(\lambda,M,j,\kappa)`$, the inclusion–exclusion of §6 |
 | 4082 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
 | 4111, 4114 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
 | 4118 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
@@ -367,7 +374,7 @@ A rejection-free **dynamic program over row-type multiplicities** carrying the c
 column-equality partition $`\pi`$ as part of its state — conditioning on separation instead of
 testing for it — is correct (its counts agree with $`s_F`$ on all 234 triples with $`p \le 4`$,
 $`M \le 6`$) but is exponential where this sampler is polynomial. Its state space is
-$`2^M (n+1) (p+1)^M B_M`$ with $`B_M`$ the Bell number, and since $`n \le pM`$ the only free axes are $`p`$
+$`2^M (n+1) (p+1)^M \,\mathrm{Bell}(M)`$ with $`\mathrm{Bell}(M)`$ the Bell number, and since $`n \le pM`$ the only free axes are $`p`$
 and $`M`$, both exponential.
 Building the table costs 9.7 s / 164 MB at $`\{3,6,12\}`$, 118 s / 1.8 GB at $`\{3,7,14\}`$, and did
 not finish in 180 s / 4 GB at $`\{3,8,16\}`$ — where this sampler draws in 0.27 ms. The reason it
@@ -390,7 +397,7 @@ In `Tests/PureComplexes.wlt`:
 | `RandomUniformSamplers-structure`, `-parallel-branch`, `-empty-space` | shape, the parallel path, and the guards of §8 |
 
 The counter has its own seven, including a brute-force enumeration of the defining description and
-the Stirling identity $`B(p,n,M) = \sum_k S(M,k)\, F(p,n,k)`$, which exercises the derivation rather
+the Stirling identity $`B(p,M,n) = \sum_k S(M,k)\, s_F(p,k,n)`$, which exercises the derivation rather
 than its endpoints.
 
 **Non-vacuity.** The §7 invariant test was confirmed to fail under two injected defects — a wrong
@@ -412,10 +419,10 @@ The algorithm is assembled from standard results; these are the ones it actually
    imposes "pairwise distinct facets" (§6), and inclusion–exclusion.
 3. M. Jerrum, "Uniform sampling modulo a group of symmetries using Markov chain simulation",
    *DIMACS Ser. Discrete Math. Theoret. Comput. Sci.* **10** (1993), 37–47. — The Burnside
-   process: the same fixed-pair set $`P`$, sampled by Markov chain where §3 samples it directly.
+   process: the same fixed-pair set $`\Phi`$, sampled by Markov chain where §3 samples it directly.
 4. L. A. Goldberg and M. Jerrum, "The 'Burnside process' converges slowly", *Combin. Probab.
-   Comput.* **11** (2002), 21–34. — Why the chain is not a shortcut, and direct sampling from $`P`$
-   is worth the effort when $`P`$ is tractable.
+   Comput.* **11** (2002), 21–34. — Why the chain is not a shortcut, and direct sampling from $`\Phi`$
+   is worth the effort when $`\Phi`$ is tractable.
 5. G. Pólya, "Kombinatorische Anzahlbestimmungen für Gruppen, Graphen und chemische
    Verbindungen", *Acta Math.* **68** (1937), 145–254; English translation in G. Pólya and
    R. C. Read, *Combinatorial Enumeration of Groups, Graphs, and Chemical Compounds*,

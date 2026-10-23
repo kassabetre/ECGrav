@@ -949,7 +949,8 @@ VerificationTest[
 (* The draw groups candidates by completion key instead of weighing them one at a time, which
    rests on two pieces of bookkeeping in RandFLPCCandTable: the packed table must list exactly
    the admissible facets, and the codes -- updated in place as blocks are covered rather than
-   recomputed -- must still decode to nu(uncovered \ S) however many facets have been laid down.
+   recomputed -- must still decode to nu(S intersect uncovered), so that nu(uncovered) minus the
+   decoded key is nu(uncovered \ S), however many facets have been laid down.
    Get either wrong and the sampler still returns perfectly plausible complexes, drawn from the
    wrong distribution, so check the two identities against the definitions they replace over
    every cycle type that can occur. *)
