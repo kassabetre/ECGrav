@@ -229,6 +229,35 @@ the number of permutations of type $`\lambda`$ times the number of tuples each f
 \sum_{\lambda} w(\lambda) \;=\; n!\; s_F(p,M,n). \tag{I1}
 ```
 
+> **$`C(\lambda,M,0,\lambda)`$ is not $`N(\lambda,p)^{(M)}`$.** Here, and throughout this spec,
+> $`|\mathrm{Fix}(\sigma)|`$ counts fixed points on the sampler's set: tuples of $`M`$ pairwise
+> distinct facets **covering** $`[n]`$. The falling factorial $`N(\lambda,p)^{(M)}`$ counts the
+> $`\sigma`$-fixed tuples of distinct facets **without** the covering condition. It is the
+> $`\omega = 0`$ term of $`C(\lambda,M,0,\lambda)`$, and the terms with $`\omega \ne 0`$ remove the
+> tuples that leave some block uncovered. `FacetLabeledCount.md` uses $`N^{(M)}`$, the summand of
+> its $`A`$ sum (§3.5), and its $`|\mathrm{Fix}(\lambda)|`$ is $`N(\lambda,p)^M`$ on $`\tilde X`$
+> (3.3), which also allows repeated facets. So the same symbol counts a different set there. The
+> counter never needs covering inside a fixed-point count, because it gets covering by
+> differencing in $`n`$: $`s_F(p,M,n) = A(p,M,n) - A(p,M,n-1)`$ (its §3.1). A sampler draws one
+> tuple at one $`n`$ and has nothing to difference against, so it has to impose covering inside
+> the weight.
+>
+> At $`(p,M,n) = (3,3,5)`$:
+>
+> | $`\lambda`$ | $`N(\lambda,3)`$ | $`N^{(3)}`$, distinct | $`C(\lambda,3,0,\lambda)`$, distinct and covering |
+> | --- | --- | --- | --- |
+> | $`(1^5)`$ | 10 | 720 | 600 |
+> | $`(2,1,1,1)`$ | 4 | 24 | 24 |
+> | all others | $`\le 2`$ | 0 | 0 |
+>
+> For $`\sigma = \mathrm{id}`$ the 120 missing tuples are those that avoid some vertex $`v`$: their
+> facets lie among the $`\binom43 = 4`$ triples of $`[5]\setminus\{v\}`$, giving $`4\cdot3\cdot2 = 24`$
+> tuples for each of the 5 vertices. No tuple avoids two vertices. For $`(2,1,1,1)`$ the two counts
+> agree, because removing any block leaves at most 2 invariant facets, too few for 3 distinct
+> ones. Summed with the $`n!/z_\lambda`$ weights, $`N^{(3)}`$ gives $`960 = 5!\,A(3,3,5)`$ and
+> $`C`$ gives $`840 = 5!\,s_F(3,3,5)`$. The difference, $`120 = 5!\,A(3,3,4)`$, is exactly the
+> differencing term.
+
 ---
 
 ## 7. The grouped draw
