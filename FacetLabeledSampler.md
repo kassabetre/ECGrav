@@ -190,6 +190,95 @@ $`\lambda - \omega`$ is the type left after removing $`\omega_k`$ blocks of size
 (`RandFLPCCompletions`). The falling factorial counts ordered choices of distinct subsets, which
 is what "the facets are labelled and pairwise distinct" asks for.
 
+#### Proof of the completion count
+
+**Setting.** Fix $`\sigma \in S_n`$ of cycle type $`\lambda`$, and let $`\mathcal B`$ be the set of its
+blocks. For $`W \subseteq \mathcal B`$ write $`\kappa(W)`$ for the multiplicity vector of the block
+sizes in $`W`$, so that $`\kappa(\mathcal B) = \lambda`$. By §4 a $`p`$-subset of $`[n]`$ is
+$`\sigma`$-invariant exactly when it is a union of blocks. We therefore identify invariant facets
+with sets $`T \subseteq \mathcal B`$ such that $`\sum_{b \in T} |b| = p`$, and write $`\mathcal F`$ for
+the set of them. For $`W \subseteq \mathcal B`$ let
+$`\mathcal F_W = \{T \in \mathcal F : T \cap W = \emptyset\}`$, the invariant facets that avoid
+every block of $`W`$. The falling factorial is $`x^{(m)} = x(x-1)\cdots(x-m+1)`$, with
+$`x^{(0)} = 1`$.
+
+**Lemma A.** For every $`W \subseteq \mathcal B`$, $`|\mathcal F_W| = N\big(\lambda - \kappa(W), p\big)`$.
+
+*Proof.* $`\mathcal F_W`$ is the set of subsets of $`\mathcal B \setminus W`$ whose block sizes sum
+to $`p`$, so
+
+```math
+|\mathcal F_W| \;=\; [x^p] \prod_{b \in \mathcal B \setminus W} \bigl(1 + x^{|b|}\bigr) \;=\; [x^p] \prod_k (1 + x^k)^{(\lambda - \kappa(W))_k} \;=\; N\big(\lambda - \kappa(W), p\big),
+```
+
+because the blocks of $`\mathcal B \setminus W`$ have size multiplicities $`\lambda - \kappa(W)`$. ∎
+
+**Proposition B (completion count).** Let $`0 \le j \le M`$, and let $`F_1, \dots, F_j \in \mathcal F`$
+be pairwise distinct. Let $`U = \mathcal B \setminus \bigcup_{i \le j} F_i`$ be the set of blocks
+they leave uncovered, and let $`\kappa = \kappa(U)`$. A **completion** is an ordered tuple
+$`(F_{j+1}, \dots, F_M)`$ of elements of $`\mathcal F`$ such that all of $`F_1, \dots, F_M`$ are
+pairwise distinct and $`\bigcup_{i > j} F_i \supseteq U`$. The number of completions is
+$`C(\lambda, M, j, \kappa)`$ as displayed above. In particular, it depends on $`F_1, \dots, F_j`$
+only through $`j`$ and $`\kappa(U)`$.
+
+*Proof.* Let $`\Omega`$ be the set of ordered $`(M-j)`$-tuples of pairwise distinct elements of
+$`\mathcal F \setminus \{F_1, \dots, F_j\}`$. These are the tuples that satisfy the distinctness
+condition. For $`b \in U`$ let $`E_b \subseteq \Omega`$ be the set of tuples none of whose entries
+contains $`b`$. The completions are exactly $`\Omega \setminus \bigcup_{b \in U} E_b`$, so
+inclusion–exclusion gives
+
+```math
+\#\{\text{completions}\} \;=\; \sum_{W \subseteq U} (-1)^{|W|}\, \Bigl|\bigcap_{b \in W} E_b\Bigr|,
+```
+
+where the empty intersection is read as $`\Omega`$.
+
+Fix $`W \subseteq U`$. A tuple lies in $`\bigcap_{b \in W} E_b`$ exactly when each of its entries
+avoids $`W`$. So $`\bigcap_{b \in W} E_b`$ is the set of ordered $`(M-j)`$-tuples of distinct elements
+of $`\mathcal F_W \setminus \{F_1, \dots, F_j\}`$.
+
+The next step is the only place where the used facets enter. Each $`F_i`$ with $`i \le j`$ is
+disjoint from $`U`$ by the definition of $`U`$, and therefore disjoint from $`W \subseteq U`$. So
+$`F_1, \dots, F_j \in \mathcal F_W`$. They are distinct, so by Lemma A
+
+```math
+\bigl|\mathcal F_W \setminus \{F_1, \dots, F_j\}\bigr| \;=\; N\big(\lambda - \kappa(W), p\big) - j \;\ge\; 0.
+```
+
+Ordered selections of $`M-j`$ distinct elements from a set of size $`m`$ number $`m^{(M-j)}`$, which
+is $`0`$ when $`m < M-j`$. Hence
+
+```math
+\Bigl|\bigcap_{b \in W} E_b\Bigr| \;=\; \Big(N\big(\lambda - \kappa(W), p\big) - j\Big)^{(M-j)}.
+```
+
+This depends on $`W`$ only through $`\omega = \kappa(W)`$, and $`|W| = |\omega|`$. Since $`U`$ contains
+$`\kappa_k`$ blocks of size $`k`$, the number of $`W \subseteq U`$ with $`\kappa(W) = \omega`$ is
+$`\prod_k \binom{\kappa_k}{\omega_k}`$ when $`\omega \le \kappa`$ componentwise. Grouping the terms
+by $`\omega`$ gives the displayed formula for $`C(\lambda, M, j, \kappa)`$. The right-hand side
+involves only $`\lambda`$, $`M`$, $`j`$ and $`\kappa`$, which proves the final claim. ∎
+
+Three points about the proof:
+
+- **The events are indexed by blocks, not vertices.** Every entry of a completion is a union of
+  blocks, so it covers either all of a block or none of it. Covering the blocks of $`U`$ is therefore
+  the same as covering the vertices they contain.
+- **The step $`F_i \in \mathcal F_W`$ is the formal content of the §6.1 lemma.** When $`W`$ lies inside
+  the uncovered blocks, every used facet survives the restriction to $`\mathcal F_W`$. This is also
+  why $`N - j`$ is never negative.
+- **The last regrouping is what §6.2 means by indexing on $`\kappa`$.** The $`2^{|U|}`$ subsets $`W`$
+  collapse to $`\prod_k (\kappa_k + 1)`$ vectors $`\omega`$.
+
+**Checks.** Three specialisations give the expected values.
+
+1. $`j = 0`$, $`\kappa = \lambda`$. The completions are the $`\sigma`$-fixed tuples of distinct facets
+   covering $`[n]`$, so $`C(\lambda, M, 0, \lambda) = |\mathrm{Fix}(\sigma)|`$, the step-1 weight of §6.3.
+2. $`\kappa = 0`$. Only $`\omega = 0`$ survives, giving $`\big(N(\lambda, p) - j\big)^{(M-j)}`$. Covering
+   is already done, and the remaining facets need only be new and distinct.
+3. $`j = M`$. Every falling factorial is $`1`$, so
+   $`C = \sum_{\omega \le \kappa} (-1)^{|\omega|} \prod_k \binom{\kappa_k}{\omega_k} = \prod_k (1-1)^{\kappa_k} = [\kappa = 0]`$.
+   A complete tuple counts exactly when it covers.
+
 ### 6.1 The lemma that makes step 3 exact
 
 The $`-j`$ in $`\big(N(\lambda-\omega,p) - j\big)`$ is the whole subtlety, and it is exact for a reason
@@ -200,8 +289,8 @@ worth stating:
 
 Every used subset lies inside the already-covered blocks, so it automatically avoids any
 $`\omega \subseteq U`$, and therefore drops out of each inclusion–exclusion term by itself; only its
-*count* enters. Without this the state would have to remember the used set and the draw would not
-decompose. It is the same observation that lets the vertex-labeled generator subtract $`(j-1)`$ for
+*count* enters; Proposition B above makes this precise. Without this the state would have to
+remember the used set and the draw would not decompose. It is the same observation that lets the vertex-labeled generator subtract $`(j-1)`$ for
 a repeated facet.
 
 Note this lemma is specific to the facet-labeled case. Its analogue **fails** in the unlabeled
