@@ -498,6 +498,16 @@ previous implementation drew $`n`$ from the **vertex-labeled** counts and let a 
 repair the difference; weighting by $`s_F`$ is the distribution that was wanted all along, and needs
 no repair.
 
+The support is $`n_{\min} \le n \le pM`$ with $`n_{\min} = \min\{n : \binom{n}{p} \ge M\}`$: below
+$`n_{\min}`$ there are fewer than $`M`$ distinct $`p`$-subsets, and on the whole interval
+$`\lceil n/p \rceil \le M \le \binom np`$, so some $`M`$ distinct facets cover $`[n]`$. The range
+$`p \le n \le pM`$ in the code just carries zero weights below $`n_{\min}`$.
+
+The counts are computed as one row by the counter's row form (`FacetLabeledCount.md` §8) and
+memoised per $`(p,M)`$ in `RandFLPCVertexWeights`. Computing them with one scalar call per $`n`$, as
+the sampler first did, builds a cycle-type table for every $`n`$, and was 25× slower at
+$`(p,M) = (4,30)`$: 155 s against 6.2 s, with identical values.
+
 The emptiness guard tests $`s_F(p,M,n) \neq 0`$, not the vertex-labeled count. The two vanish
 together on $`p \le n \le pM`$, but $`s_F`$ also needs $`\binom{n}{p} \ge M`$ distinct facets, so it is
 the correct test.
@@ -534,12 +544,13 @@ Private helpers are named `RandFLPC*`.
 | 4051 | `RandFLPCWeightCounts[m]` | coefficients of $`\prod_k (1+x^k)^{m_k}`$ out to $`x^p`$; last entry is $`N(\lambda,p)`$ (§4) |
 | 4067 | `RandFLPCCompletions[λ,M,j,κ]` | $`C(\lambda,M,j,\kappa)`$, the inclusion–exclusion of §6 |
 | 4082 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
-| 4111, 4114 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 4118 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
-| 4140 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
-| 4191 | primary pattern | `[{p,M,n}, numSamples]` |
-| 4235 | overload | `[{p,M}, numSamples]` (§8) |
-| 4278, 4287 | overloads | single-sample forms |
+| 4095 | `RandFLPCVertexWeights[p,M]` | $`s_F(p,M,n)`$ for $`p \le n \le pM`$, one memoised row of the counter (§8) |
+| 4120, 4123 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 4127 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
+| 4149 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
+| 4200 | primary pattern | `[{p,M,n}, numSamples]` |
+| 4244 | overload | `[{p,M}, numSamples]` (§8) |
+| 4287, 4296 | overloads | single-sample forms |
 
 The counter it sits on is `NumFacetLabeledPureComplexes` at line 2044, with its own derivation at
 line 1861 and helpers `NumFLPC*`.

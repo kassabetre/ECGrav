@@ -28,6 +28,13 @@ semantic-ish; breaking changes are called out explicitly.
   time of the slowest observable, so consecutive samples stay correlated: 0.2–0.3 in the energy
   and the vertex count at p = 3, M = 8 and 12, which about doubles the variance of a sample mean.
   Corrected in the usage message, the reference page and the code comments.
+- **`RandomUniformFacetLabeledPureSimplicialComplex[{p, M}, k]` sets up 25× faster.** With the
+  vertex count free it weights n by the facet-labeled counts, which it computed with one call per
+  n, building a cycle-type table for each. It now takes the whole row from the counter's row form,
+  `NumFacetLabeledPureComplexes[p, M, nlist]`, in one pass, and memoises it per (p, M): 6.2 s
+  instead of 155 s at p = 4, M = 30, with identical values. The distribution of the samples is
+  unchanged. A new test checks the row against the per-n counts and that `NumPCClearCache`
+  clears it.
 
 ### Added
 - **`RandomPureSimplicialComplexMCMC` reports effective sample sizes.** Its returned association

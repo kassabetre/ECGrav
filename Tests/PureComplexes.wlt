@@ -1014,6 +1014,25 @@ VerificationTest[
     {4000, True},
     TestID -> "RandomUniformFacetLabeled-vertex-count-marginal"
 ];
+
+(* The free-n weights come from the counter's row form, memoised. They must equal the scalar
+   counts entry by entry, zeros below Min{n : Binomial[n,p] >= M} included, and
+   NumPCClearCache must reach the memo. *)
+VerificationTest[
+    Module[{rows},
+        ECGrav`Private`NumPCClearCache[];
+        rows = Table[
+            ECGrav`Private`RandFLPCVertexWeights[p, M] ===
+              Table[ECGrav`NumFacetLabeledPureComplexes[p, M, n], {n, p, p*M}],
+            {p, 1, 4}, {M, 1, 6}];
+        {Union[Flatten[rows]],
+         Take[ECGrav`Private`RandFLPCVertexWeights[3, 5], 2],
+         Length[DownValues[ECGrav`Private`RandFLPCVertexWeights]] > 1,
+         ECGrav`Private`NumPCClearCache[] > 0,
+         Length[DownValues[ECGrav`Private`RandFLPCVertexWeights]]}],
+    {{True}, {0, 0}, True, True, 1},
+    TestID -> "RandomUniformFacetLabeled-vertex-weights-row"
+];
 (* :!CodeAnalysis::EndBlock:: *)
 
 (* Same empty-sample-space guards as the vertex-labeled generator. *)

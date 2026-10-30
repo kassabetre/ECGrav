@@ -1775,7 +1775,7 @@ always safe; it only costs the rebuilding.*)
 Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
 		cached={NumPCStep,NumPCTop,NumPCKernel,RandomPureComplexCDF,
 			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,RandFLPCCandTable,NumULPCA,
-			NumFLPCWeightTable,
+			NumFLPCWeightTable,RandFLPCVertexWeights,
 			RandULPCOrbits,RandULPCNd,RandULPCSubMulti,RandULPCFixCov,RandULPCTypeWeights,
 			RandULPCProfiles,RandULPCCCov,RandULPCComps}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
@@ -4091,6 +4091,15 @@ Module[{types,lambdas},
 		,{lam,lambdas}]}
 ];
 
+(* Private helper *)
+RandFLPCVertexWeights[p_Integer,MM_Integer]:=RandFLPCVertexWeights[p,MM]=
+(*s_F(p,MM,n) for n = p..p MM, the weights of the vertex count when it is left free. Taken from
+the counter's row form, which reads every n off one pass over the short-cycle multiplicities,
+where one scalar call per n builds a cycle-type table per n: 155 s against 6.2 s at
+(p,M) = (4,30), with identical values. Entries below Min{n : Binomial[n,p] >= MM} are zero, by
+the row form's guards. Memoised, since every call at (p,MM) needs the same row.*)
+NumFacetLabeledPureComplexes[p,MM,Range[p,p*MM]];
+
 (* Private helper: sample count above which the facet-labeled draw goes to ParallelTable. -----
    Kept separate from $RandomComplexParallelThreshold because the per-sample costs differ: a
    vertex-labeled sample is tens of microseconds, a facet-labeled one a few hundred.
@@ -4260,9 +4269,9 @@ If[purity<1||facetOrder<1,
 (*With the vertex count free, draw it from the facet-labeled counts themselves and then sample
 at that n. The old body drew n from the VERTEX-labeled counts and let the rejection step repair
 the difference; weighting by NumFacetLabeledPureComplexes is the distribution that was wanted
-all along, and needs no repair.*)
+all along, and needs no repair. The counts come as one memoised row (RandFLPCVertexWeights).*)
 With[{verts=Range[purity,purity*facetOrder],
-		weights=Table[NumFacetLabeledPureComplexes[purity,facetOrder,n],{n,purity,purity*facetOrder}]},
+		weights=RandFLPCVertexWeights[purity,facetOrder]},
 	If[RandFLPCGoParallel[numSamples],
 		ParallelTable[RandFLPCOne[purity,facetOrder,RandomChoice[weights->verts]],{numSamples},
 			DistributedContexts->{$Context,"ECGrav`","ECGrav`Private`"}],
