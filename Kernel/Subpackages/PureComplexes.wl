@@ -1777,7 +1777,7 @@ Module[{before,after,patterned=!FreeQ[First[#],Pattern]&,
 			RandFLPCWeightCounts,RandFLPCCompletions,RandFLPCTypeWeights,RandFLPCCandTable,NumULPCA,
 			NumFLPCWeightTable,RandFLPCVertexWeights,
 			RandULPCOrbits,RandULPCNd,RandULPCSubMulti,RandULPCFixCov,RandULPCTypeWeights,
-			RandULPCProfiles,RandULPCCCov,RandULPCComps}},
+			RandULPCProfiles,RandULPCCCov,RandULPCComps,RandULPCFix,RandULPCOrbitTable}},
 	before=Total[ByteCount/@Map[DownValues,cached]];
 	Scan[(DownValues[#]=Select[DownValues[#],patterned])&,cached];
 	after=Total[ByteCount/@Map[DownValues,cached]];
@@ -3743,19 +3743,36 @@ RandULPCOrbits[lambda_List,p_Integer]:=RandULPCOrbits[lambda,p]=
 (*The <sigma>-orbits on the p-subsets of [n] for the canonical sigma of cycle type lambda, each as
 {size, support, members}, the support being the set of cycle indices the subset meets. This is the
 only place the C(n,p) subsets are touched, and being keyed on lambda alone it is shared by every
-sample that draws this cycle type.*)
-Module[{pi={},cyc=<||>,off=0,seen=<||>,out={},orb,cur},
+sample that draws this cycle type. Built with Sow: AppendTo copies the list on every append, which
+made this quadratic in the orbit count (4.2 s at 1^34, p=4). Sigma permutes the subsets, so the
+walk from s first repeats at s itself -- the stop test, with no search of the orbit so far.*)
+Module[{pi={},cyc=<||>,off=0,seen=<||>,orb,cur},
 	Do[pi=Join[pi,RotateLeft[Range[off+1,off+k]]];off+=k,{k,lambda}];
 	off=0;
 	Do[Scan[(cyc[#]=j)&,Range[off+1,off+lambda[[j]]]];off+=lambda[[j]],{j,Length[lambda]}];
-	Do[
+	Catenate[Last[Reap[Do[
 		If[!KeyExistsQ[seen,s],
-			orb={};cur=s;
-			While[!MemberQ[orb,cur],AppendTo[orb,cur];cur=Sort[pi[[cur]]]];
-			Scan[(seen[#]=True)&,orb];
-			AppendTo[out,{Length[orb],Union[cyc/@s],orb}]]
-	,{s,Subsets[Range[Total[lambda]],{p}]}];
-	out
+			cur=s;
+			orb=Catenate[Last[Reap[While[True,Sow[cur];seen[cur]=True;cur=Sort[pi[[cur]]];If[cur===s,Break[]]]]]];
+			Sow[{Length[orb],Union[cyc/@s],orb}]]
+	,{s,Subsets[Range[Total[lambda]],{p}]}]]]]
+];
+
+(* Private helper *)
+RandULPCOrbitTable[lambda_List,p_Integer]:=RandULPCOrbitTable[lambda,p]=
+(*What the draw reads about the orbits of a cycle type but never changes: each orbit's size; its
+key code, the number of cycles of each length in its support packed in base p+1 by length index;
+each cycle's place value in that packing; and the cycles-to-orbits incidence used to update the
+codes in place. A support meets at most p cycles, so no digit exceeds p. Keyed on lambda alone,
+like RandULPCOrbits, so it is built once per cycle type.*)
+Module[{orbs=RandULPCOrbits[lambda,p],lens,cycRadix},
+	lens=Sort[DeleteDuplicates[lambda]];
+	cycRadix=((p+1)^Range[0,Length[lens]-1])[[Lookup[PositionIndex[lens],lambda][[All,1]]]];
+	{orbs[[All,1]],
+	 Total[cycRadix[[#]]]&/@orbs[[All,2]],
+	 cycRadix,
+	 Lookup[GroupBy[Flatten[MapIndexed[Function[{s,ix},{#,First[ix]}&/@s],orbs[[All,2]]],1],
+		First->Last],Range[Length[lambda]],{}]}
 ];
 
 (* Private helper *)
@@ -3789,11 +3806,21 @@ Module[{t=Tally[lambda],mult},
 ];
 
 (* Private helper *)
+RandULPCFix[parts_List,p_Integer,MM_Integer]:=RandULPCFix[parts,p,MM]=
+(*NumULPCFixSets, memoised for the step-1 weights. RandULPCFixCov asks for |Fix(rho)| at every
+sub-multiset rho of every cycle type of n, Sum over lambda of Prod_k (m_k+1) requests -- 240840 at
+n=27 -- but only the partitions of the integers up to n are distinct, 14742 there, so most requests
+repeat. Callers pass the tally of rho sorted, so equal rho share an entry. Kept on the sampler's
+side: memoising NumULPCFixSets itself would also store every partition the counter visits, which
+for the vertex-count row runs to millions.*)
+NumULPCFixSets[parts,p,MM];
+
+(* Private helper *)
 RandULPCFixCov[lambda_List,p_Integer,MM_Integer]:=RandULPCFixCov[lambda,p,MM]=
 (*The number of sigma-invariant COVERING M-sets for sigma of cycle type lambda. The counter never
 forms this -- it reaches covering by differencing over the vertex count, which says nothing per
 cycle type -- so this is the piece the sampler adds.*)
-Total[Function[sm,sm[[2]]*NumULPCFixSets[Tally[sm[[1]]],p,MM]]/@RandULPCSubMulti[lambda]];
+Total[Function[sm,sm[[2]]*RandULPCFix[Tally[sm[[1]]],p,MM]]/@RandULPCSubMulti[lambda]];
 
 (* Private helper *)
 RandULPCTypeWeights[p_Integer,MM_Integer,n_Integer]:=RandULPCTypeWeights[p,MM,n]=
@@ -3854,45 +3881,56 @@ Module[{tot=0,surv,ndm},
 (* Private helper *)
 RandULPCDraw[lambda_List,p_Integer,MM_Integer,a_Association]:=
 (*Step 4. The orbits are drawn one at a time, each weighted by the number of ways the draw can
-still be completed, which is exact by the chain rule. Candidates are bucketed by (size, support
-meeting the uncovered cycles): orbits sharing that pair lead to the same state, so one completion
-count serves a whole bucket. The draw produces an ORDERED sequence and forgets the order -- every
-valid set has the same number of orderings, so the set is uniform and the ordering factor cancels
-out of the weights.*)
-Module[{orbs=RandULPCOrbits[lambda,p],nOrb,lens,mv,uv,uncov,sizes,aVec,alphaVec,sIdx,
-		used,chosen={},tot,buckets,keys,w,kpick,opick},
-	nOrb=Length[orbs];
+still be completed, which is exact by the chain rule. That number depends on a candidate only
+through its size and the length multiset of the uncovered cycles it meets, since the completion
+count reads the uncovered cycles only through their length multiset. So candidates are grouped on
+that pair, packed into one integer -- size times (p+1)^(number of lengths), plus the code
+RandULPCOrbitTable gives -- and the group is drawn with weight (group size) x (completions), then
+a member uniformly. The codes are updated in place when a cycle is first covered rather than
+recomputed, and Tally does the grouping in one pass. Grouping on the uncovered cycles themselves,
+as before, gave the same distribution with up to one group per candidate: 5-6 microseconds per
+candidate per step. The draw produces an ORDERED sequence and forgets the order -- every valid set
+has the same number of orderings, so the set is uniform and the ordering factor cancels out of
+the weights.*)
+Module[{orbs=RandULPCOrbits[lambda,p],dArr,codes,cycRadix,containing,nOrb,lens,lenIdx,mv,uv,
+		uncov,sizes,aVec,alphaVec,sIdx,siArr,shift,dead={},chosen={},open,eff,tal,w,kpick,opick},
+	{dArr,codes,cycRadix,containing}=RandULPCOrbitTable[lambda,p];
+	nOrb=Length[dArr];
 	lens=Sort[DeleteDuplicates[lambda]];
+	lenIdx=Association[Thread[lens->Range[Length[lens]]]];
 	mv=Table[Count[lambda,k],{k,lens}];
 	uv=mv;
-	uncov=Range[Length[lambda]];
+	uncov=ConstantArray[True,Length[lambda]];
 	sizes=Sort[Keys[a]];
 	aVec=a[#]&/@sizes;
 	sIdx=Association[Thread[sizes->Range[Length[sizes]]]];
+	(*size index of each orbit, 0 for sizes the profile does not use*)
+	siArr=Lookup[sIdx,dArr,0];
 	alphaVec=ConstantArray[0,Length[sizes]];
-	used=ConstantArray[False,nOrb];
-	tot=Total[aVec];
+	shift=(p+1)^Length[lens];
 	Do[
-		buckets=<||>;
-		Do[
-			If[!used[[i]]&&alphaVec[[sIdx[orbs[[i,1]]]]]<a[orbs[[i,1]]],
-				With[{key={orbs[[i,1]],Intersection[orbs[[i,2]],uncov]}},
-					buckets[key]=Append[Lookup[buckets,Key[key],{}],i]]]
-		,{i,nOrb}];
-		keys=Keys[buckets];
+		(*key of every admissible orbit; -1 for spent orbits and sizes the profile has filled*)
+		open=Join[{0},Boole[Thread[alphaVec<aVec]]][[siArr+1]];
+		eff=(dArr*shift+codes)*open+open-1;
+		If[dead=!={},eff[[dead]]=-1];
+		tal=DeleteCases[Tally[eff],{-1,_}];
 		w=Table[
-			Length[buckets[key]]*RandULPCComps[p,sizes,aVec,
-				MapAt[#+1&,alphaVec,sIdx[key[[1]]]],lens,mv,
-				uv-Table[Count[lambda[[key[[2]]]],L],{L,lens}]]
-		,{key,keys}];
-		kpick=RandomChoice[w->keys];
-		opick=RandomChoice[buckets[kpick]];
-		used[[opick]]=True;
+			t[[2]]*RandULPCComps[p,sizes,aVec,
+				MapAt[#+1&,alphaVec,sIdx[Quotient[t[[1]],shift]]],lens,mv,
+				uv-Reverse[IntegerDigits[Mod[t[[1]],shift],p+1,Length[lens]]]]
+		,{t,tal}];
+		kpick=RandomChoice[w->tal[[All,1]]];
+		opick=RandomChoice[Pick[Range[nOrb],eff,kpick]];
+		AppendTo[dead,opick];
 		AppendTo[chosen,opick];
-		alphaVec=MapAt[#+1&,alphaVec,sIdx[kpick[[1]]]];
-		uv=uv-Table[Count[lambda[[kpick[[2]]]],L],{L,lens}];
-		uncov=Complement[uncov,kpick[[2]]]
-	,{tot}];
+		alphaVec=MapAt[#+1&,alphaVec,siArr[[opick]]];
+		(*only cycles this orbit covers for the first time change any key*)
+		Do[
+			uncov[[c]]=False;
+			uv[[lenIdx[lambda[[c]]]]]-=1;
+			codes[[containing[[c]]]]-=cycRadix[[c]]
+		,{c,Select[orbs[[opick,2]],uncov[[#]]&]}]
+	,{Total[aVec]}];
 	Catenate[orbs[[#,3]]&/@chosen]
 ];
 

@@ -222,10 +222,10 @@ Asserted at **every step of every draw** in testing: 0 violations in ~4,600 step
 
 Four edges covering five vertices. It is small enough to follow by hand, but every step does real
 work: several cycle types carry weight, the inclusion–exclusion for covering has nonzero
-correction terms, one cycle type has two admissible profiles, candidate orbits share buckets, and
-one bucket is shut out by covering. Every number below comes from the shipped helpers
+correction terms, one cycle type has two admissible profiles, candidate orbits share groups, and
+one group is shut out by covering. Every number below comes from the shipped helpers
 (`RandULPCTypeWeights`, `RandULPCOrbits`, `RandULPCProfiles`, `RandULPCCCov`, `RandULPCComps`), and the
-draw is a seeded run of the same logic as `RandULPCDraw`.
+draw follows one path of the same logic as `RandULPCDraw`.
 
 **The target.** $`U(2,4,5) = 4`$, and the four classes have very different automorphism groups:
 
@@ -286,38 +286,44 @@ $`n_1 = 2`$ and $`n_2 = 2`$. Profile $`(0,2)`$ is admissible in size but cannot 
 reach only two of the three fixed points. The profile column sums to $`13 = \lvert\mathrm{Fix_{cov}}\rvert`$,
 which is I2. The draw takes $`(2,1)`$: two orbits of size 1 and one of size 2.
 
-**Step 4: the orbits.** Candidates are bucketed by (size, support $`\cap\,\mathcal{U}`$). A bucket's
-weight is its size times $`K`$ of the state it leads to, and within a bucket the orbit is uniform.
+**Step 4: the orbits.** Candidates are grouped by their size and the **lengths** of the uncovered
+cycles they meet, written $`(d, \kappa)`$ with $`\kappa`$ the length multiset of
+supp $`\cap\,\mathcal{U}`$. That pair fixes the state an orbit leads to up to the length multiset
+of what stays uncovered, which is all $`K`$ reads (§12), so every orbit in a group has the same
+weight. A group's weight is its size times $`K`$ of the state it leads to, and within a group the
+orbit is uniform. Here $`c_1`$ has length 2 and $`c_2, c_3, c_4`$ have length 1.
 
 *First orbit.* Nothing is covered, so $`\mathcal{U} = \{c_1,c_2,c_3,c_4\}`$, $`K = 12`$ and $`t = 3`$.
-Every orbit is its own bucket:
+The seven orbits fall into three groups:
 
-| bucket | orbits | $`K`$ after | weight | probability |
+| group | orbits | $`K`$ after | weight | probability |
 | --- | --- | --- | --- | --- |
-| $`(1, \{c_1\})`$ | $`O_1`$ | 3 | 3 | $`1/12`$ |
-| $`(2, \{c_1,c_2\})`$, $`(2, \{c_1,c_3\})`$, $`(2, \{c_1,c_4\})`$ | $`O_2`$, $`O_3`$, $`O_4`$ | 4 each | 4 each | $`1/9`$ each |
-| $`(1, \{c_2,c_3\})`$, $`(1, \{c_2,c_4\})`$, $`(1, \{c_3,c_4\})`$ | $`O_5`$, $`O_6`$, $`O_7`$ | 7 each | 7 each | $`7/36`$ each |
+| $`(1, \{2\})`$ | $`O_1`$ | 3 | 3 | $`1/12`$ |
+| $`(2, \{2,1\})`$ | $`O_2`$, $`O_3`$, $`O_4`$ | 4 | 12 | $`1/3`$, so $`1/9`$ each |
+| $`(1, \{1,1\})`$ | $`O_5`$, $`O_6`$, $`O_7`$ | 7 | 21 | $`7/12`$, so $`7/36`$ each |
 
-The weights sum to $`36 = t\,K`$, which is I3. The draw takes $`O_6 = \{3,5\}`$, covering $`c_2`$ and $`c_4`$.
+The weights sum to $`36 = t\,K`$, which is I3. Grouping on the uncovered cycles themselves would
+leave every orbit in a group of its own, with the same per-orbit probabilities. The draw takes
+$`O_6 = \{3,5\}`$, covering $`c_2`$ and $`c_4`$.
 
-*Second orbit.* Now $`\mathcal{U} = \{c_1, c_3\}`$, $`K = 7`$ and $`t = 2`$, and buckets start to merge:
+*Second orbit.* Now $`\mathcal{U} = \{c_1, c_3\}`$, $`K = 7`$ and $`t = 2`$:
 
-| bucket | orbits | $`K`$ after | weight | probability |
+| group | orbits | $`K`$ after | weight | probability |
 | --- | --- | --- | --- | --- |
-| $`(1, \{c_1\})`$ | $`O_1`$ | 1 | 1 | $`1/14`$ |
-| $`(2, \{c_1\})`$ | $`O_2`$, $`O_4`$ | 2 | 4 | $`2/7`$ |
-| $`(2, \{c_1,c_3\})`$ | $`O_3`$ | 3 | 3 | $`3/14`$ |
-| $`(1, \{c_3\})`$ | $`O_5`$, $`O_7`$ | 3 | 6 | $`3/7`$ |
+| $`(1, \{2\})`$ | $`O_1`$ | 1 | 1 | $`1/14`$ |
+| $`(2, \{2\})`$ | $`O_2`$, $`O_4`$ | 2 | 4 | $`2/7`$ |
+| $`(2, \{2,1\})`$ | $`O_3`$ | 3 | 3 | $`3/14`$ |
+| $`(1, \{1\})`$ | $`O_5`$, $`O_7`$ | 3 | 6 | $`3/7`$ |
 
-The weights sum to $`14 = t\,K`$. The draw takes the bucket $`(2,\{c_1\})`$ and, uniformly within it,
+The weights sum to $`14 = t\,K`$. The draw takes the group $`(2,\{2\})`$ and, uniformly within it,
 $`O_2 = \{\{1,3\},\{2,3\}\}`$. This covers $`c_1`$ and uses up the one orbit of size 2.
 
 *Third orbit.* Now $`\mathcal{U} = \{c_3\}`$, $`K = 2`$ and $`t = 1`$:
 
-| bucket | orbits | $`K`$ after | weight | probability |
+| group | orbits | $`K`$ after | weight | probability |
 | --- | --- | --- | --- | --- |
 | $`(1, \varnothing)`$ | $`O_1`$ | 0 | 0 | 0 |
-| $`(1, \{c_3\})`$ | $`O_5`$, $`O_7`$ | 1 | 2 | 1 |
+| $`(1, \{1\})`$ | $`O_5`$, $`O_7`$ | 1 | 2 | 1 |
 
 $`O_1`$ is still available by size but would leave vertex 4 uncovered, so its completion count is 0.
 This is covering being enforced during the draw rather than by rejection (§9). The draw takes
@@ -415,18 +421,20 @@ Private helpers are named `RandULPC*`.
 | --- | --- | --- |
 | 3735, 3738 | `$RandomUnlabeledParallelThreshold`, `RandULPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
 | 3742 | `RandULPCOrbits[λ,p]` | the orbits as `{size, support, members}` — the only place the $`\binom{n}{p}`$ subsets are touched |
-| 3762 | `RandULPCNd[λ,p]` | $`n_d`$ by Möbius inversion off the counter's $`f(e)`$ (`UnlabeledCount.md` §2.5), so reduced cycle types cost nothing |
-| 3779 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
-| 3792 | `RandULPCFixCov[λ,p,M]` | $`\mathrm{Fix_{cov}}`$ (§5) |
-| 3799 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
-| 3810 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
-| 3824 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
-| 3834 | `RandULPCComps[...]` | completion counts (§8) |
-| 3855 | `RandULPCDraw[λ,p,M,a]` | step 4 |
-| 3900 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
-| 3919 | primary pattern | `[{p,M,n}, numSamples]` |
-| 3943 | overload | `[{p,M}, numSamples]` |
-| 3979, 3988 | overloads | single-sample forms |
+| 3762 | `RandULPCOrbitTable[λ,p]` | per-cycle-type orbit sizes, packed length-multiset codes of the supports, place values, cycle→orbit incidence (§12) |
+| 3779 | `RandULPCNd[λ,p]` | $`n_d`$ by Möbius inversion off the counter's $`f(e)`$ (`UnlabeledCount.md` §2.5), so reduced cycle types cost nothing |
+| 3796 | `RandULPCSubMulti[λ]` | sub-multisets with inclusion–exclusion signs and binomial weights |
+| 3809 | `RandULPCFix[ρ,p,M]` | the counter's $`\lvert\mathrm{Fix}(\rho)\rvert`$, memoised for the step-1 weights (§12) |
+| 3819 | `RandULPCFixCov[λ,p,M]` | $`\mathrm{Fix_{cov}}`$ (§5) |
+| 3826 | `RandULPCTypeWeights[p,M,n]` | step-1 weights |
+| 3837 | `RandULPCProfiles[λ,p,M]` | admissible size profiles |
+| 3851 | `RandULPCCCov[λ,p,M,a]` | step-3 weights (§7.2) |
+| 3861 | `RandULPCComps[...]` | completion counts (§8) |
+| 3882 | `RandULPCDraw[λ,p,M,a]` | step 4 |
+| 3938 | `RandULPCOne[p,M,n]` | one sample, steps 1–5 |
+| 3957 | primary pattern | `[{p,M,n}, numSamples]` |
+| 3981 | overload | `[{p,M}, numSamples]` |
+| 4017, 4026 | overloads | single-sample forms |
 
 All memo tables are released by the shared ``ECGrav`Private`NumPCClearCache[]``.
 
@@ -438,7 +446,7 @@ which is not the distribution that was wanted.
 
 ## 12. Optimisations
 
-Three, each exact rather than heuristic:
+Five, each exact rather than heuristic:
 
 1. **Completion counts indexed by the uncovered *length multiset***, not the uncovered cycle set.
    Sound because $`n_d(T)`$ depends only on the shape of the surviving cycles, so states of equal
@@ -447,10 +455,29 @@ Three, each exact rather than heuristic:
 2. **Inclusion–exclusion over sub-multisets** with binomial weights: writing $`u_k`$ for the number
    of uncovered cycles of length $`k`$, a sub-multiset is a choice of how many of each length to
    take, so there are $`\prod_k(u_k{+}1)`$ terms instead of $`2^{\sum_k u_k}`$ subsets.
-3. **Candidates bucketed by $`(\text{size}, \mathrm{supp} \cap \mathcal{U})`$** — orbits sharing that pair lead
-   to the same state, so one completion count serves a whole bucket.
+3. **Candidates grouped by (size, length multiset of supp $`\cap\,\mathcal{U}`$)**, carried as one
+   packed integer per orbit. Two orbits with the same pair lead to states that differ at most in
+   *which* uncovered cycles remain, not in their lengths, so by item 1 they have the same
+   completion count and one count serves the group. Each orbit's code is the number of cycles of
+   each length in its support, packed in base $`p+1`$ by length index (a support meets at most $`p`$
+   cycles); `RandULPCOrbitTable` builds it once per cycle type together with the cycle→orbit
+   incidence, the codes are updated in place when a cycle is first covered
+   (`codes[[containing[[c]]]] -= radix(c)`), and `Tally` does the grouping in one pass. For the
+   identity type this means at most $`p+1`$ groups per step where grouping on the cycles
+   themselves gave up to one per orbit.
+4. **The step-1 weights share their $`\lvert\mathrm{Fix}(\rho)\rvert`$ values.** §5's sum asks for
+   $`\sum_{\lambda\vdash n}\prod_k(m_k+1)`$ of them, but only the partitions of the integers up to
+   $`n`$ are distinct — 240,840 requests against 14,742 distinct values at $`n = 27`$ — so
+   `RandULPCFix` memoises them. It sits on the sampler's side rather than inside the counter,
+   which would otherwise store every partition the vertex-count row visits.
+5. **The orbit list is built in linear time.** `RandULPCOrbits` collects the orbits with `Sow`.
+   It used `AppendTo`, which copies the list on every append, so the build was quadratic in the
+   number of orbits. And since $`\sigma`$ permutes the $`p`$-subsets, the walk from $`s`$ first
+   repeats at $`s`$ itself, so it stops there instead of searching the orbit found so far. The
+   output is identical, element for element, which keeps seeded runs unchanged.
 
-Together these took $`\{3,5,12\}`$ from 455 ms to 2.1 ms per sample.
+Items 1–3, with item 3 then grouping on the uncovered cycles themselves, took $`\{3,5,12\}`$ from
+455 ms to 2.1 ms per sample. Grouping on lengths and items 4 and 5 are measured in §13.
 
 ---
 
@@ -472,6 +499,63 @@ Measured warm, against the previous rejection implementation extracted from the 
 The first call at a given $`(p,M,n)`$ builds the memo tables; the figures above are warm, which is
 the regime any real use is in.
 
+**Grouping on lengths and sharing the $`\lvert\mathrm{Fix}(\rho)\rvert`$ values** (§12, items 3 and 4),
+measured at fixed $`n`$ against the previous body. "Setup" is the step-1 weights at that $`n`$, cold;
+"per sample" is warm.
+
+| $`\{p,M,n\}`$ | setup before | after | per sample before | after | per-sample speedup |
+| --- | --- | --- | --- | --- | --- |
+| $`\{2,10,9\}`$ | 0.036 s | 0.012 s | 1.7 ms | 0.40 ms | 4.3× |
+| $`\{3,10,12\}`$ | 0.17 s | 0.044 s | 11.3 ms | 0.81 ms | 14× |
+| $`\{2,20,15\}`$ | 0.75 s | 0.15 s | 12.0 ms\* | 1.25 ms | 9.6× |
+| $`\{4,10,16\}`$ | 0.99 s | 0.20 s | 92 ms | 1.11 ms | 83× |
+| $`\{3,20,20\}`$ | 5.8 s | 0.83 s | 130 ms | 1.47 ms | 88× |
+| $`\{2,30,21\}`$ | 9.9 s | 1.2 s | 32 ms | 3.2 ms | 10× |
+| $`\{4,20,25\}`$ | 37.8 s | 3.8 s | 2.66 s\* | 11.4 ms | 230× |
+| $`\{3,30,27\}`$ | 80.8 s | 7.2 s | 559 ms\* | 4.3 ms | 130× |
+| $`\{4,30,34\}`$ | over 40 min | 47 s | — | 50 ms | |
+
+\* averaged over 100 samples after only 20, so partly cold. The others average 800–2000 warm
+samples.
+
+Before the change the orbit loop took over 98% of a sample at 5–6 µs per orbit per step. After it,
+in the five cases with $`M\binom{n}{p} \ge 10^4`$, all at $`p = 3, 4`$, the per-orbit cost is
+36–64 ns per step, close to the facet-labeled sampler's 12–16 ns. In the four smaller cases, the
+three at $`p = 2`$ and $`\{3,10,12\}`$, the overhead of each step dominates instead, at 370–1110 ns
+per unit of $`M\binom{n}{p}`$. The setup now evaluates $`\sum_{m \le n} P(m)`$ distinct
+$`\lvert\mathrm{Fix}(\rho)\rvert`$ values — 66,273 at $`n = 34`$ — and only adds up the
+$`\sum_\lambda \prod_k(m_k+1)`$ terms, 1,831,065 there.
+
+**The linear orbit list** (§12, item 5) removes a cost paid the first time each cycle type is
+drawn. `RandULPCOrbits`, old body against new, one kernel:
+
+| cycle type, $`p`$ | orbits | before | after |
+| --- | --- | --- | --- |
+| $`1^{25}`$, 4 | 12,650 | 0.28 s | 0.093 s |
+| $`1^{30}`$, 4 | 27,405 | 1.21 s | 0.20 s |
+| $`1^{34}`$, 4 | 46,376 | 2.92 s | 0.35 s |
+| $`2\,1^{32}`$, 4 | 41,416 | 2.27 s | 0.27 s |
+| $`9\,8\,7\,6\,4`$, 4 | 742 | 0.28 s | 0.12 s |
+
+Re-measuring the whole table above with it on 2026-11-10 (Apple M3 Pro, Wolfram Language 15.0.1,
+one kernel; 1000 samples after 300) put every row within about 10% of the "after" figures, for
+example $`\{3,30,27\}`$ at 7.1 s and 4.0 ms and $`\{4,30,34\}`$ at 51 s and 55 ms: once the caches are
+warm the orbit list is not on the per-sample path. The first 300 samples, which build the tables
+of the cycle types they meet, averaged 10–70% more. Repeated runs on this machine varied by up to
+1.5×.
+
+**With $`n`$ free, the vertex-count row is now the limit.** `[{p,M}, k]` needs $`U(p,M,m)`$ for every
+$`m \le pM`$, and the counter sums over all $`P(m)`$ partitions of each: $`\sum_m P(m)`$ is
+$`6.6\times10^6`$, $`4.7\times10^8`$ and $`1.7\times10^{10}`$ at $`(p,M) = (2,30), (3,30), (4,30)`$.
+Each partition costs more at larger $`m`$. Measured at $`M = 30`$ on uniformly random partitions, it
+rises from 0.38 to 0.81 ms between $`m = 20`$ and 60 at $`p = 2`$, from 0.44 to 1.24 ms up to $`m = 90`$
+at $`p = 3`$, and from 0.47 to 1.62 ms up to $`m = 120`$ at $`p = 4`$; $`P(40)`$ times the sampled mean
+matched a full `NumULPCA` to within 2%. That makes the row about 1.4 hours, 150 hours and 7,400
+hours. (The figures quoted here before, an hour, 65 hours and 2,400 hours, assumed a flat 0.5 ms
+per partition.) Memory runs out first: `NumULPCA` holds `IntegerPartitions[m]` (461 bytes per
+partition at $`m = 70`$) and its table of terms at once, about 28 GB at $`m = 90`$ and a terabyte at
+$`m = 120`$. The rows measured at small $`M`$ took 0.6–10 s. None of the changes above touches it.
+
 **`$RandomUnlabeledParallelThreshold = 500`**, measured on 11 subkernels: serial/parallel runs
 0.24–0.53 at 100 samples, 0.31–0.81 at 200, 0.78–1.48 at 400, 1.47–2.71 at 800, 2.7–4.2 at 3200.
 It sits far above the facet-labeled generator's 100 because nearly all the work here is memo
@@ -492,6 +576,9 @@ In `Tests/PureComplexes.wlt`:
 | `-valid-samples` | $`M`$ distinct $`p`$-subsets covering $`[n]`$, across 9 sets including $`n = pM`$ |
 | `-uniform-15-classes` | chi-square over the 15 classes of $`\{3,4,6\}`$ |
 | `-vertex-count-marginal` | `{p,M}` draws $`n`$ from `NumUnlabeledPureComplexes` |
+| `-step-identity` | I3 at every step of random draws, orbit by orbit, over every cycle type and profile of six sets |
+| `RandULPCOrbitTable-codes-track-uncovered` | the packed keys decode to the uncovered lengths after any covering order |
+| `RandULPCOrbits-walks-partition-subsets` | each orbit is $`\sigma`$'s walk from its earliest subset, closing up, and the orbits partition the $`p`$-subsets in that order, for every cycle type with $`n \le 8`$ and $`p \le 4`$ |
 | `-uniform-over-classes` | the pre-existing $`P_4`$-vs-$`K_{1,3}`$ check |
 
 I1–I3 are the ones that matter. A wrong cycle-type weight still emits plausible complexes, so

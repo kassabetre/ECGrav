@@ -35,6 +35,23 @@ semantic-ish; breaking changes are called out explicitly.
   instead of 155 s at p = 4, M = 30, with identical values. The distribution of the samples is
   unchanged. A new test checks the row against the per-n counts and that `NumPCClearCache`
   clears it.
+- **`RandomUniformUnlabeledPureSimplicialComplex` draws 4–230× faster per sample and sets up
+  3–11× faster.** The orbit-by-orbit draw grouped candidate orbits by the uncovered cycles they
+  meet, which for the identity cycle type left nearly every orbit in a group of its own and cost
+  5–6 µs per orbit per step. It now groups them by the lengths of those cycles, which is all the
+  completion count reads, and keeps each orbit's key as a packed integer updated in place, as the
+  facet-labeled sampler does. The step-1 weights requested |Fix(ρ)| once per sub-multiset of
+  every cycle type, 240,840 times at n = 27 for 14,742 distinct values; those values are now
+  memoised. At (p, M, n) = (3, 30, 27) a sample takes 4.3 ms instead of 0.56 s and the step-1
+  weights 7.2 s instead of 81 s. The distribution of the samples is unchanged. Two new tests
+  check that the packed keys track the uncovered cycles under any covering order, and that the
+  completion counts satisfy the one-step identity the draw relies on.
+- **The unlabeled sampler builds each cycle type's orbit list in linear time.** The list was grown
+  with `AppendTo`, which copies it on every append, so the build was quadratic in the number of
+  orbits: 2.9 s for the identity type at p = 4, n = 34, paid the first time that type is drawn.
+  It now takes 0.35 s. The output is identical, so seeded runs are unchanged. A new test checks
+  that each orbit is the walk of σ from its earliest subset and that the orbits partition the
+  p-subsets.
 
 ### Added
 - **`RandomPureSimplicialComplexMCMC` reports effective sample sizes.** Its returned association

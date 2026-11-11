@@ -536,21 +536,21 @@ throw low p-values by chance; prefer legs 1 and 2.
 
 ## 10. Implementation map
 
-All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 4002.
+All in `Kernel/Subpackages/PureComplexes.wl`; the derivation is the header comment at line 4040.
 Private helpers are named `RandFLPC*`.
 
 | line | symbol | role |
 | --- | --- | --- |
-| 4051 | `RandFLPCWeightCounts[m]` | coefficients of $`\prod_k (1+x^k)^{m_k}`$ out to $`x^p`$; last entry is $`N(\lambda,p)`$ (§4) |
-| 4067 | `RandFLPCCompletions[λ,M,j,κ]` | $`C(\lambda,M,j,\kappa)`$, the inclusion–exclusion of §6 |
-| 4082 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
-| 4095 | `RandFLPCVertexWeights[p,M]` | $`s_F(p,M,n)`$ for $`p \le n \le pM`$, one memoised row of the counter (§8) |
-| 4120, 4123 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
-| 4127 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
-| 4149 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
-| 4200 | primary pattern | `[{p,M,n}, numSamples]` |
-| 4244 | overload | `[{p,M}, numSamples]` (§8) |
-| 4287, 4296 | overloads | single-sample forms |
+| 4089 | `RandFLPCWeightCounts[m]` | coefficients of $`\prod_k (1+x^k)^{m_k}`$ out to $`x^p`$; last entry is $`N(\lambda,p)`$ (§4) |
+| 4105 | `RandFLPCCompletions[λ,M,j,κ]` | $`C(\lambda,M,j,\kappa)`$, the inclusion–exclusion of §6 |
+| 4120 | `RandFLPCTypeWeights[p,M,n]` | step-1 weights $`w(\lambda)`$, with the types and their multiplicity vectors |
+| 4133 | `RandFLPCVertexWeights[p,M]` | $`s_F(p,M,n)`$ for $`p \le n \le pM`$, one memoised row of the counter (§8) |
+| 4158, 4161 | `$RandomFacetLabeledParallelThreshold`, `RandFLPCGoParallel` | sample-count gate, also gated on `$KernelCount` |
+| 4165 | `RandFLPCCandTable[sizes,p]` | per-cycle-type candidate list, packed keys, place values, block→candidate incidence (§7) |
+| 4187 | `RandFLPCOne[p,M,n]` | one sample, steps 1–4 |
+| 4238 | primary pattern | `[{p,M,n}, numSamples]` |
+| 4282 | overload | `[{p,M}, numSamples]` (§8) |
+| 4325, 4334 | overloads | single-sample forms |
 
 The counter it sits on is `NumFacetLabeledPureComplexes` at line 2044, with its own derivation at
 line 1861 and helpers `NumFLPC*`.

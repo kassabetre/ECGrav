@@ -873,6 +873,104 @@ VerificationTest[
     True,
     TestID -> "RandomUniformUnlabeledPureSimplicialComplex-fixcov-at-identity"
 ];
+
+(* Step 4 groups candidate orbits on (size, lengths of the uncovered cycles they meet) and keeps
+   that key as a packed code per orbit, updated in place as cycles are covered rather than
+   recomputed. The codes must decode to the length multiset of supp(O) intersect uncovered after
+   any covering sequence, or the draw weighs groups with the wrong completion counts and still
+   emits valid-looking complexes. Checked over every cycle type with n <= 7. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, lam}, {p, 1, 3}, {n, 1, 7}, {lam, IntegerPartitions[n]}], 2],
+        Function[pl, Module[
+            {p = pl[[1]], lam = pl[[2]], orbs, dArr, codes, cycRadix, containing, lens, uncov,
+             decode, ok},
+            orbs = ECGrav`Private`RandULPCOrbits[lam, p];
+            {dArr, codes, cycRadix, containing} = ECGrav`Private`RandULPCOrbitTable[lam, p];
+            lens = Sort[DeleteDuplicates[lam]];
+            uncov = ConstantArray[True, Length[lam]];
+            decode = Function[i, Reverse[IntegerDigits[codes[[i]], p + 1, Length[lens]]]];
+            ok = dArr === orbs[[All, 1]];
+            Do[
+                ok = ok && AllTrue[Range[Length[orbs]], Function[i,
+                    decode[i] === (Count[lam[[Select[orbs[[i, 2]], uncov[[#]] &]]], #] & /@ lens)]];
+                If[uncov[[c]],
+                    uncov[[c]] = False;
+                    codes[[containing[[c]]]] -= cycRadix[[c]]]
+            , {c, RotateLeft[Range[Length[lam]], Quotient[Length[lam], 2]]}];
+            ok]]],
+    True,
+    TestID -> "RandULPCOrbitTable-codes-track-uncovered"
+];
+
+(* RandULPCOrbits collects each orbit by walking sigma from the first unseen subset, and stops when
+   the walk returns there. Every orbit must be that walk -- consecutive members related by sigma,
+   closing up -- the orbits must partition the p-subsets, and each must start at its earliest
+   subset with the orbits in that order: RandULPCOrbitTable and every seeded run read this order.
+   Checked over every cycle type with n <= 8. *)
+VerificationTest[
+    AllTrue[Flatten[Table[{p, lam}, {p, 1, 4}, {n, 1, 8}, {lam, IntegerPartitions[n]}], 2],
+        Function[pl, Module[
+            {p = pl[[1]], lam = pl[[2]], orbs, pi, cyc, subs, idx, step},
+            orbs = ECGrav`Private`RandULPCOrbits[lam, p];
+            pi = Catenate[MapThread[RotateLeft[Range[#1 + 1, #1 + #2]] &,
+                {Most[Accumulate[Prepend[lam, 0]]], lam}]];
+            cyc = Catenate[MapIndexed[ConstantArray[First[#2], #1] &, lam]];
+            subs = Subsets[Range[Total[lam]], {p}];
+            idx = First /@ PositionIndex[subs];
+            step = Sort[pi[[#]]] &;
+            Sort[Catenate[orbs[[All, 3]]]] === subs &&
+            AllTrue[orbs, Function[o,
+                o[[1]] === Length[o[[3]]] &&
+                o[[2]] === Union[cyc[[o[[3, 1]]]]] &&
+                step /@ o[[3]] === RotateLeft[o[[3]]] &&
+                idx[o[[3, 1]]] === Min[idx /@ o[[3]]]]] &&
+            OrderedQ[idx /@ orbs[[All, 3, 1]]]]]],
+    True,
+    TestID -> "RandULPCOrbits-walks-partition-subsets"
+];
+
+(* The draw is exact because the completion counts satisfy, at every partial selection,
+   Sum over unchosen orbits O of K(state after O) = (orbits still to pick) x K(state) -- each
+   completion is counted once per choice of its next orbit. Checked orbit by orbit, from each
+   orbit's own support, along random draws over every cycle type and profile of several sets.
+   A draw takes exactly Sum_d a_d steps whatever it picks, so the step count is fixed: 191. *)
+VerificationTest[
+    BlockRandom[SeedRandom[4242];
+        Module[{bad = 0, steps = 0},
+            Do[Module[{p = s[[1]], M = s[[2]], n = s[[3]]},
+                Do[Do[Module[{orbs, lens, mv, uv, uncov, sizes, aVec, sIdx, alpha, used, kAfter,
+                        K, ws, cand, pick},
+                    orbs = ECGrav`Private`RandULPCOrbits[lam, p];
+                    lens = Sort[DeleteDuplicates[lam]];
+                    mv = Count[lam, #] & /@ lens; uv = mv;
+                    uncov = ConstantArray[True, Length[lam]];
+                    sizes = Sort[Keys[a]]; aVec = a /@ sizes;
+                    sIdx = Association[Thread[sizes -> Range[Length[sizes]]]];
+                    alpha = 0*aVec; used = {};
+                    K = ECGrav`Private`RandULPCComps[p, sizes, aVec, #1, lens, mv, #2] &;
+                    kAfter = Function[i, If[!KeyExistsQ[sIdx, orbs[[i, 1]]] ||
+                            alpha[[sIdx[orbs[[i, 1]]]]] >= a[orbs[[i, 1]]], 0,
+                        K[MapAt[# + 1 &, alpha, sIdx[orbs[[i, 1]]]],
+                          uv - (Count[lam[[Select[orbs[[i, 2]], uncov[[#]] &]]], #] & /@ lens)]]];
+                    Do[
+                        cand = Complement[Range[Length[orbs]], used];
+                        ws = kAfter /@ cand;
+                        steps++;
+                        If[Total[ws] =!= (Total[aVec] - j + 1)*K[alpha, uv], bad++];
+                        pick = RandomChoice[ws -> cand];
+                        AppendTo[used, pick];
+                        alpha = MapAt[# + 1 &, alpha, sIdx[orbs[[pick, 1]]]];
+                        Do[uncov[[c]] = False; uv[[First[FirstPosition[lens, lam[[c]]]]]] -= 1,
+                            {c, Select[orbs[[pick, 2]], uncov[[#]] &]}]
+                    , {j, Total[aVec]}]],
+                    {a, Select[ECGrav`Private`RandULPCProfiles[lam, p, M],
+                        ECGrav`Private`RandULPCCCov[lam, p, M, #] > 0 &]}],
+                {lam, Select[IntegerPartitions[n], ECGrav`Private`RandULPCFixCov[#, p, M] > 0 &]}]],
+            {s, {{2, 3, 4}, {2, 4, 5}, {3, 4, 6}, {2, 6, 6}, {3, 3, 5}, {2, 5, 8}}}];
+            {bad, steps}]],
+    {0, 191},
+    TestID -> "RandomUniformUnlabeledPureSimplicialComplex-step-identity"
+];
 (* :!CodeAnalysis::EndBlock:: *)
 
 (* Every sample must be M pairwise distinct p-subsets covering [n] -- including at n = p M,
