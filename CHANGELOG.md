@@ -22,6 +22,22 @@ semantic-ish; breaking changes are called out explicitly.
   within about 25 sweeps, where the disjoint start was still trapped after 600, and three
   equilibrations converged at 1,201–1,601 sweeps.
 
+- **`RandomPureSimplicialComplexMCMC` no longer issues `Mod::indet` for fewer than five
+  samples.** Its progress interval was `Floor[numSamples/5]`, which is 0 below five samples, so the
+  sampling loop evaluated `Mod[k, 0]` at every sample. The interval is now at least 1. New test
+  `RandomPureSimplicialComplexMCMC-few-samples-issue-no-Mod-message`.
+- **A `Sow` inside an operator can no longer add rows to `RandomPureSimplicialComplexMCMC`'s
+  samples.** The driver gathered its samples with an untagged `Reap`, so a `Sow` from an operator,
+  or from a `Print` hook such as the tests' plot capture, landed in the measurements. All four
+  overloads now use a private tag. New test
+  `RandomPureSimplicialComplexMCMC-operator-Sow-does-not-leak-into-samples`.
+- **A call to `RandomPureSimplicialComplexMCMC` that matches none of its forms now returns
+  `$Failed` with `::argerr`.** It used to come back unevaluated with no message. That made a slip
+  look like a missing overload, for example `True` after the operator list instead of before it,
+  or an operator given as a symbol (`Length`) rather than a pure function (`Length[#] &`). The
+  `::argerr` message already existed, but nothing issued it. New tests
+  `RandomPureSimplicialComplexMCMC-argerr-*` cover four such slips.
+
 ### Changed
 - **The documentation no longer says `RandomPureSimplicialComplexMCMC` returns independent
   samples.** Samples are one correlation time (corrT sweeps) apart, and corrT is about one decay
@@ -52,6 +68,12 @@ semantic-ish; breaking changes are called out explicitly.
   It now takes 0.35 s. The output is identical, so seeded runs are unchanged. A new test checks
   that each orbit is the walk of σ from its earliest subset and that the orbits partition the
   p-subsets.
+
+- **The documentation of `RandomPureSimplicialComplexMCMC` covers all four call forms and the
+  return value.** The usage message and the reference page now describe the fixed-vertex form, the
+  continuation from a prior run's association, what each row of the measurements holds, the keys
+  of the returned association (`effectiveSampleSize` among them), and the `$Failed` return when
+  equilibration does not converge. The argument-error message lists the accepted forms.
 
 ### Added
 - **`RandomPureSimplicialComplexMCMC` reports effective sample sizes.** Its returned association

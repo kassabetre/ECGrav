@@ -3297,24 +3297,44 @@ RandomPureSimplicialComplexMCMCCorrelationTime::alldefault=
 (* :Usage Messages: *)
 
 RandomPureSimplicialComplexMCMC::usage="
-	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_,
-	labelingChoise_Integer, numSamples_Integer] 
-	takes as an input seed complex, a list of functions, a choice of labeleing and 
-	number of samples and outputs numSamples random pure simplicial complexes from a uniform
-	distribution, spaced one correlation time (corrT sweeps) apart. It first runs an
-	equilibriation run and determines the correlation time. Consecutive samples are NOT
-	independent: corrT is about one decay time of the slowest observable, so they stay
-	correlated, typically at 0.2-0.3 in the energy and the vertex count. The returned
-	association therefore also gives effectiveSampleSize, the smallest effective number of
-	independent samples over the recorded observables, and effectiveSampleSizeValues, one per
-	observable in the order of corrTValues; use these rather than numSamples for error bars.
-	labelingChoise is an integer in {0,1,2}. 0 = vertex labeled, 1 = facet-labeled 2 = unlabeled.";
+	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_, labelingChoice_Integer,
+	numSamples_Integer] draws numSamples pure simplicial complexes with the free-vertex
+	Metropolis chain, which keeps the purity p and facet order M of seedComplex and lets the
+	vertex count vary.
+	RandomPureSimplicialComplexMCMC[seedComplex_List, True, operators_, labelingChoice_Integer,
+	numSamples_Integer] uses the fixed-vertex chain instead, which keeps the vertex set of
+	seedComplex; False in place of True gives the free-vertex form.
+	RandomPureSimplicialComplexMCMC[priorRun_Association, operators_, labelingChoice_Integer,
+	numSamples_Integer], and the same with True after priorRun for a fixed-vertex run, continue
+	from the association returned by an earlier call, skipping equilibration and the
+	correlation-time estimate.
+	labelingChoice selects the ensemble: 0 = vertex-labeled (every vertex-labeled complex equally
+	likely), 1 = facet-labeled, 2 = unlabeled (every isomorphism class equally likely).
+	operators is a non-empty list of pure functions, each applied to a complex given as its list
+	of facets.
+	A fresh run first equilibrates, printing diagnostic plots, then estimates the correlation
+	time corrT, then takes numSamples samples corrT sweeps apart; a sweep is p M proposals.
+	The result is {measurements, info}. Each row of measurements is
+	{k, energy, vertexCount, op1, ..., opm, complex}, where energy = -Log[w] for the target
+	weight w; on the fixed-vertex chain the third entry is the number of edges of the
+	1-skeleton instead. info is an association with keys eqlT, converged, state, corrT, corrTValues, corrTMeasured,
+	effectiveSampleSize and effectiveSampleSizeValues.
+	Consecutive samples are NOT independent: corrT is about one decay time of the slowest
+	observable, so they stay correlated, typically at 0.2-0.3 in the energy and the vertex count.
+	info[\"effectiveSampleSize\"] is the smallest effective number of independent samples over
+	the recorded observables, and info[\"effectiveSampleSizeValues\"] gives one per observable, in
+	the order of corrTValues; use these rather than numSamples for error bars. With fewer than 20
+	samples they are Missing[...].
+	If equilibration does not converge within $ECGravMaxEquilibriationSweeps sweeps, the function
+	issues RandomPureSimplicialComplexMCMC::noneql and returns $Failed.";
 	
 (* :Error Messages: *)
 
 RandomPureSimplicialComplexMCMC::argerr="Input has to be of the form 
-	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_,
-	labelingChoise_Integer, numSamples_Integer].";
+	RandomPureSimplicialComplexMCMC[seedComplex_List, operators_, labelingChoice_Integer,
+	numSamples_Integer], optionally with True or False after seedComplex for a fixed or free
+	vertex count, and with a previous run's association in place of seedComplex to continue it;
+	operators must be a non-empty list of pure functions.";
 
 (* Concatenated for the same reason as the ::noconv messages. *)
 RandomPureSimplicialComplexMCMC::noneql=

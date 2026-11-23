@@ -1840,6 +1840,70 @@ VerificationTest[
     TestID -> "RandomPureSimplicialComplexMCMC-reports-effective-sample-size"
 ];
 
+(* With fewer than five samples the progress interval Floor[numSamples/5] was 0, so the sampling
+   loop evaluated Mod[k, 0] and issued Mod::indet at every sample. The interval is now at least 1.
+   Three samples also exercise the short-run effective sample size: below 20 samples every
+   observable is Missing["TooFewSamples"] and the minimum is Missing["NotAvailable"]. Check sits
+   inside Quiet, so it still sees a quieted Mod::indet. *)
+VerificationTest[
+    Module[{ops = {Function[c, Length[c]]}, res},
+        SeedRandom[623];
+        res = Quiet@Block[{Print = Null &},
+            Check[ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 0, 3],
+                "Mod::indet", {Mod::indet}]];
+        {ListQ[res], If[ListQ[res], Length[First[res]], res],
+         If[ListQ[res], res[[2, "effectiveSampleSize"]], res],
+         If[ListQ[res], res[[2, "effectiveSampleSizeValues"]], res]}],
+    {True, 3, Missing["NotAvailable"], ConstantArray[Missing["TooFewSamples"], 3]},
+    TestID -> "RandomPureSimplicialComplexMCMC-few-samples-issue-no-Mod-message"
+];
+
+(* The driver gathers its samples with a tagged Sow, so a Sow from an operator, or from a Print
+   hook such as the one in emittedGraphicsAndResult, cannot add rows to the measurements. The
+   operator's values still reach an enclosing Reap. *)
+VerificationTest[
+    Module[{ops = {Function[c, Sow[Length[c]]; Length[c]]}, meas, data, sown},
+        SeedRandom[624];
+        {{meas, data}, sown} = Quiet@Block[{Print = Null &},
+            Reap[ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, ops, 0, 5]]];
+        {Length[meas], meas[[All, 1]], mcmcMeasurementsConsistentQ[meas, ops, 0],
+         Length[sown] == 1 && Length[First[sown]] > 0}],
+    {5, Range[5], True, True},
+    TestID -> "RandomPureSimplicialComplexMCMC-operator-Sow-does-not-leak-into-samples"
+];
+
+(* A call that matches none of the four forms used to come back unevaluated and silent, which
+   looked exactly like a missing overload. These are the likely slips: True after the operators
+   instead of before them, an operator given as a symbol rather than a pure function, an empty
+   operator list, and a non-integer sample count. None of them reaches the chain. *)
+VerificationTest[
+    ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed34, {Function[c, Length[c]]}, True, 2, 5],
+    $Failed,
+    {ECGrav`RandomPureSimplicialComplexMCMC::argerr},
+    TestID -> "RandomPureSimplicialComplexMCMC-argerr-boolean-after-operators"
+];
+
+VerificationTest[
+    ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed34, True, {Length}, 2, 5],
+    $Failed,
+    {ECGrav`RandomPureSimplicialComplexMCMC::argerr},
+    TestID -> "RandomPureSimplicialComplexMCMC-argerr-symbol-operator"
+];
+
+VerificationTest[
+    ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, {}, 0, 5],
+    $Failed,
+    {ECGrav`RandomPureSimplicialComplexMCMC::argerr},
+    TestID -> "RandomPureSimplicialComplexMCMC-argerr-empty-operators"
+];
+
+VerificationTest[
+    ECGrav`RandomPureSimplicialComplexMCMC[mcmcSeed24, {Function[c, Length[c]]}, 0, 5.],
+    $Failed,
+    {ECGrav`RandomPureSimplicialComplexMCMC::argerr},
+    TestID -> "RandomPureSimplicialComplexMCMC-argerr-noninteger-sample-count"
+];
+
 (* ==================================================================== *)
 (* P1 statistics: vertex count, connectivity, Betti numbers, |Aut|.     *)
 (* Added 2026-09-04 for the combinatorics paper (ExpansionRoadmap.md    *)

@@ -5,16 +5,6 @@
 
 (* CreatedBy='Wolfram 15.0' *)
 
-(*CacheID: 234*)
-(* Internal cache information:
-NotebookFileLineBreakTest
-NotebookFileLineBreakTest
-NotebookDataPosition[       154,          7]
-NotebookDataLength[     21659,        580]
-NotebookOptionsPosition[     15226,        442]
-NotebookOutlinePosition[     15993,        468]
-CellTagsIndexPosition[     15914,        463]
-WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
@@ -24,54 +14,78 @@ Cell["RandomPureSimplicialComplexMCMC", "ObjectName",
  CellID->572683887,ExpressionUUID->"c4f02fc7-48ca-3c41-b361-e48cdf599268"],
 
 Cell[TextData[{
- Cell["   ", "ModInfo",ExpressionUUID->"00e96c4b-1fe2-4754-88dd-2c8beb04ced7"],
+ Cell["   ", "ModInfo",ExpressionUUID->"23fcd72e-0251-49d9-a8a9-8cb743075c75"],
  Cell[BoxData[
   RowBox[{
    ButtonBox["RandomPureSimplicialComplexMCMC",
     BaseStyle->"Link",
     ButtonData->"paclet:ECGrav/ref/RandomPureSimplicialComplexMCMC"], "[", 
-   StyleBox[
-    RowBox[{
-    "seedComplex_List", ",", " ", "operators_", ",", " ", 
-     "labelingChoise_Integer", ",", " ", "numSamples_Integer"}], "TI"], 
-   "]"}]], "InlineFormula",ExpressionUUID->
-  "12710162-7290-4255-ada3-ea4c5403782d"],
- " returns ",
+   RowBox[{StyleBox["seedComplex", "TI"], ",", " ", StyleBox["operators", "TI"], ",", " ", StyleBox["labelingChoice", "TI"], ",", " ", StyleBox["numSamples", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "5a809b5b-3dfe-4dfb-88b1-25ac93e2bf41"],
+ "\[LineSeparator]draws ",
  Cell[BoxData[
   StyleBox["numSamples", "TI"]], "InlineFormula",ExpressionUUID->
-  "c01a2b29-de53-4c85-840b-9a336176ddac"],
- " pure simplicial complexes drawn from the uniform distribution, spaced one \
-correlation time apart. Consecutive samples are not independent, so the \
-returned association also reports their effective sample size. It first \
-equilibrates ",
+  "208d40cb-2410-4b06-bbba-c3c73e4838db"],
+ " pure simplicial complexes with the free-vertex Metropolis chain, which keeps the purity and facet order of ",
  Cell[BoxData[
   StyleBox["seedComplex", "TI"]], "InlineFormula",ExpressionUUID->
-  "784f388f-485d-45de-88ca-b76b7d6e47a3"],
- " and estimates correlation times, tracking the observables ",
+  "18679120-8efc-4677-a2f0-c2cdeacf12c3"],
+ " and lets the vertex count vary.\n",
+ Cell["   ", "ModInfo",ExpressionUUID->"0e8b2ecc-1a2b-4d4b-9ec2-174c922607e2"],
  Cell[BoxData[
-  StyleBox["operators", "TI"]], "InlineFormula",ExpressionUUID->
-  "512c6083-9206-471c-a956-ce1788c6c96b"],
- " (a non-empty list of pure functions). ",
+  RowBox[{
+   ButtonBox["RandomPureSimplicialComplexMCMC",
+    BaseStyle->"Link",
+    ButtonData->"paclet:ECGrav/ref/RandomPureSimplicialComplexMCMC"], "[", 
+   RowBox[{StyleBox["seedComplex", "TI"], ",", " ", "True", ",", " ", StyleBox["operators", "TI"], ",", " ", StyleBox["labelingChoice", "TI"], ",", " ", StyleBox["numSamples", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "1824cabd-efab-4362-85ba-710010b99139"],
+ "\[LineSeparator]uses the fixed-vertex chain, which keeps the vertex set of ",
  Cell[BoxData[
-  StyleBox["labelingChoise", "TI"]], "InlineFormula",ExpressionUUID->
-  "b37a709f-ccc4-4707-886c-958af39bb229"],
- " is 0, 1, or 2 for vertex-labeled, facet-labeled, or unlabeled."
+  StyleBox["seedComplex", "TI"]], "InlineFormula",ExpressionUUID->
+  "9fe03f7a-efc5-4fd3-8631-95a059e38a17"],
+ ".\n",
+ Cell["   ", "ModInfo",ExpressionUUID->"80f5fd3f-a3a0-479b-9f35-62d40b4288d9"],
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["RandomPureSimplicialComplexMCMC",
+    BaseStyle->"Link",
+    ButtonData->"paclet:ECGrav/ref/RandomPureSimplicialComplexMCMC"], "[", 
+   RowBox[{StyleBox["priorRun", "TI"], ",", " ", StyleBox["operators", "TI"], ",", " ", StyleBox["labelingChoice", "TI"], ",", " ", StyleBox["numSamples", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "cf66163e-84a2-4460-9624-393ce642f758"],
+ "\[LineSeparator]continues a previous run from the association ",
+ Cell[BoxData[
+  StyleBox["priorRun", "TI"]], "InlineFormula",ExpressionUUID->
+  "7bf3f053-1b0e-4d84-ae3f-becc5b85fa0b"],
+ " that it returned, skipping equilibration and the correlation-time estimate.\n",
+ Cell["   ", "ModInfo",ExpressionUUID->"a5b9b3ea-57fd-4b46-8be7-53796c6fe54e"],
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["RandomPureSimplicialComplexMCMC",
+    BaseStyle->"Link",
+    ButtonData->"paclet:ECGrav/ref/RandomPureSimplicialComplexMCMC"], "[", 
+   RowBox[{StyleBox["priorRun", "TI"], ",", " ", "True", ",", " ", StyleBox["operators", "TI"], ",", " ", StyleBox["labelingChoice", "TI"], ",", " ", StyleBox["numSamples", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "c7460ff4-2559-40e6-8680-e9badd578391"],
+ "\[LineSeparator]continues a previous fixed-vertex run."
 }], "Usage",
- CellChangeTimes->{{3.9719700761249638`*^9, 3.9719701983964806`*^9}},
  CellID->340984395,ExpressionUUID->"552cb548-8c9b-bd4c-8c0b-d80619e7b9f7"],
 
-Cell["\<\
-The sampler runs equilibration and correlation-time estimation before drawing \
-samples, spacing draws by the measured correlation time, and prints \
-diagnostic plots. A prior-run association may be supplied in place of \
-seedComplex to continue sampling. operators must match {__Function}. Draws \
-one correlation time apart remain correlated, typically at 0.2\[Dash]0.3 in \
-the energy and the vertex count, so the returned association also reports \
-\"effectiveSampleSize\", the smallest effective number of independent samples \
-over the recorded observables, and \"effectiveSampleSizeValues\", one per \
-observable; use these rather than numSamples for error bars.\
-\>", "Notes",
- CellID->822687678,ExpressionUUID->"bffffc96-8aca-2043-be7e-15e0ca3df4df"]
+Cell["labelingChoice selects the ensemble: 0 for vertex-labeled, in which every vertex-labeled complex is equally likely; 1 for facet-labeled; 2 for unlabeled, in which every isomorphism class is equally likely.", "Notes",
+ CellID->822687678,ExpressionUUID->"bffffc96-8aca-2043-be7e-15e0ca3df4df"],
+
+Cell["operators is a non-empty list of pure functions, each applied to a complex given as its list of facets.", "Notes",
+ CellID->486132629,ExpressionUUID->"c0312ec2-5524-416d-8581-9f5c4f9865a4"],
+
+Cell["A fresh run first equilibrates, printing diagnostic plots, then estimates the correlation time corrT, then takes numSamples samples corrT sweeps apart. A sweep is p M proposals, for purity p and facet order M.", "Notes",
+ CellID->638052255,ExpressionUUID->"ad4a35c4-3ff8-468c-9325-54af3cd2aab9"],
+
+Cell["The result is {measurements, info}. Each row of measurements is {k, energy, vertexCount, op1, \[Ellipsis], opm, complex}, where energy is -Log[w] for the target weight w; on the fixed-vertex chain the third entry is the number of edges of the 1-skeleton instead. info is an association with keys \"eqlT\", \"converged\", \"state\", \"corrT\", \"corrTValues\", \"corrTMeasured\", \"effectiveSampleSize\" and \"effectiveSampleSizeValues\". A continuation returns the prior run's association with the state and the effective sample sizes updated.", "Notes",
+ CellID->567418298,ExpressionUUID->"3f141a9b-c6ac-4158-8067-b5d9ef34cf7e"],
+
+Cell["Draws one correlation time apart remain correlated, typically at 0.2\[Dash]0.3 in the energy and the vertex count. info[\"effectiveSampleSize\"] is the smallest effective number of independent samples over the recorded observables, and info[\"effectiveSampleSizeValues\"] gives one per observable, in the order of info[\"corrTValues\"]; use these rather than numSamples for error bars. With fewer than 20 samples they are Missing[\[Ellipsis]].", "Notes",
+ CellID->425093165,ExpressionUUID->"fde89825-c3a2-4dba-b276-b4d423733bbf"],
+
+Cell["If equilibration does not converge within $ECGravMaxEquilibriationSweeps sweeps, a RandomPureSimplicialComplexMCMC::noneql message is issued and the result is $Failed.", "Notes",
+ CellID->325314503,ExpressionUUID->"7519f6b8-abdf-44ae-8a84-6dab5477a047"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -225,32 +239,12 @@ Cell[BoxData[
   $Line = 0; Null]], "PrimaryExamplesSection",
  CellID->158281363,ExpressionUUID->"d91c080e-2204-da4a-bcec-0082df8c3769"],
 
-Cell["\<\
-Draw samples from the uniform distribution over pure complexes, tracking a \
-vertex-count observable (this runs the full pipeline and prints diagnostics):\
-\
-\>", "ExampleText",
+Cell["Draw 100 samples from the unlabeled ensemble, starting from the boundary of a tetrahedron and tracking the vertex count, then read off the effective sample size. This runs the full pipeline and prints diagnostic plots:", "ExampleText",
  CellID->990062307,ExpressionUUID->"f38ed9d1-a410-4947-bccc-59ddc79c39d1"],
 
-Cell[BoxData[
- RowBox[{"RandomPureSimplicialComplexMCMC", "[", 
-  RowBox[{
-   RowBox[{"{", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"1", ",", "2", ",", "3"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"1", ",", "2", ",", "4"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"1", ",", "3", ",", "4"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"2", ",", "3", ",", "4"}], "}"}]}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{
-     RowBox[{"Length", "[", 
-      RowBox[{"Union", "[", 
-       RowBox[{"Flatten", "[", "#1", "]"}], "]"}], "]"}], "&"}], "}"}], ",", 
-   "2", ",", "100"}], "]"}]], "Input",
+Cell[BoxData[{
+ RowBox[{RowBox[{RowBox[{"{", RowBox[{"measurements", ",", "info"}], "}"}], "=", RowBox[{"RandomPureSimplicialComplexMCMC", "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"1", ",", "2", ",", "3"}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "2", ",", "4"}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "3", ",", "4"}], "}"}], ",", RowBox[{"{", RowBox[{"2", ",", "3", ",", "4"}], "}"}]}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"Length", "[", RowBox[{"Union", "[", RowBox[{"Flatten", "[", "#1", "]"}], "]"}], "]"}], "&"}], "}"}], ",", "2", ",", "100"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"info", "[", "\"\<effectiveSampleSize\>\"", "]"}]}], "Input",
  CellLabel->"In[1]:=",
  CellID->871494111,ExpressionUUID->"67f325c9-8c2a-485b-a4d0-97c720bc315f"]
 }, Open  ]],
@@ -450,140 +444,3 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb",
 ExpressionUUID->"a78791f4-6793-0843-8447-28ccce09a820"
 ]
 (* End of Notebook Content *)
-
-(* Internal cache information *)
-(*CellTagsOutline
-CellTagsIndex->{
- "ExtendedExamples"->{
-  Cell[9117, 259, 485, 13, 70, "ExtendedExamplesSection",ExpressionUUID->"5b5a79ee-7777-9840-841a-4e3a25e2f11c",
-   CellTags->"ExtendedExamples",
-   CellID->8688771]}
- }
-*)
-(*CellTagsIndex
-CellTagsIndex->{
- {"ExtendedExamples", 15723, 456}
- }
-*)
-(*NotebookFileOutline
-Notebook[{
-Cell[CellGroupData[{
-Cell[576, 22, 128, 1, 70, "ObjectName",ExpressionUUID->"c4f02fc7-48ca-3c41-b361-e48cdf599268",
- CellID->572683887],
-Cell[707, 25, 1603, 35, 70, "Usage",ExpressionUUID->"552cb548-8c9b-bd4c-8c0b-d80619e7b9f7",
- CellID->340984395],
-Cell[2313, 62, 769, 11, 70, "Notes",ExpressionUUID->"bffffc96-8aca-2043-be7e-15e0ca3df4df",
- CellID->822687678]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[3119, 78, 458, 13, 70, "SeeAlsoSection",ExpressionUUID->"279084f3-bd2f-fd4c-ac16-cc8c2069c05a",
- CellID->186404876],
-Cell[3580, 93, 1737, 39, 70, "SeeAlso",ExpressionUUID->"3ebad5b2-cbfd-6647-9609-7d6fa11f168b",
- CellID->132577514]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[5354, 137, 434, 12, 70, "TechNotesSection",ExpressionUUID->"f987fa42-b271-be4e-898e-7c2e23f5a05a",
- CellID->86418293],
-Cell[5791, 151, 100, 1, 70, "Tutorials",ExpressionUUID->"6d076e56-09af-8943-9be2-8f7b86ed532e",
- CellID->263122390]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[5928, 157, 117, 1, 70, "MoreAboutSection",ExpressionUUID->"4dd64247-3ec2-3040-a233-bd080c43b229",
- CellID->154812104],
-Cell[6048, 160, 99, 1, 70, "MoreAbout",ExpressionUUID->"3f7d5ee0-455d-8644-8d82-aec81200e27a",
- CellID->27356105]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[6184, 166, 472, 13, 70, "RelatedLinksSection",ExpressionUUID->"49cd05a6-e09c-254e-b96d-bd572204cd15",
- CellID->640771381],
-Cell[6659, 181, 103, 1, 70, "RelatedLinks",ExpressionUUID->"0b261b65-4797-ed4e-833b-9ce62af31280",
- CellID->637574682]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[6799, 187, 530, 14, 70, "ExamplesInitializationSection",ExpressionUUID->"2acab48a-0e28-6348-bac8-0d12f078030a",
- CellID->219289726],
-Cell[7332, 203, 293, 5, 70, "ExampleInitialization",ExpressionUUID->"d75bf89a-3e25-c744-bb53-09a8a8d16b50",
- CellID->536694270]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[7662, 213, 442, 12, 70, "PrimaryExamplesSection",ExpressionUUID->"d91c080e-2204-da4a-bcec-0082df8c3769",
- CellID->158281363],
-Cell[8107, 227, 262, 5, 70, "ExampleText",ExpressionUUID->"f38ed9d1-a410-4947-bccc-59ddc79c39d1",
- CellID->990062307],
-Cell[8372, 234, 708, 20, 70, "Input",ExpressionUUID->"67f325c9-8c2a-485b-a4d0-97c720bc315f",
- CellID->871494111]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[9117, 259, 485, 13, 70, "ExtendedExamplesSection",ExpressionUUID->"5b5a79ee-7777-9840-841a-4e3a25e2f11c",
- CellTags->"ExtendedExamples",
- CellID->8688771],
-Cell[9605, 274, 241, 5, 70, "ExampleSection",ExpressionUUID->"e1b7d5d2-6e50-5c4f-b230-90337940c870",
- CellID->488892233],
-Cell[9849, 281, 264, 5, 70, "ExampleSection",ExpressionUUID->"b0da77ce-069a-b040-b7e8-238cc854d489",
- CellID->174776400],
-Cell[CellGroupData[{
-Cell[10138, 290, 243, 5, 70, "ExampleSection",ExpressionUUID->"a9b756a5-7498-5545-af90-94aea27becc4",
- CellID->116824418],
-Cell[10384, 297, 246, 5, 70, "ExampleSubsection",ExpressionUUID->"259de66e-7333-d245-b965-d7c00a12a203",
- CellID->501198111],
-Cell[10633, 304, 245, 5, 70, "ExampleSubsection",ExpressionUUID->"c7d87014-669c-ae45-a0e5-4013ffafb347",
- CellID->98954378]
-}, Open  ]],
-Cell[10893, 312, 248, 5, 70, "ExampleSection",ExpressionUUID->"cfa9d74a-91a2-e644-afa1-e1e1ff806c1c",
- CellID->193335720],
-Cell[11144, 319, 257, 5, 70, "ExampleSection",ExpressionUUID->"5a11aa1a-1197-fa47-bceb-a50eb1bf597f",
- CellID->29273401],
-Cell[11404, 326, 251, 5, 70, "ExampleSection",ExpressionUUID->"ddd60c25-cedd-ac4b-b374-ac9c84a5cc29",
- CellID->231610034],
-Cell[11658, 333, 256, 5, 70, "ExampleSection",ExpressionUUID->"9ba4f2ae-321f-4f48-b0f3-3d864a4db5d6",
- CellID->341830901],
-Cell[11917, 340, 248, 5, 70, "ExampleSection",ExpressionUUID->"7a04e863-9e19-8142-b9f4-5730c5380d1a",
- CellID->89853224]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[12202, 350, 109, 1, 70, "MetadataSection",ExpressionUUID->"f227da2a-fd99-9646-9187-2efbc0a2ece4",
- CellID->34854405],
-Cell[12314, 353, 475, 12, 70, "History",ExpressionUUID->"5a59965e-e7d1-d046-90d1-110d6a40378d",
- CellID->609300846],
-Cell[CellGroupData[{
-Cell[12814, 369, 483, 13, 70, "CategorizationSection",ExpressionUUID->"14e522ba-fb35-3647-942f-3297ba75b82d",
- CellID->55134484],
-Cell[13300, 384, 134, 2, 70, "Categorization",ExpressionUUID->"555860e8-1055-fe44-8f64-89dfa4c0ee4c",
- CellID->655757009],
-Cell[13437, 388, 134, 2, 70, "Categorization",ExpressionUUID->"dc890095-804a-964a-b4d4-63ce0994c8f8",
- CellID->308011628],
-Cell[13574, 392, 131, 2, 70, "Categorization",ExpressionUUID->"b0f1658a-f0bd-544f-9343-5897628aae88",
- CellID->697533844],
-Cell[13708, 396, 161, 2, 70, "Categorization",ExpressionUUID->"92590bc8-6209-124d-89db-e21c02153945",
- CellID->46222849]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[13906, 403, 110, 1, 70, "KeywordsSection",ExpressionUUID->"aef25022-9cbe-0342-931e-75ac2b1725eb",
- CellID->443764341],
-Cell[14019, 406, 119, 1, 70, "Keywords",ExpressionUUID->"56ad4497-1f28-4644-8cb0-6184b92ea603",
- CellID->699641876],
-Cell[14141, 409, 111, 1, 70, "Keywords",ExpressionUUID->"8a587251-dd9e-4955-9165-d7d84bb9470a",
- CellID->422681926],
-Cell[14255, 412, 99, 1, 70, "Keywords",ExpressionUUID->"e28e2ad5-e23e-453e-8806-7ec5493a9457",
- CellID->644200870],
-Cell[14357, 415, 118, 1, 70, "Keywords",ExpressionUUID->"67e8fe70-89a8-4887-8adf-394d59136222",
- CellID->258598761]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[14512, 421, 118, 1, 70, "TemplatesSection",ExpressionUUID->"d84964c7-6013-2743-bb18-5cd85442c6e6",
- CellID->34607802],
-Cell[14633, 424, 148, 2, 70, "Template",ExpressionUUID->"cbd15328-fac4-6c44-a63d-65160cdf8daf",
- CellID->227782066],
-Cell[14784, 428, 137, 2, 70, "Template",ExpressionUUID->"52168f9d-5a43-a14f-bad5-ce120cee6f0b",
- CellID->223450220],
-Cell[14924, 432, 135, 2, 70, "Template",ExpressionUUID->"e839700b-199f-a04c-bb27-4799ede458ec",
- CellID->511115998],
-Cell[15062, 436, 136, 2, 70, "Template",ExpressionUUID->"57adad9e-74f7-3e4e-a731-969d53c9188c",
- CellID->45578844]
-}, Closed]]
-}, Open  ]]
-}
-]
-*)
-
-(* End of internal cache information *)

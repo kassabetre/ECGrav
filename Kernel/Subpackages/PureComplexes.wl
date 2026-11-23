@@ -5483,9 +5483,13 @@ data[[Key["state"]]]=Tempoutput[[Key["state"]]];
 ******************************************)*)
 
 numsweeps=1;
-printCase=Floor[(numSamples*1.0)/5.0];
+(*At least 1: with fewer than five samples Floor gives 0, and Mod[numsweeps,0] below issued
+	Mod::indet at every sample.*)
+printCase=Max[1,Floor[(numSamples*1.0)/5.0]];
 
-measurements=Reap[
+(*Tagged, so that a Sow from an operator or from a Print hook (the tests capture printed plots
+	that way) cannot land in the measurements.*)
+measurements=Flatten[Reap[
 	While[numsweeps<=numSamples,
 
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
@@ -5499,14 +5503,14 @@ measurements=Reap[
 						data[[Key["state"],Key["vertexCount"]]],
 						Through[operators [data[[Key["state"],Key["complex"]]]]]}],
 					{data[[Key["state"],Key["complex"]]]}
-				]
+				],"ECGravMCMCSample"
 			];
 		];
 
 		numsweeps++;
 
 	]
-][[2,1]];
+,"ECGravMCMCSample"][[2]],1];
 
 {measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$69"]
 
@@ -5579,10 +5583,10 @@ data[[Key["state"]]]=Tempoutput[[Key["state"]]];
 ******************************************)*)
 
 numsweeps=1;
-printCase=Floor[(numSamples*1.0)/5.0];
+printCase=Max[1,Floor[(numSamples*1.0)/5.0]];
 
 measurements=
-	Reap[
+	Flatten[Reap[
 		While[numsweeps<=numSamples,
 
 			If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
@@ -5597,14 +5601,14 @@ measurements=
 						Flatten[{numsweeps,data[[Key["state"],Key["energy"]]],
 								data[[Key["state"],Key["edgeCount"]]],
 								Through[operators [data[[Key["state"],Key["complex"]]]]]}],
-						{data[[Key["state"],Key["complex"]]]}]
+						{data[[Key["state"],Key["complex"]]]}],"ECGravMCMCSample"
 				];
 			];
 
 			numsweeps++;
 
 		]
-	][[2,1]];
+	,"ECGravMCMCSample"][[2]],1];
 
 {measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$57"]
 
@@ -5632,9 +5636,9 @@ Module[{data,Tempoutput,numsweeps,stopnum,printCase,measurements},
 data=priorRunInput;
 
 numsweeps=1;
-printCase=Floor[(numSamples*1.0)/5.0];
+printCase=Max[1,Floor[(numSamples*1.0)/5.0]];
 
-measurements=Reap[
+measurements=Flatten[Reap[
 	While[numsweeps<=numSamples,
 
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
@@ -5644,13 +5648,13 @@ measurements=Reap[
 				labelingChoise,data[["corrT"]]];
 
 		If[Mod[numsweeps,1]==0,
-			Sow[Join[Flatten[{numsweeps,data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["vertexCount"]]],Through[operators [data[[Key["state"],Key["complex"]]]]]}],{data[[Key["state"],Key["complex"]]]}]];
+			Sow[Join[Flatten[{numsweeps,data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["vertexCount"]]],Through[operators [data[[Key["state"],Key["complex"]]]]]}],{data[[Key["state"],Key["complex"]]]}],"ECGravMCMCSample"];
 		];
 
 	numsweeps++;
 
 	]
-][[2,1]];
+,"ECGravMCMCSample"][[2]],1];
 
 
 {measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}
@@ -5682,9 +5686,9 @@ Catch[If[HoldNumberOfVerticesFixed==False,Throw[RandomPureSimplicialComplexMCMC[
 data=priorRunInput;
 
 numsweeps=1;
-printCase=Floor[(numSamples*1.0)/5.0];
+printCase=Max[1,Floor[(numSamples*1.0)/5.0]];
 
-measurements=Reap[
+measurements=Flatten[Reap[
 	While[numsweeps<=numSamples,
 
 		If[Mod[numsweeps,printCase]==0,PrintTemporary[" sweepno ",numsweeps]];
@@ -5695,17 +5699,25 @@ measurements=Reap[
 
 
 		If[Mod[numsweeps,1]==0,
-			Sow[Join[Flatten[{numsweeps,data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["edgeCount"]]],Through[operators [data[[Key["state"],Key["complex"]]]]]}],{data[[Key["state"],Key["complex"]]]}]];
+			Sow[Join[Flatten[{numsweeps,data[[Key["state"],Key["energy"]]],data[[Key["state"],Key["edgeCount"]]],Through[operators [data[[Key["state"],Key["complex"]]]]]}],{data[[Key["state"],Key["complex"]]]}],"ECGravMCMCSample"];
 		];
 
 		numsweeps++;
 
 	]
-][[2,1]];
+,"ECGravMCMCSample"][[2]],1];
 
 {measurements,RandomPureSimplicialComplexMCMCAttachEffectiveSampleSize[data,measurements,operators]}, "ECGravReturn$58"]
 
 ];
+
+
+(* Catch-all Pattern *)
+(*Without it a call that matched none of the four forms above came back unevaluated and silent --
+	True placed after the operators, or an operator given as a symbol such as Length rather than a
+	pure function, looked exactly like a missing overload.*)
+RandomPureSimplicialComplexMCMC[args___]:=(Message[RandomPureSimplicialComplexMCMC::argerr, args];
+$Failed);
 
 
 (* ::Chapter:: *)
