@@ -6,11 +6,13 @@ semantic-ish; breaking changes are called out explicitly.
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-11-23
+
 ### Fixed
 - **The free-vertex complex MCMC no longer starts an equilibration replica in a trap.**
   `RandomPureSimplicialComplexMCMCEquilibriate`, and so `RandomPureSimplicialComplexMCMC`, started
   the replica that probes the high end of the vertex count from M disjoint facets. Under the
-  unlabeled weighting (labelingChoise 2) that complex's automorphism group, (p!)^M M!, is so large
+  unlabeled weighting (labelingChoice 2) that complex's automorphism group, (p!)^M M!, is so large
   that moves out of it are almost never accepted. The mean first exit is 339 sweeps at p = 3,
   M = 12, 1,629 at M = 20 and 26,250 at M = 50, more than the whole 25,000-sweep budget; it was
   computed exactly from the weights of every proposal and confirmed by measured exits at M = 12.
@@ -21,7 +23,6 @@ semantic-ish; breaking changes are called out explicitly.
   automorphism group is small. At p = 3, M = 20 the chain start reaches typical vertex counts
   within about 25 sweeps, where the disjoint start was still trapped after 600, and three
   equilibrations converged at 1,201–1,601 sweeps.
-
 - **`RandomPureSimplicialComplexMCMC` no longer issues `Mod::indet` for fewer than five
   samples.** Its progress interval was `Floor[numSamples/5]`, which is 0 below five samples, so the
   sampling loop evaluated `Mod[k, 0]` at every sample. The interval is now at least 1. New test
@@ -44,6 +45,11 @@ semantic-ish; breaking changes are called out explicitly.
   time of the slowest observable, so consecutive samples stay correlated: 0.2–0.3 in the energy
   and the vertex count at p = 3, M = 8 and 12, which about doubles the variance of a sample mean.
   Corrected in the usage message, the reference page and the code comments.
+- **The documentation of `RandomPureSimplicialComplexMCMC` covers all four call forms and the
+  return value.** The usage message and the reference page now describe the fixed-vertex form, the
+  continuation from a prior run's association, what each row of the measurements holds, the keys
+  of the returned association (`effectiveSampleSize` among them), and the `$Failed` return when
+  equilibration does not converge. The argument-error message lists the accepted forms.
 - **`RandomUniformFacetLabeledPureSimplicialComplex[{p, M}, k]` sets up 25× faster.** With the
   vertex count free it weights n by the facet-labeled counts, which it computed with one call per
   n, building a cycle-type table for each. It now takes the whole row from the counter's row form,
@@ -68,12 +74,6 @@ semantic-ish; breaking changes are called out explicitly.
   It now takes 0.35 s. The output is identical, so seeded runs are unchanged. A new test checks
   that each orbit is the walk of σ from its earliest subset and that the orbits partition the
   p-subsets.
-
-- **The documentation of `RandomPureSimplicialComplexMCMC` covers all four call forms and the
-  return value.** The usage message and the reference page now describe the fixed-vertex form, the
-  continuation from a prior run's association, what each row of the measurements holds, the keys
-  of the returned association (`effectiveSampleSize` among them), and the `$Failed` return when
-  equilibration does not converge. The argument-error message lists the accepted forms.
 
 ### Added
 - **`RandomPureSimplicialComplexMCMC` reports effective sample sizes.** Its returned association
@@ -1796,7 +1796,8 @@ Pre-1.2.0 codebase (unrelated history; reconstructed from its commit log):
 
 - Initial version.
 
-[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.18.0...HEAD
+[Unreleased]: https://github.com/kassabetre/ECGrav/compare/v1.19.0...HEAD
+[1.19.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.19.0
 [1.18.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.18.0
 [1.17.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.17.0
 [1.16.0]: https://github.com/kassabetre/ECGrav/releases/tag/v1.16.0

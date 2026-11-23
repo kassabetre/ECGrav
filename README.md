@@ -1,7 +1,7 @@
 # ECGrav — Emergent Combinatorial Gravity
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Version](https://img.shields.io/badge/version-1.18.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.19.0-blue.svg)
 ![Wolfram Language](https://img.shields.io/badge/Wolfram%20Language-15.0%2B-red.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21684432.svg)](https://doi.org/10.5281/zenodo.21684432)
 
@@ -21,7 +21,7 @@ ECGrav provides two complementary toolkits:
   parallel tempering, Wang–Landau flat-histogram sampling, multi-histogram
   reweighting, and exact enumeration.
 
-> **Status:** 1.18.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
+> **Status:** 1.19.0. Actively developed research code. See [ROADMAP.md](ROADMAP.md)
 > for what's planned and [Tests/README.md](Tests/README.md) for known issues.
 
 For the mathematics of the model — the energy functionals, observables, and
@@ -73,7 +73,7 @@ Download `ECGrav-<version>.paclet` from the
 [GitHub Releases](https://github.com/kassabetre/ECGrav/releases) page, then:
 
 ```wolfram
-PacletInstall["/path/to/ECGrav-1.18.0.paclet"];
+PacletInstall["/path/to/ECGrav-1.19.0.paclet"];
 Needs["ECGrav`"];
 ```
 
@@ -87,7 +87,7 @@ wolframscript -file build.wls
 ```
 
 ```wolfram
-PacletInstall["/path/to/ECGrav/build/ECGrav-1.18.0.paclet", ForceVersionInstall -> True];
+PacletInstall["/path/to/ECGrav/build/ECGrav-1.19.0.paclet", ForceVersionInstall -> True];
 Needs["ECGrav`"];
 ```
 
@@ -175,7 +175,7 @@ an **ECGrav** guide (API by theme) and a **Getting Started with ECGrav** tutoria
 
 ## Tests
 
-The `Tests/` directory holds a `.wlt` regression suite (325 tests) that loads the
+The `Tests/` directory holds a `.wlt` regression suite (339 tests) that loads the
 package **from source**:
 
 ```wolfram
@@ -189,13 +189,17 @@ list of known issues.
 ## Versioning
 
 This repository follows semantic-ish versioning. The `main` branch is the
-current release (1.18.0). Earlier releases are preserved as git tags:
+current release (1.19.0). Earlier releases are preserved as git tags:
 
-- `v1.18.0` — current: Wang–Landau flat-histogram sampling. `GraphWangLandau` estimates the
+- `v1.19.0` — current: `RandomPureSimplicialComplexMCMC` reports effective sample sizes, its
+  equilibration no longer starts a replica in a trap at large M, and its documentation covers all
+  four call forms; three driver bugs are fixed. The exact samplers are faster: free-n
+  facet-labeled setup 25×, unlabeled draws 4–230×. Additive: no argument or returned key removed.
+- `v1.18.0` — Wang–Landau flat-histogram sampling. `GraphWangLandau` estimates the
   density of states of the labeled graph ensemble, and `ThermodynamicsFromDOS` and
   `TransitionOrderDiagnostics` read the thermodynamics and the transition-order diagnostics off
   it. `NumFacetLabeledPureComplexes` gains whole rows over the vertex count and a faster total.
-  Purely additive
+  Purely additive.
 - `v1.17.0` — P2's three source operators and the homogeneous `c·O` form move into
   the package. `NumTriangles`, `NumBdryEdges` and `delEulerChi` with their incremental deltas,
   plus `HHomogeneousSource` and the coordinate helpers, with the physical couplings as arguments
